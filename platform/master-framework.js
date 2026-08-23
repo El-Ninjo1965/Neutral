@@ -2038,6 +2038,65 @@
       };
     },
 
+    getRuntimeSetupDefaults() {
+      const env = (typeof process !== 'undefined' && process.env) ? process.env : {};
+      const config = (() => {
+        if (typeof require !== 'function') {
+          return {};
+        }
+
+        try {
+          return require('../server/config') || {};
+        } catch (error) {
+          return {};
+        }
+      })();
+      const activeApp = this.getActiveApp ? this.getActiveApp() : null;
+      const appId = normalizeString(env.DEFAULT_APP_ID || env.APP_ID || env.NEUTRAL_APP_ID || (activeApp && activeApp.appId) || 'neutral-app', 'neutral-app');
+      const appName = normalizeString(env.APP_NAME || env.NEUTRAL_APP_NAME || (activeApp && activeApp.name) || 'Neutral App', 'Neutral App');
+      const host = normalizeString(env.HOST || config.host || '127.0.0.1', '127.0.0.1');
+      const port = Number(env.PORT || config.port || 3000) || 3000;
+      const serverUrl = normalizeString(env.SERVER_URL || env.PUBLIC_URL || env.BASE_URL || `http://${host}:${port}`, `http://${host}:${port}`);
+      const apiBase = normalizeString(env.API_BASE || config.apiBase || '/api', '/api');
+      const database = this.getDatabaseConfig ? this.getDatabaseConfig() : {};
+
+      return {
+        appId,
+        appName,
+        serverUrl,
+        apiBase,
+        configuration: {
+          appId,
+          appName,
+          serverUrl,
+          apiBase,
+          database: { ...database }
+        },
+        serverState: {
+          configured: !!(env.SERVER_URL || env.PUBLIC_URL || env.BASE_URL || env.HOST || env.PORT),
+          testedAt: null,
+          status: 'NOT_CONFIGURED',
+          reachable: false,
+          responseTimeMs: null,
+          message: 'Server not configured.',
+          url: serverUrl,
+          apiBase
+        },
+        databaseState: {
+          configured: !!(database && (database.host || database.name || database.url || database.username || database.type)),
+          testedAt: null,
+          status: 'NOT_CONFIGURED',
+          reachable: false,
+          responseTimeMs: null,
+          message: 'Database not configured.',
+          type: database.type || 'mysql',
+          name: database.name || 'neutral',
+          host: database.host || '',
+          url: database.url || ''
+        }
+      };
+    },
+
     getDefaultSetupState() {
       return {
         status: 'NOT_CONFIGURED',

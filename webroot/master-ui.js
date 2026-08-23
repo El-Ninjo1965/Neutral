@@ -2766,6 +2766,10 @@
     const installation = setup.installation || {};
     const databaseConfig = configuration.database || {};
     const serverManagedDatabase = databaseConfig.source === 'env' || (setup.databaseState && setup.databaseState.source === 'env');
+    const discoveredAppId = setup.appId || configuration.appId || 'neutral-app';
+    const discoveredAppName = setup.appName || configuration.appName || getConfiguredAppName();
+    const discoveredServerUrl = configuration.serverUrl || (setup.serverState && setup.serverState.url) || 'http://127.0.0.1:3000';
+    const discoveredApiBase = configuration.apiBase || (setup.serverState && setup.serverState.apiBase) || '/api';
 
     page.innerHTML = `
       <div class="card">
@@ -2775,10 +2779,10 @@
           ${serverManagedDatabase ? `<div class="message success" style="margin-top: 14px;">Database configuration is already present on the server. The runtime is using the environment settings and no password is loaded into the browser.</div>` : ''}
           <form data-setup-form data-database-source="${serverManagedDatabase ? 'env' : 'manual'}">
             <div class="form-grid" style="margin-top: 18px; margin-bottom: 18px;">
-              <div class="form-field"><label>Application ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
-              <div class="form-field"><label>Application name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
-              <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || 'https://your-domain.example')}" /></div>
-              <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
+              <div class="form-field"><label>Application ID</label><input type="text" name="appId" value="${escapeHtml(discoveredAppId)}" /></div>
+              <div class="form-field"><label>Application name</label><input type="text" name="appName" value="${escapeHtml(discoveredAppName)}" /></div>
+              <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(discoveredServerUrl)}" /></div>
+              <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(discoveredApiBase)}" /></div>
               <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((databaseConfig && databaseConfig.type) || 'mysql')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
               <div class="form-field"><label>Database host</label><input type="text" name="databaseHost" value="${escapeHtml((databaseConfig && databaseConfig.host) || '127.0.0.1')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
               <div class="form-field"><label>Database port</label><input type="number" min="1" max="65535" name="databasePort" value="${escapeHtml((databaseConfig && databaseConfig.port) || '3306')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>

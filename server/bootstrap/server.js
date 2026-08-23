@@ -230,10 +230,65 @@ const getPublicDatabaseConfig = (snapshot = {}) => {
 const sanitizeSetupStateForClient = (snapshot = {}) => {
   const state = JSON.parse(JSON.stringify(snapshot || {}));
   const publicDatabase = getPublicDatabaseConfig(state);
-  state.configuration = { ...(state.configuration || {}) };
-  state.configuration.database = { ...publicDatabase };
+  const runtimeDefaults = MasterFramework.getRuntimeSetupDefaults ? MasterFramework.getRuntimeSetupDefaults() : {};
+  const serverUrl = normalizeStringValue(
+    state.serverState && state.serverState.url ? state.serverState.url : state.configuration && state.configuration.serverUrl ? state.configuration.serverUrl : runtimeDefaults.serverUrl || `http://${host}:${port}`,
+    `http://${host}:${port}`
+  );
+  const apiBase = normalizeStringValue(
+    state.serverState && state.serverState.apiBase ? state.serverState.apiBase : state.configuration && state.configuration.apiBase ? state.configuration.apiBase : runtimeDefaults.apiBase || '/api',
+    '/api'
+  );
+
+  state.appId = normalizeStringValue(state.appId || runtimeDefaults.appId || 'neutral-app', 'neutral-app');
+  state.appName = normalizeStringValue(state.appName || runtimeDefaults.appName || 'Neutral App', 'Neutral App');
+  state.configuration = {
+    ...(runtimeDefaults.configuration || {}),
+    ...(state.configuration || {}),
+    appId: state.appId,
+    appName: state.appName,
+    serverUrl,
+    apiBase,
+    database: { ...publicDatabase, ...(state.configuration && state.configuration.database ? state.configuration.database : {}) }
+  };
+  state.serverState = {
+    ...(runtimeDefaults.serverState || {}),
+    ...(state.serverState || {}),
+    url: serverUrl,
+    apiBase
+  };
+  state.databaseState = {
+    ...publicDatabase,
+    ...(state.databaseState || {}),
+    source: publicDatabase.source || (state.databaseState && state.databaseState.source) || 'setup-state'
+  };
   state.database = { ...stripSensitiveDatabaseValues(state.database || {}), ...publicDatabase };
   state.databaseState = { ...stripSensitiveDatabaseValues(state.databaseState || {}), ...publicDatabase };
+  state.discovery = {
+    app: {
+      id: state.appId,
+      name: state.appName
+    },
+    project: {
+      rootDir,
+      webRootDir,
+      appPath: path.join(rootDir, 'app'),
+      platformPath: path.join(rootDir, 'platform'),
+      testsPath: path.join(rootDir, 'tests')
+    },
+    environment: {
+      host,
+      port,
+      serverUrl,
+      apiBase,
+      nodeEnv: process.env.NODE_ENV || 'development'
+    },
+    server: {
+      url: serverUrl,
+      apiBase
+    },
+    database: publicDatabase
+  };
   delete state.database.password;
   delete state.databaseState.password;
   delete state.configuration.database.password;

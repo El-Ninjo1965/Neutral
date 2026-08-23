@@ -641,6 +641,46 @@ test('supports persisted setup state and connection updates', () => {
   assert.equal(updated.status, 'active');
 });
 
+test('discovers runtime setup defaults from the real environment and config', () => {
+  cleanupRuntimeState();
+  const runtime = Framework;
+  const originalEnv = { ...process.env };
+
+  try {
+    process.env.DEFAULT_APP_ID = 'fleet-app';
+    process.env.APP_NAME = 'Fleet Control';
+    process.env.HOST = '0.0.0.0';
+    process.env.PORT = '4200';
+    process.env.DB_TYPE = 'mysql';
+    process.env.MYSQL_HOST = 'db.internal';
+    process.env.MYSQL_DATABASE = 'fleet';
+    process.env.MYSQL_USER = 'fleet_user';
+
+    const defaults = runtime.getRuntimeSetupDefaults();
+    assert.equal(defaults.appId, 'fleet-app');
+    assert.equal(defaults.appName, 'Fleet Control');
+    assert.equal(defaults.serverUrl, 'http://0.0.0.0:4200');
+    assert.equal(defaults.apiBase, '/api');
+    assert.equal(defaults.configuration.database.type, 'mysql');
+    assert.equal(defaults.databaseState.host, 'db.internal');
+
+    const setupState = runtime.loadSetupState();
+    assert.equal(setupState.status, 'NOT_CONFIGURED');
+    assert.equal(runtime.getRuntimeSetupDefaults().appId, 'fleet-app');
+    assert.equal(runtime.getRuntimeSetupDefaults().serverUrl, 'http://0.0.0.0:4200');
+    assert.equal(runtime.getRuntimeSetupDefaults().apiBase, '/api');
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in originalEnv)) {
+        delete process.env[key];
+      }
+    }
+    for (const key of Object.keys(originalEnv)) {
+      process.env[key] = originalEnv[key];
+    }
+  }
+});
+
 test('provides diagnostic summary', () => {
   cleanupRuntimeState();
   const runtime = Framework;
