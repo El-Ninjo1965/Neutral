@@ -1,113 +1,25 @@
 # Workflow
 
-## Dokumentenrollen und verbindliche Quellen
+## Aktueller Arbeitsstand
 
-- `WORKFLOW.md` ist die verbindliche technische Quelle für Architektur, Anforderungen, Entwicklungsregeln und den aktuellen technischen Status.
-- `VISION.md` beschreibt die strategische Projektvision und das langfristige Zielbild des neutralen Frameworks.
-- `AGENTTODO.md` ist ein operativer Arbeits- und Prüfprotokoll; es dokumentiert erledigte Schritte, Tests und den konkreten Arbeitsstand, aber keine Architekturentscheidung als Primärquelle.
-- `VERSION.md` dokumentiert Versionsstand, Meilensteine und aktuelle Freigabe-/Fokuspunkte; hier werden keine fachlichen Architekturregeln neu definiert.
-- Doppelte oder widersprüchliche Festlegungen werden vermieden. Bei inhaltlichen Abweichungen gilt immer `WORKFLOW.md` als die verbindliche technische Grundlage.
-
-## CURRENT TECHNICAL AUDIT – 2026-08-21
-
-- Audit-Datum: 2026-08-21
 - Repository: El-Ninjo1965/Neutral
 - Branch: main
-- Audit-Typ: vollständiger technischer Repository-/Architektur-Audit
-- Ergebnis: tatsächlicher technischer Stand
+- WORKFLOW.md enthält ab sofort keine historischen Audits oder detaillierten Architektur-/Deploy-Regeln mehr.
+- Verbindliche technische Informationen zum aktuellen Serverbetrieb und zum Produktions-Deploy stehen ausschließlich in server.md.
+- Der aktuelle Quellcode im Repository ist immer maßgeblich gegenüber historischen Dokumentationseinträgen.
+- Der Server-Deploy darf niemals das gesamte Repository übertragen.
+- Für den Serverbetrieb gilt ausschließlich die in server.md dokumentierte Allowlist.
+- Serverseitige .env und andere ausdrücklich geschützte Serverdateien dürfen durch einen Deploy niemals überschrieben oder gelöscht werden.
+- Vor Änderungen am Deploy immer den tatsächlichen aktuellen Codebestand und server.md prüfen.
 
-### 1. Tatsächlicher Repository-Stand
+## Aktueller Fokus
 
-Der aktuelle Codebestand auf `main` enthält ein neutrales Framework mit funktionierender Core-/Runtime-/Admin-/Auth-/Storage-/Monitoring-Architektur. Die Kernlogik ist in `platform/`, `server/`, `tests/` und `webroot/` organisiert. Ein einzelnes fachliches Produkt oder ein Hosting-Szenario ist nicht hart in den Core codiert. Das Repository bleibt ein neutraler Master-/Entwicklungsframework-Stand, kein fertiger produktiver Server-Deploy.
+Das Projekt befindet sich derzeit in der Prüfung und Fertigstellung des tatsächlichen Produktiv-Deployments auf dem externen Server. Dabei ist strikt zwischen Entwicklungsrepository und produktiv benötigten Serverdateien zu unterscheiden.
 
-### 2. Tatsächlich funktionierende Komponenten
-
-- Security-/Validation-Layer: `platform/security.js`, `server/middleware/input-validation.js`
-- Storage-Abstraktion: `platform/storage-manager.js`, `platform/master-framework.js`
-- Provider-/Infrastructure-Registry: `platform/provider-manager.js`, `server/bootstrap/server.js`
-- Backup-/Restore-Orchestrierung: `server/services/backup-service.js`
-- MySQL-Produktionspfad: `server/database/connection.js`, `server/config/index.js`
-- Monitoring-/Logs-/Health: `server/services/log-service.js`, `server/services/health-service.js`
-- Release-Status und Wartungsmodus: `server/services/release-service.js`
-- Session-/Auth-/Rollenmodell und CSRF-Schutz: `server/services/auth-service.js`, `server/services/session-store.js`, `server/services/user-service.js`, `server/services/login-rate-limiter.js`
-- App-Isolation und App-Scoped Runtime: `platform/master-framework.js` und die App-Registry-Teile des Frameworks
-
-Diese Bereiche sind durch die vorhandene Test-Suite verifiziert. Der aktuelle technische Nachweis: `node --test` läuft grün mit 24/24 Tests erfolgreich.
-
-### 3. Teilweise implementierte Komponenten
-
-- Die produktive Betriebsumgebung ist vorbereitet, aber das eigentliche Hosting-Setup bleibt extern und wird nicht im Repository als produktive Server- oder Provider-Implementierung mitgeliefert.
-- Der Login-/Rate-Limiter ist im Prozess lokal und nicht als verteilter Multi-Instance-Store formalisiert.
-- MySQL ist als produktiver Pfad konfiguriert, aber die tatsächliche Instanz, Zugangsdaten und Deployment-Umgebung liegen außerhalb des Repositories.
-
-### 4. Fehlende Komponenten
-
-- Keine produktive Server-Repository-Umgebung mit echten Live-Provider-Konfigurationen und Secrets.
-- Keine produktive multi-instance Session-/Rate-Limit-Shared-Store-Implementierung im Repo.
-- Keine fertige Deployment-/Hoster-Integration mit konkreten Betriebsdaten, TLS-/Reverse-Proxy-Setup oder Provider-Spezifika im Source-Code.
-
-### 5. Abweichungen von WORKFLOW/VISION
-
-- Die aktuelle Codebasis ist stärker als die historische Planung: Auth-Session, CSRF, Storage-Abstraktion, Provider-/Runtime-Konfiguration, Backup, MySQL-Pfad und Release-/Maintenance-Status sind in der Laufzeit bereits realisiert.
-- Historische Aussagen, die auf einen noch nicht implementierten Zustand verweisen, müssen als veraltet/HISTORISCH behandelt werden. Sie sind nicht mehr als aktuelle technische Grundlage für den Produktivstatus zu verstehen.
-- Die Vision bleibt gültig: Neutral bleibt ein neutrales Master-/Entwicklungsframework, kein fertiges Produkt und kein vendorgebundener Server-Stack.
-
-### 6. App-Isolation-Ergebnis
-
-Die App-Isolation ist im aktuellen Framework-Stand funktional realisiert: Jede App besitzt einen eigenen Runtime-/Admin-Kontext, eigene Laufzeit- und Storage-Namespace-Bereiche sowie eine aktive App-Auswahl, ohne dass ein globaler Shared-State zwischen Apps die admin- und runtime-seitige Logik misst. Dieses Ergebnis ist durch die vorhandenen App-/Runtime-Tests belegt.
-
-### 7. Security-Ergebnis
-
-Die aktuelle Security-Basis ist deutlich besser als der frühere Header-Trust-Zustand: Es gibt serverseitige Session-Validierung, Rollenprüfung, CSRF-Schutz, Input-Validation, robustere Security-Primitives und eine starke grundlegende Sicherheitslage im neutralen Framework. Produktionsrelevante Secrets und provider-spezifische Zugangsdaten werden nicht im Repository hinterlegt. Das ist ein valider Framework-Stand; es ist kein vollständiges externes Produktions-Hosting-Security-Setup.
-
-### 8. Test-Ergebnisse
-
-- `node --test`
-- Ergebnis: 24 Tests bestanden, 0 fehlgeschlagen, 0 abgebrochen
-- Relevante Bereiche: Admin-API, App-/Runtime-Isolation, Monitoring, Release-Readiness, Session-Auth, Security- und Setup-Workflows
-
-### 9. P0/P1/P2/P3-Probleme
-
-- P0: keine kritischen Code-Blocker im aktuellen Repository-Stand erkannt
-- P1: keine zwingenden P1-Blocker im Repository selbst; alle relevanten Framework-P1-Teile sind im Code und in den Tests verifiziert
-- P2: externer Produktiv-Deployment-/Provider-Setup außerhalb des Repositories, inklusive Laufzeit-Umgebung, Secrets und Host-Policy
-- P2: Multi-Instance-Session-/Rate-Limit-Shared-Store ist für echte Produktions-Cluster noch extern zu definieren
-- P3: Markt-/Entitlements- und weitere App-Spezifika bleiben bewusst offen, weil das Repository neutral bleibt
-
-### 10. Framework-Freeze-Status
-
-- Framework-Freeze: JA
-- Grund: Core-/Runtime-/App-/Module-/Auth-/Security-/Storage-/Provider-/Monitoring-/Release-Architektur ist stabil, getestet und app-isoliert
-- Zulassungsgrenze: keine repo-internen P0/P1-Blocker; verbleibende Punkte sind echte Betriebs- und Deployment-Aufgaben außerhalb des neutralen Framework-Cores
-
-### 10. Aktueller Framework-Freigabestatus
-
-- Repository-/Framework-Status: freigegeben für den neutralen Core-/Framework-Stand; Framework-Freeze erreicht
-- Betriebssicherheit: auf Framework-Ebene akzeptabel, getestet und stabil
-- Deployment-Status: externes Hosting-/Provider-Setup erforderlich; kein repo-internes Produktiv-Deployment implementiert, aber kein P0/P1-Blocker im Framework-Code mehr
-
-### 11. Genau ein empfohlener nächster Arbeitsschritt
-
-Der nächste und einzige sinnvolle Arbeitsschritt ist: externes Produktiv-Deployment und Provider-/Umgebungs-Setup außerhalb des Repositorys abschließen, inklusive echter MySQL-/Backup- und Secret-Management-Umgebung; das Repository selbst bleibt dabei beim neutralen Framework-Freeze-Stand.
-
-## CURRENT TECHNICAL AUDIT – 2026-08-21 – P1 DETAIL AUDIT
-
-- Audit-Datum: 2026-08-21
-- Repository: El-Ninjo1965/Neutral
-- Branch: main
-- Audit-Typ: vollständiger technischer Repository-/Architektur-Audit mit P1-Detailprüfung
-- Ergebnis: tatsächlicher technischer Stand, nicht Soll-Stand aus der Vision
-
-### Überblick
-
-Der aktuelle Codebestand auf `main` ist bereits ein funktionierender neutraler Framework-Kern. Die Architektur ist modularer Core, App-/Runtime-Isolation, Admin-/CMS-Layer, Auth-/Session-Sicherheit, Storage-Abstraktion und Monitoring/Release-Status. Ein vollständiger produktiver Rahmen mit Deployment-/Provider-/App-Hosting-Umgebung bleibt jedoch extern und ist nicht im Repository als Live-Server-Stack implementiert.
-
-Die sieben P1-Bereiche sind nicht alle im gleichen Reifegrad vorhanden. Einige sind real vorhanden und funktional, aber nur als minimale Architekturgrundlage; andere sind vorhanden, aber nicht vollständig ausgereift; und einige sind noch echte Lücken gegenüber der langfristigen Vision.
-
-### Prüfungsbasis
-
-- Tatsächlicher Code: `platform/*.js`, `server/*.js`, `webroot/*.js`, `tests/*.js`
-- Tatsächlich ausgeführte Tests: `node --test`
+1. Keine weiteren historischen Inhalte aus der alten WORKFLOW.md übernehmen.
+2. server.md nicht löschen oder inhaltlich verschlechtern.
+3. Keine anderen Projektdateien verändern.
+chlich ausgeführte Tests: `node --test`
 - Vergleichsquellen: `WORKFLOW.md`, `VISION.md`, `AGENTTODO.md`, `VERSION.md`
 
 ### P1-Ergebnis-Tabelle
