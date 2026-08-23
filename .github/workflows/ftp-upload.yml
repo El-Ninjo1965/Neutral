@@ -16,38 +16,109 @@ jobs:
       FTP_PORT: ${{ secrets.FTP_PORT || 21 }}
 
     steps:
-      - name: Prüfe benötigte GitHub Secrets
-        shell: bash
-        run: |
-          set -eu
-          for name in FTP_HOST FTP_USER FTP_PASSWORD; do
-            if [ -z "${!name:-}" ]; then
-              echo "Fehlendes GitHub Secret: $name"
-              exit 1
-            fi
-          done
-          echo "FTP-Host: ${FTP_HOST}"
-          echo "FTP-Port: ${FTP_PORT}"
-          echo "FTP-Root: /"
-
       - name: Repository auschecken
         uses: actions/checkout@v4
 
-      - name: Dateien per FTPS auf das cPanel-FTP-Root übertragen
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: ${{ env.FTP_HOST }}
-          username: ${{ env.FTP_USER }}
-          password: ${{ env.FTP_PASSWORD }}
-          port: ${{ env.FTP_PORT }}
-          protocol: ftps
-          server-dir: /
-          local-dir: ./
-          state-name: .ftp-deploy-sync-state.json
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            **/*.log
+      - name: Produktions-Staging aufbauen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
+          rm -rf "$STAGING_DIR"
+          mkdir -p "$STAGING_DIR"
+
+          copy_file() {
+            local source_path="$1"
+            local target_path="$STAGING_DIR/$1"
+            mkdir -p "$(dirname "$target_path")"
+            cp -p "$source_path" "$target_path"
+          }
+
+          copy_dir() {
+            local source_path="$1"
+            local target_path="$STAGING_DIR/$1"
+            mkdir -p "$target_path"
+            cp -a "$source_path"/. "$target_path"/
+          }
+
+          copy_file package.json
+          copy_file package-lock.json
+
+          copy_dir platform
+
+          mkdir -p "$STAGING_DIR/server/api"
+          mkdir -p "$STAGING_DIR/server/bootstrap"
+          mkdir -p "$STAGING_DIR/server/config"
+          mkdir -p "$STAGING_DIR/server/database"
+          mkdir -p "$STAGING_DIR/server/middleware"
+          copy_dir server/api
+          copy_dir server/services
+          copy_file server/server.js
+          copy_file server/bootstrap/server.js
+          copy_file server/config/index.js
+          copy_file server/database/connection.js
+          copy_file server/middleware/input-validation.js
+
+          mkdir -p "$STAGING_DIR/app/modules/gps"
+          copy_file app/index.js
+          copy_file app/modules/index.json
+          copy_file app/modules/gps/index.js
+          copy_file app/modules/gps/module.json
+
+          mkdir -p "$STAGING_DIR/webroot/admin"
+          copy_file webroot/index.html
+          copy_file webroot/setup.html
+          copy_file webroot/admin.html
+          copy_file webroot/dev.html
+          copy_file webroot/style.css
+          copy_file webroot/master-ui.js
+          copy_file webroot/user-app.js
+          copy_file webroot/api-client.js
+          copy_file webroot/admin-init.js
+          copy_file webroot/admin/common.js
+          copy_file webroot/admin/index.js
+          copy_file webroot/admin/roles-view.js
+          copy_file webroot/admin/settings-view.js
+          copy_file webroot/admin/users-view.js
+
+          mkdir -p "$STAGING_DIR/apps/neutral-app"
+          copy_file apps/neutral-app/app-info.json
+          copy_file apps/neutral-app/index.html
+
+          echo "Staging tree:"
+          find "$STAGING_DIR" -type f | sort
+
+      - name: FTPS-Client bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y lftp
+          fi
+
+      - name: Produktionsbestand per FTPS hochladen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
+
+          lftp <<EOF
+          set cmd:fail-exit true
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:verify-certificate no
+          set net:timeout 30
+          set net:max-retries 1
+          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
+          # Upload only the allowlisted production tree; never remove remote files.
+          mirror -R --only-newer --verbose \
+            --exclude-glob .env \
+            --exclude-glob app-node-test \
+            --exclude-glob app-node-test/** \
+            "$STAGING_DIR" /
+          bye
+          EOF
