@@ -46,39 +46,48 @@ const validateSetupPayload = (payload) => {
   return errors;
 };
 
-const validateDatabasePayload = (payload) => {
+const validateDatabasePayload = (payload = {}) => {
   const errors = [];
 
   const validTypes = ['mysql', 'postgresql', 'sqlite', 'indexeddb', 'mongodb'];
+  const normalizedType = String(payload.type || '').toLowerCase();
+  const allowsEmptyConnection = ['sqlite', 'indexeddb'].includes(normalizedType);
+
   if (payload.type && !validTypes.includes(payload.type)) {
     errors.push(`type must be one of: ${validTypes.join(', ')}`);
   }
 
   if (payload.host !== undefined && payload.host !== null && typeof payload.host !== 'string') {
     errors.push('host must be a string');
-  } else if (typeof payload.host === 'string' && normalizeString(payload.host, { maxLength: 255, allowEmpty: false }) === '') {
+  } else if (typeof payload.host === 'string' && payload.host.trim() !== '' && normalizeString(payload.host, { maxLength: 255, allowEmpty: false }) === '') {
+    errors.push('host must be a non-empty string');
+  } else if (typeof payload.host === 'string' && payload.host.trim() === '' && !allowsEmptyConnection) {
     errors.push('host must be a non-empty string');
   }
 
   if (payload.name !== undefined && payload.name !== null && typeof payload.name !== 'string') {
     errors.push('name must be a string');
-  } else if (typeof payload.name === 'string' && normalizeString(payload.name, { maxLength: 255, allowEmpty: false }) === '') {
+  } else if (typeof payload.name === 'string' && payload.name.trim() !== '' && normalizeString(payload.name, { maxLength: 255, allowEmpty: false }) === '') {
     errors.push('name must be a non-empty string');
   }
 
-  if (payload.port && (typeof payload.port !== 'number' || payload.port < 1 || payload.port > 65535)) {
+  if (payload.port !== undefined && payload.port !== null && payload.port !== '' && (typeof payload.port !== 'number' || payload.port < 1 || payload.port > 65535)) {
     errors.push('port must be a number between 1 and 65535');
   }
 
   if (payload.username !== undefined && payload.username !== null && typeof payload.username !== 'string') {
     errors.push('username must be a string');
-  } else if (typeof payload.username === 'string' && normalizeString(payload.username, { maxLength: 255, allowEmpty: false }) === '') {
+  } else if (typeof payload.username === 'string' && payload.username.trim() !== '' && normalizeString(payload.username, { maxLength: 255, allowEmpty: false }) === '') {
+    errors.push('username must be a non-empty string');
+  } else if (typeof payload.username === 'string' && payload.username.trim() === '' && !allowsEmptyConnection) {
     errors.push('username must be a non-empty string');
   }
 
   if (payload.password !== undefined && payload.password !== null && typeof payload.password !== 'string') {
     errors.push('password must be a string');
-  } else if (typeof payload.password === 'string' && normalizeString(payload.password, { maxLength: 512, allowEmpty: false }) === '') {
+  } else if (typeof payload.password === 'string' && payload.password.trim() !== '' && normalizeString(payload.password, { maxLength: 512, allowEmpty: false }) === '') {
+    errors.push('password must be a non-empty string');
+  } else if (typeof payload.password === 'string' && payload.password.trim() === '' && !allowsEmptyConnection) {
     errors.push('password must be a non-empty string');
   }
 

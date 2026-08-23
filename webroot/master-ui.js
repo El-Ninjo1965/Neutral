@@ -905,6 +905,7 @@
             const databaseName = form.querySelector('[name="databaseName"]') ? form.querySelector('[name="databaseName"]').value : '';
             const databaseUser = form.querySelector('[name="databaseUser"]') ? form.querySelector('[name="databaseUser"]').value : '';
             const databasePassword = form.querySelector('[name="databasePassword"]') ? form.querySelector('[name="databasePassword"]').value : '';
+            const runtimeDbSource = form.dataset.databaseSource || 'manual';
             const payload = {
               appId: form.querySelector('[name="appId"]') ? form.querySelector('[name="appId"]').value : 'neutral-app',
               appName: form.querySelector('[name="appName"]') ? form.querySelector('[name="appName"]').value : getConfiguredAppName(),
@@ -916,8 +917,7 @@
                   host: databaseHost,
                   port: databasePort,
                   name: databaseName,
-                  username: databaseUser,
-                  password: databasePassword
+                  username: databaseUser
                 }
               },
               serverState: {
@@ -933,7 +933,6 @@
                 port: databasePort,
                 name: databaseName,
                 username: databaseUser,
-                password: databasePassword,
                 status: 'CONFIGURATION_REQUIRED'
               },
               bootstrapState: {
@@ -944,6 +943,9 @@
                 role: 'developer'
               }
             };
+            if (runtimeDbSource !== 'env' && databasePassword) {
+              payload.databaseState.password = databasePassword;
+            }
             const result = await postJson('/api/setup', payload, { ok: false, setup: {} });
             if (window.ConfigManager && typeof window.ConfigManager.setPath === 'function') {
               window.ConfigManager.setPath('app.name', payload.appName);
@@ -2762,25 +2764,28 @@
     const setup = setupResult.setup || {};
     const configuration = setup.configuration || {};
     const installation = setup.installation || {};
+    const databaseConfig = configuration.database || {};
+    const serverManagedDatabase = databaseConfig.source === 'env' || (setup.databaseState && setup.databaseState.source === 'env');
 
     page.innerHTML = `
       <div class="card">
         <div class="card-header"><h2 class="card-title">First-run setup</h2></div>
         <div class="content-wrap">
           <div class="message info">This installation is not active yet. Configure the server, test the connections, and activate the system before using the admin workspace.</div>
-          <form data-setup-form>
+          ${serverManagedDatabase ? `<div class="message success" style="margin-top: 14px;">Database configuration is already present on the server. The runtime is using the environment settings and no password is loaded into the browser.</div>` : ''}
+          <form data-setup-form data-database-source="${serverManagedDatabase ? 'env' : 'manual'}">
             <div class="form-grid" style="margin-top: 18px; margin-bottom: 18px;">
               <div class="form-field"><label>Application ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
               <div class="form-field"><label>Application name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
               <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || 'https://your-domain.example')}" /></div>
               <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
-              <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((configuration.database && configuration.database.type) || 'indexeddb')}" /></div>
-              <div class="form-field"><label>Database host</label><input type="text" name="databaseHost" value="${escapeHtml((configuration.database && configuration.database.host) || '127.0.0.1')}" /></div>
-              <div class="form-field"><label>Database port</label><input type="number" min="1" max="65535" name="databasePort" value="${escapeHtml((configuration.database && configuration.database.port) || '3306')}" /></div>
-              <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((configuration.database && configuration.database.name) || 'CoreDB')}" /></div>
-              <div class="form-field"><label>Database user</label><input type="text" name="databaseUser" value="${escapeHtml((configuration.database && configuration.database.username) || '')}" /></div>
-              <div class="form-field"><label>Database password</label><input type="password" name="databasePassword" value="${escapeHtml((configuration.database && configuration.database.password) || '')}" /></div>
-              <div class="form-field"><label>Database URL (optional)</label><input type="text" name="databaseUrl" value="${escapeHtml((configuration.database && configuration.database.url) || '')}" /></div>
+              <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((databaseConfig && databaseConfig.type) || 'mysql')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
+              <div class="form-field"><label>Database host</label><input type="text" name="databaseHost" value="${escapeHtml((databaseConfig && databaseConfig.host) || '127.0.0.1')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
+              <div class="form-field"><label>Database port</label><input type="number" min="1" max="65535" name="databasePort" value="${escapeHtml((databaseConfig && databaseConfig.port) || '3306')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
+              <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((databaseConfig && databaseConfig.name) || 'CoreDB')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
+              <div class="form-field"><label>Database user</label><input type="text" name="databaseUser" value="${escapeHtml((databaseConfig && databaseConfig.username) || '')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
+              <div class="form-field"><label>Database password</label><input type="password" name="databasePassword" value="" ${serverManagedDatabase ? 'readonly placeholder="Configured on server"' : 'placeholder="Leave empty to keep the server-side password"'} /></div>
+              <div class="form-field"><label>Database URL (optional)</label><input type="text" name="databaseUrl" value="${escapeHtml((databaseConfig && databaseConfig.url) || '')}" ${serverManagedDatabase ? 'readonly' : ''} /></div>
             </div>
             <div class="action-list" style="margin-bottom: 18px;">
               <button type="button" class="primary" data-admin-action="setup-save">Save configuration</button>
@@ -2794,7 +2799,7 @@
             <div class="metric"><span class="metric-label">Status</span><div class="metric-value">${escapeHtml(setup.status || 'NOT_CONFIGURED')}</div></div>
             <div class="metric"><span class="metric-label">Current step</span><div class="metric-value">${escapeHtml(setup.currentStep || 'system-check')}</div></div>
             <div class="metric"><span class="metric-label">Server</span><div class="metric-value">${escapeHtml(configuration.serverUrl || 'not configured')}</div></div>
-            <div class="metric"><span class="metric-label">Database</span><div class="metric-value">${escapeHtml((configuration.database && configuration.database.name) || 'not configured')}</div></div>
+            <div class="metric"><span class="metric-label">Database</span><div class="metric-value">${escapeHtml((databaseConfig && databaseConfig.name) || 'not configured')}</div></div>
             <div class="metric"><span class="metric-label">Framework</span><div class="metric-value">${escapeHtml((setup.frameworkState && setup.frameworkState.status) || 'NOT_INITIALIZED')}</div></div>
             <div class="metric"><span class="metric-label">Bootstrap</span><div class="metric-value">${escapeHtml((setup.bootstrapState && setup.bootstrapState.status) || 'NOT_CONFIGURED')}</div></div>
           </div>

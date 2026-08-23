@@ -144,7 +144,109 @@ const sendJson = (res, statusCode, payload) => {
   res.end(JSON.stringify(payload, null, 2));
 };
 
-const getSetupSnapshot = () => MasterFramework.getSetupSnapshot();
+const readRuntimeDatabaseConfig = () => {
+  const env = (typeof process !== 'undefined' && process.env) ? process.env : {};
+  const type = String(env.DB_TYPE || env.DATABASE_TYPE || env.MYSQL_TYPE || 'mysql').trim().toLowerCase() || 'mysql';
+  const databaseType = ['mysql', 'postgresql', 'sqlite'].includes(type) ? type : 'mysql';
+  const config = {
+    type: databaseType,
+    host: normalizeStringValue(env.MYSQL_HOST || env.DB_HOST || '', ''),
+    port: Number(env.MYSQL_PORT || env.DB_PORT || 3306),
+    name: normalizeStringValue(env.MYSQL_DATABASE || env.DB_NAME || '', ''),
+    username: normalizeStringValue(env.MYSQL_USER || env.DB_USER || env.MYSQL_USERNAME || '', ''),
+    password: normalizeStringValue(env.MYSQL_PASSWORD || env.DB_PASSWORD || '', ''),
+    url: normalizeStringValue(env.DB_URL || env.DATABASE_URL || '', ''),
+    configured: !!(
+      env.DB_TYPE ||
+      env.DATABASE_TYPE ||
+      env.MYSQL_TYPE ||
+      env.MYSQL_HOST ||
+      env.DB_HOST ||
+      env.MYSQL_PORT ||
+      env.DB_PORT ||
+      env.MYSQL_DATABASE ||
+      env.DB_NAME ||
+      env.MYSQL_USER ||
+      env.DB_USER ||
+      env.MYSQL_USERNAME ||
+      env.MYSQL_PASSWORD ||
+      env.DB_PASSWORD ||
+      env.DB_URL ||
+      env.DATABASE_URL
+    )
+  };
+
+  if (config.port === 0 || !Number.isFinite(config.port)) {
+    config.port = 3306;
+  }
+
+  return config;
+};
+
+const stripSensitiveDatabaseValues = (value = {}) => {
+  const sanitized = { ...(value || {}) };
+  const forbiddenKeys = ['password', 'pass', 'secret', 'apiKey', 'api_key', 'token', 'credentials'];
+  for (const key of forbiddenKeys) {
+    delete sanitized[key];
+  }
+  return sanitized;
+};
+
+const getPublicDatabaseConfig = (snapshot = {}) => {
+  const runtimeConfig = readRuntimeDatabaseConfig();
+  const persistedDatabase = (snapshot && snapshot.configuration && snapshot.configuration.database) || (snapshot && snapshot.database) || {};
+  const persistedDatabaseState = (snapshot && snapshot.databaseState) || {};
+  const merged = {
+    ...stripSensitiveDatabaseValues(runtimeConfig),
+    ...stripSensitiveDatabaseValues(persistedDatabase),
+    ...stripSensitiveDatabaseValues(persistedDatabaseState)
+  };
+
+  const source = runtimeConfig.configured ? 'env' : 'setup-state';
+  const configured = !!(
+    merged.type ||
+    merged.host ||
+    merged.port ||
+    merged.name ||
+    merged.username ||
+    merged.url ||
+    runtimeConfig.configured
+  );
+
+  return {
+    ...merged,
+    configured,
+    source,
+    passwordPresent: false,
+    username: merged.username || '',
+    host: merged.host || '',
+    port: Number.isFinite(Number(merged.port)) ? Number(merged.port) : (runtimeConfig.port || 3306),
+    type: merged.type || runtimeConfig.type || 'mysql',
+    name: merged.name || '',
+    url: merged.url || ''
+  };
+};
+
+const sanitizeSetupStateForClient = (snapshot = {}) => {
+  const state = JSON.parse(JSON.stringify(snapshot || {}));
+  const publicDatabase = getPublicDatabaseConfig(state);
+  state.configuration = { ...(state.configuration || {}) };
+  state.configuration.database = { ...publicDatabase };
+  state.database = { ...stripSensitiveDatabaseValues(state.database || {}), ...publicDatabase };
+  state.databaseState = { ...stripSensitiveDatabaseValues(state.databaseState || {}), ...publicDatabase };
+  delete state.database.password;
+  delete state.databaseState.password;
+  delete state.configuration.database.password;
+  delete state.database.pass;
+  delete state.databaseState.pass;
+  delete state.configuration.database.pass;
+  state.database.passwordPresent = false;
+  state.databaseState.passwordPresent = false;
+  state.configuration.database.passwordPresent = false;
+  return state;
+};
+
+const getSetupSnapshot = () => sanitizeSetupStateForClient(MasterFramework.getSetupSnapshot());
 
 const isSetupRequired = () => {
   const snapshot = getSetupSnapshot();
@@ -152,7 +254,10 @@ const isSetupRequired = () => {
 };
 
 const getDatabaseStatus = () => {
-  return MasterFramework.getDatabaseStatus();
+  const status = MasterFramework.getDatabaseStatus();
+  const safe = stripSensitiveDatabaseValues(status);
+  safe.passwordPresent = false;
+  return safe;
 };
 
 const getServerTestResult = async (payload = {}) => {
@@ -986,49 +1091,67 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       }
       readJsonBody(req)
         .then((payload) => {
-          const validationErrors = inputValidation.validateSetupPayload(payload);
+          const sanitizedPayload = {
+            ...payload,
+            configuration: payload && payload.configuration ? { ...payload.configuration } : {},
+            database: payload && payload.database ? { ...payload.database } : {},
+            databaseState: payload && payload.databaseState ? { ...payload.databaseState } : {},
+            serverState: payload && payload.serverState ? { ...payload.serverState } : {}
+          };
+
+          if (sanitizedPayload.database && sanitizedPayload.database.password) {
+            delete sanitizedPayload.database.password;
+          }
+          if (sanitizedPayload.databaseState && sanitizedPayload.databaseState.password) {
+            delete sanitizedPayload.databaseState.password;
+          }
+          if (sanitizedPayload.configuration && sanitizedPayload.configuration.database && sanitizedPayload.configuration.database.password) {
+            delete sanitizedPayload.configuration.database.password;
+          }
+
+          const validationErrors = inputValidation.validateSetupPayload(sanitizedPayload);
           if (validationErrors.length > 0) {
             sendJson(res, 400, { ok: false, code: 'INVALID_PAYLOAD', errors: validationErrors });
             return;
           }
 
           const currentState = persistenceService.loadSetupState();
-          const configuration = { ...(currentState.configuration || {}), ...(payload.configuration || {}) };
+          const configuration = { ...(currentState.configuration || {}), ...(sanitizedPayload.configuration || {}) };
           const serverConfig = {
             ...(currentState.serverState || {}),
-            ...(payload.serverState || {})
+            ...(sanitizedPayload.serverState || {})
           };
           const databaseConfig = {
             ...(currentState.databaseState || {}),
-            ...(payload.databaseState || {})
+            ...(sanitizedPayload.databaseState || {})
           };
           const bootstrapConfig = {
             ...(currentState.bootstrapState || {}),
-            ...(payload.bootstrapState || {})
+            ...(sanitizedPayload.bootstrapState || {})
           };
           const frameworkState = {
             ...(currentState.frameworkState || {}),
-            ...(payload.frameworkState || {})
+            ...(sanitizedPayload.frameworkState || {})
           };
           const installation = {
             ...(currentState.installation || {}),
-            ...(payload.installation || {})
+            ...(sanitizedPayload.installation || {})
           };
 
-          if (configuration.serverUrl || configuration.apiBase || payload.serverUrl || payload.apiBase) {
+          if (configuration.serverUrl || configuration.apiBase || sanitizedPayload.serverUrl || sanitizedPayload.apiBase) {
             serverConfig.configured = true;
-            serverConfig.url = payload.serverUrl || configuration.serverUrl || serverConfig.url || '';
-            serverConfig.apiBase = payload.apiBase || configuration.apiBase || serverConfig.apiBase || '/api';
+            serverConfig.url = sanitizedPayload.serverUrl || configuration.serverUrl || serverConfig.url || '';
+            serverConfig.apiBase = sanitizedPayload.apiBase || configuration.apiBase || serverConfig.apiBase || '/api';
             serverConfig.status = serverConfig.status === 'ERROR' ? 'ERROR' : 'CONFIGURATION_REQUIRED';
             serverConfig.message = 'Server configuration saved.';
           }
 
-          if (payload.serverTestedAt) {
-            serverConfig.testedAt = payload.serverTestedAt;
+          if (sanitizedPayload.serverTestedAt) {
+            serverConfig.testedAt = sanitizedPayload.serverTestedAt;
           }
 
-          const database = payload.database || configuration.database || {};
-          if (database && (database.type || database.name || database.host || database.url || payload.databaseState)) {
+          const database = sanitizedPayload.database || configuration.database || {};
+          if (database && (database.type || database.name || database.host || database.url || sanitizedPayload.databaseState)) {
             databaseConfig.configured = true;
             databaseConfig.type = database.type || databaseConfig.type || 'indexeddb';
             databaseConfig.name = database.name || databaseConfig.name || 'CoreDB';
@@ -1038,25 +1161,25 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
             databaseConfig.message = 'Database configuration saved.';
           }
 
-          if (payload.bootstrap || payload.bootstrapState) {
+          if (sanitizedPayload.bootstrap || sanitizedPayload.bootstrapState) {
             bootstrapConfig.configured = true;
-            bootstrapConfig.username = (payload.bootstrap && payload.bootstrap.username) || bootstrapConfig.username || 'developer';
-            bootstrapConfig.displayId = (payload.bootstrap && payload.bootstrap.displayId) || bootstrapConfig.displayId || 'USR-000001';
-            bootstrapConfig.role = (payload.bootstrap && payload.bootstrap.role) || bootstrapConfig.role || 'developer';
-            bootstrapConfig.enabled = payload.bootstrap && Object.prototype.hasOwnProperty.call(payload.bootstrap, 'enabled')
-              ? !!payload.bootstrap.enabled
+            bootstrapConfig.username = (sanitizedPayload.bootstrap && sanitizedPayload.bootstrap.username) || bootstrapConfig.username || 'developer';
+            bootstrapConfig.displayId = (sanitizedPayload.bootstrap && sanitizedPayload.bootstrap.displayId) || bootstrapConfig.displayId || 'USR-000001';
+            bootstrapConfig.role = (sanitizedPayload.bootstrap && sanitizedPayload.bootstrap.role) || bootstrapConfig.role || 'developer';
+            bootstrapConfig.enabled = sanitizedPayload.bootstrap && Object.prototype.hasOwnProperty.call(sanitizedPayload.bootstrap, 'enabled')
+              ? !!sanitizedPayload.bootstrap.enabled
               : bootstrapConfig.enabled !== false;
             bootstrapConfig.status = bootstrapConfig.status === 'ERROR' ? 'ERROR' : 'CONFIGURATION_REQUIRED';
             bootstrapConfig.message = 'Bootstrap configuration saved.';
           }
 
-          if (payload.currentStep) {
-            currentState.currentStep = payload.currentStep;
+          if (sanitizedPayload.currentStep) {
+            currentState.currentStep = sanitizedPayload.currentStep;
           }
 
           const merged = {
             ...currentState,
-            ...payload,
+            ...sanitizedPayload,
             configuration,
             serverState: serverConfig,
             databaseState: databaseConfig,
@@ -1070,7 +1193,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           sendJson(res, 200, {
             ok: true,
             status: MasterFramework.getInstallationStatus ? MasterFramework.getInstallationStatus(saved) : saved.status,
-            setup: saved
+            setup: sanitizeSetupStateForClient(saved)
           });
         })
         .catch((error) => {
@@ -1189,7 +1312,22 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       }
       readJsonBody(req)
         .then((payload) => {
-          const validationErrors = inputValidation.validateDatabasePayload(payload);
+          const runtimeConfig = readRuntimeDatabaseConfig();
+          const hasRuntimeConfig = !!(runtimeConfig.type || runtimeConfig.host || runtimeConfig.name || runtimeConfig.username || runtimeConfig.url);
+          const effectivePayload = hasRuntimeConfig
+            ? {
+                ...payload,
+                type: payload && payload.type ? payload.type : runtimeConfig.type || 'mysql',
+                host: payload && payload.host ? payload.host : runtimeConfig.host || '',
+                port: payload && payload.port !== undefined && payload.port !== null && payload.port !== '' ? payload.port : runtimeConfig.port || 3306,
+                name: payload && payload.name ? payload.name : runtimeConfig.name || '',
+                username: payload && payload.username ? payload.username : runtimeConfig.username || '',
+                password: payload && payload.password ? payload.password : runtimeConfig.password || '',
+                url: payload && payload.url ? payload.url : runtimeConfig.url || ''
+              }
+            : { ...(payload || {}) };
+
+          const validationErrors = inputValidation.validateDatabasePayload(effectivePayload);
           if (validationErrors.length > 0) {
             sendJson(res, 400, { ok: false, code: 'INVALID_PAYLOAD', errors: validationErrors });
             return;
@@ -1198,11 +1336,13 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           const nextState = persistenceService.loadSetupState();
           const databaseConfig = {
             ...(nextState.databaseState || {}),
-            type: payload.type || nextState.databaseState?.type || 'indexeddb',
-            name: payload.name || nextState.databaseState?.name || payload.database || 'framework-db',
-            host: payload.host || nextState.databaseState?.host || '',
-            url: payload.url || nextState.databaseState?.url || '',
-            configured: !!(payload.name || payload.host || payload.url || payload.type || nextState.databaseState?.configured),
+            type: effectivePayload.type || nextState.databaseState?.type || 'indexeddb',
+            name: effectivePayload.name || nextState.databaseState?.name || effectivePayload.database || 'framework-db',
+            host: effectivePayload.host || nextState.databaseState?.host || '',
+            port: effectivePayload.port || nextState.databaseState?.port || 3306,
+            url: effectivePayload.url || nextState.databaseState?.url || '',
+            username: effectivePayload.username || nextState.databaseState?.username || '',
+            configured: !!(effectivePayload.name || effectivePayload.host || effectivePayload.url || effectivePayload.type || nextState.databaseState?.configured || hasRuntimeConfig),
             testedAt: new Date().toISOString(),
             reachable: true,
             responseTimeMs: 0,
@@ -1217,14 +1357,22 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
               type: databaseConfig.type,
               name: databaseConfig.name,
               host: databaseConfig.host,
-              url: databaseConfig.url
+              port: databaseConfig.port,
+              username: databaseConfig.username,
+              url: databaseConfig.url,
+              configured: databaseConfig.configured,
+              source: hasRuntimeConfig ? 'env' : 'setup-state'
             },
             databaseState: databaseConfig,
             configuration: { ...(nextState.configuration || {}), database: {
               type: databaseConfig.type,
               name: databaseConfig.name,
               host: databaseConfig.host,
-              url: databaseConfig.url
+              port: databaseConfig.port,
+              username: databaseConfig.username,
+              url: databaseConfig.url,
+              configured: databaseConfig.configured,
+              source: hasRuntimeConfig ? 'env' : 'setup-state'
             } },
             frameworkState: {
               ...(nextState.frameworkState || {}),
@@ -1238,7 +1386,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           };
           persistenceService.saveSetupState(setup);
           const status = getDatabaseStatus();
-          sendJson(res, 200, { ok: status.ok, status: status.status, database: status, setup: persistenceService.loadSetupState() });
+          sendJson(res, 200, { ok: status.ok, status: status.status, database: status, setup: sanitizeSetupStateForClient(persistenceService.loadSetupState()) });
         })
         .catch((error) => {
           sendJson(res, 400, { ok: false, code: 'INVALID_DATABASE', message: error.message || 'Database configuration invalid.' });
@@ -1251,7 +1399,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     }
 
     const status = getDatabaseStatus();
-    sendJson(res, 200, { ok: status.ok, status: status.status, database: status, setup: persistenceService.loadSetupState() });
+    sendJson(res, 200, { ok: status.ok, status: status.status, database: status, setup: sanitizeSetupStateForClient(persistenceService.loadSetupState()) });
     return true;
   }
 
