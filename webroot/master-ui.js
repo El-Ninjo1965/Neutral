@@ -429,7 +429,11 @@
           }
 
           if (action === 'server-test') {
-            const payload = { serverUrl: document.getElementById('serverUrlInput') ? document.getElementById('serverUrlInput').value : '', apiBase: document.getElementById('serverApiBaseInput') ? document.getElementById('serverApiBaseInput').value : '/api' };
+            const form = document.querySelector('[data-setup-form]');
+            const payload = {
+              serverUrl: (form && form.querySelector('[name="serverUrl"]')) ? form.querySelector('[name="serverUrl"]').value : (document.getElementById('serverUrlInput') ? document.getElementById('serverUrlInput').value : ''),
+              apiBase: (form && form.querySelector('[name="apiBase"]')) ? form.querySelector('[name="apiBase"]').value : (document.getElementById('serverApiBaseInput') ? document.getElementById('serverApiBaseInput').value : '/api')
+            };
             const result = await postJson('/api/server/test', payload, { ok: false, result: { status: 'ERROR', message: 'Server test failed.' } });
             if (statusTarget) {
               statusTarget.textContent = result && result.result && result.result.message ? result.result.message : 'Server test failed.';
@@ -438,11 +442,15 @@
           }
 
           if (action === 'database-test') {
+            const form = document.querySelector('[data-setup-form]');
             const payload = {
-              type: document.getElementById('dbTypeInput') ? document.getElementById('dbTypeInput').value : 'indexeddb',
-              name: document.getElementById('dbNameInput') ? document.getElementById('dbNameInput').value : '',
-              host: document.getElementById('dbHostInput') ? document.getElementById('dbHostInput').value : '',
-              url: document.getElementById('dbUrlInput') ? document.getElementById('dbUrlInput').value : ''
+              type: (form && form.querySelector('[name="databaseType"]')) ? form.querySelector('[name="databaseType"]').value : (document.getElementById('dbTypeInput') ? document.getElementById('dbTypeInput').value : 'indexeddb'),
+              name: (form && form.querySelector('[name="databaseName"]')) ? form.querySelector('[name="databaseName"]').value : (document.getElementById('dbNameInput') ? document.getElementById('dbNameInput').value : ''),
+              host: (form && form.querySelector('[name="databaseHost"]')) ? form.querySelector('[name="databaseHost"]').value : (document.getElementById('dbHostInput') ? document.getElementById('dbHostInput').value : ''),
+              port: ((form && form.querySelector('[name="databasePort"]')) ? Number(form.querySelector('[name="databasePort"]').value || 0) : (document.getElementById('dbPortInput') ? Number(document.getElementById('dbPortInput').value || 0) : 0)) || undefined,
+              username: (form && form.querySelector('[name="databaseUser"]')) ? form.querySelector('[name="databaseUser"]').value : '',
+              password: (form && form.querySelector('[name="databasePassword"]')) ? form.querySelector('[name="databasePassword"]').value : '',
+              url: (form && form.querySelector('[name="databaseUrl"]')) ? form.querySelector('[name="databaseUrl"]').value : (document.getElementById('dbUrlInput') ? document.getElementById('dbUrlInput').value : '')
             };
             const result = await postJson('/api/database/test', payload, { ok: false, status: 'NOT_CONFIGURED', database: { message: 'Database not configured.' } });
             if (statusTarget) {
@@ -888,16 +896,45 @@
           if (action === 'setup-save') {
             const form = button.closest('form');
             if (!form) return;
+            const serverUrl = form.querySelector('[name="serverUrl"]') ? form.querySelector('[name="serverUrl"]').value : '';
+            const apiBase = form.querySelector('[name="apiBase"]') ? form.querySelector('[name="apiBase"]').value : '/api';
+            const databaseType = form.querySelector('[name="databaseType"]') ? form.querySelector('[name="databaseType"]').value : 'indexeddb';
+            const databaseHost = form.querySelector('[name="databaseHost"]') ? form.querySelector('[name="databaseHost"]').value : '';
+            const databasePortValue = form.querySelector('[name="databasePort"]') ? form.querySelector('[name="databasePort"]').value : '';
+            const databasePort = databasePortValue === '' ? undefined : Number(databasePortValue);
+            const databaseName = form.querySelector('[name="databaseName"]') ? form.querySelector('[name="databaseName"]').value : '';
+            const databaseUser = form.querySelector('[name="databaseUser"]') ? form.querySelector('[name="databaseUser"]').value : '';
+            const databasePassword = form.querySelector('[name="databasePassword"]') ? form.querySelector('[name="databasePassword"]').value : '';
             const payload = {
               appId: form.querySelector('[name="appId"]') ? form.querySelector('[name="appId"]').value : 'neutral-app',
               appName: form.querySelector('[name="appName"]') ? form.querySelector('[name="appName"]').value : getConfiguredAppName(),
               configuration: {
-                serverUrl: form.querySelector('[name="serverUrl"]') ? form.querySelector('[name="serverUrl"]').value : '',
-                apiBase: form.querySelector('[name="apiBase"]') ? form.querySelector('[name="apiBase"]').value : '/api',
+                serverUrl,
+                apiBase,
                 database: {
-                  type: form.querySelector('[name="databaseType"]') ? form.querySelector('[name="databaseType"]').value : 'indexeddb',
-                  name: form.querySelector('[name="databaseName"]') ? form.querySelector('[name="databaseName"]').value : ''
+                  type: databaseType,
+                  host: databaseHost,
+                  port: databasePort,
+                  name: databaseName,
+                  username: databaseUser,
+                  password: databasePassword
                 }
+              },
+              serverState: {
+                configured: true,
+                url: serverUrl,
+                apiBase,
+                status: 'CONFIGURATION_REQUIRED'
+              },
+              databaseState: {
+                configured: !!(databaseType || databaseHost || databaseName || databaseUser || databasePassword),
+                type: databaseType,
+                host: databaseHost,
+                port: databasePort,
+                name: databaseName,
+                username: databaseUser,
+                password: databasePassword,
+                status: 'CONFIGURATION_REQUIRED'
               },
               bootstrapState: {
                 configured: true,
@@ -2731,20 +2768,27 @@
         <div class="card-header"><h2 class="card-title">First-run setup</h2></div>
         <div class="content-wrap">
           <div class="message info">This installation is not active yet. Configure the server, test the connections, and activate the system before using the admin workspace.</div>
-          <div class="form-grid" style="margin-top: 18px; margin-bottom: 18px;">
-            <div class="form-field"><label>Application ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
-            <div class="form-field"><label>Application name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
-            <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || 'https://your-domain.example')}" /></div>
-            <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
-            <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((configuration.database && configuration.database.type) || 'indexeddb')}" /></div>
-            <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((configuration.database && configuration.database.name) || 'CoreDB')}" /></div>
-          </div>
-          <div class="action-list" style="margin-bottom: 18px;">
-            <button type="button" class="primary" data-admin-action="setup-save">Save configuration</button>
-            <button type="button" class="secondary" data-admin-action="server-test">Test server</button>
-            <button type="button" class="secondary" data-admin-action="database-test">Test database</button>
-            <button type="button" class="primary" data-admin-action="setup-activate">Activate system</button>
-          </div>
+          <form data-setup-form>
+            <div class="form-grid" style="margin-top: 18px; margin-bottom: 18px;">
+              <div class="form-field"><label>Application ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
+              <div class="form-field"><label>Application name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
+              <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || 'https://your-domain.example')}" /></div>
+              <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
+              <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((configuration.database && configuration.database.type) || 'indexeddb')}" /></div>
+              <div class="form-field"><label>Database host</label><input type="text" name="databaseHost" value="${escapeHtml((configuration.database && configuration.database.host) || '127.0.0.1')}" /></div>
+              <div class="form-field"><label>Database port</label><input type="number" min="1" max="65535" name="databasePort" value="${escapeHtml((configuration.database && configuration.database.port) || '3306')}" /></div>
+              <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((configuration.database && configuration.database.name) || 'CoreDB')}" /></div>
+              <div class="form-field"><label>Database user</label><input type="text" name="databaseUser" value="${escapeHtml((configuration.database && configuration.database.username) || '')}" /></div>
+              <div class="form-field"><label>Database password</label><input type="password" name="databasePassword" value="${escapeHtml((configuration.database && configuration.database.password) || '')}" /></div>
+              <div class="form-field"><label>Database URL (optional)</label><input type="text" name="databaseUrl" value="${escapeHtml((configuration.database && configuration.database.url) || '')}" /></div>
+            </div>
+            <div class="action-list" style="margin-bottom: 18px;">
+              <button type="button" class="primary" data-admin-action="setup-save">Save configuration</button>
+              <button type="button" class="secondary" data-admin-action="server-test">Test server</button>
+              <button type="button" class="secondary" data-admin-action="database-test">Test database</button>
+              <button type="button" class="primary" data-admin-action="setup-activate">Activate system</button>
+            </div>
+          </form>
           <div id="adminActionStatus" class="message info">Setup state: ${escapeHtml(setup.status || 'NOT_CONFIGURED')} · Server: ${escapeHtml((setup.serverState && setup.serverState.status) || 'NOT_CONFIGURED')} · Database: ${escapeHtml((setup.databaseState && setup.databaseState.status) || 'NOT_CONFIGURED')}</div>
           <div class="grid" style="margin-top: 18px;">
             <div class="metric"><span class="metric-label">Status</span><div class="metric-value">${escapeHtml(setup.status || 'NOT_CONFIGURED')}</div></div>
