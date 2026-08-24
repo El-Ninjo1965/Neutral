@@ -1,0 +1,230 @@
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const projectRoot = path.resolve(__dirname, '..');
+const envFile = path.join(projectRoot, '.env.deploy');
+const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
+
+const allowedEntries = [
+  'package.json',
+  'package-lock.json',
+  'platform',
+  'server/server.js',
+  'server/bootstrap/server.js',
+  'server/config/index.js',
+  'server/database/connection.js',
+  'server/middleware/input-validation.js',
+  'server/api',
+  'server/services',
+  'app/index.js',
+  'app/modules/index.json',
+  'app/modules/gps/index.js',
+  'app/modules/gps/module.json',
+  'apps/neutral-app/app-info.json',
+  'apps/neutral-app/index.html',
+  'webroot/index.html',
+  'webroot/setup.html',
+  'webroot/admin.html',
+  'webroot/dev.html',
+  'webroot/style.css',
+  'webroot/master-ui.js',
+  'webroot/user-app.js',
+  'webroot/api-client.js',
+  'webroot/admin-init.js',
+  'webroot/admin/common.js',
+  'webroot/admin/index.js',
+  'webroot/admin/roles-view.js',
+  'webroot/admin/settings-view.js',
+  'webroot/admin/users-view.js'
+];
+
+function parseEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  const values = {};
+  const text = fs.readFileSync(filePath, 'utf8');
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const sepIndex = line.indexOf('=');
+    if (sepIndex === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, sepIndex).trim();
+    const value = line.slice(sepIndex + 1).trim();
+    values[key] = value.replace(/^['"]|['"]$/g, '');
+  }
+
+  return values;
+}
+
+function getConfig() {
+  const parsed = parseEnvFile(envFile);
+  const merged = { ...parsed, ...process.env };
+  const normalized = {};
+  for (const key of required) {
+    normalized[key] = String(merged[key] || '').trim();
+  }
+
+  normalized.FTP_TARGET_DIR = normalized.FTP_TARGET_DIR || '/';
+  normalized.FTP_PROTOCOL = (normalized.FTP_PROTOCOL || 'ftps').toLowerCase();
+  return normalized;
+}
+
+function copyDirectory(srcDir, destDir) {
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+  fs.mkdirSync(destDir, { recursive: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name);
+    const destPath = path.join(destDir, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectory(srcPath, destPath);
+      continue;
+    }
+    fs.copyFileSync(srcPath, destPath);
+  }
+}
+
+function buildStagingTree() {
+  const stagingRoot = path.join(projectRoot, '.deploy-staging');
+  fs.rmSync(stagingRoot, { recursive: true, force: true });
+  fs.mkdirSync(stagingRoot, { recursive: true });
+
+  const missing = [];
+
+  for (const entry of allowedEntries) {
+    const sourcePath = path.join(projectRoot, entry);
+    if (!fs.existsSync(sourcePath)) {
+      missing.push(entry);
+      continue;
+    }
+
+    const targetPath = path.join(stagingRoot, entry);
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+
+    const stat = fs.statSync(sourcePath);
+    if (stat.isDirectory()) {
+      copyDirectory(sourcePath, targetPath);
+      continue;
+    }
+
+    fs.copyFileSync(sourcePath, targetPath);
+  }
+
+  return { stagingRoot, missing };
+}
+
+function ensureLftpInstalled() {
+  const output = spawnSync('lftp', ['--version'], { stdio: 'ignore' });
+  if (output.status === 0) {
+    return;
+  }
+
+  const install = spawnSync('sudo', ['apt-get', 'update'], { stdio: 'inherit' });
+  if (install.status !== 0) {
+    throw new Error('lftp installation failed');
+  }
+
+  const installLftp = spawnSync('sudo', ['apt-get', 'install', '-y', 'lftp'], { stdio: 'inherit' });
+  if (installLftp.status !== 0) {
+    throw new Error('could not install lftp');
+  }
+}
+
+function runManualDeploy(stagingRoot, config) {
+  ensureLftpInstalled();
+
+  const commandScript = [
+    'set cmd:fail-exit true',
+    'set net:timeout 30',
+    'set net:max-retries 1',
+    `set ftp:ssl-force ${config.FTP_PROTOCOL === 'ftps' ? 'true' : 'false'}`,
+    'set ftp:ssl-protect-data true',
+    'set ssl:verify-certificate no',
+    `open -u "${config.FTP_USERNAME}","${config.FTP_PASSWORD}" -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
+    `mirror -R --only-newer --verbose --parallel=2 --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** "${stagingRoot}" "${config.FTP_TARGET_DIR}"`,
+    'bye'
+  ].join('\n');
+
+  const result = spawnSync('lftp', ['-e', commandScript], {
+    stdio: 'inherit',
+    shell: false
+  });
+
+  if (result.status !== 0) {
+    throw new Error('manual FTPS deploy failed');
+  }
+}
+
+function printHelp() {
+  console.log(`Usage: node scripts/manual-ftps-deploy.js [--dry-run]\n\nCreates a staging directory containing only the allowlisted production files and uploads only changed/newer files to the remote server.\n`);
+}
+
+function main() {
+  const args = new Set(process.argv.slice(2));
+
+  if (args.has('--help') || args.has('-h')) {
+    printHelp();
+    return;
+  }
+
+  const dryRun = args.has('--dry-run') || args.has('--preview');
+  const config = getConfig();
+  const missingConfig = required.filter((key) => !String(config[key] || '').trim());
+
+  if (!dryRun && missingConfig.length > 0) {
+    console.error(JSON.stringify({ status: 'ERROR', missingConfig, message: 'Set values in .env.deploy or environment variables before deploying.' }, null, 2));
+    process.exit(1);
+  }
+
+  const { stagingRoot, missing } = buildStagingTree();
+  const stagedFiles = [];
+
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+      stagedFiles.push(path.relative(stagingRoot, fullPath).split(path.sep).join('/'));
+    }
+  }
+
+  walk(stagingRoot);
+
+  console.log(JSON.stringify({
+    status: dryRun ? 'DRY_RUN' : 'READY',
+    stagingDir: stagingRoot,
+    filesQueued: stagedFiles.length,
+    files: stagedFiles.sort(),
+    missingAllowlistEntries: missing,
+    transferTarget: config.FTP_TARGET_DIR || '/',
+    ftpProtocol: config.FTP_PROTOCOL || 'ftps',
+    note: dryRun ? 'No upload was executed.' : 'Only new or newer files will be uploaded.'
+  }, null, 2));
+
+  if (dryRun) {
+    return;
+  }
+
+  runManualDeploy(stagingRoot, config);
+  console.log(JSON.stringify({ status: 'OK', uploaded: stagedFiles.length }, null, 2));
+}
+
+try {
+  main();
+} catch (error) {
+  console.error(JSON.stringify({ status: 'ERROR', message: error.message }, null, 2));
+  process.exit(1);
+}

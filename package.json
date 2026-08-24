@@ -4,8 +4,9 @@
   "description": "Neutral reusable web application platform with core, server, webroot, administration, and module scaffolding.",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "test": "node --test --test-concurrency=1 tests/*.test.js"
+    "start": "node scripts/neutral-start.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "deploy:manual": "node scripts/manual-ftps-deploy.js"
   },
   "keywords": [
     "platform",
