@@ -4,12 +4,12 @@
   "status": "maintenance",
   "maintenanceMode": false,
   "maintenanceReason": "",
-  "checkedAt": "2026-08-24T05:38:16.205Z",
+  "checkedAt": "2026-08-24T12:03:05.491Z",
   "checks": {
     "database": {
       "ok": true,
       "status": "READY",
-      "message": "Database configuration test passed."
+      "message": "Database not configured."
     },
     "server": {
       "ok": true,
