@@ -263,8 +263,8 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
     `set ftp:ssl-force ${config.FTP_PROTOCOL === 'ftps' ? 'true' : 'false'}`,
     'set ftp:ssl-protect-data true',
     'set ssl:verify-certificate no',
-    `open -u "${config.FTP_USERNAME}","${config.FTP_PASSWORD}" -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
-    `mirror -R --only-newer --verbose --parallel=2 --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** "${stagingRoot}" "${config.FTP_TARGET_DIR}"`,
+    `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
+    `mirror -R --only-newer --verbose --parallel=2 --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
     deleteCommands ? deleteCommands : '',
     'bye'
   ].filter(Boolean).join('\n');

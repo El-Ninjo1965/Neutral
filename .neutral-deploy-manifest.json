@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T04:26:57.524Z",
+  "generatedAt": "2026-08-24T07:18:38.008Z",
   "files": {
     "app/index.js": {
       "path": "app/index.js",
@@ -39,8 +39,8 @@
     },
     "package.json": {
       "path": "package.json",
-      "hash": "4ec559e02060ac33702508a7ff5be575f2735727626be293a73ea0080a0f3bce",
-      "size": 612
+      "hash": "9bd35b5d6dc4367517375cc9a207c6f4c11c89b0b16923cca44e82b5ff26746d",
+      "size": 671
     },
     "platform/app.js": {
       "path": "platform/app.js",
@@ -229,8 +229,8 @@
     },
     "server/bootstrap/server.js": {
       "path": "server/bootstrap/server.js",
-      "hash": "f9aef69089f8ed259b4f3ff925afe6d2aa9f35613d99a94ee1b8a72d840fa281",
-      "size": 70687
+      "hash": "d70527bdccca295b7b854f272f783250da351383d429d484121496b9c660557e",
+      "size": 71964
     },
     "server/config/index.js": {
       "path": "server/config/index.js",

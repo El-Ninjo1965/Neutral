@@ -129,3 +129,13 @@ Projekt-Setup- und Release-Regel
 * Erst wenn Preflight, Dry-Run und Health-Checks erfolgreich sind, darf der echte Host-/cPanel-Setup bestätigt werden.
 * Nach dem echten Serverstart muss der Host-Status unmittelbar validiert werden, bevor weitere Änderungen am Projekt oder Server vorgenommen werden.
 * Die lokale Git- und Remote-Synchronisierung ist ein verbindlicher Abschluss jeder Arbeitsphase.
+
+Realer Produktionsdeploy (tatsächlich ausgeführt)
+
+* Ausgangscommit: `git status --short --branch` zeigte einen sauberen `main`-Stand mit `origin/main` als Upstream.
+* Verwendeter Mechanismus: `npm run deploy:manual` mit `scripts/manual-ftps-deploy.js` und der vorhandenen `.env.deploy`-Konfiguration; keine Änderung an den bereitgestellten FTP-Daten.
+* Realer FTPS-Upload: erfolgreich gegen `ftp.turbolikes.com:21` mit `FTPS` unter Nutzung des Projektspezifischen Allowlist-Staging. Der erste Versuch scheiterte wegen fehlerhafter lftp-Quoting im `mirror`-Befehl (`\"...\"` wurden als Teil des lokalen Pfads interpretiert); nach Entfernen der überflüssigen Quotes funktionierte der echte Upload korrekt.
+* Tatsächlich übertragene/aktualisierte Dateien: `package.json` und `server/bootstrap/server.js` (gemäß finalem Deploy-Output `uploaded: 2`, `deleted: 0`, `kept: 76`). Die restlichen Allowlist-Dateien waren bereits aktuell und wurden nicht erneut übertragen.
+* Produktionsserver-Verifikation: `lftp`-Liste des Servers zeigt die erwarteten Produktivordner `app/`, `platform/`, `server/`, `webroot/` sowie die vorhandene serverseitige `.env`; die ausführliche Prüfung bestätigte, dass `.env` nicht überschrieben oder gelöscht wurde.
+* Setup-Verifikation: Die Live-`server/bootstrap/server.js` prüft `DB_TYPE`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` und `DB_URL` aus der Laufzeit-Umgebung und entfernt sensible Felder vor dem Versand an das Frontend. `DB_NAME` und `DB_USER` wurden auf dem Server als `web1819_neutral_app` erkannt; das Passwort bleibt nur serverseitig in `.env` und wird nicht an das Frontend übertragen.
+* Erfolgsstatus: Die Produktsicherung war erfolgreich; der Upload war ein echter FTPS-Transfer und kein Dry-Run.
