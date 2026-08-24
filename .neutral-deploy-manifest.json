@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T09:28:43Z",
+  "generatedAt": "2026-08-24T11:30:15.544Z",
   "files": {
     "app/index.js": {
       "path": "app/index.js",
@@ -49,8 +49,8 @@
     },
     "platform/config-manager.js": {
       "path": "platform/config-manager.js",
-      "hash": "9053b03ea5d200bc3162812136a89c8e7f36d3c79b81e52a3da649939df06fe4",
-      "size": 13016
+      "hash": "7833bbe23a1b356f2f86a1f8703f9af04b11f3f1c03ae1d07f3fb0fa77b460d7",
+      "size": 13316
     },
     "platform/core-access.js": {
       "path": "platform/core-access.js",
@@ -59,8 +59,8 @@
     },
     "platform/core-admin.js": {
       "path": "platform/core-admin.js",
-      "hash": "43cd115edce94b04e5c89625fbcc2240b5bee663443cee51fcead36a4c63076d",
-      "size": 53498
+      "hash": "3b21b382d417471d1c555ab31994e0b1413d63c47333fc9be0d59be8e74e0154",
+      "size": 54038
     },
     "platform/core-audit.js": {
       "path": "platform/core-audit.js",
@@ -169,8 +169,8 @@
     },
     "platform/master-framework.js": {
       "path": "platform/master-framework.js",
-      "hash": "58daaeb90616f9bca6a15903324cdf710061f7014c1503b7e3c4670eb79c7b9a",
-      "size": 123995
+      "hash": "af5b85cb968b89ac11b2923be0f25e4c528fc510b902ab27d5b9c91329dd4ada",
+      "size": 130586
     },
     "platform/media-manager.js": {
       "path": "platform/media-manager.js",
@@ -229,8 +229,8 @@
     },
     "server/bootstrap/server.js": {
       "path": "server/bootstrap/server.js",
-      "hash": "d70527bdccca295b7b854f272f783250da351383d429d484121496b9c660557e",
-      "size": 71964
+      "hash": "9c7ca7453c383c9f9e67f7b4a967c4eca24e9a4009b2512a250cef0664c39c7e",
+      "size": 76557
     },
     "server/config/index.js": {
       "path": "server/config/index.js",
@@ -349,8 +349,8 @@
     },
     "webroot/admin-init.js": {
       "path": "webroot/admin-init.js",
-      "hash": "3f17e43bacf2fc75d54e21aa10f2708e2b09a69728616d01cd51c8979ab29cd9",
-      "size": 3561
+      "hash": "84aaa964266c57c7a6eef47a15734c3bc3e117a2ecd15a926d4cb384d9562bd9",
+      "size": 4012
     },
     "webroot/admin.html": {
       "path": "webroot/admin.html",
@@ -374,13 +374,18 @@
     },
     "webroot/master-ui.js": {
       "path": "webroot/master-ui.js",
-      "hash": "8677425b1679f5776a004cc5a9d86bc6461034404885516c8996f28effd14b5f",
-      "size": 177654
+      "hash": "7c576103e1cd272ec8ff3183b2cfd89c04670ec730f5410c39aa33c91ab820d8",
+      "size": 178461
+    },
+    "webroot/setup.html": {
+      "path": "webroot/setup.html",
+      "hash": "1073e44bff45248e42c74934aa90b78f75c10cd4d618d9a87359a421a33e0c52",
+      "size": 2334
     },
     "webroot/setup.php": {
       "path": "webroot/setup.php",
-      "hash": "f6d12315c57817cd6c9fb8a5e220faadcf85e5c84b29226e32cb73a58ccb6268",
-      "size": 7594
+      "hash": "d4d0c4a6cbb5db34d8488bf44572ae5aadcd7417d35d478450791093fde5db50",
+      "size": 31034
     },
     "webroot/style.css": {
       "path": "webroot/style.css",
@@ -391,11 +396,6 @@
       "path": "webroot/user-app.js",
       "hash": "19f5315ff689a75f2f28a879f4967a3eebcb06b51ea9014153ca24724080feac",
       "size": 21694
-    },
-    "webroot/setup.html": {
-      "path": "webroot/setup.html",
-      "hash": "1073e44bff45248e42c74934aa90b78f75c10cd4d618d9a87359a421a33e0c52",
-      "size": 2334
     }
   }
 }
