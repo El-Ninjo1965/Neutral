@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T11:41:30.474Z",
+  "generatedAt": "2026-08-24T11:48:13.807Z",
   "files": {
     "app/index.js": {
       "path": "app/index.js",
@@ -384,8 +384,8 @@
     },
     "webroot/setup.php": {
       "path": "webroot/setup.php",
-      "hash": "2a4d48690c9c5421f47d91c4b06d6f0e97679a9b0bd62c384a4aa009845dd0e3",
-      "size": 35669
+      "hash": "fa03464a134e80aa6e078b76aaea94d776e18bb16147f46835d63bb857bd40fc",
+      "size": 39908
     },
     "webroot/style.css": {
       "path": "webroot/style.css",

@@ -87,6 +87,24 @@ function writeSetupLog($message, array $context = []) {
     return @file_put_contents($logDir . '/setup-debug.log', $line, FILE_APPEND | LOCK_EX) !== false;
 }
 
+function writeJsonFile($filePath, array $content) {
+    if (!is_string($filePath) || $filePath === '') {
+        return false;
+    }
+
+    $directory = dirname($filePath);
+    if (!is_dir($directory) && !@mkdir($directory, 0777, true) && !is_dir($directory)) {
+        return false;
+    }
+
+    $json = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+
+    return @file_put_contents($filePath, $json . PHP_EOL, LOCK_EX) !== false;
+}
+
 function resolveRuntimeEnvFile() {
     $projectRootCandidates = [];
     $projectRoot = dirname(__DIR__);
@@ -258,6 +276,82 @@ $serverUrl = resolveRuntimeServerUrl($env);
 $dbUrl = buildDatabaseUrlFromEnv($env);
 
 $setupReadyFromEnv = ($serverUrl !== '' && $dbHost !== '' && $dbName !== '' && $dbUser !== '' && $dbPassword !== '');
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
+    $installLogFile = dirname(__DIR__) . '/server/runtime/setup-debug.log';
+    $statePath = dirname(__DIR__) . '/server/runtime/setup-state.json';
+    $installPayload = [
+        'status' => 'ACTIVE',
+        'appId' => $env['APP_ID'] ?? $env['DEFAULT_APP_ID'] ?? 'neutral-app',
+        'appName' => $env['APP_NAME'] ?? 'Neutral Platform',
+        'installation' => [
+            'active' => true,
+            'state' => 'ACTIVE',
+            'message' => 'Installed from server .env configuration.'
+        ],
+        'serverState' => [
+            'configured' => true,
+            'status' => 'ACTIVE',
+            'url' => $serverUrl,
+            'apiBase' => $env['API_BASE'] ?? '/api',
+            'message' => 'Server configuration loaded from .env.'
+        ],
+        'databaseState' => [
+            'configured' => true,
+            'status' => 'ACTIVE',
+            'type' => $dbType,
+            'host' => $dbHost,
+            'port' => $dbPort,
+            'name' => $dbName,
+            'username' => $dbUser,
+            'passwordPresent' => true,
+            'message' => 'Database configuration loaded from .env.'
+        ],
+        'bootstrapState' => [
+            'configured' => true,
+            'enabled' => true,
+            'status' => 'ACTIVE',
+            'username' => 'Developer',
+            'role' => 'developer',
+            'message' => 'Developer bootstrap is ready.'
+        ],
+        'configuration' => [
+            'appId' => $env['APP_ID'] ?? $env['DEFAULT_APP_ID'] ?? 'neutral-app',
+            'appName' => $env['APP_NAME'] ?? 'Neutral Platform',
+            'serverUrl' => $serverUrl,
+            'apiBase' => $env['API_BASE'] ?? '/api',
+            'database' => [
+                'type' => $dbType,
+                'host' => $dbHost,
+                'port' => $dbPort,
+                'name' => $dbName,
+                'username' => $dbUser,
+                'passwordPresent' => true,
+                'url' => $dbUrl
+            ]
+        ],
+        'updatedAt' => gmdate('c')
+    ];
+
+    $logResult = writeSetupLog('setup.php install now invoked', [
+        'serverUrl' => $serverUrl,
+        'dbHost' => $dbHost,
+        'dbName' => $dbName,
+        'dbUser' => $dbUser,
+        'envFile' => $envFile,
+        'stateFile' => $statePath
+    ]);
+    $stateSaved = writeJsonFile($statePath, $installPayload);
+
+    if (!$logResult || !$stateSaved) {
+        http_response_code(500);
+        echo '<!doctype html><html><body><h1>Install failed</h1><p>Could not persist the runtime setup state.</p></body></html>';
+        exit;
+    }
+
+    echo '<!doctype html><html><head><meta charset="utf-8" /><meta http-equiv="refresh" content="1;url=admin.html" /></head><body style="font-family:Arial,sans-serif;background:#111827;color:#e5e7eb;padding:32px;"><div style="max-width:720px;margin:0 auto;background:#1f2937;border-radius:12px;padding:28px;"><h1>Installation complete</h1><p>Using the values from the server .env file. Redirecting to the admin panel…</p></div></body></html>';
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -771,16 +865,31 @@ $setupReadyFromEnv = ($serverUrl !== '' && $dbHost !== '' && $dbName !== '' && $
 
         const installNowBtn = document.getElementById('installNowBtn');
         if (installNowBtn) {
-          installNowBtn.addEventListener('click', async () => {
-            try {
-              const result = await installSetup({ silent: false });
-              setStatus(result && result.message ? result.message : 'Installation completed successfully.', 'success');
-              setTimeout(() => { window.location.href = 'admin.html'; }, 600);
-            } catch (error) {
-              console.error('Install now failed', error);
-              setStatus(error && error.message ? error.message : 'Installation failed.', 'error');
-            }
-          });
+          if (setupReady) {
+            installNowBtn.addEventListener('click', () => {
+              const form = document.createElement('form');
+              form.method = 'POST';
+              form.action = window.location.href;
+              const hidden = document.createElement('input');
+              hidden.type = 'hidden';
+              hidden.name = 'install_now';
+              hidden.value = '1';
+              form.appendChild(hidden);
+              document.body.appendChild(form);
+              form.submit();
+            });
+          } else {
+            installNowBtn.addEventListener('click', async () => {
+              try {
+                const result = await installSetup({ silent: false });
+                setStatus(result && result.message ? result.message : 'Installation completed successfully.', 'success');
+                setTimeout(() => { window.location.href = 'admin.html'; }, 600);
+              } catch (error) {
+                console.error('Install now failed', error);
+                setStatus(error && error.message ? error.message : 'Installation failed.', 'error');
+              }
+            });
+          }
         }
 
         const activateSystemBtn = document.getElementById('activateSystemBtn');
