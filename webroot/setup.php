@@ -106,31 +106,64 @@ function writeJsonFile($filePath, array $content) {
 }
 
 function resolveRuntimeEnvFile() {
-    $projectRootCandidates = [];
     $projectRoot = dirname(__DIR__);
-    if (is_string($projectRoot) && $projectRoot !== '') {
-        $projectRootCandidates[] = $projectRoot;
+    $candidateRoots = [];
+
+    foreach ([
+        $projectRoot,
+        dirname($projectRoot),
+        dirname(dirname($projectRoot)),
+        getenv('NEUTRAL_APP_ROOT'),
+        getenv('NEUTRAL_INSTALL_ROOT'),
+        getenv('APP_ROOT'),
+        getenv('REAL_APP_ROOT'),
+        getenv('INSTALL_ROOT'),
+        getenv('DOCUMENT_ROOT'),
+        '/home/web1819',
+        '/home/web1819/public_html',
+        '/home/web1819/public_html/index/app/neutral',
+        '/var/www/html',
+        '/var/www',
+        '/srv/www',
+    ] as $candidate) {
+        if (!is_string($candidate) || trim($candidate) === '') {
+            continue;
+        }
+        $candidateRoots[] = rtrim($candidate, "/\\");
     }
 
-    $envPathOverrides = [
-        getenv('NEUTRAL_ENV_FILE'),
-        getenv('NEUTRAL_APP_ROOT'),
-        getenv('APP_ROOT'),
-        getenv('INSTALL_ROOT'),
-        '/home/web1819/.env',
-        '/var/www/html/.env'
-    ];
+    $seen = [];
+    foreach ($candidateRoots as $root) {
+        if ($root === '' || isset($seen[$root])) {
+            continue;
+        }
+        $seen[$root] = true;
 
-    foreach ($envPathOverrides as $candidate) {
-        if (is_string($candidate) && $candidate !== '' && is_file($candidate)) {
-            $projectRootCandidates[] = $candidate;
+        foreach ([
+            $root,
+            $root . '/.env',
+            $root . '/.env.local',
+            $root . '/.env.production',
+            $root . '/.env.development',
+            $root . '/index/app/neutral/.env',
+            $root . '/index/app/neutral/webroot/../.env',
+        ] as $candidate) {
+            if (is_string($candidate) && trim($candidate) !== '' && is_file($candidate)) {
+                return $candidate;
+            }
         }
     }
 
-    foreach ($projectRootCandidates as $candidate) {
-        $resolved = is_file($candidate) ? $candidate : rtrim((string) $candidate, '/\\') . '/.env';
-        if (is_file($resolved)) {
-            return $resolved;
+    foreach ([
+        getenv('NEUTRAL_ENV_FILE'),
+        '/home/web1819/.env',
+        '/home/web1819/public_html/.env',
+        '/home/web1819/public_html/index/app/neutral/.env',
+        '/var/www/html/.env',
+        '/var/www/.env'
+    ] as $candidate) {
+        if (is_string($candidate) && trim($candidate) !== '' && is_file($candidate)) {
+            return $candidate;
         }
     }
 
@@ -600,6 +633,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
           statusEl.className = 'status' + (kind === 'success' ? ' success' : kind === 'error' ? ' error' : '');
         };
 
+        const canReachRuntimeApi = async (timeoutMs = 1500) => {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            const response = await fetch(buildApiUrl('/status'), {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response && response.ok;
+          } catch (error) {
+            return false;
+          }
+        };
+
+        const submitPhpSetupForm = () => {
+          const targetForm = document.getElementById('setupForm');
+          if (targetForm) {
+            targetForm.submit();
+            return true;
+          }
+          return false;
+        };
+
         const sha256 = async (value) => {
           const data = new TextEncoder().encode(String(value || ''));
           const digest = await crypto.subtle.digest('SHA-256', data);
@@ -755,6 +814,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         if (form) {
           form.addEventListener('submit', async (event) => {
             event.preventDefault();
+
+            const runtimeApiReady = await canReachRuntimeApi();
+            if (!runtimeApiReady) {
+              setStatus('Shared-host runtime is not available; using the server-side PHP setup flow instead.', 'info');
+              submitPhpSetupForm();
+              return;
+            }
+
             const payload = {
               appId: document.getElementById('appId').value || 'neutral-app',
               appName: document.getElementById('appName').value || 'Neutral Platform',
@@ -807,7 +874,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
               }
               setStatus('Setup saved successfully.', 'success');
             } catch (error) {
-              setStatus(error && error.message ? error.message : 'Setup save failed.', 'error');
+              setStatus('Node runtime is unavailable on this host; falling back to the PHP setup flow.', 'info');
+              submitPhpSetupForm();
             }
           });
         }
@@ -815,6 +883,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         const testServerBtn = document.getElementById('testServerBtn');
         if (testServerBtn) {
           testServerBtn.addEventListener('click', async () => {
+            const runtimeApiReady = await canReachRuntimeApi();
+            if (!runtimeApiReady) {
+              setStatus('Shared hosting does not expose a Node API; server test is performed by the PHP setup flow instead.', 'info');
+              submitPhpSetupForm();
+              return;
+            }
+
             try {
               const response = await fetch(buildApiUrl('/server/test'), {
                 method: 'POST',
@@ -830,7 +905,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
               }
               setStatus((result && result.result && result.result.message) || 'Server connection is healthy.', 'success');
             } catch (error) {
-              setStatus(error && error.message ? error.message : 'Server test failed.', 'error');
+              setStatus('The server runtime is unavailable on this shared host; using the PHP setup flow instead.', 'info');
+              submitPhpSetupForm();
             }
           });
         }
@@ -838,6 +914,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         const testDatabaseBtn = document.getElementById('testDatabaseBtn');
         if (testDatabaseBtn) {
           testDatabaseBtn.addEventListener('click', async () => {
+            const runtimeApiReady = await canReachRuntimeApi();
+            if (!runtimeApiReady) {
+              setStatus('Database validation is handled server-side on this shared host; no Node API is required.', 'info');
+              submitPhpSetupForm();
+              return;
+            }
+
             try {
               const response = await fetch(buildApiUrl('/database/test'), {
                 method: 'POST',
@@ -858,7 +941,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
               }
               setStatus((result && result.result && result.result.message) || 'Database configuration is valid.', 'success');
             } catch (error) {
-              setStatus(error && error.message ? error.message : 'Database test failed.', 'error');
+              setStatus('No Node runtime backend is available here; server-side PHP validation will be used instead.', 'info');
+              submitPhpSetupForm();
             }
           });
         }

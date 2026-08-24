@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T11:48:13.807Z",
+  "generatedAt": "2026-08-24T12:32:16.238Z",
   "files": {
     "app/index.js": {
       "path": "app/index.js",
@@ -234,8 +234,8 @@
     },
     "server/config/index.js": {
       "path": "server/config/index.js",
-      "hash": "2df95f9034844d760bc72f792dc27bf122e408a43441fa57c03e4228baecd0be",
-      "size": 6915
+      "hash": "c14a2aeb723b42ff2e173cfe072d7160102303f28c5247da03f599e494a9a6d9",
+      "size": 6967
     },
     "server/database/connection.js": {
       "path": "server/database/connection.js",
@@ -249,8 +249,8 @@
     },
     "server/server.js": {
       "path": "server/server.js",
-      "hash": "b2f1c86e2bd91439737ac9d22c7fdef3a1f5f7cc5feceb2a8dbf3a7900d45ba9",
-      "size": 337
+      "hash": "834da44cc251e1a6ba37895d239c6b69567e12a3d942522e91017a2c9de479af",
+      "size": 392
     },
     "server/services/audit-service.js": {
       "path": "server/services/audit-service.js",
@@ -384,8 +384,8 @@
     },
     "webroot/setup.php": {
       "path": "webroot/setup.php",
-      "hash": "fa03464a134e80aa6e078b76aaea94d776e18bb16147f46835d63bb857bd40fc",
-      "size": 39908
+      "hash": "1ac5341715c8fe355678ef0da1c8c794a421d83a5453e2bbbb80981c525acbd0",
+      "size": 42787
     },
     "webroot/style.css": {
       "path": "webroot/style.css",
