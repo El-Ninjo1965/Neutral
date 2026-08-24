@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node scripts/neutral-start.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
-    "deploy:manual": "node scripts/manual-ftps-deploy.js"
+    "deploy:manual": "node scripts/manual-ftps-deploy.js",
+    "setup:preflight": "node scripts/cpanel-preflight.js"
   },
   "keywords": [
     "platform",
