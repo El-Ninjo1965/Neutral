@@ -104,3 +104,47 @@ Validierungsprotokoll
 * `curl http://127.0.0.1:3000/health` liefert nach dem Start `HTTP/1.1 200 OK` und das Health-JSON des Neutral-Servers.
 * Dieser Repo-Zustand wird mit ausdrücklicher Freigabe vollständiger GitHub-Synchronisierung gepflegt: Umgebung, Laufzeit- und Konfigurationsdaten werden im Repository hinterlegt, sofern sie Teil des aktuellen Arbeitsstands sind.
 * Vor dem finalen Commit und Push wird die komplette Git-Status-Prüfung und die Prüfung des GitHub-Remote-Status erneut ausgeführt.
+
+cPanel-/Host-Setup-Checkliste
+
+1. Produktionsverzeichnis auf dem Host anlegen und auf die minimale Neutral-Produktionsstruktur begrenzen.
+2. Nur die in `server.md` definierte Allowlist auf den Host übernehmen; keine komplette Repository-Synchronisierung.
+3. Host-Umgebungsvariablen setzen:
+   - `PORT=3000`
+   - `HOST=0.0.0.0`
+   - `NODE_ENV=production`
+   - `DEFAULT_APP_ID=neutral-app`
+   - `ADMIN_ACCESS_TOKEN=<dein-token>`
+   - `CORE_BOOTSTRAP_USERNAME=admin`
+   - `CORE_BOOTSTRAP_PASSWORD=<dein-bootstrap-passwort>`
+   - `DB_TYPE=mysql`
+   - `DB_HOST=<mysql-host>`
+   - `DB_PORT=3306`
+   - `DB_NAME=<db-name>`
+   - `DB_USER=<db-user>`
+   - `DB_PASSWORD=<db-passwort>`
+   - `SERVER_MODE=single`
+4. Die FTP-Umgebung prüft und setzt:
+   - `FTP_SERVER=ftp.turbolikes.com`
+   - `FTP_PORT=21`
+   - `FTP_USERNAME=neutral@turbolikes.com`
+   - `FTP_PASSWORD=appGITHUBserver01`
+   - `FTP_TARGET_DIR=/`
+   - `FTP_PROTOCOL=ftps`
+5. Im Host-Projektverzeichnis `npm install --production` oder die passende Produktion-Installation ausführen.
+6. Server starten: `npm start` oder `node scripts/neutral-start.js`.
+7. Direkt danach Status prüfen: `curl -i http://127.0.0.1:3000/health`.
+8. Admin-Zugriff prüfen: `curl -i -H "x-admin-access-token: <token>" http://127.0.0.1:3000/admin.html`.
+9. Admin-Health prüfen: `curl -i -H "x-admin-access-token: <token>" -H "x-admin-role: admin" http://127.0.0.1:3000/api/admin/system/health`.
+10. Bootstrap-Login prüfen: `curl -i -X POST http://127.0.0.1:3000/api/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"<bootstrap-passwort>"}'`.
+11. Gesamtstatus prüfen: `curl -i http://127.0.0.1:3000/api/status`.
+12. Keine `.env`-Dateien im produktiven Host-Verzeichnis mit einem Git-Deploy mitführen; Server-Umgebung muss auf dem Host als echte Laufzeit-Variable gesetzt werden.
+13. Keine fremden Serverdateien löschen; nur Neutral-Managed-Bestand und nur innerhalb der Allowlist behandeln.
+
+Projekt-Setup- und Release-Regel
+
+* Vor dem echten Server-Deploy muss `npm run setup:preflight` sauber durchlaufen.
+* Erst wenn Preflight, Dry-Run und Health-Checks erfolgreich sind, darf der echte Host-/cPanel-Setup bestätigt werden.
+* Nach dem echten Serverstart muss der Host-Status sofort validiert werden, bevor weitere Änderungen am Projekt oder Server vorgenommen werden.
+* Jeder Abschluss einer Aufgaben- oder Setup-Phase muss in GitHub synchronisiert werden: `git status`, `git add -A`, `git commit -m "..."`, `git push origin main`, `git status`, `git rev-parse HEAD`, `git ls-remote --heads origin main`.
+* Lokaler `HEAD` und `origin/main` müssen nach jedem Abschluss identisch sein.
