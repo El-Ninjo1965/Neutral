@@ -6,6 +6,7 @@ Aktueller Stand
 * Branch: main
 * Der aktuelle Quellcode ist die maßgebliche Referenz.
 * Die Setup-Seite wurde auf einen reinen .env-Install-Flow umgestellt: Wenn die Serverkonfiguration auf dem Host vorhanden ist, zeigt die Seite nur noch den Install-Button und kein Formular mehr.
+* Der Standard-Host der Node-Laufzeit wurde auf `0.0.0.0` korrigiert, damit der Server öffentlich erreichbar ist; `HOST`, `PUBLIC_HOST` und `SERVER_HOST` werden dabei korrekt berücksichtigt.
 
 Verbindliche Regeln
 

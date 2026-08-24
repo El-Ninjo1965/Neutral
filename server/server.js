@@ -3,8 +3,10 @@
 const server = require('./bootstrap/server');
 
 if (require.main === module) {
-  server.listen(process.env.PORT || 3000, process.env.HOST || '127.0.0.1', () => {
-    console.log(`Neutral platform server listening on http://${process.env.HOST || '127.0.0.1'}:${process.env.PORT || 3000}`);
+  const host = process.env.HOST || process.env.PUBLIC_HOST || process.env.SERVER_HOST || '0.0.0.0';
+  const port = Number(process.env.PORT || 3000);
+  server.listen(port, host, () => {
+    console.log(`Neutral platform server listening on http://${host}:${port}`);
   });
 }
 

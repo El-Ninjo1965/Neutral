@@ -137,7 +137,7 @@ const apiBase = normalizeEnvValue(process.env.API_BASE || process.env.NEUTRAL_AP
 
 module.exports = {
   port: Number(process.env.PORT || 3000),
-  host: process.env.HOST || '127.0.0.1',
+  host: process.env.HOST || process.env.PUBLIC_HOST || process.env.SERVER_HOST || '0.0.0.0',
   projectRoot: rootDir,
   rootDir,
   installRoot: rootDir,
