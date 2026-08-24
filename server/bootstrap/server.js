@@ -359,8 +359,25 @@ const getDatabaseStatus = () => {
   return safe;
 };
 
-const getServerTestResult = async (payload = {}) => {
-  const targetBase = normalizeStringValue(payload.serverUrl || process.env.SERVER_URL || `http://${host}:${port}`, `http://${host}:${port}`);
+const resolveRequestOrigin = (req, fallbackHost = host, fallbackPort = port) => {
+  const headers = req && req.headers ? req.headers : {};
+  const forwardedProto = normalizeStringValue(
+    Array.isArray(headers['x-forwarded-proto']) ? String(headers['x-forwarded-proto'][0] || '') : String(headers['x-forwarded-proto'] || headers['x-forwarded-protocol'] || headers['x-forwarded-scheme'] || ''),
+    req && req.socket && req.socket.encrypted ? 'https' : 'http'
+  ).split(',')[0].trim();
+  const forwardedHost = normalizeStringValue(
+    Array.isArray(headers['x-forwarded-host']) ? String(headers['x-forwarded-host'][0] || '') : String(headers['x-forwarded-host'] || headers.host || ''),
+    `${fallbackHost}:${fallbackPort}`
+  ).split(',')[0].trim();
+
+  return `${forwardedProto}://${forwardedHost.replace(/\/$/, '')}`;
+};
+
+const getServerTestResult = async (payload = {}, req = null) => {
+  const targetBase = normalizeStringValue(
+    payload.serverUrl || process.env.SERVER_URL || resolveRequestOrigin(req, host, port),
+    `http://${host}:${port}`
+  );
   const apiBase = payload.apiBase || '/api';
   const targetUrl = new URL(`${targetBase.replace(/\/$/, '')}${apiBase}/status`);
   const start = Date.now();
@@ -1361,14 +1378,14 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       }
       readJsonBody(req)
         .then(async (payload) => {
-          const result = await getServerTestResult(payload);
+          const result = await getServerTestResult(payload, req);
           const setupState = persistenceService.loadSetupState();
           const nextState = {
             ...setupState,
             currentStep: 'server-test',
             configuration: {
               ...(setupState.configuration || {}),
-              serverUrl: payload.serverUrl || setupState.configuration?.serverUrl || `http://${host}:${port}`,
+              serverUrl: payload.serverUrl || setupState.configuration?.serverUrl || resolveRequestOrigin(req, host, port),
               apiBase: payload.apiBase || setupState.configuration?.apiBase || '/api'
             },
             serverState: {
@@ -1379,7 +1396,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
               responseTimeMs: result.responseTimeMs,
               status: result.ok ? 'READY_TO_TEST' : 'ERROR',
               message: result.message,
-              url: payload.serverUrl || setupState.configuration?.serverUrl || `http://${host}:${port}`,
+              url: payload.serverUrl || setupState.configuration?.serverUrl || resolveRequestOrigin(req, host, port),
               apiBase: payload.apiBase || setupState.configuration?.apiBase || '/api'
             },
             installation: { ...(setupState.installation || {}), state: result.ok ? 'CONFIGURATION_REQUIRED' : 'ERROR' },
@@ -1398,7 +1415,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       return true;
     }
 
-    getServerTestResult({ serverUrl: process.env.SERVER_URL || `http://${host}:${port}`, apiBase }).then((result) => {
+    getServerTestResult({ serverUrl: process.env.SERVER_URL || resolveRequestOrigin(req, host, port), apiBase }, req).then((result) => {
       sendJson(res, 200, { ok: result.ok, result });
     }).catch((error) => {
       sendJson(res, 500, { ok: false, code: 'SERVER_TEST_FAILED', message: error.message || 'Server test failed.' });

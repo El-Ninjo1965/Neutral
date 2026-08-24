@@ -11,8 +11,13 @@
     'use strict';
 
     const getRuntimeOrigin = () => {
-        if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
-            return window.location.origin;
+        if (typeof window !== 'undefined' && window.location) {
+            if (window.location.origin && window.location.origin !== 'null') {
+                return window.location.origin;
+            }
+            if (window.location.protocol && window.location.hostname) {
+                return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
+            }
         }
         return 'http://localhost';
     };

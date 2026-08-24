@@ -91,6 +91,7 @@ Aktueller Fix – Setup-ENV-Priorität
 * Der Fix in `server/bootstrap/server.js` setzt nun die Priorität: `runtime ENV` > `persisted setup-state` > `defaults`.
 * `password`, `pass`, `secret`, `token`, `apiKey` und ähnliche sensible Felder werden vor dem Versand an das Frontend entfernt; nur die nicht-sensiblen DB-Einstellungen verbleiben in `configuration.database` und `databaseState`.
 * Die Formfelder im First-Run-Setup nutzen damit jetzt die echten Runtime-Werte, z. B. `DB_TYPE`/`MYSQL_*`, statt veralteter persistierter Werte wie `indexeddb`/`CoreDB`.
+* Nach dem Abschluss der Setup-/Bootstrap-Prüfung wurde die Rückfalllogik auf echte Request-/Origin-Daten aus `x-forwarded-*` bzw. `window.location.origin` erweitert, damit der reale Host nicht mehr versehentlich auf lokale `localhost`-Fallbacks führt.
 
 Verbindliche GitHub-Synchronisationsregel
 
