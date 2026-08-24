@@ -33,16 +33,42 @@ const resolveProjectRoot = () => {
 
 const loadDotEnv = () => {
   const projectRoot = resolveProjectRoot();
-  const candidates = [
-    path.join(projectRoot, '.env'),
-    path.join(projectRoot, '.env.local'),
-    path.join(process.cwd(), '.env')
-  ];
+  const candidateRoots = [
+    projectRoot,
+    process.cwd(),
+    '/home/web1819',
+    '/home/web1819/public_html',
+    '/home/web1819/public_html/index/app/neutral',
+    path.resolve(projectRoot, '..'),
+    path.resolve(projectRoot, '../..')
+  ].filter(Boolean);
 
+  const candidates = [];
+  for (const root of candidateRoots) {
+    const normalized = path.resolve(root);
+    candidates.push(
+      path.join(normalized, '.env'),
+      path.join(normalized, '.env.local'),
+      path.join(normalized, '.env.production'),
+      path.join(normalized, '.env.development'),
+      path.join(normalized, '.env.deploy')
+    );
+  }
+
+  candidates.push(
+    '/home/web1819/.env',
+    '/home/web1819/public_html/.env',
+    '/home/web1819/public_html/index/app/neutral/.env',
+    path.join(process.cwd(), '.env')
+  );
+
+  const seen = new Set();
   for (const filePath of candidates) {
-    if (!filePath || !fs.existsSync(filePath)) {
+    if (!filePath || seen.has(filePath) || !fs.existsSync(filePath)) {
       continue;
     }
+    seen.add(filePath);
+
     const content = fs.readFileSync(filePath, 'utf8');
     for (const rawLine of content.split(/\r?\n/)) {
       const line = rawLine.trim();

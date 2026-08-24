@@ -510,7 +510,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         <input id="envDbPort" type="hidden" value="<?= htmlspecialchars((string) $dbPort, ENT_QUOTES, 'UTF-8') ?>" />
         <input id="envDbName" type="hidden" value="<?= htmlspecialchars((string) $dbName, ENT_QUOTES, 'UTF-8') ?>" />
         <input id="envDbUser" type="hidden" value="<?= htmlspecialchars((string) $dbUser, ENT_QUOTES, 'UTF-8') ?>" />
-        <input id="envDbPassword" type="hidden" value="<?= htmlspecialchars((string) $dbPassword, ENT_QUOTES, 'UTF-8') ?>" />
         <input id="envDbUrl" type="hidden" value="<?= htmlspecialchars((string) $dbUrl, ENT_QUOTES, 'UTF-8') ?>" />
 
         <div class="actions">
@@ -706,8 +705,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
             host: setupReady ? getHiddenValue('envDbHost', '127.0.0.1') : (document.getElementById('dbHost')?.value || '127.0.0.1'),
             port: setupReady ? getHiddenValue('envDbPort', '3306') : (document.getElementById('dbPort')?.value || '3306'),
             name: setupReady ? getHiddenValue('envDbName', '') : (document.getElementById('dbName')?.value || ''),
-            username: setupReady ? getHiddenValue('envDbUser', '') : (document.getElementById('dbUser')?.value || ''),
-            password: setupReady ? getHiddenValue('envDbPassword', '') : (document.getElementById('dbPassword')?.value || '')
+            username: setupReady ? getHiddenValue('envDbUser', '') : (document.getElementById('dbUser')?.value || '')
           },
           dbUrl: setupReady ? getHiddenValue('envDbUrl', '') : (document.getElementById('dbUrl')?.value || '')
         });
@@ -729,8 +727,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
                 host: config.database.host,
                 port: config.database.port,
                 name: config.database.name,
-                username: config.database.username,
-                password: config.database.password
+                username: config.database.username
               }
             },
             databaseState: {
@@ -739,8 +736,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
               host: config.database.host,
               port: config.database.port,
               name: config.database.name,
-              username: config.database.username,
-              password: config.database.password
+              username: config.database.username
             },
             bootstrapState: {
               configured: true,

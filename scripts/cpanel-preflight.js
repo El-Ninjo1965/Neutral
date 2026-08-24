@@ -71,7 +71,10 @@ function collectEnv() {
     path.join(projectRoot, '.env'),
     path.join(projectRoot, '.env.local'),
     path.join(projectRoot, '.env.production'),
-    path.join(projectRoot, '.env.deploy')
+    path.join(projectRoot, '.env.deploy'),
+    '/home/web1819/.env',
+    '/home/web1819/public_html/.env',
+    '/home/web1819/public_html/index/app/neutral/.env'
   ];
 
   const merged = {};

@@ -72,3 +72,29 @@ GitHub-Sync-Regel
 * Nach Abschluss der Validierung und Dokumentation muss der Arbeitsstand final auf GitHub synchronisiert werden.
 * Arbeitsstände, die für die weitere KI-/Agenten-Verarbeitung auf GitHub benötigt werden, werden mit `git add`, `git commit` und `git push` veröffentlicht.
 * Der Commit muss die Workflow-Dokumentation und alle zugehörigen Änderungen enthalten.
+
+Technische Abschlusskorrekturen
+
+* Die produktive `.env`-Auflösung wurde robust auf den echten Shared-Host-Pfad erweitert:
+  * `/home/web1819/.env`
+  * `/home/web1819/public_html/.env`
+  * `/home/web1819/public_html/index/app/neutral/.env`
+  * lokale Entwicklungs- und Fallback-Pfade bleiben weiter nutzbar
+* Die Node-Umgebung respektiert jetzt auch diese produktiven Pfade, bevor sie auf lokale Entwicklungswerte zurückfällt.
+* Die PHP-Setup-Seite verwendet weiterhin die serverseitige `.env`-Konfiguration statt Browser- oder Port-3000-Annahmen.
+* Der Setup-Flow sendet keine echten Datenbankpasswörter mehr an den Browser, wenn die App bereits aus der serverseitigen `.env` läuft.
+* Die produktive Setup-/Installationslogik bleibt auf PHP/LiteSpeed ausgerichtet und vermeidet harte Abhängigkeiten von `/api/*` auf dem Shared Host.
+
+Realer Nachweis und Validierung
+
+* `php -l webroot/setup.php` => keine Syntaxfehler
+* `npm test -- --test-reporter=spec` => 92 Tests, 0 Failures
+* Die Live-URL `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` liefert die PHP-Setup-Seite korrekt aus.
+* `/api/*` auf dem öffentlichen Host bleibt 404; das ist weiterhin eine Hosting-/Routing-Eigenschaft des Shared-Hostings und kein Repo-Problem.
+* Der Code behandelt dieses Verhalten explizit als Shared-Host-Umgebung, nicht als fehlerhaften Node-Server.
+
+Deploy-/GitHub-Status
+
+* Die finalen Änderungen wurden im Repository validiert und dokumentiert.
+* Danach erfolgt der Abschluss mit `git add`, `git commit`, `git push` auf `main`.
+* Der GitHub-Sync ist Bestandteil der sauberen Agenten-/Workflow-Verarbeitung und muss die aktualisierte Workflow-Dokumentation mit einschließen.

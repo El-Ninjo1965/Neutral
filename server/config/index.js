@@ -62,13 +62,38 @@ const loadDotEnvFile = (filePath) => {
 
 const ensureRuntimeEnv = () => {
   const projectRoot = resolveProjectRoot();
-  const candidateFiles = [
-    path.join(projectRoot, '.env'),
-    path.join(projectRoot, '.env.local'),
-    path.join(projectRoot, '.env.production'),
-    path.join(projectRoot, '.env.development'),
+  const candidateRoots = [
+    projectRoot,
+    process.cwd(),
+    '/home/web1819',
+    '/home/web1819/public_html',
+    '/home/web1819/public_html/index/app/neutral',
+    path.resolve(projectRoot, '..'),
+    path.resolve(projectRoot, '../..')
+  ].filter(Boolean);
+
+  const candidateFiles = [];
+  for (const root of candidateRoots) {
+    const normalized = path.resolve(root);
+    if (!normalized || normalized.includes('node_modules')) {
+      continue;
+    }
+
+    candidateFiles.push(
+      path.join(normalized, '.env'),
+      path.join(normalized, '.env.local'),
+      path.join(normalized, '.env.production'),
+      path.join(normalized, '.env.development'),
+      path.join(normalized, '.env.deploy')
+    );
+  }
+
+  candidateFiles.push(
+    '/home/web1819/.env',
+    '/home/web1819/public_html/.env',
+    '/home/web1819/public_html/index/app/neutral/.env',
     path.join(process.cwd(), '.env')
-  ];
+  );
 
   for (const filePath of candidateFiles) {
     if (filePath && !filePath.includes('node_modules')) {
