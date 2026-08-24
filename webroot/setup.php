@@ -68,6 +68,25 @@ function writeEnvFile($filePath, array $values) {
     return @file_put_contents($filePath, $content, LOCK_EX) !== false;
 }
 
+function writeSetupLog($message, array $context = []) {
+    $projectRoot = dirname(__DIR__);
+    $logDir = $projectRoot . '/server/runtime';
+    if (!is_dir($logDir) && !@mkdir($logDir, 0777, true) && !is_dir($logDir)) {
+        return false;
+    }
+
+    $payload = [
+        'timestamp' => gmdate('c'),
+        'message' => (string) $message,
+    ];
+    if (!empty($context)) {
+        $payload['context'] = $context;
+    }
+
+    $line = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    return @file_put_contents($logDir . '/setup-debug.log', $line, FILE_APPEND | LOCK_EX) !== false;
+}
+
 function resolveRuntimeEnvFile() {
     $projectRootCandidates = [];
     $projectRoot = dirname(__DIR__);
@@ -188,6 +207,20 @@ $env = readEnvFile($envFile);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post = $_POST;
+
+    $serverUrl = trim((string) ($post['serverUrl'] ?? $env['SERVER_URL'] ?? $env['PUBLIC_URL'] ?? $env['BASE_URL'] ?? resolveRuntimeServerUrl($env, 'http://localhost')));
+    if ($serverUrl !== '') {
+        $env['SERVER_URL'] = $serverUrl;
+        $env['PUBLIC_URL'] = $serverUrl;
+        $env['BASE_URL'] = $serverUrl;
+    }
+
+    $apiBase = trim((string) ($post['apiBase'] ?? $env['API_BASE'] ?? '/api')) ?: '/api';
+    $env['API_BASE'] = $apiBase;
+    $env['APP_ID'] = trim((string) ($post['appId'] ?? $env['APP_ID'] ?? 'neutral-app')) ?: 'neutral-app';
+    $env['APP_NAME'] = trim((string) ($post['appName'] ?? $env['APP_NAME'] ?? 'Neutral Platform')) ?: 'Neutral Platform';
+    $env['HOST'] = trim((string) ($post['host'] ?? $env['HOST'] ?? '0.0.0.0')) ?: '0.0.0.0';
+    $env['PORT'] = trim((string) ($post['port'] ?? $env['PORT'] ?? '3000')) ?: '3000';
     $env['DB_TYPE'] = trim((string) ($post['dbType'] ?? $env['DB_TYPE'] ?? 'mysql')) ?: ($env['DB_TYPE'] ?? 'mysql');
     $env['DB_HOST'] = trim((string) ($post['dbHost'] ?? $env['DB_HOST'] ?? '127.0.0.1')) ?: ($env['DB_HOST'] ?? '127.0.0.1');
     $env['DB_PORT'] = trim((string) ($post['dbPort'] ?? $env['DB_PORT'] ?? '3306')) ?: ($env['DB_PORT'] ?? '3306');
@@ -200,8 +233,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dbUrl = trim((string) ($post['dbUrl'] ?? $env['DB_URL'] ?? ''));
     if ($dbUrl !== '') {
         $env['DB_URL'] = $dbUrl;
+        $env['DATABASE_URL'] = $dbUrl;
     }
-    writeEnvFile($envFile, $env);
+
+    if (!writeEnvFile($envFile, $env)) {
+        writeSetupLog('setup.php writeEnvFile failed', [
+            'envFile' => $envFile,
+            'serverUrl' => $serverUrl,
+            'apiBase' => $apiBase,
+            'dbHost' => $env['DB_HOST'] ?? null,
+            'dbName' => $env['DB_NAME'] ?? null,
+            'dbUser' => $env['DB_USER'] ?? null,
+        ]);
+    }
 }
 
 $dbType = $env['DB_TYPE'] ?? $env['MYSQL_TYPE'] ?? 'mysql';
@@ -374,6 +418,7 @@ $dbUrl = buildDatabaseUrlFromEnv($env);
           <button type="submit">Save configuration</button>
           <button type="button" class="secondary" id="testServerBtn">Test server</button>
           <button type="button" class="secondary" id="testDatabaseBtn">Test database</button>
+          <button type="button" id="installNowBtn">Install now</button>
           <button type="button" id="activateSystemBtn">Activate system</button>
         </div>
       </form>
@@ -456,6 +501,75 @@ $dbUrl = buildDatabaseUrlFromEnv($env);
             ? base.replace(/\/+$/, '')
             : `${getConfiguredServerUrl().replace(/\/+$/, '')}${base.startsWith('/') ? base : `/${base}`}`;
           return `${baseUrl.replace(/\/+$/, '')}${normalizedEndpoint}`;
+        };
+
+        const installSetup = async ({ silent = false } = {}) => {
+          const payload = {
+            appId: document.getElementById('appId').value || 'neutral-app',
+            appName: document.getElementById('appName').value || 'Neutral Platform',
+            serverUrl: document.getElementById('serverUrl').value || getRuntimeOrigin(),
+            apiBase: document.getElementById('apiBase').value || '/api',
+            host: window.location && window.location.hostname ? window.location.hostname : '0.0.0.0',
+            port: window.location && window.location.port ? window.location.port : '3000',
+            configuration: {
+              serverUrl: document.getElementById('serverUrl').value || getRuntimeOrigin(),
+              apiBase: document.getElementById('apiBase').value || '/api',
+              database: {
+                type: document.getElementById('dbType').value || 'mysql',
+                host: document.getElementById('dbHost').value || '127.0.0.1',
+                port: document.getElementById('dbPort').value || '3306',
+                name: document.getElementById('dbName').value || '',
+                username: document.getElementById('dbUser').value || '',
+                password: document.getElementById('dbPassword').value || ''
+              }
+            },
+            databaseState: {
+              configured: true,
+              type: document.getElementById('dbType').value || 'mysql',
+              host: document.getElementById('dbHost').value || '127.0.0.1',
+              port: document.getElementById('dbPort').value || '3306',
+              name: document.getElementById('dbName').value || '',
+              username: document.getElementById('dbUser').value || '',
+              password: document.getElementById('dbPassword').value || ''
+            },
+            bootstrapState: {
+              configured: true,
+              enabled: true,
+              username: 'Developer',
+              displayId: 'USR-000001',
+              role: 'developer'
+            },
+            installation: {
+              active: true,
+              state: 'ACTIVE'
+            }
+          };
+
+          if (!silent) {
+            setStatus('Installing configuration and activating system…');
+          }
+
+          const saveResponse = await fetch(buildApiUrl('/setup'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const saveResult = await saveResponse.json().catch(() => ({}));
+          if (!saveResponse.ok) {
+            throw new Error((saveResult && saveResult.message) || 'Setup could not be saved.');
+          }
+
+          const activateResponse = await fetch(buildApiUrl('/setup/activate'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentStep: 'runtime', message: 'Installation activated.' })
+          });
+          const activateResult = await activateResponse.json().catch(() => ({}));
+          if (!activateResponse.ok) {
+            throw new Error((activateResult && activateResult.message) || 'Activation failed.');
+          }
+
+          return { ok: true, message: 'Installation completed successfully.' };
         };
 
         const saveLocalDeveloperAccount = async (username, password) => {
@@ -590,20 +704,24 @@ $dbUrl = buildDatabaseUrlFromEnv($env);
           }
         });
 
+        document.getElementById('installNowBtn').addEventListener('click', async () => {
+          try {
+            const result = await installSetup({ silent: false });
+            setStatus(result && result.message ? result.message : 'Installation completed successfully.', 'success');
+            setTimeout(() => { window.location.href = 'admin.html'; }, 600);
+          } catch (error) {
+            console.error('Install now failed', error);
+            setStatus(error && error.message ? error.message : 'Installation failed.', 'error');
+          }
+        });
+
         document.getElementById('activateSystemBtn').addEventListener('click', async () => {
           try {
-            const response = await fetch(buildApiUrl('/setup/activate'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ currentStep: 'runtime', message: 'Installation activated.' })
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) {
-              throw new Error((result && result.message) || 'Activation failed.');
-            }
-            setStatus('System activated successfully.', 'success');
-            setTimeout(() => { window.location.href = 'admin.html'; }, 500);
+            const result = await installSetup({ silent: false });
+            setStatus(result && result.message ? result.message : 'System activated successfully.', 'success');
+            setTimeout(() => { window.location.href = 'admin.html'; }, 600);
           } catch (error) {
+            console.error('Activate system failed', error);
             setStatus(error && error.message ? error.message : 'Activation failed.', 'error');
           }
         });

@@ -92,6 +92,7 @@ Aktueller Fix – Setup-ENV-Priorität
 * `password`, `pass`, `secret`, `token`, `apiKey` und ähnliche sensible Felder werden vor dem Versand an das Frontend entfernt; nur die nicht-sensiblen DB-Einstellungen verbleiben in `configuration.database` und `databaseState`.
 * Die Formfelder im First-Run-Setup nutzen damit jetzt die echten Runtime-Werte, z. B. `DB_TYPE`/`MYSQL_*`, statt veralteter persistierter Werte wie `indexeddb`/`CoreDB`.
 * Nach dem Abschluss der Setup-/Bootstrap-Prüfung wurde die Rückfalllogik auf echte Request-/Origin-Daten aus `x-forwarded-*` bzw. `window.location.origin` erweitert, damit der reale Host nicht mehr versehentlich auf lokale `localhost`-Fallbacks führt.
+* Die PHP-Setup-Seite schreibt nun die relevanten Konfigurationswerte inklusive DB-Password in die Runtime-`.env`, aktiviert die Installation direkt über den "Install now"-Pfad und protokolliert Setup-/Installationsfehler in `server/runtime/setup-debug.log`, damit reale Fehler reproduzierbar und leichter nachvollziehbar sind.
 
 Verbindliche GitHub-Synchronisationsregel
 

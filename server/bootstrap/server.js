@@ -147,6 +147,24 @@ const setCorsHeaders = (res) => {
   res.setHeader('Vary', 'Origin');
 };
 
+const appendSetupLog = (message, context = {}) => {
+  try {
+    const logDir = path.join(rootDir, 'server', 'runtime');
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const entry = {
+      timestamp: new Date().toISOString(),
+      message: String(message || 'setup event'),
+      ...(context && typeof context === 'object' ? { context } : { context: { value: context } })
+    };
+    fs.appendFileSync(path.join(logDir, 'setup-debug.log'), `${JSON.stringify(entry)}\n`, { encoding: 'utf8' });
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const sendJson = (res, statusCode, payload) => {
   setCorsHeaders(res);
   res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1202,6 +1220,28 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     }
   }
 
+  if (pathname === `${apiBase}/setup/log` || pathname === `${apiBase}/admin/setup/log`) {
+    if (req && req.method === 'POST') {
+      readJsonBody(req)
+        .then((payload) => {
+          const message = payload && payload.message ? String(payload.message) : 'setup event';
+          appendSetupLog(message, {
+            step: payload && payload.step ? payload.step : 'unknown',
+            details: payload && payload.details ? payload.details : payload || {},
+            requestPath: pathname,
+            method: req.method
+          });
+          sendJson(res, 200, { ok: true, logged: true });
+        })
+        .catch((error) => {
+          sendJson(res, 400, { ok: false, code: 'LOG_FAILED', message: error.message || 'Setup log request failed.' });
+        });
+      return true;
+    }
+    sendJson(res, 405, { ok: false, code: 'METHOD_NOT_ALLOWED', message: 'Use POST to log setup events.' });
+    return true;
+  }
+
   if (pathname === `${apiBase}/setup` || pathname === `${apiBase}/admin/setup` || pathname === `${apiBase}/setup/status` || pathname === `${apiBase}/admin/setup/status` || pathname === `${apiBase}/install/status`) {
     if (req && req.method === 'POST') {
       if (!requireSetupBootstrapAccess(req, res)) {
@@ -1229,6 +1269,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
           const validationErrors = inputValidation.validateSetupPayload(sanitizedPayload);
           if (validationErrors.length > 0) {
+            appendSetupLog('Setup payload validation failed', { validationErrors, payload: sanitizedPayload });
             sendJson(res, 400, { ok: false, code: 'INVALID_PAYLOAD', errors: validationErrors });
             return;
           }
@@ -1315,6 +1356,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           });
         })
         .catch((error) => {
+          appendSetupLog('Setup payload processing failed', { message: error.message || 'Setup payload invalid.', stack: error && error.stack ? error.stack : undefined });
           sendJson(res, 400, { ok: false, code: 'INVALID_SETUP', message: error.message || 'Setup payload invalid.' });
         });
       return true;
@@ -1346,6 +1388,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           });
 
           if (result && result.ok === false) {
+            appendSetupLog('Setup activation rejected', { result });
             sendJson(res, 409, result);
             return;
           }
@@ -1357,6 +1400,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           });
         })
         .catch((error) => {
+          appendSetupLog('Setup activation failed', { message: error.message || 'Activation payload invalid.', stack: error && error.stack ? error.stack : undefined });
           sendJson(res, 400, { ok: false, code: 'INVALID_SETUP', message: error.message || 'Activation payload invalid.' });
         });
       return true;
@@ -1403,9 +1447,13 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
             updatedAt: new Date().toISOString()
           };
           persistenceService.saveSetupState(nextState);
+          if (!result.ok) {
+            appendSetupLog('Server test failed', { payload, result });
+          }
           sendJson(res, 200, { ok: result.ok, result });
         })
         .catch((error) => {
+          appendSetupLog('Server test request failed', { message: error.message || 'Server test failed.', payload });
           sendJson(res, 400, { ok: false, code: 'SERVER_TEST_FAILED', message: error.message || 'Server test failed.' });
         });
       return true;
@@ -1447,6 +1495,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
           const validationErrors = inputValidation.validateDatabasePayload(effectivePayload);
           if (validationErrors.length > 0) {
+            appendSetupLog('Database payload validation failed', { validationErrors, payload: effectivePayload });
             sendJson(res, 400, { ok: false, code: 'INVALID_PAYLOAD', errors: validationErrors });
             return;
           }
@@ -1507,6 +1556,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           sendJson(res, 200, { ok: status.ok, status: status.status, database: status, setup: sanitizeSetupStateForClient(persistenceService.loadSetupState()) });
         })
         .catch((error) => {
+          appendSetupLog('Database request failed', { message: error.message || 'Database configuration invalid.', stack: error && error.stack ? error.stack : undefined });
           sendJson(res, 400, { ok: false, code: 'INVALID_DATABASE', message: error.message || 'Database configuration invalid.' });
         });
       return true;
