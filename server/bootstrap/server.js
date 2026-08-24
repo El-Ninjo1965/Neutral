@@ -194,15 +194,28 @@ const stripSensitiveDatabaseValues = (value = {}) => {
 
 const getPublicDatabaseConfig = (snapshot = {}) => {
   const runtimeConfig = readRuntimeDatabaseConfig();
-  const persistedDatabase = (snapshot && snapshot.configuration && snapshot.configuration.database) || (snapshot && snapshot.database) || {};
-  const persistedDatabaseState = (snapshot && snapshot.databaseState) || {};
-  const merged = {
-    ...stripSensitiveDatabaseValues(runtimeConfig),
-    ...stripSensitiveDatabaseValues(persistedDatabase),
-    ...stripSensitiveDatabaseValues(persistedDatabaseState)
+  const persistedDatabase = stripSensitiveDatabaseValues((snapshot && snapshot.configuration && snapshot.configuration.database) || (snapshot && snapshot.database) || {});
+  const persistedDatabaseState = stripSensitiveDatabaseValues((snapshot && snapshot.databaseState) || {});
+  const fallbackDatabase = {
+    ...persistedDatabase,
+    ...persistedDatabaseState
   };
 
-  const source = runtimeConfig.configured ? 'env' : 'setup-state';
+  const runtimePriority = runtimeConfig.configured ? runtimeConfig : {};
+  const merged = {
+    ...fallbackDatabase,
+    ...stripSensitiveDatabaseValues(runtimePriority),
+    type: runtimePriority.type || fallbackDatabase.type || 'mysql',
+    host: runtimePriority.host || fallbackDatabase.host || '127.0.0.1',
+    port: Number.isFinite(Number(runtimePriority.port))
+      ? Number(runtimePriority.port)
+      : (Number.isFinite(Number(fallbackDatabase.port)) ? Number(fallbackDatabase.port) : 3306),
+    name: runtimePriority.name || fallbackDatabase.name || '',
+    username: runtimePriority.username || fallbackDatabase.username || '',
+    url: runtimePriority.url || fallbackDatabase.url || ''
+  };
+
+  const source = runtimeConfig.configured ? 'env' : (fallbackDatabase.type || fallbackDatabase.host || fallbackDatabase.name || fallbackDatabase.username || fallbackDatabase.url || persistedDatabaseState.type || persistedDatabaseState.host || persistedDatabaseState.name || persistedDatabaseState.username || persistedDatabaseState.url) ? 'setup-state' : 'default';
   const configured = !!(
     merged.type ||
     merged.host ||
@@ -210,7 +223,12 @@ const getPublicDatabaseConfig = (snapshot = {}) => {
     merged.name ||
     merged.username ||
     merged.url ||
-    runtimeConfig.configured
+    runtimeConfig.configured ||
+    fallbackDatabase.type ||
+    fallbackDatabase.host ||
+    fallbackDatabase.name ||
+    fallbackDatabase.username ||
+    fallbackDatabase.url
   );
 
   return {
@@ -220,8 +238,8 @@ const getPublicDatabaseConfig = (snapshot = {}) => {
     passwordPresent: false,
     username: merged.username || '',
     host: merged.host || '',
-    port: Number.isFinite(Number(merged.port)) ? Number(merged.port) : (runtimeConfig.port || 3306),
-    type: merged.type || runtimeConfig.type || 'mysql',
+    port: Number.isFinite(Number(merged.port)) ? Number(merged.port) : 3306,
+    type: merged.type || 'mysql',
     name: merged.name || '',
     url: merged.url || ''
   };
@@ -249,7 +267,10 @@ const sanitizeSetupStateForClient = (snapshot = {}) => {
     appName: state.appName,
     serverUrl,
     apiBase,
-    database: { ...publicDatabase, ...(state.configuration && state.configuration.database ? state.configuration.database : {}) }
+    database: {
+      ...(state.configuration && state.configuration.database ? stripSensitiveDatabaseValues(state.configuration.database) : {}),
+      ...publicDatabase
+    }
   };
   state.serverState = {
     ...(runtimeDefaults.serverState || {}),
@@ -257,13 +278,15 @@ const sanitizeSetupStateForClient = (snapshot = {}) => {
     url: serverUrl,
     apiBase
   };
+  state.database = {
+    ...stripSensitiveDatabaseValues(state.database || {}),
+    ...publicDatabase
+  };
   state.databaseState = {
+    ...stripSensitiveDatabaseValues(state.databaseState || {}),
     ...publicDatabase,
-    ...(state.databaseState || {}),
     source: publicDatabase.source || (state.databaseState && state.databaseState.source) || 'setup-state'
   };
-  state.database = { ...stripSensitiveDatabaseValues(state.database || {}), ...publicDatabase };
-  state.databaseState = { ...stripSensitiveDatabaseValues(state.databaseState || {}), ...publicDatabase };
   state.discovery = {
     app: {
       id: state.appId,

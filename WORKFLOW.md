@@ -85,6 +85,13 @@ Aktuelle Betriebs- und Deploy-Schritte
 * Die Daten für FTP und MySQL wurden in der lokalen Umgebung hinterlegt und sind in diesem Projekt-Teil ausdrücklich für den GitHub-Read-Zugriff freigegeben. Die GitHub-Repo-Synchronisierung ist Teil des letzten Arbeitsgangs.
 * Für lokale Test- und Bootstrap-Flows bleibt der Standardtoken `test-token` zusätzlich zu technisch konfigurierten Host-/Umgebungstokens akzeptiert. Dadurch bleiben reale Produktivtokens wirksam, ohne dass bestehende lokale Auth- und Session-Validierungen blockiert werden.
 
+Aktueller Fix – Setup-ENV-Priorität
+
+* Die Ursache lag in der Reihenfolge des Merge- bzw. Sanitizing-Schritts beim Aufbau des Server-Setup-Snapshots: Persistierte Setup-Werte konnten Laufzeitwerte aus `.env`/`process.env` überschreiben.
+* Der Fix in `server/bootstrap/server.js` setzt nun die Priorität: `runtime ENV` > `persisted setup-state` > `defaults`.
+* `password`, `pass`, `secret`, `token`, `apiKey` und ähnliche sensible Felder werden vor dem Versand an das Frontend entfernt; nur die nicht-sensiblen DB-Einstellungen verbleiben in `configuration.database` und `databaseState`.
+* Die Formfelder im First-Run-Setup nutzen damit jetzt die echten Runtime-Werte, z. B. `DB_TYPE`/`MYSQL_*`, statt veralteter persistierter Werte wie `indexeddb`/`CoreDB`.
+
 Verbindliche GitHub-Synchronisationsregel
 
 * GitHub ist die zentrale und verbindliche Quelle des Projekts.

@@ -681,6 +681,103 @@ test('discovers runtime setup defaults from the real environment and config', ()
   }
 });
 
+test('prefers runtime env database config over stale persisted setup state in setup snapshot', async () => {
+  cleanupRuntimeState();
+  const runtime = Framework;
+  const originalEnv = { ...process.env };
+  const savedSetupState = {
+    status: 'CONFIGURATION_REQUIRED',
+    configuration: {
+      appId: 'neutral-app',
+      appName: 'Neutral App',
+      serverUrl: 'http://stale.example:3000',
+      apiBase: '/api',
+      database: {
+        type: 'indexeddb',
+        host: 'stale-db.internal',
+        port: 9000,
+        name: 'CoreDB',
+        username: 'stale-user',
+        password: 'stale-secret'
+      }
+    },
+    databaseState: {
+      type: 'indexeddb',
+      host: 'stale-db.internal',
+      port: 9000,
+      name: 'CoreDB',
+      username: 'stale-user',
+      password: 'stale-secret',
+      source: 'setup-state'
+    }
+  };
+
+  runtime.setupState = savedSetupState;
+  const app = ServerBootstrap.createServer();
+
+  try {
+    process.env.DB_TYPE = 'mysql';
+    process.env.MYSQL_HOST = 'db.internal';
+    process.env.MYSQL_PORT = '3307';
+    process.env.MYSQL_DATABASE = 'neutral_prod';
+    process.env.MYSQL_USER = 'neutral_user';
+    process.env.MYSQL_PASSWORD = 'server-secret';
+    process.env.DB_URL = 'mysql://neutral_user@db.internal:3307/neutral_prod';
+
+    await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve));
+    const port = app.address().port;
+
+    const requestJson = (method, pathname) => new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port,
+        path: pathname,
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-framework-role': 'admin',
+          'x-admin-access-token': 'test-token'
+        }
+      }, (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            resolve({ statusCode: res.statusCode, body: data ? JSON.parse(data) : {} });
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.end();
+    });
+
+    const snapshot = await requestJson('GET', '/api/setup/status');
+    assert.equal(snapshot.statusCode, 200);
+    assert.equal(snapshot.body.setup.configuration.database.type, 'mysql');
+    assert.equal(snapshot.body.setup.configuration.database.host, 'db.internal');
+    assert.equal(snapshot.body.setup.configuration.database.port, 3307);
+    assert.equal(snapshot.body.setup.configuration.database.name, 'neutral_prod');
+    assert.equal(snapshot.body.setup.configuration.database.username, 'neutral_user');
+    assert.equal(snapshot.body.setup.configuration.database.password, undefined);
+    assert.equal(snapshot.body.setup.databaseState.source, 'env');
+  } finally {
+    await new Promise((resolve) => app.close(resolve));
+    for (const key of Object.keys(process.env)) {
+      if (!(key in originalEnv)) {
+        delete process.env[key];
+      }
+    }
+    for (const key of Object.keys(originalEnv)) {
+      process.env[key] = originalEnv[key];
+    }
+    runtime.setupState = null;
+  }
+});
+
 test('provides diagnostic summary', () => {
   cleanupRuntimeState();
   const runtime = Framework;
