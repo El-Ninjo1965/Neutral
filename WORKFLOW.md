@@ -76,13 +76,29 @@ Aktuelle Betriebs- und Deploy-Schritte
 * Für den produktiven Server-Deploy gilt weiterhin die in `server.md` definierte Allowlist; die entsprechende Logik bleibt in `scripts/manual-ftps-deploy.js` erhalten und wurde nicht willkürlich durch einen Full-Repo-Upload ersetzt.
 * Der manuelle FTPS-Deploy wird über `scripts/manual-ftps-deploy.js` verwaltet. Der Script-Aufruf ist `npm run deploy:manual` bzw. `node scripts/manual-ftps-deploy.js --dry-run` für die Vorschau ohne Upload.
 * Der Deploy setzt nur neue oder aktualisierte Dateien per `lftp mirror -R --only-newer` hoch und respektiert dabei `--exclude-glob .env` sowie `app-node-test`-Ausnahmen.
+* Zusätzlich führt Neutral ein dauerhaftes Deploy-Manifest `.neutral-deploy-manifest.json` mit SHA-256-Prüfsummen und Dateilistenzuordnung für den neutral verwalteten Produktionsbestand. Dadurch kann ein Wechsel zwischen bisher verwaltetem und aktuellem Neutral-Bestand analysiert werden.
+* Beim nächsten Deploy wird der bisherige Neutral-Bestand mit dem aktuellen Neutral-Bestand verglichen. Dateien, die früher durch Neutral verwaltet wurden und heute nicht mehr im aktuellen Produktionsbestand enthalten sind, werden als veraltet erkannt und nur im eindeutig verwalteten Neutral-Bestand gelöscht. Fremde Serverdateien, die nicht über Neutral verwaltet wurden, bleiben unangetastet.
+* Der bestehende Dry-Run muss vor jeder Bereinigung exakt UPLOAD/UPDATE/DELETE/KEEP anzeigen und darf keinerlei Serveränderung durchführen.
 * Der Server-Start erfolgt über `npm start` bzw. `node scripts/neutral-start.js`; der lokale Start wurde mit der `.env`-Konfiguration validiert.
 * Nach dem Start wurde die Health-Route `http://127.0.0.1:3000/health` geprüft. Der erwartete Status ist `200 OK` mit einem JSON-Body, das `ok: true` und `status: "healthy"` enthält.
 * Die Daten für FTP und MySQL wurden in der lokalen Umgebung hinterlegt und sind in diesem Projekt-Teil ausdrücklich für den GitHub-Read-Zugriff freigegeben. Die GitHub-Repo-Synchronisierung ist Teil des letzten Arbeitsgangs.
 
+Verbindliche GitHub-Synchronisationsregel
+
+* GitHub ist die zentrale und verbindliche Quelle des Projekts.
+* Nach jeder abgeschlossenen Arbeitseinheit muss der aktuelle Codespace-/Arbeitsstand vollständig mit GitHub synchronisiert werden.
+* Verbindlicher Abschluss jeder abgeschlossenen Aufgabe: `git status` -> `git add -A` -> `git commit -m "<passende Commit Message>"` -> `git push origin main`.
+* Danach zwingend prüfen: `git status`, `git rev-parse HEAD`, `git ls-remote --heads origin main`.
+* Der lokale HEAD und `origin/main` müssen identisch sein.
+* Es darf nach Abschluss einer Aufgabe kein unbeabsichtigter uncommitted Arbeitsstand zurückbleiben.
+* Jede Änderung an `WORKFLOW.md`, `VISION.md` oder anderen wichtigen Markdown-Dateien muss unmittelbar in einem Commit und auf GitHub landen.
+* WORKFLOW.md darf niemals verändert werden, ohne anschließend GitHub zu aktualisieren.
+* Wenn Commit oder Push technisch fehlschlägt, gilt die Aufgabe noch nicht als abgeschlossen.
+
 Validierungsprotokoll
 
-* `node scripts/manual-ftps-deploy.js --dry-run` läuft erfolgreich und zeigt den erwarteten Staging-Bestand und die Liste der zu synchronisierenden Dateien an.
+* `node scripts/manual-ftps-deploy.js --dry-run` läuft erfolgreich und zeigt den erwarteten Staging-Bestand, Upload-, Update-, Delete- und Keep-Listen an.
+* `node --test --test-concurrency=1 tests/*.test.js` läuft erfolgreich und prüft die Deploy-Logik und die Neutral-Deploy-Manifest-Differenzierung.
 * `curl http://127.0.0.1:3000/health` liefert nach dem Start `HTTP/1.1 200 OK` und das Health-JSON des Neutral-Servers.
 * Dieser Repo-Zustand wird mit ausdrücklicher Freigabe vollständiger GitHub-Synchronisierung gepflegt: Umgebung, Laufzeit- und Konfigurationsdaten werden im Repository hinterlegt, sofern sie Teil des aktuellen Arbeitsstands sind.
 * Vor dem finalen Commit und Push wird die komplette Git-Status-Prüfung und die Prüfung des GitHub-Remote-Status erneut ausgeführt.

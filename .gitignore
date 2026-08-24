@@ -59,9 +59,12 @@ terminal.md
 
 # Runtime setup state
 # Full repository sync is explicitly enabled for this project; runtime state is intentionally included in the working repository.
+server/runtime/
+.deploy-staging/
 
 # Runtime configuration files (persisted by persistence-service)
 # Full repository sync is explicitly enabled for this project; runtime config files remain part of the repository state.
+config/*.json
 
 # Runtime Database Files
 # Schema, migrations and seed files remain tracked.

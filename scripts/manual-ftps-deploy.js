@@ -2,10 +2,12 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
 const envFile = path.join(projectRoot, '.env.deploy');
+const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
 const allowedEntries = [
@@ -65,6 +67,113 @@ function parseEnvFile(filePath) {
   }
 
   return values;
+}
+
+function normalizeManifestPath(filePath) {
+  return String(filePath || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\//, '');
+}
+
+function hashFile(filePath) {
+  const content = fs.readFileSync(filePath);
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function readDeploymentManifest(filePath = manifestFile) {
+  if (!fs.existsSync(filePath)) {
+    return { version: 1, generatedAt: null, files: {} };
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!parsed || typeof parsed !== 'object') {
+      return { version: 1, generatedAt: null, files: {} };
+    }
+
+    const files = parsed.files && typeof parsed.files === 'object' ? parsed.files : {};
+    return {
+      version: Number(parsed.version || 1),
+      generatedAt: parsed.generatedAt || null,
+      files
+    };
+  } catch (error) {
+    return { version: 1, generatedAt: null, files: {} };
+  }
+}
+
+function writeDeploymentManifest(manifest, filePath = manifestFile) {
+  fs.writeFileSync(filePath, JSON.stringify({
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    files: manifest
+  }, null, 2) + '\n');
+}
+
+function collectManifestFiles(dir) {
+  const files = {};
+
+  function walk(currentDir) {
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const fullPath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+
+      const relativePath = normalizeManifestPath(path.relative(dir, fullPath));
+      const fileStat = fs.statSync(fullPath);
+      files[relativePath] = {
+        path: relativePath,
+        hash: hashFile(fullPath),
+        size: fileStat.size
+      };
+    }
+  }
+
+  walk(dir);
+  return files;
+}
+
+function compareDeploymentFiles(previousFiles, currentFiles) {
+  const previousKeys = Object.keys(previousFiles || {});
+  const currentKeys = Object.keys(currentFiles || {});
+
+  const upload = [];
+  const update = [];
+  const deleteCandidates = [];
+  const keep = [];
+
+  for (const key of currentKeys) {
+    if (!previousFiles[key]) {
+      upload.push(key);
+      continue;
+    }
+
+    if (previousFiles[key].hash !== currentFiles[key].hash) {
+      update.push(key);
+      continue;
+    }
+
+    keep.push(key);
+  }
+
+  for (const key of previousKeys) {
+    if (!currentFiles[key]) {
+      deleteCandidates.push(key);
+    }
+  }
+
+  return { upload: upload.sort(), update: update.sort(), deleteCandidates: deleteCandidates.sort(), keep: keep.sort() };
+}
+
+function buildRemoteDeleteTargets(deleteCandidates, ftpTargetDir) {
+  const base = String(ftpTargetDir || '/').replace(/\\/g, '/');
+  const normalizedBase = base === '/' ? '' : base.replace(/\/+$/, '');
+
+  return deleteCandidates.map((fileRelativePath) => {
+    const value = normalizeManifestPath(fileRelativePath);
+    const remotePath = `${normalizedBase}/${value}`.replace(/\/+/g, '/');
+    return remotePath === '' ? '/' : remotePath;
+  });
 }
 
 function getConfig() {
@@ -141,8 +250,11 @@ function ensureLftpInstalled() {
   }
 }
 
-function runManualDeploy(stagingRoot, config) {
+function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], deleteCandidates: [], keep: [] }) {
   ensureLftpInstalled();
+
+  const deleteTargets = buildRemoteDeleteTargets(diff.deleteCandidates, config.FTP_TARGET_DIR);
+  const deleteCommands = deleteTargets.map((target) => `rm -f "${target}"`).join('\n');
 
   const commandScript = [
     'set cmd:fail-exit true',
@@ -153,8 +265,9 @@ function runManualDeploy(stagingRoot, config) {
     'set ssl:verify-certificate no',
     `open -u "${config.FTP_USERNAME}","${config.FTP_PASSWORD}" -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
     `mirror -R --only-newer --verbose --parallel=2 --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** "${stagingRoot}" "${config.FTP_TARGET_DIR}"`,
+    deleteCommands ? deleteCommands : '',
     'bye'
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   const result = spawnSync('lftp', ['-e', commandScript], {
     stdio: 'inherit',
@@ -189,6 +302,9 @@ function main() {
 
   const { stagingRoot, missing } = buildStagingTree();
   const stagedFiles = [];
+  const currentManifestFiles = collectManifestFiles(stagingRoot);
+  const previousManifest = readDeploymentManifest();
+  const diff = compareDeploymentFiles(previousManifest.files || {}, currentManifestFiles);
 
   function walk(dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -203,7 +319,7 @@ function main() {
 
   walk(stagingRoot);
 
-  console.log(JSON.stringify({
+  const output = {
     status: dryRun ? 'DRY_RUN' : 'READY',
     stagingDir: stagingRoot,
     filesQueued: stagedFiles.length,
@@ -211,20 +327,42 @@ function main() {
     missingAllowlistEntries: missing,
     transferTarget: config.FTP_TARGET_DIR || '/',
     ftpProtocol: config.FTP_PROTOCOL || 'ftps',
-    note: dryRun ? 'No upload was executed.' : 'Only new or newer files will be uploaded.'
-  }, null, 2));
+    upload: diff.upload,
+    update: diff.update,
+    delete: diff.deleteCandidates,
+    keep: diff.keep,
+    manifestPath: manifestFile,
+    note: dryRun ? 'Dry run only: no upload or cleanup was executed.' : 'Only new, updated, and obsolete Neutral-managed files are handled in this deploy.'
+  };
+
+  console.log(JSON.stringify(output, null, 2));
 
   if (dryRun) {
     return;
   }
 
-  runManualDeploy(stagingRoot, config);
-  console.log(JSON.stringify({ status: 'OK', uploaded: stagedFiles.length }, null, 2));
+  runManualDeploy(stagingRoot, config, diff);
+  writeDeploymentManifest(currentManifestFiles, manifestFile);
+  console.log(JSON.stringify({ status: 'OK', uploaded: diff.upload.length + diff.update.length, deleted: diff.deleteCandidates.length, kept: diff.keep.length }, null, 2));
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(JSON.stringify({ status: 'ERROR', message: error.message }, null, 2));
-  process.exit(1);
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error(JSON.stringify({ status: 'ERROR', message: error.message }, null, 2));
+    process.exit(1);
+  }
 }
+
+module.exports = {
+  allowedEntries,
+  buildStagingTree,
+  buildRemoteDeleteTargets,
+  collectManifestFiles,
+  compareDeploymentFiles,
+  readDeploymentManifest,
+  writeDeploymentManifest,
+  normalizeManifestPath,
+  getConfig
+};
