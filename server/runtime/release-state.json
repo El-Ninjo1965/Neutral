@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "environment": "development",
+  "status": "maintenance",
+  "maintenanceMode": false,
+  "maintenanceReason": "",
+  "checkedAt": "2026-08-23T10:25:16.372Z",
+  "checks": {
+    "database": {
+      "ok": true,
+      "status": "READY",
+      "message": "Database configuration test passed."
+    },
+    "server": {
+      "ok": true,
+      "status": "ready",
+      "message": "Server configuration is present."
+    },
+    "framework": {
+      "ok": true,
+      "status": "READY",
+      "message": "Server framework loaded."
+    },
+    "security": {
+      "ok": true,
+      "status": "ready",
+      "message": "Security baseline is active."
+    }
+  }
+}

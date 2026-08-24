@@ -1,0 +1,61 @@
+{
+  "roles": [
+    {
+      "id": "role-admin",
+      "name": "admin",
+      "role": "admin",
+      "description": "Full administrative access",
+      "permissions": [
+        "admin.read",
+        "admin.write",
+        "user.read",
+        "user.write",
+        "role.read",
+        "role.write",
+        "app.read",
+        "app.write",
+        "settings.read",
+        "settings.write"
+      ],
+      "createdAt": "2026-08-24T03:43:03.363Z",
+      "updatedAt": "2026-08-24T03:43:03.363Z"
+    },
+    {
+      "id": "role-developer",
+      "name": "developer",
+      "role": "developer",
+      "description": "Developer access with app management",
+      "permissions": [
+        "app.read",
+        "app.write",
+        "user.read",
+        "settings.read"
+      ],
+      "createdAt": "2026-08-24T03:43:03.363Z",
+      "updatedAt": "2026-08-24T03:43:03.363Z"
+    },
+    {
+      "id": "role-user",
+      "name": "user",
+      "role": "user",
+      "description": "Standard user access",
+      "permissions": [
+        "app.read",
+        "settings.read"
+      ],
+      "createdAt": "2026-08-24T03:43:03.363Z",
+      "updatedAt": "2026-08-24T03:43:03.363Z"
+    },
+    {
+      "id": "role-viewer",
+      "name": "viewer",
+      "role": "viewer",
+      "description": "Read-only access",
+      "permissions": [
+        "app.read"
+      ],
+      "createdAt": "2026-08-24T03:43:03.363Z",
+      "updatedAt": "2026-08-24T03:43:03.363Z"
+    }
+  ]
+}

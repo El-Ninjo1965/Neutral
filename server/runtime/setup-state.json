@@ -1,0 +1,83 @@
+{
+  "status": "ACTIVE",
+  "currentStep": "server-runtime",
+  "completedSteps": [],
+  "appId": "neutral-app",
+  "appName": "Neutral App",
+  "selectedApp": null,
+  "configuration": {
+    "serverUrl": "http://127.0.0.1:35763",
+    "apiBase": "/api",
+    "database": {
+      "type": "indexeddb",
+      "name": "CoreDB",
+      "host": "",
+      "port": 3306,
+      "username": "",
+      "url": "",
+      "configured": true,
+      "source": "env"
+    }
+  },
+  "serverState": {
+    "configured": true,
+    "testedAt": "2026-08-23T10:25:16.120Z",
+    "status": "READY_TO_TEST",
+    "reachable": true,
+    "responseTimeMs": 4,
+    "message": "Server reachable.",
+    "url": "http://127.0.0.1:35763",
+    "apiBase": "/api"
+  },
+  "databaseState": {
+    "configured": true,
+    "testedAt": "2026-08-23T10:25:16.124Z",
+    "status": "READY",
+    "reachable": true,
+    "responseTimeMs": 0,
+    "message": "Database configuration test passed.",
+    "type": "indexeddb",
+    "name": "CoreDB",
+    "host": "",
+    "url": "",
+    "port": 3306,
+    "username": ""
+  },
+  "frameworkState": {
+    "initialized": true,
+    "initializedAt": "2026-08-24T04:04:28.805Z",
+    "status": "READY",
+    "message": "Server framework loaded."
+  },
+  "bootstrapState": {
+    "configured": true,
+    "enabled": true,
+    "username": "developer",
+    "displayId": "USR-000001",
+    "role": "developer",
+    "status": "CONFIGURATION_REQUIRED",
+    "message": "Bootstrap configuration saved."
+  },
+  "connections": [],
+  "database": {
+    "type": "indexeddb",
+    "name": "CoreDB",
+    "host": "",
+    "port": 3306,
+    "username": "",
+    "url": "",
+    "configured": true,
+    "source": "env"
+  },
+  "adminAccount": null,
+  "license": null,
+  "installation": {
+    "active": true,
+    "installedAt": "2026-08-23T10:25:16.133Z",
+    "activatedAt": "2026-08-23T10:25:16.133Z",
+    "state": "ACTIVE",
+    "message": "Installation activated."
+  },
+  "updatedAt": "2026-08-24T04:04:28.806Z",
+  "createdAt": "2026-08-23T10:25:16.109Z"
+}

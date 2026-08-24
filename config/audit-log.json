@@ -1,0 +1,94 @@
+{
+  "entries": [
+    {
+      "id": "audit-1787543852765-mxommxmrq",
+      "timestamp": "2026-08-24T03:57:32.765Z",
+      "action": "auth.login.failure",
+      "resource": "auth",
+      "resourceId": "developer",
+      "actor": "developer",
+      "details": {
+        "ip": "127.0.0.1",
+        "attempts": 1
+      },
+      "result": "failure"
+    },
+    {
+      "id": "audit-1787544177795-pyokra16i",
+      "timestamp": "2026-08-24T04:02:57.795Z",
+      "action": "auth.login.failure",
+      "resource": "auth",
+      "resourceId": "admin",
+      "actor": "admin",
+      "details": {
+        "ip": "127.0.0.1",
+        "attempts": 1
+      },
+      "result": "failure"
+    },
+    {
+      "id": "audit-1787544185954-t4uvb6vsw",
+      "timestamp": "2026-08-24T04:03:05.954Z",
+      "action": "auth.login.failure",
+      "resource": "auth",
+      "resourceId": "admin",
+      "actor": "admin",
+      "details": {
+        "ip": "127.0.0.1",
+        "attempts": 2
+      },
+      "result": "failure"
+    },
+    {
+      "id": "audit-1787544208560-imyqrb4ug",
+      "timestamp": "2026-08-24T04:03:28.560Z",
+      "action": "auth.login.failure",
+      "resource": "auth",
+      "resourceId": "admin",
+      "actor": "admin",
+      "details": {
+        "ip": "127.0.0.1",
+        "attempts": 3
+      },
+      "result": "failure"
+    },
+    {
+      "id": "audit-1787544277140-fl5sdsbue",
+      "timestamp": "2026-08-24T04:04:37.140Z",
+      "action": "user.created",
+      "resource": "user",
+      "resourceId": "user-b4505cb9",
+      "actor": "admin",
+      "details": {
+        "username": "admin",
+        "email": "admin@local.test",
+        "role": "admin"
+      },
+      "result": "success"
+    },
+    {
+      "id": "audit-1787544277263-qdl1d5mlt",
+      "timestamp": "2026-08-24T04:04:37.263Z",
+      "action": "auth.login.success",
+      "resource": "auth",
+      "resourceId": "user-b4505cb9",
+      "actor": "admin",
+      "details": {
+        "ip": "127.0.0.1"
+      },
+      "result": "success"
+    },
+    {
+      "id": "audit-1787544285774-slyy5sw69",
+      "timestamp": "2026-08-24T04:04:45.775Z",
+      "action": "auth.login.success",
+      "resource": "auth",
+      "resourceId": "user-b4505cb9",
+      "actor": "admin",
+      "details": {
+        "ip": "127.0.0.1"
+      },
+      "result": "success"
+    }
+  ]
+}

@@ -9,13 +9,10 @@ Thumbs.db
 logs/
 
 # Environment / Secrets
-.env
-.env.*
-!.env.example
-!.env.deploy.example
+# Full repository sync is explicitly enabled for this project; local secrets are not being hidden from the working repository.
 
 # Dependencies
-node_modules/
+# Full repository sync is explicitly enabled for this project; modules remain part of the checked-in workspace if present.
 
 # Package Manager
 .npm/
@@ -61,11 +58,10 @@ terminal.md
 *.local
 
 # Runtime setup state
-server/runtime/
-.deploy-staging/
+# Full repository sync is explicitly enabled for this project; runtime state is intentionally included in the working repository.
 
 # Runtime configuration files (persisted by persistence-service)
-config/*.json
+# Full repository sync is explicitly enabled for this project; runtime config files remain part of the repository state.
 
 # Runtime Database Files
 # Schema, migrations and seed files remain tracked.

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-app-title>Platform Administration</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="admin">
+    <div id="accessDenied" class="auth-shell hidden">
+      <div class="auth-card">
+        <h2>Access denied</h2>
+        <p class="subtle">Administrative access requires an authorized role.</p>
+        <div class="action-list">
+          <a class="nav-item" id="backToAppLink" href="index.html">Return to platform</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="authPanel" class="auth-shell">
+      <div class="auth-card">
+      <h2 data-auth-title>Platform Administration</h2>
+        <p class="subtle">Sign in to access the administrator workspace.</p>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" type="text" value="developer" />
+          </div>
+          <div class="form-field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" value="" />
+          </div>
+          <div class="action-list">
+            <button id="loginBtn" class="primary" type="button">Sign in</button>
+          </div>
+          <div id="authMessage" class="message info">Use the preview auth flow for local testing.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+      <aside class="sidebar shared-shell-sidebar">
+        <div class="brand-box shared-shell-brand">
+          <div id="brandMark" class="brand-mark shared-shell-mark">P</div>
+          <div>
+            <div id="brandName" class="brand-name shared-shell-name">Platform</div>
+            <div id="brandSubtitle" class="brand-subtitle">Administration</div>
+          </div>
+        </div>
+        <div class="nav-section shared-shell-nav-section">
+          <div class="nav-section-title">Application</div>
+          <div id="appModuleNav" class="nav-list shared-shell-nav"></div>
+        </div>
+        <div class="user-card">
+          <div id="currentUserInitial" class="avatar">D</div>
+          <div class="user-meta">
+            <div id="currentUserName" class="user-name">Developer</div>
+            <div class="user-id" data-user-display-id>USR-000001</div>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Administration</div>
+          <div id="userMenu" class="nav-list"></div>
+        </div>
+      </aside>
+      <main class="main-panel">
+        <div class="topbar">
+          <div id="topbarTitle" class="topbar-title">Platform Administration</div>
+          <div class="header-actions">
+            <span id="summaryRoleBadge" class="role-badge developer">developer</span>
+            <button id="logoutBtn" class="secondary" type="button">Logout</button>
+          </div>
+        </div>
+        <div class="summary-row">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Administrator</h2>
+            </div>
+            <div class="user-summary">
+              <div>
+                <div id="summaryUsername" class="summary-username">Developer</div>
+                <div class="small-muted" data-user-display-id>USR-000001</div>
+              </div>
+              <span id="summaryStatus" class="status-badge ok">active</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">System overview</h2>
+            </div>
+            <div id="activeModules" class="chip-list"><span class="chip">Admin access granted</span></div>
+          </div>
+        </div>
+        <div id="mainContent" class="content-wrap"></div>
+      </main>
+    </div>
+
+    <script src="../platform/core.js"></script>
+    <script src="../platform/core-event-bus.js"></script>
+    <script src="../platform/core-error-handler.js"></script>
+    <script src="../platform/error-log.js"></script>
+    <script src="../platform/core-config.js"></script>
+    <script src="../platform/core-context.js"></script>
+    <script src="../platform/core-lifecycle.js"></script>
+    <script src="../platform/core-state.js"></script>
+    <script src="../platform/core-storage.js"></script>
+    <script src="../platform/module-interface.js"></script>
+    <script src="../platform/module-registry.js"></script>
+    <script src="../platform/module-manager.js"></script>
+    <script src="../platform/core-loader.js"></script>
+    <script src="../platform/config-manager.js"></script>
+    <script src="../platform/database-manager.js"></script>
+    <script src="../platform/security.js"></script>
+    <script src="../platform/core-auth.js"></script>
+    <script src="../platform/core-access.js"></script>
+    <script src="../platform/core-audit.js"></script>
+    <script src="../platform/core-event-ring.js"></script>
+    <script src="../platform/core-user.js"></script>
+    <script src="../platform/core-admin.js"></script>
+    <script src="../platform/service-manager.js"></script>
+    <script src="../platform/core-startup.js"></script>
+    <script src="../platform/core-runtime.js"></script>
+    <script src="../platform/core-entry.js"></script>
+    <script src="../platform/theme-engine.js"></script>
+    <script src="../platform/media-manager.js"></script>
+    <script src="../platform/local-auth.js"></script>
+    <script src="../platform/app.js"></script>
+    <script src="master-ui.js"></script>
+    <!-- Admin Panel Components -->
+    <script src="api-client.js"></script>
+    <script src="admin/common.js"></script>
+    <script src="admin/users-view.js"></script>
+    <script src="admin/roles-view.js"></script>
+    <script src="admin/settings-view.js"></script>
+    <script src="admin/index.js"></script>
+    <script src="admin-init.js"></script>
+  </body>
+</html>

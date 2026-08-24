@@ -1,0 +1,24 @@
+{
+  "name": "neutral-web-platform",
+  "version": "1.0.0",
+  "description": "Neutral reusable web application platform with core, server, webroot, administration, and module scaffolding.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node scripts/neutral-start.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "deploy:manual": "node scripts/manual-ftps-deploy.js"
+  },
+  "keywords": [
+    "platform",
+    "framework",
+    "web-app",
+    "modular",
+    "neutral"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "argon2": "^0.45.1"
+  }
+}
