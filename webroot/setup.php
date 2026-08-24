@@ -235,7 +235,7 @@ if ($dbUrl === '') {
         </div>
         <div class="row">
           <label for="serverUrl">Server URL</label>
-          <input id="serverUrl" name="serverUrl" type="text" value="http://127.0.0.1:3000" />
+          <input id="serverUrl" name="serverUrl" type="text" value="<?= htmlspecialchars($_SERVER['HTTP_HOST'] ? (($_SERVER['HTTPS'] ?? 'http') . '://' . $_SERVER['HTTP_HOST']) : 'http://127.0.0.1:3000', ENT_QUOTES, 'UTF-8') ?>" />
         </div>
         <div class="row">
           <label for="apiBase">API base</label>
@@ -307,6 +307,15 @@ if ($dbUrl === '') {
       (() => {
         const statusEl = document.getElementById('setupStatus');
         const form = document.getElementById('setupForm');
+      const runtimeOrigin = window.location && window.location.origin ? window.location.origin : 'http://127.0.0.1:3000';
+      const serverUrlInput = document.getElementById('serverUrl');
+      const apiBaseInput = document.getElementById('apiBase');
+      if (serverUrlInput && (!serverUrlInput.value || serverUrlInput.value === 'http://127.0.0.1:3000')) {
+        serverUrlInput.value = runtimeOrigin;
+      }
+      if (apiBaseInput && (!apiBaseInput.value || apiBaseInput.value === '/')) {
+        apiBaseInput.value = '/api';
+      }
 
         const setStatus = (message, kind = 'info') => {
           statusEl.textContent = message;

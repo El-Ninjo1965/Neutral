@@ -10,6 +10,13 @@
 (() => {
     'use strict';
 
+    const getRuntimeOrigin = () => {
+        if (typeof window !== 'undefined' && window.location && window.location.origin) {
+            return window.location.origin;
+        }
+        return 'http://127.0.0.1:3000';
+    };
+
     const cloneValue = (value) => {
         if (Array.isArray(value)) {
             return value.map((entry) => cloneValue(entry));
@@ -43,7 +50,7 @@
             title: 'API',
             description: 'Connectivity behaviour for online services.',
             settings: [
-                { key: 'baseUrl', path: 'api.baseUrl', label: 'Base URL', type: 'text', defaultValue: 'http://localhost:3000/api' },
+                { key: 'baseUrl', path: 'api.baseUrl', label: 'Base URL', type: 'text', defaultValue: `${getRuntimeOrigin().replace(/\/+$/, '')}/api` },
                 { key: 'timeout', path: 'api.timeout', label: 'Request timeout (ms)', type: 'number', defaultValue: 30000, min: 1000, step: 500 },
                 { key: 'retries', path: 'api.retries', label: 'Retry count', type: 'number', defaultValue: 3, min: 0, step: 1 },
                 { key: 'retryDelay', path: 'api.retryDelay', label: 'Retry delay (ms)', type: 'number', defaultValue: 1000, min: 0, step: 100 }

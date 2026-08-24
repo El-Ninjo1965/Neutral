@@ -60,6 +60,11 @@
          * Lädt Standard-Konfigurationen
          */
         loadDefaultConfigs() {
+            const runtimeOrigin = (typeof window !== 'undefined' && window.location && window.location.origin)
+                ? window.location.origin
+                : 'http://127.0.0.1:3000';
+            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}/api`;
+
             // Application Config
             this.set('app', {
                 name: 'Neutral Platform',
@@ -121,7 +126,7 @@
 
             // API Config
             this.set('api', {
-                baseUrl: 'http://localhost:3000/api',
+                baseUrl: runtimeApiBaseUrl,
                 timeout: 30000,
                 retries: 3,
                 retryDelay: 1000,

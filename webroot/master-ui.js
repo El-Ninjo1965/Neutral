@@ -246,6 +246,21 @@
     });
   };
 
+  const resolveRuntimeOrigin = () => (typeof window !== 'undefined' && window.location && window.location.origin)
+    ? window.location.origin
+    : 'http://127.0.0.1:3000';
+
+  const resolveRuntimeServerUrl = () => {
+    const configured = typeof window !== 'undefined' && window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? (window.ConfigManager.get('app') && window.ConfigManager.get('app').serverUrl) || (window.ConfigManager.get('api') && window.ConfigManager.get('api').baseUrl)
+      : null;
+    if (configured && typeof configured === 'string' && configured.trim()) {
+      return configured.trim().replace(/\/+$/, '');
+    }
+    const origin = resolveRuntimeOrigin();
+    return origin.replace(/\/+$/, '');
+  };
+
   const fetchJson = async (url, fallback = { ok: false }, options = {}) => {
     try {
       const response = await fetch(url, { cache: 'no-store', ...options });
@@ -2193,7 +2208,7 @@
     const defaultConnection = connections[0] || {
       connectionId: 'file-storage',
       appId: 'neutral-app',
-      serverUrl: 'http://127.0.0.1:3000',
+      serverUrl: resolveRuntimeServerUrl(),
       apiBase: '/api',
       storageType: 'file',
       databaseType: 'file',
@@ -2227,7 +2242,7 @@
             <div class="form-field"><label>Port</label><input type="text" name="port" value="${escapeHtml(defaultConnection.port || '')}" /></div>
             <div class="form-field"><label>Username</label><input type="text" name="username" value="${escapeHtml(defaultConnection.username || '')}" /></div>
             <div class="form-field"><label>Password</label><input type="password" name="password" value="" /></div>
-            <div class="form-field"><label>Server URL</label><input id="connectionServerUrl" type="text" name="serverUrl" value="${escapeHtml(defaultConnection.serverUrl || 'http://127.0.0.1:3000')}" /></div>
+            <div class="form-field"><label>Server URL</label><input id="connectionServerUrl" type="text" name="serverUrl" value="${escapeHtml(defaultConnection.serverUrl || resolveRuntimeServerUrl())}" /></div>
             <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(defaultConnection.apiBase || '/api')}" /></div>
             <div class="form-field"><label>Auth type</label><input type="text" name="authType" value="${escapeHtml(defaultConnection.authType || 'none')}" /></div>
             <div class="form-field"><label>Status</label><input type="text" name="status" value="${escapeHtml(defaultConnection.status || (defaultConnection.active ? 'active' : 'inactive'))}" /></div>
@@ -2274,7 +2289,7 @@
         <div class="card-header"><h2 class="card-title">Server</h2></div>
         <div class="content-wrap">
           <div class="form-grid" style="margin-bottom: 18px;">
-            <div class="form-field"><label>Server URL</label><input id="serverUrlInput" type="text" value="http://127.0.0.1:3000" /></div>
+            <div class="form-field"><label>Server URL</label><input id="serverUrlInput" type="text" value="${escapeHtml(resolveRuntimeServerUrl())}" /></div>
             <div class="form-field"><label>API base</label><input id="serverApiBaseInput" type="text" value="/api" /></div>
             <div class="action-list">
               <button type="button" class="primary" data-admin-action="server-test">Test server connection</button>
@@ -2717,7 +2732,7 @@
           <form class="form-grid" style="margin-bottom: 18px;">
             <div class="form-field"><label>App ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
             <div class="form-field"><label>App name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
-            <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || 'http://127.0.0.1:3000')}" /></div>
+            <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || resolveRuntimeServerUrl())}" /></div>
             <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
             <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((configuration.database && configuration.database.type) || 'indexeddb')}" /></div>
             <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((configuration.database && configuration.database.name) || 'CoreDB')}" /></div>
@@ -2768,7 +2783,7 @@
     const serverManagedDatabase = databaseConfig.source === 'env' || (setup.databaseState && setup.databaseState.source === 'env');
     const discoveredAppId = setup.appId || configuration.appId || 'neutral-app';
     const discoveredAppName = setup.appName || configuration.appName || getConfiguredAppName();
-    const discoveredServerUrl = configuration.serverUrl || (setup.serverState && setup.serverState.url) || 'http://127.0.0.1:3000';
+    const discoveredServerUrl = configuration.serverUrl || (setup.serverState && setup.serverState.url) || resolveRuntimeServerUrl();
     const discoveredApiBase = configuration.apiBase || (setup.serverState && setup.serverState.apiBase) || '/api';
 
     page.innerHTML = `
