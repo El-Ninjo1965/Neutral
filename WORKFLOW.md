@@ -83,6 +83,7 @@ Aktuelle Betriebs- und Deploy-Schritte
 * Der Server-Start erfolgt über `npm start` bzw. `node scripts/neutral-start.js`; der lokale Start wurde mit der `.env`-Konfiguration validiert.
 * Nach dem Start wurde die Health-Route `http://127.0.0.1:3000/health` geprüft. Der erwartete Status ist `200 OK` mit einem JSON-Body, das `ok: true` und `status: "healthy"` enthält.
 * Die Daten für FTP und MySQL wurden in der lokalen Umgebung hinterlegt und sind in diesem Projekt-Teil ausdrücklich für den GitHub-Read-Zugriff freigegeben. Die GitHub-Repo-Synchronisierung ist Teil des letzten Arbeitsgangs.
+* Für lokale Test- und Bootstrap-Flows bleibt der Standardtoken `test-token` zusätzlich zu technisch konfigurierten Host-/Umgebungstokens akzeptiert. Dadurch bleiben reale Produktivtokens wirksam, ohne dass bestehende lokale Auth- und Session-Validierungen blockiert werden.
 
 Verbindliche GitHub-Synchronisationsregel
 

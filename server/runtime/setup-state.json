@@ -1,58 +1,83 @@
 {
-  "status": "NOT_CONFIGURED",
+  "status": "ACTIVE",
   "currentStep": "server-runtime",
   "completedSteps": [],
   "appId": "neutral-app",
   "appName": "Neutral App",
   "selectedApp": null,
-  "configuration": {},
+  "configuration": {
+    "serverUrl": "http://127.0.0.1:33157",
+    "apiBase": "/api",
+    "database": {
+      "type": "indexeddb",
+      "name": "CoreDB",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "username": "web1819_neutral_app",
+      "url": "",
+      "configured": true,
+      "source": "env"
+    }
+  },
   "serverState": {
-    "configured": false,
-    "testedAt": null,
-    "status": "NOT_CONFIGURED",
-    "reachable": false,
-    "responseTimeMs": null,
-    "message": "Server not configured.",
-    "url": "",
+    "configured": true,
+    "testedAt": "2026-08-24T05:38:15.943Z",
+    "status": "READY_TO_TEST",
+    "reachable": true,
+    "responseTimeMs": 4,
+    "message": "Server reachable.",
+    "url": "http://127.0.0.1:33157",
     "apiBase": "/api"
   },
   "databaseState": {
-    "configured": false,
-    "testedAt": null,
-    "status": "NOT_CONFIGURED",
-    "reachable": false,
-    "responseTimeMs": null,
-    "message": "Database not configured.",
+    "configured": true,
+    "testedAt": "2026-08-24T05:38:15.946Z",
+    "status": "READY",
+    "reachable": true,
+    "responseTimeMs": 0,
+    "message": "Database configuration test passed.",
     "type": "indexeddb",
     "name": "CoreDB",
-    "host": "",
-    "url": ""
+    "host": "127.0.0.1",
+    "url": "",
+    "port": 3306,
+    "username": "web1819_neutral_app"
   },
   "frameworkState": {
     "initialized": true,
-    "initializedAt": "2026-08-24T05:34:05.043Z",
+    "initializedAt": "2026-08-24T05:38:16.272Z",
     "status": "READY",
     "message": "Server framework loaded."
   },
   "bootstrapState": {
-    "configured": false,
+    "configured": true,
     "enabled": true,
     "username": "developer",
     "displayId": "USR-000001",
     "role": "developer",
-    "status": "NOT_CONFIGURED",
-    "message": "Bootstrap not configured."
+    "status": "CONFIGURATION_REQUIRED",
+    "message": "Bootstrap configuration saved."
   },
   "connections": [],
-  "database": null,
+  "database": {
+    "type": "indexeddb",
+    "name": "CoreDB",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "username": "web1819_neutral_app",
+    "url": "",
+    "configured": true,
+    "source": "env"
+  },
   "adminAccount": null,
   "license": null,
   "installation": {
-    "active": false,
-    "installedAt": null,
-    "activatedAt": null,
-    "state": "NOT_CONFIGURED"
+    "active": true,
+    "installedAt": "2026-08-24T05:38:15.948Z",
+    "activatedAt": "2026-08-24T05:38:15.948Z",
+    "state": "ACTIVE",
+    "message": "Installation activated."
   },
-  "updatedAt": "2026-08-24T05:34:05.044Z",
-  "createdAt": "2026-08-24T05:34:04.806Z"
+  "updatedAt": "2026-08-24T05:38:16.272Z",
+  "createdAt": "2026-08-24T05:38:15.929Z"
 }
