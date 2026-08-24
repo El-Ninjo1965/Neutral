@@ -62,6 +62,7 @@ terminal.md
 
 # Runtime setup state
 server/runtime/
+.deploy-staging/
 
 # Runtime configuration files (persisted by persistence-service)
 config/*.json
