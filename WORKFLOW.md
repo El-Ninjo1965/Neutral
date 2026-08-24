@@ -145,4 +145,4 @@ Aktueller Sync- und Bereinungsstatus
 * `setup.html` bleibt das aktive Laufzeit-Setup für den Node-Server (`server/bootstrap/server.js` serviert `/setup` und `/setup.html`), während `setup.php` als ergänzendes PHP-Setup erhalten bleibt und im Staging/Manifest gelistet ist, damit keine veraltete oder "verlorene" Setup-Datei im GitHub-/Deploy-Pfad bleibt.
 * `npm run setup:preflight` und `node scripts/manual-ftps-deploy.js --dry-run` wurden erfolgreich ausgeführt; keine Allowlist-Dateien fehlen, und der Deploy-Dry-Run zeigt keinen Upload-/Delete-Verlust an.
 * Der lokale Repository-Zustand ist mit den aktuellen Server-/Deploy-Erfordernissen konsistent; keine produktiv benötigten Dateien wurden als veraltet oder leblos identifiziert.
-* Für den GitHub-/AI-Ablauf ist der aktuelle Zustand nun dokumentiert und als synchronisierter Arbeitsstand vorbereitet.
+* Die lokale HTTP-/Form-Prüfung gegen `http://127.0.0.1:8000/setup.php` bestätigt `POST` mit `HTTP/1.1 200 OK`, sichtbaren Submit-Button und den benötigten `name`-Attributen; der Arbeitsstand wurde nach Dokumentation mit `git add -A`, `git commit -m "..."` und `git push origin main` auf GitHub synchronisiert.
