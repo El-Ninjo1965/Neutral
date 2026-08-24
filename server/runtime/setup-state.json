@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE",
-  "currentStep": "runtime",
+  "currentStep": "server-runtime",
   "completedSteps": [],
   "appId": "neutral-app",
   "appName": "Neutral App",
@@ -30,9 +30,9 @@
   },
   "frameworkState": {
     "initialized": true,
-    "initializedAt": "2024-01-01T00:00:00.000Z",
+    "initializedAt": "2026-08-24T11:59:04.532Z",
     "status": "READY",
-    "message": "ready"
+    "message": "Server framework loaded."
   },
   "bootstrapState": {
     "configured": true,
@@ -53,6 +53,6 @@
     "activatedAt": "2026-08-24T11:11:35.501Z",
     "state": "ACTIVE"
   },
-  "updatedAt": "2026-08-24T11:11:35.501Z",
+  "updatedAt": "2026-08-24T11:59:04.532Z",
   "createdAt": "2026-08-24T11:11:35.500Z"
 }
