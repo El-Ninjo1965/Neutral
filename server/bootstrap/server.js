@@ -1007,7 +1007,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
           const normalized = {
             connectionId,
             appId,
-            serverUrl: payload.serverUrl || payload.url || 'http://localhost',
+            serverUrl: payload.serverUrl || payload.url || resolveRequestOrigin(req, host, port),
             apiBase: payload.apiBase || '/api',
             storageType: payload.storageType || payload.type || payload.databaseType || 'file',
             connectionType: payload.connectionType || payload.storageType || payload.type || 'file',

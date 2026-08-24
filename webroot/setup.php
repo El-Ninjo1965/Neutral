@@ -100,13 +100,14 @@ function resolveRuntimeEnvFile() {
     return $projectRoot . '/.env';
 }
 
-function resolveRuntimeServerUrl(array $env, $fallback = 'http://localhost') {
-    $candidate = trim((string) ($env['SERVER_URL'] ?? $env['PUBLIC_URL'] ?? $env['BASE_URL'] ?? ''));
-    if ($candidate !== '') {
-        return rtrim($candidate, '/');
-    }
+function isLocalHostname($host) {
+    $normalized = strtolower(trim((string) $host));
+    $normalized = preg_replace('/^\[(.*)\]$/', '$1', $normalized);
+    return in_array($normalized, ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'], true);
+}
 
-    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost'));
+function resolveRuntimeServerUrl(array $env, $fallback = 'http://localhost') {
+    $requestHost = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
     $forwardedProto = trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? ''));
     $scheme = '';
     if ($forwardedProto !== '') {
@@ -116,6 +117,23 @@ function resolveRuntimeServerUrl(array $env, $fallback = 'http://localhost') {
         $isSecure = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') || ((isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT']) === '443');
         $scheme = $isSecure ? 'https' : 'http';
     }
+
+    $candidate = trim((string) ($env['SERVER_URL'] ?? $env['PUBLIC_URL'] ?? $env['BASE_URL'] ?? ''));
+    if ($candidate !== '') {
+        $normalizedCandidate = rtrim($candidate, '/');
+        $parsed = parse_url($normalizedCandidate);
+        if (is_array($parsed) && !empty($parsed['host'])) {
+            $candidateHost = trim((string) $parsed['host']);
+            if (!isLocalHostname($candidateHost) && !empty($requestHost) && !isLocalHostname($requestHost) && strtolower($candidateHost) === strtolower(preg_replace('/:\d+$/', '', $requestHost))) {
+                $normalizedCandidate = $scheme . '://' . preg_replace('/:\d+$/', '', $requestHost);
+            } elseif (!empty($requestHost) && !isLocalHostname($requestHost) && !empty($parsed['port']) && (string) $parsed['port'] === '3000') {
+                $normalizedCandidate = $scheme . '://' . preg_replace('/:\d+$/', '', $requestHost);
+            }
+        }
+        return $normalizedCandidate;
+    }
+
+    $host = trim((string) $requestHost);
     if ($host === '') {
         $host = 'localhost';
     }
@@ -124,12 +142,14 @@ function resolveRuntimeServerUrl(array $env, $fallback = 'http://localhost') {
     $host = preg_replace('/^\[::1\]$/', 'localhost', $host);
 
     $runtimeHost = trim((string) ($env['HOST'] ?? ''));
-    if ($runtimeHost !== '' && $runtimeHost !== '0.0.0.0' && $runtimeHost !== '::') {
+    if ($runtimeHost !== '' && $runtimeHost !== '0.0.0.0' && $runtimeHost !== '::' && !isLocalHostname($runtimeHost) && !isLocalHostname($host)) {
         $host = $runtimeHost;
     }
 
     $port = trim((string) ($env['PORT'] ?? ''));
-    if ($port !== '' && $port !== '80' && $port !== '443' && !preg_match('/:\d+$/', $host)) {
+    $hostWithoutPort = preg_replace('/:\d+$/', '', $host);
+    $shouldSkipPort = $port !== '' && $port !== '80' && $port !== '443' && !preg_match('/:\d+$/', $host) && !(!isLocalHostname($hostWithoutPort) && $port === '3000' && !isLocalHostname($requestHost));
+    if ($shouldSkipPort) {
         $host = $host . ':' . $port;
     }
 

@@ -2054,9 +2054,39 @@
       const activeApp = this.getActiveApp ? this.getActiveApp() : null;
       const appId = normalizeString(env.DEFAULT_APP_ID || env.APP_ID || env.NEUTRAL_APP_ID || (activeApp && activeApp.appId) || 'neutral-app', 'neutral-app');
       const appName = normalizeString(env.APP_NAME || env.NEUTRAL_APP_NAME || (activeApp && activeApp.name) || 'Neutral App', 'Neutral App');
-      const host = normalizeString(env.HOST || config.host || '127.0.0.1', '127.0.0.1');
-      const port = Number(env.PORT || config.port || 3000) || 3000;
-      const serverUrl = normalizeString(env.SERVER_URL || env.PUBLIC_URL || env.BASE_URL || `http://${host}:${port}`, `http://${host}:${port}`);
+      const currentWindowOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : '';
+      const effectiveHost = normalizeString((currentWindowOrigin ? new URL(currentWindowOrigin).hostname : '') || env.HOST || config.host || '127.0.0.1', '127.0.0.1');
+      const isLocalHostname = (hostname) => {
+        const normalized = String(hostname || '').trim().toLowerCase().replace(/^\[|\]$/g, '');
+        return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(normalized);
+      };
+      const rawServerUrl = normalizeString(env.SERVER_URL || env.PUBLIC_URL || env.BASE_URL || '', '');
+      const serverUrl = (() => {
+        if (rawServerUrl) {
+          try {
+            const parsed = new URL(rawServerUrl);
+            if (!isLocalHostname(parsed.hostname) && currentWindowOrigin) {
+              const currentHost = new URL(currentWindowOrigin).hostname;
+              if (parsed.hostname === currentHost && parsed.port === '3000') {
+                return currentWindowOrigin.replace(/\/$/, '');
+              }
+            }
+            return rawServerUrl.replace(/\/$/, '');
+          } catch (error) {
+            return rawServerUrl.replace(/\/$/, '');
+          }
+        }
+
+        if (!isLocalHostname(effectiveHost) && currentWindowOrigin) {
+          return currentWindowOrigin.replace(/\/$/, '');
+        }
+
+        const port = Number(env.PORT || config.port || 3000) || 3000;
+        const normalizedPort = port === 80 || port === 443 ? '' : `:${port}`;
+        return `http://${effectiveHost}${normalizedPort}`;
+      })();
       const apiBase = normalizeString(env.API_BASE || config.apiBase || '/api', '/api');
       const database = this.getDatabaseConfig ? this.getDatabaseConfig() : {};
 
