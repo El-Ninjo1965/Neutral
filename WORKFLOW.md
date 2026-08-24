@@ -112,6 +112,7 @@ Validierungsprotokoll
 * `curl http://127.0.0.1:3000/health` liefert nach dem Start `HTTP/1.1 200 OK` und das gültige Health-JSON des Neutral-Servers.
 * Die First-Run-Setup-Seite übernimmt vorhandene ENV-Werte automatisch in die passenden Formularfelder, sofern sie nicht sensibel sind; sensible Werte wie Passwörter und Tokens bleiben geschützt und werden nicht in das Frontend übernommen.
 * Die bestehende Setup-, Auth-, Preflight- und FTPS-Deploy-Logik wurde beibehalten; der reale FTPS-Upload blieb nur ausführen, wenn echte Host-/Serverdaten und Berechtigungen in der Umgebung vorhanden sind.
+* Zusätzlicher Regressionscheck: `node --test --test-concurrency=1 tests/master-framework.test.js tests/admin-api.test.js` läuft erfolgreich und validiert den Initial-Setup-, Bootstrap- und Aktivierungsfluss inklusive unauthentifiziertem Save vor Aktivierung.
 * Die finale GitHub-Synchronisierung läuft nur nach erfolgreichem Commit, Push und anschließender Prüfung von `HEAD` gegen `origin/main`.
 
 GitHub-Synchronisierung und Abschluss

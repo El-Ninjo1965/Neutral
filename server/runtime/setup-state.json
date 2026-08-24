@@ -1,83 +1,58 @@
 {
   "status": "ACTIVE",
-  "currentStep": "server-runtime",
+  "currentStep": "runtime",
   "completedSteps": [],
   "appId": "neutral-app",
   "appName": "Neutral App",
   "selectedApp": null,
-  "configuration": {
-    "serverUrl": "http://127.0.0.1:33157",
-    "apiBase": "/api",
-    "database": {
-      "type": "indexeddb",
-      "name": "CoreDB",
-      "host": "127.0.0.1",
-      "port": 3306,
-      "username": "web1819_neutral_app",
-      "url": "",
-      "configured": true,
-      "source": "env"
-    }
-  },
+  "configuration": {},
   "serverState": {
     "configured": true,
-    "testedAt": "2026-08-24T05:38:15.943Z",
-    "status": "READY_TO_TEST",
+    "testedAt": "2024-01-01T00:00:00.000Z",
+    "status": "READY",
     "reachable": true,
-    "responseTimeMs": 4,
-    "message": "Server reachable.",
-    "url": "http://127.0.0.1:33157",
+    "responseTimeMs": null,
+    "message": "Server not configured.",
+    "url": "",
     "apiBase": "/api"
   },
   "databaseState": {
     "configured": true,
-    "testedAt": "2026-08-24T05:38:15.946Z",
+    "testedAt": "2024-01-01T00:00:00.000Z",
     "status": "READY",
     "reachable": true,
-    "responseTimeMs": 0,
-    "message": "Database configuration test passed.",
+    "responseTimeMs": null,
+    "message": "Database not configured.",
     "type": "indexeddb",
     "name": "CoreDB",
-    "host": "127.0.0.1",
-    "url": "",
-    "port": 3306,
-    "username": "web1819_neutral_app"
+    "host": "",
+    "url": ""
   },
   "frameworkState": {
     "initialized": true,
-    "initializedAt": "2026-08-24T05:38:16.272Z",
+    "initializedAt": "2024-01-01T00:00:00.000Z",
     "status": "READY",
-    "message": "Server framework loaded."
+    "message": "ready"
   },
   "bootstrapState": {
     "configured": true,
     "enabled": true,
-    "username": "developer",
+    "username": "Developer",
     "displayId": "USR-000001",
     "role": "developer",
-    "status": "CONFIGURATION_REQUIRED",
-    "message": "Bootstrap configuration saved."
+    "status": "READY",
+    "message": "Developer bootstrap created."
   },
   "connections": [],
-  "database": {
-    "type": "indexeddb",
-    "name": "CoreDB",
-    "host": "127.0.0.1",
-    "port": 3306,
-    "username": "web1819_neutral_app",
-    "url": "",
-    "configured": true,
-    "source": "env"
-  },
+  "database": null,
   "adminAccount": null,
   "license": null,
   "installation": {
     "active": true,
-    "installedAt": "2026-08-24T05:38:15.948Z",
-    "activatedAt": "2026-08-24T05:38:15.948Z",
-    "state": "ACTIVE",
-    "message": "Installation activated."
+    "installedAt": "2026-08-24T10:13:32.945Z",
+    "activatedAt": "2026-08-24T10:13:32.945Z",
+    "state": "ACTIVE"
   },
-  "updatedAt": "2026-08-24T05:38:16.272Z",
-  "createdAt": "2026-08-24T05:38:15.929Z"
+  "updatedAt": "2026-08-24T10:13:32.946Z",
+  "createdAt": "2026-08-24T10:13:32.944Z"
 }

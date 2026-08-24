@@ -331,6 +331,18 @@ const isSetupRequired = () => {
   return !(snapshot.installation && snapshot.installation.active) && snapshot.status !== 'ACTIVE';
 };
 
+const canAccessSetupBootstrap = () => {
+  const snapshot = getSetupSnapshot();
+  return !(snapshot.installation && snapshot.installation.active) && snapshot.status !== 'ACTIVE';
+};
+
+const requireSetupBootstrapAccess = (req, res) => {
+  if (canAccessSetupBootstrap()) {
+    return true;
+  }
+  return requireAdminWriteAccess(req, res);
+};
+
 const getDatabaseStatus = () => {
   const status = MasterFramework.getDatabaseStatus();
   const safe = stripSensitiveDatabaseValues(status);
@@ -1166,7 +1178,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
   if (pathname === `${apiBase}/setup` || pathname === `${apiBase}/admin/setup` || pathname === `${apiBase}/setup/status` || pathname === `${apiBase}/admin/setup/status` || pathname === `${apiBase}/install/status`) {
     if (req && req.method === 'POST') {
-      if (!requireAdminWriteAccess(req, res)) {
+      if (!requireSetupBootstrapAccess(req, res)) {
         return true;
       }
       readJsonBody(req)
@@ -1282,7 +1294,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       return true;
     }
 
-    if (!requireAdminAccess(req, res)) {
+    if (!canAccessSetupBootstrap() && !requireAdminAccess(req, res)) {
       return true;
     }
 
@@ -1297,7 +1309,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
   if (pathname === `${apiBase}/setup/activate` || pathname === `${apiBase}/admin/setup/activate`) {
     if (req && req.method === 'POST') {
-      if (!requireAdminWriteAccess(req, res)) {
+      if (!requireSetupBootstrapAccess(req, res)) {
         return true;
       }
       readJsonBody(req)
@@ -1335,7 +1347,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
   if (pathname === `${apiBase}/server/test` || pathname === `${apiBase}/admin/server/test`) {
     if (req && req.method === 'POST') {
-      if (!requireAdminWriteAccess(req, res)) {
+      if (!canAccessSetupBootstrap() && !requireAdminWriteAccess(req, res)) {
         return true;
       }
       readJsonBody(req)
@@ -1373,7 +1385,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       return true;
     }
 
-    if (!requireAdminAccess(req, res)) {
+    if (!canAccessSetupBootstrap() && !requireAdminAccess(req, res)) {
       return true;
     }
 
@@ -1387,7 +1399,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
   if (pathname === `${apiBase}/database/status` || pathname === `${apiBase}/admin/database/status` || pathname === `${apiBase}/database/test` || pathname === `${apiBase}/admin/database/test`) {
     if (req && req.method === 'POST') {
-      if (!requireAdminWriteAccess(req, res)) {
+      if (!canAccessSetupBootstrap() && !requireAdminWriteAccess(req, res)) {
         return true;
       }
       readJsonBody(req)
@@ -1474,7 +1486,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       return true;
     }
 
-    if (!requireAdminAccess(req, res)) {
+    if (!canAccessSetupBootstrap() && !requireAdminAccess(req, res)) {
       return true;
     }
 

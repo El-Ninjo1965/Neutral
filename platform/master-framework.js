@@ -2474,6 +2474,106 @@
       return this.saveSetupState(state);
     },
 
+    ensureDeveloperBootstrap(metadata = {}) {
+      const bootstrapState = this.getBootstrapState();
+      const runtimeBootstrap = (typeof globalThis !== 'undefined' && globalThis.ConfigManager && typeof globalThis.ConfigManager.get === 'function')
+        ? (globalThis.ConfigManager.get('bootstrap', {}) || {})
+        : {};
+      const username = normalizeString(
+        metadata.username || bootstrapState.username || runtimeBootstrap.developerUsername || 'Developer',
+        'Developer'
+      );
+      const displayId = normalizeString(
+        metadata.displayId || bootstrapState.displayId || runtimeBootstrap.developerDisplayId || 'USR-000001',
+        'USR-000001'
+      );
+      const role = normalizeString(
+        metadata.role || bootstrapState.role || runtimeBootstrap.role || 'developer',
+        'developer'
+      );
+
+      if (bootstrapState.enabled === false || runtimeBootstrap.enabled === false) {
+        return {
+          ok: true,
+          code: 'BOOTSTRAP_DISABLED',
+          created: false,
+          message: 'Developer bootstrap is disabled.',
+          state: {
+            configured: true,
+            enabled: false,
+            username,
+            displayId,
+            role,
+            status: 'DISABLED',
+            message: 'Developer bootstrap is disabled.'
+          }
+        };
+      }
+
+      if (typeof globalThis !== 'undefined' && globalThis.ConfigManager && typeof globalThis.ConfigManager.set === 'function') {
+        globalThis.ConfigManager.set('bootstrap', {
+          ...runtimeBootstrap,
+          enabled: true,
+          developerUsername: username,
+          developerDisplayId: displayId,
+          role,
+          passwordRequired: runtimeBootstrap.passwordRequired !== false,
+          passwordSource: runtimeBootstrap.passwordSource || 'local-offline',
+          hasDeveloperAccount: true
+        });
+      }
+
+      const userModule = (typeof globalThis !== 'undefined' && globalThis.UserModule)
+        || (typeof window !== 'undefined' && window.UserModule)
+        || null;
+
+      if (!userModule || typeof userModule.bootstrapDeveloperUser !== 'function') {
+        return {
+          ok: true,
+          code: 'BOOTSTRAP_SKIPPED',
+          created: false,
+          message: 'Developer bootstrap is not available in this runtime.',
+          state: {
+            configured: true,
+            enabled: true,
+            username,
+            displayId,
+            role,
+            status: 'READY',
+            message: 'Developer bootstrap is not available in this runtime.'
+          }
+        };
+      }
+
+      const result = userModule.bootstrapDeveloperUser();
+      const nextState = {
+        configured: true,
+        enabled: true,
+        username,
+        displayId,
+        role,
+        status: result && result.ok === false ? 'ERROR' : 'READY',
+        message: result && result.message ? result.message : (result && result.created ? 'Developer bootstrap created.' : 'Developer bootstrap ready.')
+      };
+
+      if (result && result.ok === false) {
+        return {
+          ...result,
+          created: false,
+          state: nextState
+        };
+      }
+
+      return {
+        ok: true,
+        code: result && result.code ? result.code : 'DEVELOPER_BOOTSTRAP_READY',
+        created: !!(result && result.created),
+        data: result && result.data ? result.data : null,
+        message: nextState.message,
+        state: nextState
+      };
+    },
+
     activateInstallation(metadata = {}) {
       const state = this.loadSetupState();
       const currentStatus = this.getInstallationStatus(state);
@@ -2487,6 +2587,12 @@
         };
       }
 
+      const bootstrapOutcome = this.ensureDeveloperBootstrap({
+        username: state.bootstrapState && state.bootstrapState.username,
+        displayId: state.bootstrapState && state.bootstrapState.displayId,
+        role: state.bootstrapState && state.bootstrapState.role
+      });
+
       const nextState = {
         ...state,
         status: 'ACTIVE',
@@ -2497,12 +2603,31 @@
           activatedAt: new Date().toISOString(),
           state: 'ACTIVE'
         },
+        bootstrapState: {
+          ...state.bootstrapState,
+          ...((bootstrapOutcome && bootstrapOutcome.state) || {}),
+          configured: true,
+          enabled: bootstrapOutcome && bootstrapOutcome.state && Object.prototype.hasOwnProperty.call(bootstrapOutcome.state, 'enabled')
+            ? !!bootstrapOutcome.state.enabled
+            : (state.bootstrapState && state.bootstrapState.enabled !== false),
+          username: (bootstrapOutcome && bootstrapOutcome.state && bootstrapOutcome.state.username) || (state.bootstrapState && state.bootstrapState.username) || 'Developer',
+          displayId: (bootstrapOutcome && bootstrapOutcome.state && bootstrapOutcome.state.displayId) || (state.bootstrapState && state.bootstrapState.displayId) || 'USR-000001',
+          role: (bootstrapOutcome && bootstrapOutcome.state && bootstrapOutcome.state.role) || (state.bootstrapState && state.bootstrapState.role) || 'developer'
+        },
         currentStep: metadata.currentStep || 'runtime',
         updatedAt: new Date().toISOString()
       };
 
       if (metadata.message) {
         nextState.installation.message = metadata.message;
+      }
+
+      if (bootstrapOutcome && bootstrapOutcome.ok === false) {
+        nextState.status = 'ERROR';
+        nextState.installation.state = 'ERROR';
+        nextState.installation.message = bootstrapOutcome.message || 'Developer bootstrap failed.';
+        nextState.bootstrapState.status = 'ERROR';
+        nextState.bootstrapState.message = bootstrapOutcome.message || 'Developer bootstrap failed.';
       }
 
       return this.saveSetupState(nextState);

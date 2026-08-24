@@ -5,6 +5,7 @@ const path = require('node:path');
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
+const MasterFramework = require('../platform/master-framework');
 const ServerBootstrap = require('../server/bootstrap/server.js');
 
 /**
@@ -20,14 +21,22 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
 
   const cleanupConfigFiles = () => {
     const configDir = path.resolve(__dirname, '../config');
-    if (!fs.existsSync(configDir)) {
-      return;
+    if (fs.existsSync(configDir)) {
+      for (const filename of ['setup-state.json', 'admin-users.json', 'admin-roles.json', 'admin-settings.json', 'audit-log.json']) {
+        const filePath = path.join(configDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
     }
 
-    for (const filename of ['setup-state.json', 'admin-users.json', 'admin-roles.json', 'admin-settings.json', 'audit-log.json']) {
-      const filePath = path.join(configDir, filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    const runtimeDir = path.resolve(__dirname, '../server/runtime');
+    if (fs.existsSync(runtimeDir)) {
+      for (const filename of ['setup-state.json', 'admin-state.json']) {
+        const filePath = path.join(runtimeDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
     }
   };
@@ -68,6 +77,9 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
 
   before(async () => {
     cleanupConfigFiles();
+    MasterFramework.setupState = null;
+    MasterFramework.installState = null;
+    MasterFramework.adminState = null;
     app = ServerBootstrap.createServer();
     await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve));
     port = app.address().port;
@@ -75,6 +87,9 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
 
   after(async () => {
     cleanupConfigFiles();
+    MasterFramework.setupState = null;
+    MasterFramework.installState = null;
+    MasterFramework.adminState = null;
     await new Promise((resolve, reject) => {
       app.close((error) => error ? reject(error) : resolve());
     });
@@ -329,11 +344,38 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(result.statusCode, 403);
   });
 
-  test('Setup and database status routes require auth', async () => {
+  test('Setup and database status are available during bootstrap without auth', async () => {
     const setupResult = await requestJson('GET', '/api/setup/status', null, null, null);
     const databaseResult = await requestJson('GET', '/api/database/status', null, null, null);
-    assert.equal(setupResult.statusCode, 401);
-    assert.equal(databaseResult.statusCode, 401);
+    assert.equal(setupResult.statusCode, 200);
+    assert.equal(setupResult.body.ok, true);
+    assert.equal(databaseResult.statusCode, 200);
+    assert.equal(databaseResult.body.ok, true);
+  });
+
+  test('Bootstrap setup save works without auth before activation', async () => {
+    const result = await requestJson('POST', '/api/setup', {
+      configuration: {
+        serverUrl: 'http://127.0.0.1:3000',
+        apiBase: '/api',
+        database: {
+          type: 'mysql',
+          host: '127.0.0.1',
+          port: 3306,
+          name: 'neutral_bootstrap',
+          username: 'neutral_user'
+        }
+      },
+      bootstrapState: {
+        configured: true,
+        enabled: true,
+        username: 'Developer',
+        displayId: 'USR-000001',
+        role: 'developer'
+      }
+    }, null, null);
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.ok, true);
   });
 
   test('Invalid JSON payload returns 400', async () => {

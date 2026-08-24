@@ -1111,6 +1111,77 @@ test('supports setup, database, and activation flow', async () => {
   }
 });
 
+test('activates installation and bootstraps the developer user when the runtime exposes UserModule', () => {
+  cleanupRuntimeState();
+  const context = {
+    window: null,
+    document: { readyState: 'complete', addEventListener() {} },
+    navigator: {},
+    localStorage: {
+      store: new Map(),
+      getItem(key) { return this.store.has(key) ? this.store.get(key) : null; },
+      setItem(key, value) { this.store.set(key, String(value)); },
+      removeItem(key) { this.store.delete(key); }
+    },
+    crypto: { randomUUID() { return 'test-uuid'; }, subtle: null },
+    console,
+    require,
+    process,
+    DatabaseManager: {
+      async clear() { return true; },
+      async save() { return true; },
+      async getAll() { return []; }
+    },
+    ConfigManager: {
+      get(key, fallback) {
+        const state = this.store || {};
+        if (key === 'bootstrap') {
+          return state.bootstrap || fallback || {};
+        }
+        return fallback;
+      },
+      set(key, value) { this.store = this.store || {}; this.store[key] = value; }
+    },
+    UserModule: {
+      bootstrapDeveloperUser() {
+        return { ok: true, created: true, code: 'DEVELOPER_BOOTSTRAP_CREATED', data: { username: 'Developer' } };
+      }
+    },
+    Core: { emit() {}, on() {} },
+    CoreAudit: { record() {} },
+    CoreAccess: null,
+    FrameworkModuleCatalog: []
+  };
+  const sandbox = vm.createContext(context);
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  sandbox.window.localStorage = sandbox.localStorage;
+
+  const base = path.resolve(__dirname, '..');
+  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'platform/master-framework.js'));
+
+  const runtime = sandbox.MasterFramework;
+  runtime.setupState = {
+    ...runtime.getDefaultSetupState(),
+    status: 'READY',
+    currentStep: 'runtime',
+    serverState: { ...runtime.getDefaultSetupState().serverState, configured: true, testedAt: '2024-01-01T00:00:00.000Z', status: 'READY', reachable: true },
+    databaseState: { ...runtime.getDefaultSetupState().databaseState, configured: true, testedAt: '2024-01-01T00:00:00.000Z', status: 'READY', reachable: true },
+    frameworkState: { ...runtime.getDefaultSetupState().frameworkState, initialized: true, initializedAt: '2024-01-01T00:00:00.000Z', status: 'READY', message: 'ready' },
+    bootstrapState: { ...runtime.getDefaultSetupState().bootstrapState, configured: true, enabled: true, username: 'Developer', displayId: 'USR-000001', role: 'developer', status: 'READY' },
+    installation: { ...runtime.getDefaultSetupState().installation, active: false, state: 'READY' }
+  };
+
+  const result = runtime.activateInstallation({ currentStep: 'runtime' });
+  assert.equal(result.status, 'ACTIVE');
+  assert.equal(result.bootstrapState.status, 'READY');
+  assert.equal(result.bootstrapState.username, 'Developer');
+  assert.equal(context.ConfigManager.get('bootstrap').developerUsername, 'Developer');
+  assert.equal(context.ConfigManager.get('bootstrap').hasDeveloperAccount, true);
+});
+
 test('bootstraps the developer user even when other users already exist', async () => {
   const context = {
     window: null,
