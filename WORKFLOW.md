@@ -15,62 +15,57 @@ Verbindliche Regeln
 * `server.md` und die Allowlist in `scripts/manual-ftps-deploy.js` bleiben die verbindliche Quelle für produktive Datei- und Deploy-Entscheidungen.
 * Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen, außer wenn der Nutzer sie ausdrücklich für die GitHub-Synchronisierung freigegeben hat.
 
+Produktionsumgebung: tatsächlicher Befund
+
+* Webserver: LiteSpeed / cPanel Shared Webspace
+* PHP: 8.5.9
+* PHP SAPI: litespeed
+* OS: Linux x86_64
+* App-Root: direkt im Webspace / FTP-Wurzel, inklusive `package.json`, `server/`, `webroot/`, `.env`
+* `node`, `npm`, `npx` im normalen PATH: nicht vorhanden
+* Port 3000 lokal im Shared-Hosting-Kontext: nicht erreichbar
+* `/api/*` auf der public URL: HTTP 404
+* `curl https://www.turbolikes.com/api/status` => 404
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.html` => 200
+
+Exakte Schlussfolgerung
+
+* Die Produktionsumgebung ist ein reines Shared-Webhosting mit LiteSpeed/PHP; sie ist nicht als Node-Backend-Host ausgelegt.
+* Es liegt kein funktionierender Reverse Proxy/Host-Mapping für `/api/*` vor.
+* Es gibt keine verlässliche lokale Node-Instanz auf Port 3000 im Host-Kontext.
+* In dieser Umgebung ist eine Node-basierte API-Lösung auf dem Shared-Server nicht die passende technische Lösung, sofern der Hoster Node/Passenger nicht aktiviert und öffentlich nutzbar gemacht hat.
+* Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
+
 Untersuchung der Produktionskette
 
 * Browser → `https://www.turbolikes.com`
-* Hosting / Apache / Nginx / Reverse Proxy / Host-Mapping
-* Node-Backend auf Port `3000`
-* `/api/status`
+* Hosting / LiteSpeed / cPanel / PHP
+* fehlende bzw. inaktive Backend-Weiterleitung zu `/api/*`
+* fehlender Node-Backend-Prozess / fehlender Reverse Proxy
 
 Realer Befund:
 
-* Lokale Runtime: `curl http://127.0.0.1:3000/api/status` → HTTP 200 OK.
-* Lokaler Portcheck: `ss -tulpn | grep 3000` → Node hört auf `0.0.0.0:3000`.
-* Öffentliche URL: `curl https://www.turbolikes.com/api/status` → HTTP 404 Not Found.
-* Öffentliche Root-URL: `curl https://www.turbolikes.com/` → `301 Moved Permanently` nach `http://www.turbolikes.com/index/index.html`.
-* Öffentliche Setup-URL: `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` → HTTP 200 OK.
-* Öffentliche Admin-URL: `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.html` → HTTP 200 OK.
+* Lokale Runtime auf dem Rechner: `curl http://127.0.0.1:3000/api/status` -> HTTP 200 OK.
+* Shared-Hosting-Context: `http://127.0.0.1:3000` -> nicht erreichbar.
+* Öffentliche URL: `curl https://www.turbolikes.com/api/status` -> HTTP 404 Not Found.
+* Öffentliche Root-URL: `curl https://www.turbolikes.com/` -> `301 Moved Permanently` zu einer statischen Seite.
+* konkrete Setup-URLs laufen zwar, aber nicht als API-Endpunkte.
 
-Folgerung:
+Technische Lösung für den echten Host
 
-* Die öffentliche Domain dient aktuell dem statischen Hosting bzw. einem Apache-/Hosting-Layer, der `/api/*` nicht an den lokalen Node-Prozess weiterleitet.
-* Der Node-Service läuft lokal korrekt, aber die Produktionsseite leitet `/api/status` nicht an Port 3000 weiter.
-* Es gibt im Repository keine Apache-/Nginx-/cPanel-/Passenger-Konfiguration, die den öffentlichen Host auf Node weiterleiten würde.
-* `server.md` und `.env.deploy` dokumentieren nur den FTP-Deploy der Projektdateien; sie bilden keine öffentliche Proxy-Regel auf dem Host ab.
-
-Technische Schlussfolgerung
-
-* Das Repository selbst ist für die Laufzeit-Logik und den Setup-Flow korrekt vorbereitet.
-* Die verbleibende, echte Ursache liegt außerhalb des Git-Repositorys: Die öffentliche Produktionsumgebung hat keine funktionierende Host-/Proxy-Anbindung für `/api/*` auf den Node-Service.
-* Der korrekte Fix auf dem Hosting-Server ist ein externer Apache/Nginx/cPanel- oder Reverse-Proxy-Eintrag, der `https://www.turbolikes.com/api/*` auf `http://127.0.0.1:3000` weiterleitet.
-* Ein reiner Repo-/FTPS-Deploy kann diese Production-Proxy-Anbindung nicht ersetzen, wenn das Hosting-System außerhalb des Projekt-Repositorys verwaltet wird.
-
-Durchgeführte Nachweise
-
-* Node lokal erreichbar: JA
-* `http://127.0.0.1:3000/api/status`: JA
-* `https://www.turbolikes.com/api/status`: NEIN (HTTP 404)
-* Reverse Proxy/Host-Mapping korrekt: NEIN
-* Echte Produktiv-Deployment-Änderung im Repo: NEIN (nicht möglich, da die benötigte Host-Konfiguration außerhalb des Git-Repositorys und außerhalb der FTPS-Allowlist liegt)
-* Setup-API auf public host erreichbar: NEIN
-* Database Name/User im Live-Host public API erkannt: NEIN, weil `/api/*` nicht öffentlich erreichbar ist
-* Passwort an Frontend übertragen: nicht verifiziert auf public host; im Repository werden keine Passwörter ins Frontend übertragen
-
-Exakter externer Fix, der auf dem Produktionsserver erforderlich ist
-
-* Apache-/Nginx-Rule / cPanel-Proxy-Setting:
-  - `https://www.turbolikes.com/api/` -> `http://127.0.0.1:3000/`
-  - `https://www.turbolikes.com/api/status` -> `http://127.0.0.1:3000/api/status`
-* Zusätzlich muss der Vertrieb/Dispatcher auf dem Hosting-Server so konfiguriert sein, dass PHP-/HTML-Pfade weiterhin funktionieren, aber `/api/*` nicht mehr vom Webserver selbst mit 404 abgefangen wird.
-* Wenn das Hosting cPanel/Passenger nutzt, muss der Reverse-Proxy oder ProxyPass/Rewrite in der cPanel-/Apache-Konfiguration gesetzt werden.
+* Die grundsätzliche und technisch saubere Entscheidung ist: Keine Node-/Port-3000-API auf diesem Shared Webspace erzwingen.
+* Stattdessen muss die komplette Setup-/Runtime-Logik als PHP/LiteSpeed-Umgebung arbeiten, inklusive `.env`-Lesung, DB-Prüfung auf dem Server, und Setup-UI, die die vorhandenen Werte serverseitig nutzt.
+* Das `.env` auf dem Host ist lesbar und enthält die relevanten Werte für DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_URL, DATABASE_URL, PORT, HOST.
+* Der DB-Fehler `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'` zeigt ein separates Infrastrukturproblem: falsche MySQL-Zugangsdaten oder Grants, nicht automatisch die Node-API als Ursache.
 
 Dokumentierte Arbeiten
 
 * Node-Host-Binding-Fix implementiert.
 * Lokale Runtime validiert.
 * Public-Host-Proxy-Anbindung geprüft.
-* Externe Hosting-Konfiguration als verbleibende Ursache dokumentiert.
-* Kein Scheinfix bzw. kein Blind-Deploy durchgeführt, da die öffentliche Routing-Konfiguration nicht im Projekt-Repo liegt.
+* Shared-Hosting-LiteSpeed-Umgebung als reale Ursache dokumentiert.
+* Schlussfolgerung: Node/Passenger auf diesem Shared-Hosting nicht geeignet bzw. nicht verfügbar; PHP/LiteSpeed-basierte Lösung erforderlich.
 
 GitHub-Sync-Regel
 
