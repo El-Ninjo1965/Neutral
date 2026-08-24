@@ -59,7 +59,7 @@
       const userRole = roleElement ? roleElement.textContent.toLowerCase() : 'admin';
 
       // Initialize API client with auth using the current host/origin so the UI works on the real deployment host.
-      const apiClient = new ApiClient((window.location && window.location.origin) || 'http://127.0.0.1:3000');
+      const apiClient = new ApiClient((window.location && window.location.origin && window.location.origin !== 'null') || 'http://localhost');
       apiClient.setAuthRole(userRole);
 
       // Create the admin router

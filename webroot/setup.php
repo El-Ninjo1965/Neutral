@@ -68,7 +68,102 @@ function writeEnvFile($filePath, array $values) {
     return @file_put_contents($filePath, $content, LOCK_EX) !== false;
 }
 
-$envFile = '/home/web1819/.env';
+function resolveRuntimeEnvFile() {
+    $projectRootCandidates = [];
+    $projectRoot = dirname(__DIR__);
+    if (is_string($projectRoot) && $projectRoot !== '') {
+        $projectRootCandidates[] = $projectRoot;
+    }
+
+    $envPathOverrides = [
+        getenv('NEUTRAL_ENV_FILE'),
+        getenv('NEUTRAL_APP_ROOT'),
+        getenv('APP_ROOT'),
+        getenv('INSTALL_ROOT'),
+        '/home/web1819/.env',
+        '/var/www/html/.env'
+    ];
+
+    foreach ($envPathOverrides as $candidate) {
+        if (is_string($candidate) && $candidate !== '' && is_file($candidate)) {
+            $projectRootCandidates[] = $candidate;
+        }
+    }
+
+    foreach ($projectRootCandidates as $candidate) {
+        $resolved = is_file($candidate) ? $candidate : rtrim((string) $candidate, '/\\') . '/.env';
+        if (is_file($resolved)) {
+            return $resolved;
+        }
+    }
+
+    return $projectRoot . '/.env';
+}
+
+function resolveRuntimeServerUrl(array $env, $fallback = 'http://localhost') {
+    $candidate = trim((string) ($env['SERVER_URL'] ?? $env['PUBLIC_URL'] ?? $env['BASE_URL'] ?? ''));
+    if ($candidate !== '') {
+        return rtrim($candidate, '/');
+    }
+
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost'));
+    $forwardedProto = trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? ''));
+    $scheme = '';
+    if ($forwardedProto !== '') {
+        $scheme = strtolower(strtok($forwardedProto, ','));
+    }
+    if ($scheme === '') {
+        $isSecure = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') || ((isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT']) === '443');
+        $scheme = $isSecure ? 'https' : 'http';
+    }
+    if ($host === '') {
+        $host = 'localhost';
+    }
+
+    $host = preg_replace('/^0\.0\.0\.0$/', 'localhost', $host);
+    $host = preg_replace('/^\[::1\]$/', 'localhost', $host);
+
+    $runtimeHost = trim((string) ($env['HOST'] ?? ''));
+    if ($runtimeHost !== '' && $runtimeHost !== '0.0.0.0' && $runtimeHost !== '::') {
+        $host = $runtimeHost;
+    }
+
+    $port = trim((string) ($env['PORT'] ?? ''));
+    if ($port !== '' && $port !== '80' && $port !== '443' && !preg_match('/:\d+$/', $host)) {
+        $host = $host . ':' . $port;
+    }
+
+    return rtrim($scheme . '://' . $host, '/');
+}
+
+function buildDatabaseUrlFromEnv(array $env) {
+    $dbType = strtolower(trim((string) ($env['DB_TYPE'] ?? $env['MYSQL_TYPE'] ?? 'mysql')));
+    if ($dbType === '') {
+        $dbType = 'mysql';
+    }
+
+    $configuredDbUrl = trim((string) ($env['DB_URL'] ?? $env['DATABASE_URL'] ?? ''));
+    if ($configuredDbUrl !== '') {
+        return $configuredDbUrl;
+    }
+
+    $dbHost = trim((string) ($env['DB_HOST'] ?? $env['MYSQL_HOST'] ?? '127.0.0.1'));
+    $dbPort = trim((string) ($env['DB_PORT'] ?? $env['MYSQL_PORT'] ?? '3306'));
+    $dbName = trim((string) ($env['DB_NAME'] ?? $env['MYSQL_DATABASE'] ?? ''));
+    $dbUser = trim((string) ($env['DB_USER'] ?? $env['MYSQL_USER'] ?? ''));
+
+    $hostPart = $dbHost !== '' ? $dbHost : '127.0.0.1';
+    $portPart = $dbPort !== '' ? ':' . $dbPort : '';
+    $namePart = $dbName !== '' ? '/' . $dbName : '';
+
+    if ($dbUser !== '') {
+        return $dbType . '://' . $dbUser . '@' . $hostPart . $portPart . $namePart;
+    }
+
+    return $dbType . '://' . $hostPart . $portPart . $namePart;
+}
+
+$envFile = resolveRuntimeEnvFile();
 $env = readEnvFile($envFile);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -94,23 +189,8 @@ $dbHost = $env['DB_HOST'] ?? $env['MYSQL_HOST'] ?? '127.0.0.1';
 $dbPort = $env['DB_PORT'] ?? $env['MYSQL_PORT'] ?? '3306';
 $dbName = $env['DB_NAME'] ?? $env['MYSQL_DATABASE'] ?? '';
 $dbUser = $env['DB_USER'] ?? $env['MYSQL_USER'] ?? '';
-$dbUrl = $env['DB_URL'] ?? $env['DATABASE_URL'] ?? '';
-
-if ($dbUrl === '') {
-    $protocol = strtolower((string) $dbType) === 'postgresql' ? 'postgresql' : 'mysql';
-    $hostPart = trim((string) $dbHost) !== '' ? (string) $dbHost : '127.0.0.1';
-    $portPart = trim((string) $dbPort) !== '' ? (string) $dbPort : '3306';
-    $namePart = trim((string) $dbName) !== '' ? (string) $dbName : '';
-    $userPart = trim((string) $dbUser) !== '' ? (string) $dbUser : '';
-
-    if ($userPart !== '' && $namePart !== '') {
-        $dbUrl = $protocol . '://' . $userPart . '@' . $hostPart . ':' . $portPart . '/' . $namePart;
-    } elseif ($namePart !== '') {
-        $dbUrl = $protocol . '://' . $hostPart . ':' . $portPart . '/' . $namePart;
-    } else {
-        $dbUrl = $protocol . '://' . $hostPart . ':' . $portPart;
-    }
-}
+$serverUrl = resolveRuntimeServerUrl($env);
+$dbUrl = buildDatabaseUrlFromEnv($env);
 ?>
 <!doctype html>
 <html lang="en">
@@ -235,7 +315,7 @@ if ($dbUrl === '') {
         </div>
         <div class="row">
           <label for="serverUrl">Server URL</label>
-          <input id="serverUrl" name="serverUrl" type="text" value="<?= htmlspecialchars($_SERVER['HTTP_HOST'] ? (($_SERVER['HTTPS'] ?? 'http') . '://' . $_SERVER['HTTP_HOST']) : 'http://127.0.0.1:3000', ENT_QUOTES, 'UTF-8') ?>" />
+          <input id="serverUrl" name="serverUrl" type="text" value="<?= htmlspecialchars((string) $serverUrl, ENT_QUOTES, 'UTF-8') ?>" />
         </div>
         <div class="row">
           <label for="apiBase">API base</label>
@@ -307,15 +387,20 @@ if ($dbUrl === '') {
       (() => {
         const statusEl = document.getElementById('setupStatus');
         const form = document.getElementById('setupForm');
-      const runtimeOrigin = window.location && window.location.origin ? window.location.origin : 'http://127.0.0.1:3000';
-      const serverUrlInput = document.getElementById('serverUrl');
-      const apiBaseInput = document.getElementById('apiBase');
-      if (serverUrlInput && (!serverUrlInput.value || serverUrlInput.value === 'http://127.0.0.1:3000')) {
-        serverUrlInput.value = runtimeOrigin;
-      }
-      if (apiBaseInput && (!apiBaseInput.value || apiBaseInput.value === '/')) {
-        apiBaseInput.value = '/api';
-      }
+        const getRuntimeOrigin = () => {
+          const origin = window.location && window.location.origin && window.location.origin !== 'null'
+            ? window.location.origin
+            : 'http://localhost';
+          return origin.replace(/\/+$/, '');
+        };
+        const serverUrlInput = document.getElementById('serverUrl');
+        const apiBaseInput = document.getElementById('apiBase');
+        if (serverUrlInput && (!serverUrlInput.value || /^https?:\/\/127\.0\.0\.1(?::3000)?$/.test(serverUrlInput.value) || /^https?:\/\/localhost(?::3000)?$/.test(serverUrlInput.value))) {
+          serverUrlInput.value = getRuntimeOrigin();
+        }
+        if (apiBaseInput && (!apiBaseInput.value || apiBaseInput.value === '/')) {
+          apiBaseInput.value = '/api';
+        }
 
         const setStatus = (message, kind = 'info') => {
           statusEl.textContent = message;
@@ -330,7 +415,7 @@ if ($dbUrl === '') {
 
         const getConfiguredServerUrl = () => {
           const configured = (document.getElementById('serverUrl')?.value || '').trim();
-          return configured || window.location.origin || 'http://127.0.0.1:3000';
+          return configured || getRuntimeOrigin();
         };
 
         const getConfiguredApiBase = () => {
@@ -388,7 +473,7 @@ if ($dbUrl === '') {
             appId: document.getElementById('appId').value || 'neutral-app',
             appName: document.getElementById('appName').value || 'Neutral Platform',
             configuration: {
-              serverUrl: document.getElementById('serverUrl').value || 'http://127.0.0.1:3000',
+              serverUrl: document.getElementById('serverUrl').value || getRuntimeOrigin(),
               apiBase: document.getElementById('apiBase').value || '/api',
               database: {
                 type: document.getElementById('dbType').value || 'mysql',
@@ -401,7 +486,7 @@ if ($dbUrl === '') {
             },
             serverState: {
               configured: true,
-              url: document.getElementById('serverUrl').value || 'http://127.0.0.1:3000',
+              url: document.getElementById('serverUrl').value || getRuntimeOrigin(),
               apiBase: document.getElementById('apiBase').value || '/api',
               status: 'CONFIGURATION_REQUIRED'
             },
@@ -446,7 +531,7 @@ if ($dbUrl === '') {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                serverUrl: document.getElementById('serverUrl').value || 'http://127.0.0.1:3000',
+                serverUrl: document.getElementById('serverUrl').value || getRuntimeOrigin(),
                 apiBase: document.getElementById('apiBase').value || '/api'
               })
             });

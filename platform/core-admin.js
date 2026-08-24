@@ -11,10 +11,10 @@
     'use strict';
 
     const getRuntimeOrigin = () => {
-        if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
             return window.location.origin;
         }
-        return 'http://127.0.0.1:3000';
+        return 'http://localhost';
     };
 
     const cloneValue = (value) => {
