@@ -319,6 +319,31 @@ if ($dbUrl === '') {
           return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
         };
 
+        const getConfiguredServerUrl = () => {
+          const configured = (document.getElementById('serverUrl')?.value || '').trim();
+          return configured || window.location.origin || 'http://127.0.0.1:3000';
+        };
+
+        const getConfiguredApiBase = () => {
+          const configured = (document.getElementById('apiBase')?.value || '').trim();
+          if (!configured) {
+            return '/api';
+          }
+          if (/^https?:\/\//i.test(configured)) {
+            return configured.replace(/\/+$/, '');
+          }
+          return configured.startsWith('/') ? configured : `/${configured}`;
+        };
+
+        const buildApiUrl = (endpoint) => {
+          const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+          const base = getConfiguredApiBase();
+          const baseUrl = /^https?:\/\//i.test(base)
+            ? base.replace(/\/+$/, '')
+            : `${getConfiguredServerUrl().replace(/\/+$/, '')}${base.startsWith('/') ? base : `/${base}`}`;
+          return `${baseUrl.replace(/\/+$/, '')}${normalizedEndpoint}`;
+        };
+
         const saveLocalDeveloperAccount = async (username, password) => {
           if (!window.LocalAuth || typeof window.LocalAuth.setupDeveloper !== 'function') {
             const passwordHash = await sha256(password);
@@ -391,7 +416,7 @@ if ($dbUrl === '') {
           };
 
           try {
-            const response = await fetch('/api/setup', {
+            const response = await fetch(buildApiUrl('/setup'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -408,7 +433,7 @@ if ($dbUrl === '') {
 
         document.getElementById('testServerBtn').addEventListener('click', async () => {
           try {
-            const response = await fetch('/api/server/test', {
+            const response = await fetch(buildApiUrl('/server/test'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -428,7 +453,7 @@ if ($dbUrl === '') {
 
         document.getElementById('testDatabaseBtn').addEventListener('click', async () => {
           try {
-            const response = await fetch('/api/database/test', {
+            const response = await fetch(buildApiUrl('/database/test'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -453,7 +478,7 @@ if ($dbUrl === '') {
 
         document.getElementById('activateSystemBtn').addEventListener('click', async () => {
           try {
-            const response = await fetch('/api/setup/activate', {
+            const response = await fetch(buildApiUrl('/setup/activate'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ currentStep: 'runtime', message: 'Installation activated.' })

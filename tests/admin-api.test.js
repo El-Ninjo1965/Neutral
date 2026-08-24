@@ -378,6 +378,30 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(result.body.ok, true);
   });
 
+  test('Bootstrap endpoints respond to CORS preflight requests', async () => {
+    await new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port,
+        path: '/api/setup',
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'https://example.com',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type, X-Framework-Role'
+        }
+      }, (res) => {
+        res.resume();
+        assert.equal(res.statusCode, 204);
+        assert.equal(res.headers['access-control-allow-origin'], '*');
+        assert.match(String(res.headers['access-control-allow-methods'] || ''), /POST/i);
+        resolve();
+      });
+      req.on('error', reject);
+      req.end();
+    });
+  });
+
   test('Invalid JSON payload returns 400', async () => {
     await new Promise((resolve, reject) => {
       const req = http.request({

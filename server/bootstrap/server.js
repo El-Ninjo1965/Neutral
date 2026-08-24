@@ -139,7 +139,16 @@ const mimeTypes = {
   '.txt': 'text/plain; charset=utf-8'
 };
 
+const setCorsHeaders = (res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Access-Token, X-Auth-Token, X-Framework-Role, X-User-Role, X-Admin-Role, X-CSRF-Token, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '600');
+  res.setHeader('Vary', 'Origin');
+};
+
 const sendJson = (res, statusCode, payload) => {
+  setCorsHeaders(res);
   res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(payload, null, 2));
 };
@@ -1960,6 +1969,13 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 };
 
 const createServer = ({ modulesDir = appModulesDir } = {}) => http.createServer((req, res) => {
+  if (req.method === 'OPTIONS') {
+    setCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   const url = new URL(req.url, `http://${host}:${port}`);
 
   // Session cookie resolution must complete before routing/authorization,
