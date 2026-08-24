@@ -68,3 +68,19 @@ Dabei ist strikt zu unterscheiden zwischen:
 * lokalen Test-/Entwicklungsdateien
 
 Die Produktionsumgebung darf niemals dadurch aufgebaut werden, dass einfach der gesamte Repository-Root auf den Server synchronisiert wird.
+
+Aktuelle Betriebs- und Deploy-Schritte
+
+* Lokale Secrets werden nur in `.env` und `.env.deploy` gehalten. Diese Dateien sind nicht im Repository enthalten und dürfen niemals committed werden.
+* Für den produktiven Server-Deploy gilt die in `server.md` definierte Allowlist; nur diese Dateien werden in den Staging-Ordner kopiert.
+* Der manuelle FTPS-Deploy wird über `scripts/manual-ftps-deploy.js` verwaltet. Der Script-Aufruf ist `npm run deploy:manual` bzw. `node scripts/manual-ftps-deploy.js --dry-run` für die Vorschau ohne Upload.
+* Der Deploy setzt nur neue oder aktualisierte Dateien per `lftp mirror -R --only-newer` hoch und respektiert dabei `--exclude-glob .env` sowie `app-node-test`-Ausnahmen.
+* Der Server-Start erfolgt über `npm start` bzw. `node scripts/neutral-start.js`; der lokale Start wurde mit der `.env`-Konfiguration validiert.
+* Nach dem Start wurde die Health-Route `http://127.0.0.1:3000/health` geprüft. Der erwartete Status ist `200 OK` mit einem JSON-Body, das `ok: true` und `status: "healthy"` enthält.
+* Die Daten für FTP und MySQL wurden in der lokalen Umgebung hinterlegt, nicht im Repository. Die `.env`-Dateien werden durch `.gitignore` geschützt.
+
+Validierungsprotokoll
+
+* `node scripts/manual-ftps-deploy.js --dry-run` läuft erfolgreich und zeigt den erwarteten Staging-Bestand und die Liste der zu synchronisierenden Dateien an.
+* `curl http://127.0.0.1:3000/health` liefert nach dem Start `HTTP/1.1 200 OK` und das Health-JSON des Neutral-Servers.
+* Bei Änderungen muss vor dem Commit geprüft werden, dass keine geheimen Zugangsdaten oder Server-Only-Dateien in Git gelangen.
