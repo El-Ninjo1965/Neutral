@@ -28,6 +28,7 @@ const allowedEntries = [
   'apps/neutral-app/index.html',
   'webroot/index.html',
   'webroot/setup.html',
+  'webroot/setup.php',
   'webroot/admin.html',
   'webroot/dev.html',
   'webroot/style.css',

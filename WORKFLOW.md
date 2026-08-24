@@ -139,3 +139,10 @@ Realer Produktionsdeploy (tatsächlich ausgeführt)
 * Produktionsserver-Verifikation: `lftp`-Liste des Servers zeigt die erwarteten Produktivordner `app/`, `platform/`, `server/`, `webroot/` sowie die vorhandene serverseitige `.env`; die ausführliche Prüfung bestätigte, dass `.env` nicht überschrieben oder gelöscht wurde.
 * Setup-Verifikation: Die Live-`server/bootstrap/server.js` prüft `DB_TYPE`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` und `DB_URL` aus der Laufzeit-Umgebung und entfernt sensible Felder vor dem Versand an das Frontend. `DB_NAME` und `DB_USER` wurden auf dem Server als `web1819_neutral_app` erkannt; das Passwort bleibt nur serverseitig in `.env` und wird nicht an das Frontend übertragen.
 * Erfolgsstatus: Die Produktsicherung war erfolgreich; der Upload war ein echter FTPS-Transfer und kein Dry-Run.
+
+Aktueller Sync- und Bereinungsstatus
+
+* `setup.html` bleibt das aktive Laufzeit-Setup für den Node-Server (`server/bootstrap/server.js` serviert `/setup` und `/setup.html`), während `setup.php` als ergänzendes PHP-Setup erhalten bleibt und im Staging/Manifest gelistet ist, damit keine veraltete oder "verlorene" Setup-Datei im GitHub-/Deploy-Pfad bleibt.
+* `npm run setup:preflight` und `node scripts/manual-ftps-deploy.js --dry-run` wurden erfolgreich ausgeführt; keine Allowlist-Dateien fehlen, und der Deploy-Dry-Run zeigt keinen Upload-/Delete-Verlust an.
+* Der lokale Repository-Zustand ist mit den aktuellen Server-/Deploy-Erfordernissen konsistent; keine produktiv benötigten Dateien wurden als veraltet oder leblos identifiziert.
+* Für den GitHub-/AI-Ablauf ist der aktuelle Zustand nun dokumentiert und als synchronisierter Arbeitsstand vorbereitet.
