@@ -40,7 +40,7 @@ final class SetupInstaller
         ]);
 
         $migrationStatus = strtoupper((string) ($state['migrationState']['status'] ?? 'BLOCKED'));
-        $runtimeReady = $checkResult['ok'] && !in_array($migrationStatus, ['BLOCKED', 'ERROR'], true);
+        $runtimeReady = $checkResult['ok'] && $migrationStatus === 'ACTIVE';
         $persistedActive = strtoupper((string) ($state['status'] ?? '')) === 'ACTIVE'
             && (bool) (($state['installation']['active'] ?? false) === true);
 

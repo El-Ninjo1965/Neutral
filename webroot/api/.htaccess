@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Keep direct access to existing files/directories (e.g. setup/status.php).
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route API paths through index.php on shared-host setups without custom rewrites.
+RewriteRule ^ index.php [L,QSA]

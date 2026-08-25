@@ -30,6 +30,8 @@ const allowedEntries = [
   'app/modules/gps/module.json',
   'apps/neutral-app/app-info.json',
   'apps/neutral-app/index.html',
+  'core/php/bootstrap.php',
+  'core/php/src',
   'webroot/index.html',
   'webroot/setup.html',
   'webroot/setup.php',
@@ -43,9 +45,12 @@ const allowedEntries = [
   'webroot/admin-init.js',
   'webroot/admin/common.js',
   'webroot/admin/index.js',
+  'webroot/admin/audit-view.js',
   'webroot/admin/roles-view.js',
   'webroot/admin/settings-view.js',
-  'webroot/admin/users-view.js'
+  'webroot/admin/users-view.js',
+  'webroot/api/.htaccess',
+  'webroot/api'
 ];
 
 function parseEnvFile(filePath) {

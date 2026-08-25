@@ -64,12 +64,14 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Verified through live diagnostics: real host `.env` is readable and DB host/port are active in the running PHP process.
 [x] Repair the actual server-to-DB connection for Neutral.
   - Current verification result: read-only connectivity check is successful; no schema or data mutation was performed.
-[?] Verify server-side storage is usable for online data persistence.
-  - Live diagnostics confirms DB connectivity (`localhost` and `127.0.0.1` both succeed), but storage viability for app persistence is not yet fully verified: `table_count` is currently `0` in the production DB and file-based config storage paths under `/home/web1819/public_html/index/app/neutral/config` are not present.
-[ ] Validate browser vs server storage separation in actual runtime conditions.
+[x] Verify server-side storage is usable for online data persistence.
+  - Verified on live host after controlled setup install: MySQL metadata check is `SUCCESS`, schema migration `2026_08_25_0001_core_schema` is applied, and diagnostics show `table_count=15`.
+[x] Validate browser vs server storage separation in actual runtime conditions.
+  - Verified on live host: server-authoritative auth/users/roles/sessions/settings/audit run through PHP+MySQL API; browser storage remains client-side only.
 
 ### Application and module integration
-[ ] Test the admin area against the real backend.
+[x] Test the admin area against the real backend.
+  - Verified against live PHP/MySQL API: users, roles/permissions, settings, sessions, audit, auth/me, login/logout and CSRF-protected writes.
 [ ] Test module discovery and administration against the real backend.
 [ ] Test GPS module behavior on the real system.
 [ ] Test module activation and deactivation persistence.
@@ -436,15 +438,49 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - `php -l webroot/api/index.php` (pass)
     - `php core/php/tests/smoke.php` (pass)
     - `npm test -- --test-reporter=spec` (92/92 pass)
-    - runtime smoke via `php -S`:
-      - `/api/status` returns `database.state=error` with explicit `Missing required PHP extension: pdo_mysql` in this local environment
-      - `/api/auth/login` and `/api/auth/logout` return HTTP 500 while `pdo_mysql` is unavailable (no simulated success)
-      - `/api/auth/me` remains protected (401 without authenticated session)
-      - `/api/admin/users` and `/api/admin/roles` remain protected (403 without identity/permission)
+  - MySQL-authoritative E2E verification status (isolated runtime, no production DB usage):
+    - Runtime availability:
+      - VERIFIED: real MariaDB + PHP runtime with `pdo_mysql` used for E2E verification.
+      - BLOCKED: local host PHP CLI still missing `pdo_mysql`; native local MySQL E2E remains unavailable without isolated runtime.
+    - Setup/migration/bootstrap:
+      - VERIFIED: setup install path (`/api/setup/install.php`) created schema and seed data in isolated DB.
+      - VERIFIED: bootstrap admin created from `.env`, password stored hashed, role assignment present.
+      - VERIFIED: repeated install remains idempotent (second run reports already active state).
+    - Auth/session:
+      - VERIFIED: `/api/auth/login` succeeds with valid bootstrap credentials and persists session in MySQL `sessions`.
+      - VERIFIED: `/api/auth/me` rehydrates user/roles/permissions from MySQL-backed state.
+      - VERIFIED: `/api/auth/logout` invalidates session; subsequent `/api/auth/me` is unauthenticated.
+      - VERIFIED: invalid/tampered session ids return unauthorized.
+    - RBAC/user/role/permission:
+      - VERIFIED: non-privileged user is forbidden on admin-protected operations.
+      - VERIFIED: user CRUD executes against MySQL persistence (create/update/delete with bootstrap protection behavior preserved).
+      - VERIFIED: role + permission CRUD executes against MySQL persistence (create/read/update/delete custom role and permissions).
+      - VERIFIED: role assignment changes become effective server-side for session identity rehydration.
+    - Audit/settings:
+      - VERIFIED: admin write operations create audit rows in MySQL `audit_log`; `/api/admin/audit` reflects DB-backed entries.
+      - VERIFIED: `/api/admin/settings` writes/reads MySQL-backed settings and values persist across app restart.
+    - Defects found during real-DB verification:
+      - FIXED: missing `Phase4UserService::normalizePermissions()` caused `/api/auth/login` HTTP 500; method restored in `core/php/src/Phase4AuthRbac.php`.
+      - OPEN: some domain/validation failures still surface as HTTP 500 (e.g. protected bootstrap delete, invalid role payload) and should be normalized to consistent 4xx API responses in a dedicated follow-up.
   - Current gap analysis (remaining):
     - Module lifecycle admin controls are still pending (PHASE 8 dependency).
-    - End-to-end login/logout/user CRUD/role CRUD/session lifecycle verification against a real MySQL runtime is still pending because local PHP CLI lacks `pdo_mysql`.
-    - Settings/audit path still includes controlled fallback behavior in `Phase6AdminStorage`; production-authoritative operation requires MySQL runtime availability.
+    - Production-host MySQL E2E verification is now VERIFIED (live host, live PHP/LiteSpeed runtime, controlled migration path executed).
+    - Settings/audit path still includes controlled fallback behavior in `Phase6AdminStorage`; production-authoritative operation is verified when MySQL runtime is available.
+  - Follow-up production verification and fixes:
+    - `scripts/manual-ftps-deploy.js` allowlist extended to include PHP core/API runtime files and `webroot/admin/audit-view.js`.
+    - Added `webroot/api/.htaccess` rewrite fallback so `/webroot/api/*` routes are forwarded to `index.php` on LiteSpeed shared hosting without custom vhost rewrites.
+    - `core/php/src/SetupInstaller.php` corrected: stale persisted `ACTIVE` setup state no longer blocks install while migrations are still pending.
+    - Live setup/install execution result:
+      - `/api/setup/status` moved from `READY_TO_INSTALL` to `ACTIVE`
+      - migration `2026_08_25_0001_core_schema` applied
+      - bootstrap admin seeded as `created-101`
+      - DB table count increased from `0` to `15`
+    - Live E2E API checks passed for:
+      - `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`
+      - `/api/admin/users`, `/api/admin/roles`, `/api/admin/settings`, `/api/admin/audit`, `/api/admin/sessions`, `/api/admin/permissions`
+      - RBAC checks (`403` for unauthorized write), session invalidation (`401` after logout), MySQL-backed persistence for users/roles/settings/audit.
+    - Remaining production defect:
+      - some domain/security failures still map to HTTP `500` instead of stable `4xx` (`csrf` missing on write; delete protected user `101`).
   - Required functional concept:
     - Benutzer: list/create/edit/status activate/deactivate/delete + role assignments.
     - Rollen & Rechte: role CRUD, permission catalog visibility, role-permission assignment, user-role assignment, server-enforced checks.
@@ -530,13 +566,17 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
 - Result/Notes: normal deployment is non-destructive sync only; first-install/migration and cleanup remain explicit, separate, approved procedures.
 
 #### PHASE 13 – Produktionsinstallation
-- [ ] OFFEN
+- [~] IN ARBEIT (kontrollierte Erstinstallation ausgeführt, Abschlussprüfung offen)
 - Description: Install the new PHP + MySQL target on the verified production host structure using the existing FTPS/cPanel deployment path; validate environment and initialize schema in a controlled workflow.
 - Dependencies: PHASE 5, PHASE 12, PHASE 12A, PHASE 12B
 - Affected components: real webroot, real app root, live env file, live DB schema, setup flow, admin bootstrap, runtime directories, production files to be migrated or replaced
-- Status: not started
+- Status: controlled production deployment + setup/migration/bootstrap executed; final sign-off still pending remaining phase checks
 - Test criterion: app boots and setup completes without Node/Passenger, without port 3000, and without a background server process; production data and `.env` remain protected
-- Result/Notes: production DB remains untouched until schema migration and setup are ready and approved
+- Result/Notes:
+  - deployed via existing FTPS workflow with extended allowlist for PHP core/API files
+  - setup/migration/bootstrap completed on live host without Node/Passenger requirement
+  - no `.env` values were committed or changed in repository
+  - no cleanup/deletion of production data directories executed
 
 #### PHASE 14 – Tests
 - [ ] OFFEN
