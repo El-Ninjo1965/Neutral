@@ -6,6 +6,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const configModulePath = path.resolve(__dirname, '../server/config/index.js');
+const legacyConfigModulePath = path.resolve(__dirname, '../config/index.js');
 const phpEnvLoaderPath = path.resolve(__dirname, '../core/php/src/EnvLoader.php');
 
 const createAlternativeInstall = () => {
@@ -64,11 +65,12 @@ const preserveEnv = () => {
       }
     }
     delete require.cache[require.resolve(configModulePath)];
+    delete require.cache[require.resolve(legacyConfigModulePath)];
   };
 };
 
 test('Node runtime resolves project root and API base from the active installation context', () => {
-  const { appRoot } = createAlternativeInstall();
+  const { tempRoot, appRoot } = createAlternativeInstall();
   const restoreEnv = preserveEnv();
 
   try {
@@ -79,33 +81,42 @@ test('Node runtime resolves project root and API base from the active installati
     process.env.INSTALL_ROOT = appRoot;
     process.env.APP_API_BASE = '/portable-api';
     delete require.cache[require.resolve(configModulePath)];
+    delete require.cache[require.resolve(legacyConfigModulePath)];
 
     const config = require(configModulePath);
+    const legacyConfig = require(legacyConfigModulePath);
     assert.equal(config.projectRoot, appRoot);
     assert.equal(config.rootDir, appRoot);
     assert.equal(config.webRootDir, path.join(appRoot, 'webroot'));
     assert.equal(config.apiBase, '/portable-api');
+    assert.equal(legacyConfig.projectRoot, appRoot);
+    assert.equal(legacyConfig.apiBase, '/portable-api');
     assert.ok(!config.projectRoot.includes('/home/web1819'));
     assert.ok(!config.webRootDir.includes('/home/web1819'));
     assert.ok(!config.installRoot.includes('/home/web1819'));
   } finally {
     restoreEnv();
+    fs.rmSync(tempRoot, { recursive: true, force: true });
   }
 });
 
 test('PHP runtime prefers the active install root over shared-host fallback candidates', () => {
-  const { appRoot } = createAlternativeInstall();
-  const script = [
-    `require ${JSON.stringify(phpEnvLoaderPath)};`,
-    `$root = ${JSON.stringify(appRoot)};`,
-    `$candidates = \\Neutral\\Core\\EnvLoader::defaultCandidates($root);`,
-    `echo json_encode($candidates);`
-  ].join('\n');
+  const { tempRoot, appRoot } = createAlternativeInstall();
+  try {
+    const script = [
+      `require ${JSON.stringify(phpEnvLoaderPath)};`,
+      `$root = ${JSON.stringify(appRoot)};`,
+      `$candidates = \\Neutral\\Core\\EnvLoader::defaultCandidates($root);`,
+      `echo json_encode($candidates);`
+    ].join('\n');
 
-  const stdout = execFileSync('php', ['-r', script], { encoding: 'utf8' });
-  const candidates = JSON.parse(stdout);
-  assert.ok(candidates[0] === path.join(appRoot, '.env'));
-  assert.ok(candidates.includes(path.join(appRoot, '.env')));
-  assert.ok(candidates.includes('/home/web1819/.env'));
-  assert.ok(candidates.indexOf(path.join(appRoot, '.env')) < candidates.indexOf('/home/web1819/.env'));
+    const stdout = execFileSync('php', ['-r', script], { encoding: 'utf8' });
+    const candidates = JSON.parse(stdout);
+    assert.ok(candidates[0] === path.join(appRoot, '.env'));
+    assert.ok(candidates.includes(path.join(appRoot, '.env')));
+    assert.ok(candidates.includes('/home/web1819/.env'));
+    assert.ok(candidates.indexOf(path.join(appRoot, '.env')) < candidates.indexOf('/home/web1819/.env'));
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
