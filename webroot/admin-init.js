@@ -77,10 +77,13 @@
       }
 
       const meResult = await apiClient.me();
+      const meData = typeof apiClient.extractEnvelopeData === 'function'
+        ? apiClient.extractEnvelopeData(meResult)
+        : null;
       const hasAuthenticatedContext = !!(
         meResult.ok &&
-        meResult.data &&
-        (meResult.data.user || (Array.isArray(meResult.data.roles) && meResult.data.roles.length > 0))
+        meData &&
+        (meData.user || (Array.isArray(meData.roles) && meData.roles.length > 0))
       );
       if (!hasAuthenticatedContext) {
         const authMessage = document.getElementById('authMessage');

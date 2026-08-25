@@ -109,6 +109,17 @@ class ApiClient {
     }
   }
 
+  extractEnvelopeData(result) {
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+      return null;
+    }
+    const envelope = result.data;
+    if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
+      return null;
+    }
+    return envelope.data;
+  }
+
   // GET request
   async get(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: 'GET' });
@@ -281,6 +292,10 @@ class ApiClient {
   async me() {
     return this.get('/api/auth/me');
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.ApiClient = ApiClient;
 }
 
 // Export for browser and Node.js
