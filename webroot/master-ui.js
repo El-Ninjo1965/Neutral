@@ -3142,6 +3142,59 @@
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
+    const extractApiData = (result) => {
+      if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+        return null;
+      }
+      const envelope = result.data;
+      if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
+        return null;
+      }
+      return envelope.data;
+    };
+
+    const applyServerIdentity = (identityData) => {
+      const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
+        ? identityData.user
+        : null;
+      if (!userRecord) {
+        return null;
+      }
+
+      const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
+        ? identityData.roles
+        : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
+      const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
+        ? identityData.permissions
+        : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
+
+      const normalizedUser = {
+        ...userRecord,
+        roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
+        permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
+        status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
+      };
+
+      const normalizedSession = {
+        sessionId: 'server-session',
+        status: 'active',
+        authContext: {
+          source: 'server-session'
+        }
+      };
+
+      if (window.CoreAuth && typeof window.CoreAuth === 'object') {
+        window.CoreAuth.currentUser = normalizedUser;
+        window.CoreAuth.currentSession = normalizedSession;
+      }
+      if (window.UserModule && typeof window.UserModule === 'object') {
+        window.UserModule.currentUser = normalizedUser;
+        window.UserModule.currentSession = normalizedSession;
+      }
+
+      return normalizedUser;
+    };
+
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
@@ -3152,39 +3205,61 @@
         const username = usernameInput ? usernameInput.value.trim() : 'Developer';
         const password = passwordInput ? passwordInput.value : '';
 
-        if (!window.UserModule || typeof window.UserModule.login !== 'function') {
-          return;
-        }
-
-        const result = await window.UserModule.login({ username, password });
-        if (!result || !result.ok) {
+        if (!serverApiClient) {
           const authMessage = document.getElementById('authMessage');
           if (authMessage) {
             authMessage.className = 'message error';
-            authMessage.textContent = result && result.message ? result.message : 'Authentication failed.';
+            authMessage.textContent = 'Server authentication client is not available.';
           }
           return;
         }
 
-        if (serverApiClient) {
-          const serverLogin = await serverApiClient.login(username, password);
-          if (!serverLogin.ok) {
-            const authMessage = document.getElementById('authMessage');
-            if (authMessage) {
-              authMessage.className = 'message error';
-              authMessage.textContent = serverLogin.error || 'Server authentication failed.';
-            }
-            return;
+        const serverLogin = await serverApiClient.login(username, password);
+        const serverLoginData = extractApiData(serverLogin);
+        if (!serverLogin.ok || !serverLoginData) {
+          const serverError = serverLogin && serverLogin.data && serverLogin.data.error && serverLogin.data.error.message
+            ? serverLogin.data.error.message
+            : (serverLogin && serverLogin.error ? serverLogin.error : 'Server authentication failed.');
+          const authMessage = document.getElementById('authMessage');
+          if (authMessage) {
+            authMessage.className = 'message error';
+            authMessage.textContent = serverError;
           }
+          return;
         }
 
-        const user = result.data && result.data.user ? result.data.user : null;
+        const meResult = await serverApiClient.me();
+        const meData = extractApiData(meResult);
+        if (!meResult.ok || !meData || !meData.user) {
+          const authMessage = document.getElementById('authMessage');
+          if (authMessage) {
+            authMessage.className = 'message error';
+            authMessage.textContent = meResult && meResult.error ? meResult.error : 'Server session could not be established.';
+          }
+          return;
+        }
+
+        const user = applyServerIdentity({
+          user: meData.user || serverLoginData.user || null,
+          roles: Array.isArray(meData.roles) ? meData.roles : serverLoginData.roles,
+          permissions: Array.isArray(meData.permissions) ? meData.permissions : serverLoginData.permissions
+        });
+        if (!user) {
+          const authMessage = document.getElementById('authMessage');
+          if (authMessage) {
+            authMessage.className = 'message error';
+            authMessage.textContent = 'No authenticated user was returned by the server.';
+          }
+          return;
+        }
+
         const target = resolveRoleRoute(user);
         if (target && target !== window.location.pathname.replace(/^\//, '')) {
           window.location.replace(target);
           return;
         }
 
+        syncShellVisibility();
         renderSummary();
         renderUserMenu();
         renderPageContent();
