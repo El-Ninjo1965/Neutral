@@ -148,6 +148,7 @@ function describePath($path) {
         'exists' => file_exists($path),
         'is_dir' => is_dir($path),
         'readable' => is_readable($path),
+        'writable' => is_writable($path),
     ];
 }
 
@@ -210,6 +211,23 @@ $webrootStatus = [
     'admin_html' => describePath($webRootPath . '/admin.html'),
 ];
 
+$projectRoot = dirname(__DIR__);
+$configDir = $projectRoot . '/config';
+$runtimeDir = $projectRoot . '/server/runtime';
+$runtimeDataDir = $runtimeDir . '/data';
+$storageFiles = [
+    'setup-state.json',
+    'admin-users.json',
+    'admin-settings.json',
+    'admin-roles.json',
+    'audit-log.json',
+    'sessions.json',
+];
+$storageFileStatus = [];
+foreach ($storageFiles as $filename) {
+    $storageFileStatus[$filename] = describePath($configDir . '/' . $filename);
+}
+
 $phpVersion = PHP_VERSION;
 $phpSapi = php_sapi_name();
 $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'unknown';
@@ -238,6 +256,13 @@ $dbConfig = [
 $mysqlAttempts = [];
 $pdoAvailable = extension_loaded('pdo_mysql');
 $mysqliAvailable = extension_loaded('mysqli');
+$storageMetadata = [
+    'db_metadata_status' => 'NOT_ATTEMPTED',
+    'database' => $dbName !== '' ? $dbName : null,
+    'active_database' => null,
+    'table_count' => null,
+    'error' => null,
+];
 
 $targets = [];
 if ($dbHost !== '') {
@@ -296,6 +321,67 @@ foreach ($targets as $hostCandidate) {
     $mysqlAttempts[] = $result;
 }
 
+if ($pdoAvailable && $dbHost !== '' && $dbName !== '' && $dbUser !== '' && $dbPassword !== '') {
+    try {
+        $metadataDsn = 'mysql:host=' . $dbHost . ';port=' . ($dbPort !== '' ? (int) $dbPort : 3306) . ';dbname=' . $dbName . ';charset=utf8mb4';
+        $metadataPdo = new PDO($metadataDsn, $dbUser, $dbPassword, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+        $dbRow = $metadataPdo->query('SELECT DATABASE() AS active_database')->fetch();
+        $countStmt = $metadataPdo->prepare('SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = :schema');
+        $countStmt->execute(['schema' => $dbName]);
+        $countRow = $countStmt->fetch();
+
+        $storageMetadata['db_metadata_status'] = 'SUCCESS';
+        $storageMetadata['active_database'] = isset($dbRow['active_database']) ? (string) $dbRow['active_database'] : null;
+        $storageMetadata['table_count'] = isset($countRow['table_count']) ? (int) $countRow['table_count'] : null;
+        $storageMetadata['error'] = null;
+        $metadataPdo = null;
+    } catch (Throwable $throwable) {
+        $storageMetadata['db_metadata_status'] = 'FAILED';
+        $storageMetadata['error'] = sanitizeMessage($throwable->getMessage(), $dbPassword);
+    }
+} elseif ($mysqliAvailable && $dbHost !== '' && $dbName !== '' && $dbUser !== '' && $dbPassword !== '') {
+    $metadataLink = @mysqli_connect($dbHost, $dbUser, $dbPassword, $dbName, $dbPort !== '' ? (int) $dbPort : 3306);
+    if ($metadataLink === false) {
+        $storageMetadata['db_metadata_status'] = 'FAILED';
+        $storageMetadata['error'] = sanitizeMessage(mysqli_connect_error(), $dbPassword);
+    } else {
+        $dbResult = @mysqli_query($metadataLink, 'SELECT DATABASE() AS active_database');
+        $countResult = @mysqli_query($metadataLink, "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = '" . mysqli_real_escape_string($metadataLink, $dbName) . "'");
+
+        if ($dbResult !== false) {
+            $dbRow = @mysqli_fetch_assoc($dbResult);
+            $storageMetadata['active_database'] = isset($dbRow['active_database']) ? (string) $dbRow['active_database'] : null;
+            @mysqli_free_result($dbResult);
+        }
+
+        if ($countResult !== false) {
+            $countRow = @mysqli_fetch_assoc($countResult);
+            $storageMetadata['table_count'] = isset($countRow['table_count']) ? (int) $countRow['table_count'] : null;
+            @mysqli_free_result($countResult);
+        }
+
+        $storageMetadata['db_metadata_status'] = 'SUCCESS';
+        $storageMetadata['error'] = null;
+        @mysqli_close($metadataLink);
+    }
+} else {
+    $storageMetadata['db_metadata_status'] = 'SKIPPED';
+    $storageMetadata['error'] = 'DB metadata check requires PDO/MySQLi and DB credentials';
+}
+
+$storageStatus = [
+    'project_root' => describePath($projectRoot),
+    'config_dir' => describePath($configDir),
+    'runtime_dir' => describePath($runtimeDir),
+    'runtime_data_dir' => describePath($runtimeDataDir),
+    'config_files' => $storageFileStatus,
+    'db_metadata' => $storageMetadata,
+];
+
 $reportText = "PRODUCTION DIAGNOSTICS\n======================\n\n";
 $reportText .= "HOST\n";
 $reportText .= '- /home/web1819 exists: ' . (file_exists('/home/web1819') ? 'yes' : 'no') . "\n";
@@ -333,6 +419,17 @@ $reportText .= '- expected app root exists: ' . (file_exists($expectedWebroot) ?
 $reportText .= '- expected webroot exists: ' . (file_exists($webRootPath) ? 'yes' : 'no') . "\n";
 $reportText .= '- setup.php exists: ' . (file_exists($webRootPath . '/setup.php') ? 'yes' : 'no') . "\n";
 $reportText .= '- admin.html exists: ' . (file_exists($webRootPath . '/admin.html') ? 'yes' : 'no') . "\n";
+$reportText .= "\nSERVER STORAGE\n";
+$reportText .= '- config dir exists/readable/writable: '
+    . ($storageStatus['config_dir']['exists'] ? 'yes' : 'no') . '/'
+    . ($storageStatus['config_dir']['readable'] ? 'yes' : 'no') . '/'
+    . ($storageStatus['config_dir']['writable'] ? 'yes' : 'no') . "\n";
+$reportText .= '- runtime data dir exists/readable/writable: '
+    . ($storageStatus['runtime_data_dir']['exists'] ? 'yes' : 'no') . '/'
+    . ($storageStatus['runtime_data_dir']['readable'] ? 'yes' : 'no') . '/'
+    . ($storageStatus['runtime_data_dir']['writable'] ? 'yes' : 'no') . "\n";
+$reportText .= '- db metadata check: ' . ($storageMetadata['db_metadata_status'] ?? 'UNKNOWN') . "\n";
+$reportText .= '- db table count: ' . (isset($storageMetadata['table_count']) ? (string) $storageMetadata['table_count'] : 'n/a') . "\n";
 
 if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
     $payload = [
@@ -362,6 +459,7 @@ if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
         'db_url' => parseDbUrlSummary($dbUrl),
         'mysql' => $mysqlAttempts,
         'webroot' => $webrootStatus,
+        'storage' => $storageStatus,
     ];
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), PHP_EOL;

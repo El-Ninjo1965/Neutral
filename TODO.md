@@ -64,7 +64,8 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Verified through live diagnostics: real host `.env` is readable and DB host/port are active in the running PHP process.
 [x] Repair the actual server-to-DB connection for Neutral.
   - Current verification result: read-only connectivity check is successful; no schema or data mutation was performed.
-[ ] Verify server-side storage is usable for online data persistence.
+[?] Verify server-side storage is usable for online data persistence.
+  - Live diagnostics confirms DB connectivity (`localhost` and `127.0.0.1` both succeed), but storage viability for app persistence is not yet fully verified: `table_count` is currently `0` in the production DB and file-based config storage paths under `/home/web1819/public_html/index/app/neutral/config` are not present.
 [ ] Validate browser vs server storage separation in actual runtime conditions.
 
 ### Application and module integration
