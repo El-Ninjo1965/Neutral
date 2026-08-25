@@ -1,12 +1,6 @@
 'use strict';
 
-/**
- * Admin Users View
- * User management UI with CRUD operations
- */
-
-// Utility function to escape HTML
-const escapeHtml = (value) => String(value ?? '')
+const escapeHtmlUsers = (value) => String(value ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
@@ -17,28 +11,33 @@ class AdminUsersView {
   constructor(apiClient) {
     this.api = apiClient;
     this.users = [];
+    this.roles = [];
     this.editingUserId = null;
+    this.filters = { q: '', status: '', role: '' };
   }
 
-  // Initialize the view
   async init(container) {
     this.container = container;
+    await this.loadRoles();
     await this.loadUsers();
     this.render();
   }
 
-  // Load users from API
+  async loadRoles() {
+    const result = await this.api.getRoles();
+    this.roles = result.ok && Array.isArray(result.data.roles) ? result.data.roles : [];
+  }
+
   async loadUsers() {
-    const result = await this.api.getUsers();
+    const result = await this.api.searchUsers(this.filters);
     if (result.ok) {
-      this.users = result.data.users || [];
+      this.users = Array.isArray(result.data.users) ? result.data.users : [];
     } else {
       AdminCommon.showAlert(`Failed to load users: ${result.error}`, 'error');
       this.users = [];
     }
   }
 
-  // Render the view
   render() {
     this.container.innerHTML = `
       <div class="admin-users-view">
@@ -46,155 +45,191 @@ class AdminUsersView {
           <h2>User Management</h2>
           <button class="btn btn-primary" onclick="adminUsers.showCreateForm()">+ New User</button>
         </div>
-
+        <form id="users-filter-form" class="inline-form">
+          <input type="text" id="filterQuery" placeholder="Search username, email, display name" value="${escapeHtmlUsers(this.filters.q || '')}" />
+          <select id="filterStatus">
+            <option value="">All statuses</option>
+            ${['active', 'inactive', 'pending', 'archived'].map((status) => `
+              <option value="${status}" ${this.filters.status === status ? 'selected' : ''}>${status}</option>
+            `).join('')}
+          </select>
+          <select id="filterRole">
+            <option value="">All roles</option>
+            ${this.roles.map((role) => `
+              <option value="${escapeHtmlUsers(role.id)}" ${this.filters.role === role.id ? 'selected' : ''}>${escapeHtmlUsers(role.name)}</option>
+            `).join('')}
+          </select>
+          <button type="submit" class="btn btn-secondary">Apply</button>
+          <button type="button" class="btn btn-secondary" onclick="adminUsers.resetFilters()">Reset</button>
+        </form>
         <div class="users-table-container" id="users-table"></div>
         <div class="create-form-container" id="create-form" style="display:none;"></div>
       </div>
     `;
-
+    this.bindFilterForm();
     this.renderTable();
   }
 
-  // Render users table
-  renderTable() {
-    const tableDiv = document.getElementById('users-table');
-    if (!tableDiv) return;
-
-    if (this.users.length === 0) {
-      tableDiv.innerHTML = '<p class="empty-state">No users found. Create one to get started.</p>';
+  bindFilterForm() {
+    const form = document.getElementById('users-filter-form');
+    if (!form) {
       return;
     }
 
-    const table = document.createElement('table');
-    table.className = 'admin-table';
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Created</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${this.users.map(user => `
-          <tr>
-            <td><strong>${escapeHtml(user.username)}</strong></td>
-            <td>${escapeHtml(user.email)}</td>
-            <td><span class="badge badge-${user.role}">${escapeHtml(user.role)}</span></td>
-            <td><span class="badge badge-${user.status}">${escapeHtml(user.status)}</span></td>
-            <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-            <td class="action-buttons">
-              <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${user.id}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${user.id}')">Delete</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    `;
-
-    tableDiv.innerHTML = '';
-    tableDiv.appendChild(table);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      this.filters = {
+        q: document.getElementById('filterQuery')?.value || '',
+        status: document.getElementById('filterStatus')?.value || '',
+        role: document.getElementById('filterRole')?.value || ''
+      };
+      await this.loadUsers();
+      this.renderTable();
+    });
   }
 
-  // Show create form
+  async resetFilters() {
+    this.filters = { q: '', status: '', role: '' };
+    await this.loadUsers();
+    this.render();
+  }
+
+  renderTable() {
+    const tableDiv = document.getElementById('users-table');
+    if (!tableDiv) {
+      return;
+    }
+
+    if (this.users.length === 0) {
+      tableDiv.innerHTML = '<p class="empty-state">No matching users found.</p>';
+      return;
+    }
+
+    tableDiv.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${this.users.map((user) => `
+            <tr>
+              <td>${escapeHtmlUsers(user.id)}</td>
+              <td><strong>${escapeHtmlUsers(user.username)}</strong></td>
+              <td>${escapeHtmlUsers(user.email || '—')}</td>
+              <td>${Array.isArray(user.roles) && user.roles.length ? user.roles.map((r) => `<span class="chip">${escapeHtmlUsers(r)}</span>`).join(' ') : '—'}</td>
+              <td><span class="badge badge-${escapeHtmlUsers(user.status || 'active')}">${escapeHtmlUsers(user.status || 'active')}</span></td>
+              <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
+              <td class="action-buttons">
+                <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
   showCreateForm() {
     this.editingUserId = null;
     this.showForm();
   }
 
-  // Show edit form
   showEditForm(userId) {
-    this.editingUserId = userId;
+    this.editingUserId = String(userId);
     this.showForm();
   }
 
-  // Show create/edit form
   showForm() {
     const formDiv = document.getElementById('create-form');
-    if (!formDiv) return;
+    if (!formDiv) {
+      return;
+    }
 
-    const user = this.editingUserId ? this.users.find(u => u.id === this.editingUserId) : null;
+    const user = this.editingUserId ? this.users.find((entry) => String(entry.id) === String(this.editingUserId)) : null;
     const title = this.editingUserId ? 'Edit User' : 'Create New User';
     const submitText = this.editingUserId ? 'Update User' : 'Create User';
+    const selectedRoles = Array.isArray(user?.roles) ? user.roles : [];
+
+    const roleOptions = this.roles.map((role) => `
+      <label class="permission-checkbox">
+        <input type="checkbox" name="roles" value="${escapeHtmlUsers(role.id)}" ${selectedRoles.includes(role.id) ? 'checked' : ''} />
+        ${escapeHtmlUsers(role.name)}
+      </label>
+    `).join('');
 
     const form = document.createElement('form');
     form.className = 'admin-form';
     form.innerHTML = `
       <h3>${title}</h3>
-      
       ${!this.editingUserId ? `
         <div class="form-group">
           <label for="username">Username *</label>
-          <input type="text" id="username" name="username" required placeholder="e.g., alice" value="${user ? escapeHtml(user.username) : ''}">
-          <small>At least 3 characters</small>
+          <input type="text" id="username" name="username" required minlength="3" value="">
         </div>
       ` : ''}
-
       <div class="form-group">
         <label for="email">Email *</label>
-        <input type="email" id="email" name="email" required placeholder="e.g., user@example.com" value="${user ? escapeHtml(user.email) : ''}">
+        <input type="email" id="email" name="email" required value="${escapeHtmlUsers(user?.email || '')}">
       </div>
-
       <div class="form-group">
         <label for="displayName">Display Name</label>
-        <input type="text" id="displayName" name="displayName" placeholder="e.g., Alice Developer" value="${user ? escapeHtml(user.displayName || '') : ''}">
+        <input type="text" id="displayName" name="displayName" value="${escapeHtmlUsers(user?.displayName || '')}">
       </div>
-
       <div class="form-group">
-        <label for="role">Role *</label>
-        <select id="role" name="role" required>
-          <option value="">Select a role</option>
-          <option value="admin" ${user?.role === 'admin' ? 'selected' : ''}>Admin</option>
-          <option value="developer" ${user?.role === 'developer' ? 'selected' : ''}>Developer</option>
-          <option value="user" ${user?.role === 'user' ? 'selected' : ''}>User</option>
-          <option value="viewer" ${user?.role === 'viewer' ? 'selected' : ''}>Viewer</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="status">Status *</label>
+        <label for="status">Status</label>
         <select id="status" name="status" required>
-          <option value="active" ${user?.status === 'active' ? 'selected' : ''}>Active</option>
-          <option value="inactive" ${user?.status === 'inactive' ? 'selected' : ''}>Inactive</option>
-          <option value="pending" ${user?.status === 'pending' ? 'selected' : ''}>Pending</option>
-          <option value="archived" ${user?.status === 'archived' ? 'selected' : ''}>Archived</option>
+          ${['active', 'inactive', 'pending', 'archived'].map((status) => `
+            <option value="${status}" ${user?.status === status ? 'selected' : ''}>${status}</option>
+          `).join('')}
         </select>
       </div>
-
-      ${this.editingUserId ? `
-        <div class="form-group">
-          <label for="password">New Password (leave empty to keep current)</label>
-          <input type="password" id="password" name="password" placeholder="Leave empty to keep unchanged">
-        </div>
-      ` : `
-        <div class="form-group">
-          <label for="password">Password *</label>
-          <input type="password" id="password" name="password" required placeholder="Enter a strong password">
-        </div>
-      `}
-
+      <div class="form-group">
+        <label>Roles</label>
+        <div class="permissions-checklist">${roleOptions || '<small>No roles available.</small>'}</div>
+      </div>
+      <div class="form-group">
+        <label for="password">${this.editingUserId ? 'New Password (optional)' : 'Password *'}</label>
+        <input type="password" id="password" name="password" ${this.editingUserId ? '' : 'required'} minlength="8">
+      </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">${submitText}</button>
         <button type="button" class="btn btn-secondary" onclick="adminUsers.cancelForm()">Cancel</button>
       </div>
     `;
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
       const formData = new FormData(form);
-      const data = Object.fromEntries(formData);
-      
+      const roles = formData.getAll('roles').map((entry) => String(entry));
+      const payload = {
+        email: formData.get('email') || '',
+        displayName: formData.get('displayName') || '',
+        status: formData.get('status') || 'active',
+        roles
+      };
+
+      if (!this.editingUserId) {
+        payload.username = formData.get('username') || '';
+      }
+
+      const password = formData.get('password');
+      if (password) {
+        payload.password = password;
+      }
+
       if (this.editingUserId) {
-        // Remove password if empty on edit
-        if (!data.password) {
-          delete data.password;
-        }
-        this.updateUser(data);
+        this.updateUser(payload);
       } else {
-        this.createUser(data);
+        this.createUser(payload);
       }
     });
 
@@ -203,47 +238,44 @@ class AdminUsersView {
     formDiv.style.display = 'block';
   }
 
-  // Create user
   async createUser(data) {
     const result = await this.api.createUser(data);
-    if (result.ok) {
-      AdminCommon.showAlert(`User "${data.username}" created successfully`, 'success');
-      this.cancelForm();
-      await this.loadUsers();
-      this.renderTable();
-    } else {
+    if (!result.ok) {
       AdminCommon.showAlert(`Failed to create user: ${result.error}`, 'error');
+      return;
     }
+    AdminCommon.showAlert(`User "${data.username}" created successfully`, 'success');
+    this.cancelForm();
+    await this.loadUsers();
+    this.renderTable();
   }
 
-  // Update user
   async updateUser(data) {
     const result = await this.api.updateUser(this.editingUserId, data);
-    if (result.ok) {
-      AdminCommon.showAlert('User updated successfully', 'success');
-      this.cancelForm();
-      await this.loadUsers();
-      this.renderTable();
-    } else {
+    if (!result.ok) {
       AdminCommon.showAlert(`Failed to update user: ${result.error}`, 'error');
+      return;
     }
+    AdminCommon.showAlert('User updated successfully', 'success');
+    this.cancelForm();
+    await this.loadUsers();
+    this.renderTable();
   }
 
-  // Delete user
   async deleteUser(userId) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
-    const result = await this.api.deleteUser(userId);
-    if (result.ok) {
-      AdminCommon.showAlert('User deleted successfully', 'success');
-      await this.loadUsers();
-      this.renderTable();
-    } else {
-      AdminCommon.showAlert(`Failed to delete user: ${result.error}`, 'error');
+    if (!confirm('Delete this user? This action cannot be undone.')) {
+      return;
     }
+    const result = await this.api.deleteUser(userId);
+    if (!result.ok) {
+      AdminCommon.showAlert(`Failed to delete user: ${result.error}`, 'error');
+      return;
+    }
+    AdminCommon.showAlert('User deleted successfully', 'success');
+    await this.loadUsers();
+    this.renderTable();
   }
 
-  // Cancel form
   cancelForm() {
     const formDiv = document.getElementById('create-form');
     if (formDiv) {
@@ -253,7 +285,6 @@ class AdminUsersView {
   }
 }
 
-// Export for browser
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminUsersView;
 }

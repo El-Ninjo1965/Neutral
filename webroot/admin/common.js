@@ -6,7 +6,7 @@
  */
 
 // Utility function to escape HTML
-const escapeHtml = (value) => String(value ?? '')
+const escapeHtmlCommon = (value) => String(value ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
@@ -20,7 +20,7 @@ const AdminCommon = {
     form.id = id;
     form.className = 'admin-form';
     form.innerHTML = `
-      <h3>${escapeHtml(title)}</h3>
+      <h3>${escapeHtmlCommon(title)}</h3>
       <div class="form-fields"></div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save</button>
@@ -39,7 +39,7 @@ const AdminCommon = {
         input = `<textarea name="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}></textarea>`;
       } else if (field.type === 'select') {
         const options = field.options ? field.options.map(opt => 
-          `<option value="${opt.value}">${escapeHtml(opt.label)}</option>`
+          `<option value="${opt.value}">${escapeHtmlCommon(opt.label)}</option>`
         ).join('') : '';
         input = `<select name="${field.name}" ${field.required ? 'required' : ''}>${options}</select>`;
       } else if (field.type === 'checkbox') {
@@ -49,9 +49,9 @@ const AdminCommon = {
       }
       
       fieldGroup.innerHTML = `
-        <label>${escapeHtml(field.label)}</label>
+        <label>${escapeHtmlCommon(field.label)}</label>
         ${input}
-        ${field.help ? `<small>${escapeHtml(field.help)}</small>` : ''}
+        ${field.help ? `<small>${escapeHtmlCommon(field.help)}</small>` : ''}
       `;
       
       fieldsContainer.appendChild(fieldGroup);
@@ -74,13 +74,13 @@ const AdminCommon = {
     
     container.innerHTML = `
       <div class="table-header">
-        <h3>${escapeHtml(title)}</h3>
+        <h3>${escapeHtmlCommon(title)}</h3>
         <button class="btn btn-sm btn-primary" onclick="document.getElementById('${id}-modal').style.display='block'">+ Add New</button>
       </div>
       <table id="${id}" class="admin-table">
         <thead>
           <tr>
-            ${columns.map(col => `<th>${escapeHtml(col.label)}</th>`).join('')}
+            ${columns.map(col => `<th>${escapeHtmlCommon(col.label)}</th>`).join('')}
             <th>Actions</th>
           </tr>
         </thead>
@@ -93,7 +93,7 @@ const AdminCommon = {
     rows.forEach((row, idx) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        ${columns.map(col => `<td>${escapeHtml(String(row[col.key] || ''))}</td>`).join('')}
+        ${columns.map(col => `<td>${escapeHtmlCommon(String(row[col.key] || ''))}</td>`).join('')}
         <td class="action-buttons">
           ${actions.edit ? `<button class="btn btn-sm btn-info" onclick="editRow('${row.id}', ${idx})">Edit</button>` : ''}
           ${actions.delete ? `<button class="btn btn-sm btn-danger" onclick="deleteRow('${row.id}', ${idx})">Delete</button>` : ''}
@@ -113,7 +113,7 @@ const AdminCommon = {
     modal.innerHTML = `
       <div class="modal-content">
         <div class="modal-header">
-          <h2>${escapeHtml(title)}</h2>
+          <h2>${escapeHtmlCommon(title)}</h2>
           <button class="close" onclick="document.getElementById('${id}').style.display='none'">&times;</button>
         </div>
         <div class="modal-body">
@@ -130,7 +130,7 @@ const AdminCommon = {
     alert.className = `alert alert-${type}`;
     alert.innerHTML = `
       <div class="alert-content">
-        ${escapeHtml(message)}
+        ${escapeHtmlCommon(message)}
         <button class="close" onclick="this.parentElement.parentElement.remove()">&times;</button>
       </div>
     `;
@@ -147,23 +147,11 @@ const AdminCommon = {
     if (value === null || value === undefined) return '—';
     if (type === 'date') return new Date(value).toLocaleString();
     if (type === 'array') return Array.isArray(value) ? value.join(', ') : value;
-    return escapeHtml(String(value));
+    return escapeHtmlCommon(String(value));
   }
 };
 
-// Helper to escape HTML
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return String(text).replace(/[&<>"']/g, m => map[m]);
-}
-
 // Export for browser
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AdminCommon, escapeHtml };
+  module.exports = { AdminCommon, escapeHtml: escapeHtmlCommon };
 }

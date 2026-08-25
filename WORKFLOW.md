@@ -118,3 +118,5 @@ Admin-/Infrastruktur-Architekturregel (dauerhaft)
 * Das Admin-System ist Desktop/Tablet-first und nutzt primär eine linke, hierarchische Explorer-Navigation.
 * Infrastrukturverwaltung wird generisch modelliert (`type`, `name`, `configuration`, `credential_reference`, `capabilities`, `status`, `enabled`) und nicht auf einzelne Runtime-Typen fest verdrahtet.
 * Node.js kann künftig als Integrationstyp geführt werden, ist aber keine aktuelle Produktionsvoraussetzung.
+* Für Admin-Schreiboperationen gilt serverseitig verpflichtend: Session-basierte Authentifizierung + CSRF-Token-Prüfung; UI-Sichtbarkeit ersetzt keine Autorisierung.
+* Der initiale Bootstrap-Admin wird aus `.env` (`CORE_BOOTSTRAP_USERNAME`, `CORE_BOOTSTRAP_PASSWORD`) bereitgestellt; feste produktive Default-Credentials im Code sind unzulässig.
