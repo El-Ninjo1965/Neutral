@@ -74,6 +74,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 ### Application and module integration
 [x] Test the admin area against the real backend.
   - Verified against live PHP/MySQL API: users, roles/permissions, settings, sessions, audit, auth/me, login/logout and CSRF-protected writes.
+  - Fixed admin login flow in `webroot/master-ui.js`: the server auth endpoints (`/api/auth/login` -> `/api/auth/me`) are now the authoritative login path; local `UserModule/CoreAuth` can no longer block a valid server login.
 [x] Test module discovery and administration against the real backend.
   - Verified live on `https://www.turbolikes.com/index/app/neutral/webroot/api`: `/api/modules`, `/api/admin/modules`, `/api/admin/modules/gps`, `/api/admin/modules/gps/install`, `/api/admin/modules/gps/activate`, `/api/admin/modules/gps/deactivate`.
   - PHP router now exposes generic module lifecycle endpoints and no GPS-only special route is required.
