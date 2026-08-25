@@ -15,6 +15,7 @@ require_once __DIR__ . '/src/SetupInstaller.php';
 require_once __DIR__ . '/src/Phase4AuthRbac.php';
 require_once __DIR__ . '/src/SchemaMigrator.php';
 require_once __DIR__ . '/src/CoreDataSeeder.php';
+require_once __DIR__ . '/src/Phase6AdminStorage.php';
 
 /**
  * @param array{project_root?:string, register_error_handler?:bool} $options

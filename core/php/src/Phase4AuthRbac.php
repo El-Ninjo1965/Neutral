@@ -17,6 +17,7 @@ final class Phase4AuthRbac
         'settings.read',
         'settings.write',
         'session.read',
+        'audit.read',
     ];
 
     /** @var array<string, list<string>> */
@@ -33,6 +34,7 @@ final class Phase4AuthRbac
             'settings.read',
             'settings.write',
             'session.read',
+            'audit.read',
         ],
         'developer' => [
             'admin.read',
@@ -43,6 +45,7 @@ final class Phase4AuthRbac
             'settings.read',
             'settings.write',
             'session.read',
+            'audit.read',
         ],
         'viewer' => [
             'admin.read',
@@ -51,6 +54,7 @@ final class Phase4AuthRbac
             'role.read',
             'settings.read',
             'session.read',
+            'audit.read',
         ],
         'user' => [
             'auth.read',

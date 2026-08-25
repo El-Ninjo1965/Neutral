@@ -11,6 +11,8 @@ use Neutral\Core\Phase4RoleService;
 use Neutral\Core\Phase4SessionRegistry;
 use Neutral\Core\Phase4SettingsService;
 use Neutral\Core\Phase4UserService;
+use Neutral\Core\Phase6AuditService;
+use Neutral\Core\Phase6SettingsService;
 use Neutral\Core\Security;
 
 $runtime = neutral_bootstrap();
@@ -19,7 +21,8 @@ $config = $runtime->config();
 $store = new Phase4JsonStore($runtime->projectRoot() . '/config');
 $roleService = new Phase4RoleService($store);
 $userService = new Phase4UserService($store, $roleService, $config);
-$settingsService = new Phase4SettingsService($store);
+$settingsService = new Phase6SettingsService($runtime->database(), new Phase4SettingsService($store));
+$auditService = new Phase6AuditService($runtime->database(), $store);
 $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/server/runtime'));
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
 
@@ -101,6 +104,19 @@ function admin_user_payload(array $user): array
         'createdAt' => $user['createdAt'],
         'updatedAt' => $user['updatedAt'],
     ];
+}
+
+function actor_user_id(?array $identity): ?int
+{
+    if (!$identity) {
+        return null;
+    }
+    $raw = (string) ($identity['userId'] ?? '');
+    if ($raw === '' || !ctype_digit($raw)) {
+        return null;
+    }
+    $value = (int) $raw;
+    return $value > 0 ? $value : null;
 }
 
 if ($method === 'OPTIONS') {
@@ -251,6 +267,10 @@ if ($route === 'admin/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
     $payload = parse_json_body();
     $created = $userService->create($payload);
+    $auditService->log('user.create', 'user', (string) ($created['id'] ?? ''), actor_user_id($identity), [
+        'username' => (string) ($created['username'] ?? ''),
+        'status' => (string) ($created['status'] ?? ''),
+    ]);
     JsonResponse::success(['user' => admin_user_payload($created)], 201);
 }
 
@@ -268,11 +288,16 @@ if (preg_match('#^admin/users/([a-z0-9\-]+)$#', $route, $matches) === 1) {
         require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
         $payload = parse_json_body();
         $updated = $userService->update($userId, $payload);
+        $auditService->log('user.update', 'user', $userId, actor_user_id($identity), [
+            'status' => (string) ($updated['status'] ?? ''),
+            'roles' => $updated['roles'] ?? [],
+        ]);
         JsonResponse::success(['user' => admin_user_payload($updated)]);
     }
     if ($method === 'DELETE') {
         require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
         $userService->delete($userId);
+        $auditService->log('user.delete', 'user', $userId, actor_user_id($identity), []);
         JsonResponse::success(['deleted' => true]);
     }
 }
@@ -286,6 +311,9 @@ if ($route === 'admin/roles' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
     $payload = parse_json_body();
     $created = $roleService->create($payload);
+    $auditService->log('role.create', 'role', (string) ($created['id'] ?? ''), actor_user_id($identity), [
+        'name' => (string) ($created['name'] ?? ''),
+    ]);
     JsonResponse::success(['role' => $created], 201);
 }
 
@@ -303,11 +331,15 @@ if (preg_match('#^admin/roles/([a-z0-9\-]+)$#', $route, $matches) === 1) {
         require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
         $payload = parse_json_body();
         $updated = $roleService->update($roleId, $payload);
+        $auditService->log('role.update', 'role', $roleId, actor_user_id($identity), [
+            'permissions' => $updated['permissions'] ?? [],
+        ]);
         JsonResponse::success(['role' => $updated]);
     }
     if ($method === 'DELETE') {
         require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
         $roleService->delete($roleId);
+        $auditService->log('role.delete', 'role', $roleId, actor_user_id($identity), []);
         JsonResponse::success(['deleted' => true]);
     }
 }
@@ -320,7 +352,22 @@ if ($route === 'admin/settings' && $method === 'GET') {
 if ($route === 'admin/settings' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'settings.write', true, $headers);
     $payload = parse_json_body();
-    JsonResponse::success(['settings' => $settingsService->update($payload)]);
+    $updated = $settingsService->update($payload, actor_user_id($identity));
+    $auditService->log('settings.update', 'settings', 'core', actor_user_id($identity), [
+        'appId' => (string) ($updated['appId'] ?? ''),
+        'appName' => (string) ($updated['appName'] ?? ''),
+    ]);
+    JsonResponse::success(['settings' => $updated]);
+}
+
+if ($route === 'admin/audit' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'audit.read', false, $headers);
+    $filters = [
+        'action' => (string) ($_GET['action'] ?? ''),
+        'resource' => (string) ($_GET['resource'] ?? ''),
+        'limit' => (int) ($_GET['limit'] ?? 100),
+    ];
+    JsonResponse::success(['entries' => $auditService->list($filters)]);
 }
 
 if ($route === 'database/status' && $method === 'GET') {

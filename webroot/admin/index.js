@@ -94,6 +94,19 @@ class AdminRouter {
       permissions: new AdminPermissionsView(apiClient),
       sessions: new AdminSessionsView(apiClient),
       settings: new AdminSettingsView(apiClient),
+      audit: new AdminAuditView(apiClient),
+      dashboard: new AdminPlaceholderView(
+        'Dashboard',
+        'Operational summary widgets are prepared and will be expanded as additional server-backed modules become available.'
+      ),
+      modules: new AdminPlaceholderView(
+        'Modules',
+        'Module lifecycle administration (discover/register/install/activate/deactivate) is planned as the next dedicated phase with server-backed state.'
+      ),
+      updates: new AdminPlaceholderView(
+        'Updates & Backups',
+        'Release and backup administration are prepared for upcoming server-backed rollout steps.'
+      ),
       infrastructure: new AdminPlaceholderView(
         'Infrastructure',
         'This area is prepared for future generic connection/service administration (databases, APIs, servers, integrations) without binding the core to one runtime type.'
@@ -109,7 +122,11 @@ class AdminRouter {
     this.container = container;
     this.renderLayout();
     this.setupNavigation();
-    await this.showView('users');
+    await this.showView('dashboard');
+    const initial = this.container.querySelector('.nav-link[data-view="dashboard"]');
+    if (initial) {
+      initial.classList.add('active');
+    }
   }
 
   renderLayout() {
@@ -123,17 +140,39 @@ class AdminRouter {
 
           <nav class="admin-nav">
             <div class="admin-nav-group">
-              <h3>Identity</h3>
+              <h3>Dashboard</h3>
+              <a href="#" class="nav-link" data-view="dashboard">Overview</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>Users</h3>
               <a href="#" class="nav-link" data-view="users">Users</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>Roles & Permissions</h3>
               <a href="#" class="nav-link" data-view="roles">Roles</a>
               <a href="#" class="nav-link" data-view="permissions">Permissions</a>
               <a href="#" class="nav-link" data-view="sessions">Sessions</a>
             </div>
             <div class="admin-nav-group">
-              <h3>System</h3>
+              <h3>Modules</h3>
+              <a href="#" class="nav-link" data-view="modules">Module Administration</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>Settings</h3>
               <a href="#" class="nav-link" data-view="settings">Settings</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>System</h3>
               <a href="#" class="nav-link" data-view="infrastructure">Infrastructure</a>
               <a href="#" class="nav-link" data-view="diagnostics">Diagnostics</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>Logs / Audit</h3>
+              <a href="#" class="nav-link" data-view="audit">Audit Log</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>Updates / Backup</h3>
+              <a href="#" class="nav-link" data-view="updates">Updates & Backups</a>
             </div>
           </nav>
 
@@ -192,7 +231,11 @@ class AdminRouter {
       roles: 'Role Management',
       permissions: 'Permission Catalog',
       sessions: 'Session Overview',
+      audit: 'Audit Log',
       settings: 'System Settings',
+      dashboard: 'Dashboard',
+      modules: 'Module Administration',
+      updates: 'Updates & Backups',
       infrastructure: 'Infrastructure',
       diagnostics: 'Diagnostics'
     };
