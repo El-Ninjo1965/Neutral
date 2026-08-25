@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__) . '/core/php/bootstrap.php';
+
 function readEnvFile($filePath) {
     if (!is_string($filePath) || $filePath === '' || !is_file($filePath)) {
         return [];
@@ -299,90 +301,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$dbType = $env['DB_TYPE'] ?? $env['MYSQL_TYPE'] ?? 'mysql';
-$dbHost = $env['DB_HOST'] ?? $env['MYSQL_HOST'] ?? '127.0.0.1';
-$dbPort = $env['DB_PORT'] ?? $env['MYSQL_PORT'] ?? '3306';
-$dbName = $env['DB_NAME'] ?? $env['MYSQL_DATABASE'] ?? '';
-$dbUser = $env['DB_USER'] ?? $env['MYSQL_USER'] ?? '';
-$dbPassword = $env['DB_PASSWORD'] ?? $env['MYSQL_PASSWORD'] ?? '';
-$serverUrl = resolveRuntimeServerUrl($env);
-$dbUrl = buildDatabaseUrlFromEnv($env);
+$env = readEnvFile($envFile);
+$runtime = neutral_bootstrap([
+    'project_root' => dirname(__DIR__),
+    'register_error_handler' => false,
+]);
+$runtimeConfig = $runtime->config();
+$runtimeDatabase = $runtimeConfig->database();
+$setupStateStore = new \Neutral\Core\SetupStateStore(\Neutral\Core\SetupStateStore::defaultStateFile($runtime->projectRoot()));
+$prerequisiteChecker = new \Neutral\Core\PrerequisiteChecker($runtimeConfig, $runtime->database());
+$setupInstaller = new \Neutral\Core\SetupInstaller($runtime, $setupStateStore, $prerequisiteChecker);
+$setupSnapshot = $setupInstaller->status();
 
-$setupReadyFromEnv = ($serverUrl !== '' && $dbHost !== '' && $dbName !== '' && $dbUser !== '' && $dbPassword !== '');
+$dbType = $runtimeDatabase['type'];
+$dbHost = $runtimeDatabase['host'];
+$dbPort = $runtimeDatabase['port'];
+$dbName = $runtimeDatabase['name'];
+$dbUser = $runtimeDatabase['user'];
+$dbPassword = $runtimeDatabase['password'];
+$serverUrl = resolveRuntimeServerUrl($env);
+$dbUrl = $runtimeDatabase['url'] !== '' ? $runtimeDatabase['url'] : buildDatabaseUrlFromEnv($env);
+$setupReadyFromEnv = in_array((string) ($setupSnapshot['status'] ?? 'SETUP_REQUIRED'), ['READY_TO_INSTALL', 'ACTIVE'], true);
+$setupChecks = is_array($setupSnapshot['checks'] ?? null) ? $setupSnapshot['checks'] : [];
+$installationActive = (bool) (($setupSnapshot['installation']['active'] ?? false) === true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
-    $installLogFile = dirname(__DIR__) . '/server/runtime/setup-debug.log';
-    $statePath = dirname(__DIR__) . '/server/runtime/setup-state.json';
-    $installPayload = [
-        'status' => 'ACTIVE',
-        'appId' => $env['APP_ID'] ?? $env['DEFAULT_APP_ID'] ?? 'neutral-app',
-        'appName' => $env['APP_NAME'] ?? 'Neutral Platform',
-        'installation' => [
-            'active' => true,
-            'state' => 'ACTIVE',
-            'message' => 'Installed from server .env configuration.'
-        ],
-        'serverState' => [
-            'configured' => true,
-            'status' => 'ACTIVE',
-            'url' => $serverUrl,
-            'apiBase' => $env['API_BASE'] ?? '/api',
-            'message' => 'Server configuration loaded from .env.'
-        ],
-        'databaseState' => [
-            'configured' => true,
-            'status' => 'ACTIVE',
-            'type' => $dbType,
-            'host' => $dbHost,
-            'port' => $dbPort,
-            'name' => $dbName,
-            'username' => $dbUser,
-            'passwordPresent' => true,
-            'message' => 'Database configuration loaded from .env.'
-        ],
-        'bootstrapState' => [
-            'configured' => true,
-            'enabled' => true,
-            'status' => 'ACTIVE',
-            'username' => 'Developer',
-            'role' => 'developer',
-            'message' => 'Developer bootstrap is ready.'
-        ],
-        'configuration' => [
-            'appId' => $env['APP_ID'] ?? $env['DEFAULT_APP_ID'] ?? 'neutral-app',
-            'appName' => $env['APP_NAME'] ?? 'Neutral Platform',
-            'serverUrl' => $serverUrl,
-            'apiBase' => $env['API_BASE'] ?? '/api',
-            'database' => [
-                'type' => $dbType,
-                'host' => $dbHost,
-                'port' => $dbPort,
-                'name' => $dbName,
-                'username' => $dbUser,
-                'passwordPresent' => true,
-                'url' => $dbUrl
-            ]
-        ],
-        'updatedAt' => gmdate('c')
-    ];
-
-    $logResult = writeSetupLog('setup.php install now invoked', [
-        'serverUrl' => $serverUrl,
-        'dbHost' => $dbHost,
-        'dbName' => $dbName,
-        'dbUser' => $dbUser,
-        'envFile' => $envFile,
-        'stateFile' => $statePath
-    ]);
-    $stateSaved = writeJsonFile($statePath, $installPayload);
-
-    if (!$logResult || !$stateSaved) {
-        http_response_code(500);
-        echo '<!doctype html><html><body><h1>Install failed</h1><p>Could not persist the runtime setup state.</p></body></html>';
+    $result = $setupInstaller->install();
+    $isActive = strtoupper((string) ($result['status'] ?? '')) === 'ACTIVE' && (bool) (($result['installation']['active'] ?? false) === true);
+    if (!$isActive) {
+        http_response_code(409);
+        echo '<!doctype html><html><body><h1>Install blocked</h1><p>Installation prerequisites are not yet satisfied. Check setup status details and retry.</p></body></html>';
         exit;
     }
 
-    echo '<!doctype html><html><head><meta charset="utf-8" /><meta http-equiv="refresh" content="1;url=admin.html" /></head><body style="font-family:Arial,sans-serif;background:#111827;color:#e5e7eb;padding:32px;"><div style="max-width:720px;margin:0 auto;background:#1f2937;border-radius:12px;padding:28px;"><h1>Installation complete</h1><p>Using the values from the server .env file. Redirecting to the admin panel…</p></div></body></html>';
+    echo '<!doctype html><html><head><meta charset="utf-8" /><meta http-equiv="refresh" content="1;url=admin.html" /></head><body style="font-family:Arial,sans-serif;background:#111827;color:#e5e7eb;padding:32px;"><div style="max-width:720px;margin:0 auto;background:#1f2937;border-radius:12px;padding:28px;"><h1>Installation complete</h1><p>Using the values from the server .env file and prerequisite checks. Redirecting to the admin panel…</p></div></body></html>';
     exit;
 }
 ?>
@@ -492,11 +444,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         font-size: 0.85rem;
         color: #cbd5e1;
       }
+      .check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .check-item {
+        border: 1px solid #374151;
+        border-radius: 10px;
+        background: #0f172a;
+        padding: 10px 12px;
+      }
+      .check-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .check-ok {
+        color: #86efac;
+      }
+      .check-fail {
+        color: #fda4af;
+      }
+      .check-meta {
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: #cbd5e1;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
     </style>
   </head>
   <body>
     <div class="panel" data-setup-ready="<?= $setupReadyFromEnv ? '1' : '0' ?>">
-      <h1><?= $setupReadyFromEnv ? 'Installation ready' : 'Platform setup' ?></h1>
+      <h1><?= $installationActive ? 'Installation active' : ($setupReadyFromEnv ? 'Installation ready' : 'Platform setup') ?></h1>
+      <p class="small">Setup state: <?= htmlspecialchars((string) ($setupSnapshot['status'] ?? 'SETUP_REQUIRED'), ENT_QUOTES, 'UTF-8') ?></p>
+
+      <div class="section">
+        <h2>System checks</h2>
+        <div class="check-grid">
+          <?php foreach ($setupChecks as $checkKey => $checkValue): ?>
+            <?php
+              $checkOk = (bool) (($checkValue['ok'] ?? false) === true);
+              $checkMeta = $checkValue;
+              unset($checkMeta['ok']);
+            ?>
+            <div class="check-item">
+              <div class="check-title <?= $checkOk ? 'check-ok' : 'check-fail' ?>">
+                <?= $checkOk ? 'PASS' : 'FAIL' ?> — <?= htmlspecialchars((string) $checkKey, ENT_QUOTES, 'UTF-8') ?>
+              </div>
+              <div class="check-meta"><?= htmlspecialchars((string) json_encode($checkMeta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
 
       <?php if ($setupReadyFromEnv): ?>
         <p class="small">Using the live server configuration from the installed .env file. No manual setup fields are required.</p>
@@ -513,9 +514,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install_now'])) {
         <input id="envDbUrl" type="hidden" value="<?= htmlspecialchars((string) $dbUrl, ENT_QUOTES, 'UTF-8') ?>" />
 
         <div class="actions">
-          <button type="button" id="installNowBtn">Install now</button>
+          <?php if (!$installationActive): ?>
+            <button type="button" id="installNowBtn">Install now</button>
+          <?php else: ?>
+            <a href="admin.html" style="display:inline-block;background:#2563eb;color:#fff;border-radius:8px;padding:10px 18px;font-size:1rem;font-weight:600;text-decoration:none;">Open admin</a>
+          <?php endif; ?>
         </div>
-        <div id="setupStatus" class="status" aria-live="polite">Setup status: ready to install from the server .env configuration.</div>
+        <div id="setupStatus" class="status" aria-live="polite">
+          Setup status: <?= $installationActive ? 'installation is already active.' : 'ready to install from the server .env configuration.' ?>
+        </div>
       <?php else: ?>
         <form id="setupForm" method="post" action="<?= htmlspecialchars($_SERVER['PHP_SELF'] ?? 'setup.php', ENT_QUOTES, 'UTF-8') ?>">
           <div class="row">

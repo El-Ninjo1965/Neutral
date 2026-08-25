@@ -249,15 +249,47 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
   - Deferred/minimal now: CatchTrack domain tables and advanced sync queue tables remain out of core until exact functional requirements are approved in PHASE 9/10.
 
 #### PHASE 3 – PHP-Core
-- [~] IN ARBEIT (Architektur-/Design-Spezifikation finalisiert, Implementierung offen)
+- [~] IN ARBEIT (Implementierung gestartet)
 - Description: Create the minimal PHP app/core foundation: bootstrap, config loading, environment validation, DB access layer, exception handling, response format, logging, security hooks, and app lifecycle.
 - Dependencies: PHASE 1, PHASE 2
 - Affected components: new PHP entry points, config/bootstrap files, shared DB layer, error handling, app bootstrap, security wrapper
-- Status: next implementation phase is design-complete; no code implementation started
+- Status: base implementation started in repository (no production deploy, no DB migration)
 - Test criterion: PHP core boots under LiteSpeed/PHP and reads env config without needing Node or Passenger
 - Result/Notes:
   - The next implementation phase will treat Neutral as a portable platform core, not a single fixed app.
-  - No PHP/SQL implementation is performed in this step; this is architecture/design only.
+  - Implemented portable PHP core foundation under `core/php`:
+    - `core/php/bootstrap.php`
+    - `core/php/src/EnvLoader.php`
+    - `core/php/src/AppConfig.php`
+    - `core/php/src/AppLogger.php`
+    - `core/php/src/Database.php`
+    - `core/php/src/JsonResponse.php`
+    - `core/php/src/Security.php`
+    - `core/php/src/AppRuntime.php`
+  - Added first PHP API status entry points for core bootstrap/runtime verification:
+    - `webroot/api/status.php`
+    - `webroot/api/index.php`
+  - Extended PHASE-3 setup/runtime architecture to avoid duplicate logic and keep installation idempotent:
+    - `core/php/src/SetupStateStore.php` (runtime setup status persistence abstraction)
+    - `core/php/src/PrerequisiteChecker.php` (portable prerequisite/env/path/extension/db checks)
+    - `core/php/src/SetupInstaller.php` (idempotent install activation flow from `.env`)
+    - `core/php/src/InfrastructureCatalog.php` (generic future-ready connection/service contract baseline)
+    - `webroot/api/setup/status.php` and `webroot/api/setup/install.php` (PHP setup API surface)
+  - Updated `webroot/setup.php` to use the new core setup services:
+    - keeps setup UI intentionally simple
+    - reads authoritative configuration from `.env`
+    - shows prerequisite check results directly in setup
+    - performs install via centralized `SetupInstaller` instead of ad-hoc inline state payload building
+    - keeps install idempotent (`ACTIVE` state guarded, no repeated destructive actions)
+  - Validation executed:
+    - `php -l` passed for all new/updated core files and existing `webroot/setup.php`, `webroot/diagnose.php`.
+    - `php core/php/tests/smoke.php` passed (core bootstrap + setup status orchestration).
+    - Existing Node test suite passed: `npm test -- --test-reporter=spec` (92/92).
+    - Runtime smoke calls on `/api/status` and `/api/setup/status` return structured JSON state.
+  - Local environment note:
+    - local CLI currently lacks `pdo_mysql`; endpoint reports this explicitly as `database.state=error` instead of crashing.
+    - setup prerequisite checks therefore expose DB connectivity as failed in local CLI until `pdo_mysql` is available.
+  - No SQL execution, no schema migration, no production deploy, no production file deletion performed.
   - Core must expose reusable setup/admin/module/infrastructure management for future apps without core rewrites.
 
 #### PHASE 4 – Auth / Users / Roles / Permissions
