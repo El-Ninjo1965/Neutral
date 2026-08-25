@@ -249,13 +249,16 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
   - Deferred/minimal now: CatchTrack domain tables and advanced sync queue tables remain out of core until exact functional requirements are approved in PHASE 9/10.
 
 #### PHASE 3 – PHP-Core
-- [ ] OFFEN
+- [~] IN ARBEIT (Architektur-/Design-Spezifikation finalisiert, Implementierung offen)
 - Description: Create the minimal PHP app/core foundation: bootstrap, config loading, environment validation, DB access layer, exception handling, response format, logging, security hooks, and app lifecycle.
 - Dependencies: PHASE 1, PHASE 2
 - Affected components: new PHP entry points, config/bootstrap files, shared DB layer, error handling, app bootstrap, security wrapper
-- Status: not started
+- Status: next implementation phase is design-complete; no code implementation started
 - Test criterion: PHP core boots under LiteSpeed/PHP and reads env config without needing Node or Passenger
-- Result/Notes: must not duplicate the old Node server boot path or create parallel runtime logic
+- Result/Notes:
+  - The next implementation phase will treat Neutral as a portable platform core, not a single fixed app.
+  - No PHP/SQL implementation is performed in this step; this is architecture/design only.
+  - Core must expose reusable setup/admin/module/infrastructure management for future apps without core rewrites.
 
 #### PHASE 4 – Auth / Users / Roles / Permissions
 - [ ] OFFEN
@@ -532,6 +535,112 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
   - Nur Erstinstallation/Migration: einmalige Bootstrap-/Schema-Initialisierung
   - Nur kontrollierte Bereinigung: Legacy-Node-Artefaktentfernung
   - Niemals deployen: lokale Secret-/Entwicklungsartefakte, `node_modules/`, Git-Metadaten
+
+#### Designprotokoll 2026-08-25 – Nächste Implementierungsphase (Architektur/Design only)
+
+##### Bereits entschieden (übernommen und bestätigt)
+- Produktionszielarchitektur bleibt verbindlich: Browser/App -> LiteSpeed -> PHP -> MySQL.
+- Keine produktive Node/Passenger-Voraussetzung.
+- Keine parallele Node/PHP/JSON/SQLite/MySQL-Serverarchitektur.
+- Offline-first bleibt clientseitig (LocalStorage/IndexedDB), MySQL bleibt autoritative Online-Persistenz.
+- Modul-Lifecycle bleibt verbindlich:
+  - DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE
+  - Discovery bedeutet niemals automatische Aktivierung.
+
+##### Neu entschieden (für die nächste Implementierungsphase verbindlich)
+
+1) Portable Neutral-Plattformarchitektur
+- Neutral wird als wiederverwendbarer Core festgeschrieben:
+  - Setup/Installation
+  - Konfiguration/ENV
+  - Admin-System
+  - Benutzer/Rollen/Berechtigungen
+  - Modulverwaltung
+  - Serververwaltung
+  - API-Verwaltung
+  - Datenbankverwaltung
+  - Audit/Logs
+  - Backup
+  - Migration
+  - Application Layer (app-spezifisch) + Module
+- Strikte Schichtentrennung:
+  - **Neutral Core** (plattformweit wiederverwendbar)
+  - **Application Layer** (pro App variierend, ohne Core-Fork)
+  - **Module Layer** (fachliche Erweiterungen über definierte Contracts)
+- Installationsroutine für künftige Apps bleibt identisch:
+  - Core deployen -> `.env` hinterlegen -> Setup -> DB-Check -> Core-Schema installieren/migrieren -> ersten Admin anlegen -> Module discovern -> gewünschte Module aktivieren -> App-Konfiguration laden.
+- Portabilitätsregeln:
+  - keine hartcodierten Produktionspfade
+  - installationspfadunabhängig
+  - ENV-/Konfig-Scopes getrennt (core/app/module)
+  - app-spezifische Features nur im Application Layer oder Modul, nicht im Core-Hardcode
+
+2) Professionelles Admin-Bedienkonzept (Tablet/PC-first)
+- Primäre Informationsarchitektur: linke Explorer-Navigation mit einklappbaren Gruppen.
+- Mindestbereiche:
+  - Dashboard
+  - Benutzer (Benutzer, Rollen, Berechtigungen)
+  - Anwendungen (aktuelle App / App-Kontext)
+  - Module (installiert, verfügbar, Migrationen)
+  - Infrastruktur (Server, Datenbanken, APIs, Verbindungen)
+  - System (Einstellungen, Diagnose, Logs, Audit, Backups)
+  - Administration (Setup, Migrationen, Systemstatus)
+- UX-Grundregeln:
+  - klare aktive Position
+  - keine überladene Top-Navigation
+  - konsistente Abstände/Komponenten
+  - sinnvolle Icons
+  - tabletgerechte Klickflächen
+  - Suche/Filter in größeren Listen
+  - klare Success/Warning/Error-Zustände
+  - Bestätigungsdialoge für destruktive Aktionen
+  - keine toten Menüeinträge
+
+3) Bedienbarkeit statt UI-Fassade (Funktionsverträge)
+- Benutzer/Rollen/Rechte müssen später backendgestützt tatsächlich bedienbar sein:
+  - Benutzer: create/read/update/deactivate/delete (policy-gesteuert), Rollen zuweisen
+  - Rollen: create/read/update/delete (policy-gesteuert)
+  - Berechtigungen: Katalog + role_permissions + serverseitige Enforcement
+- Module müssen später vollständig administrierbar sein:
+  - Discovery, Registrierung, Installation, Migration, Aktivierung, Deaktivierung, Status, Konfiguration, Fehlerstatus
+  - optionale Entfernung erst als kontrollierte Admin-Aktion
+- GPS als Referenzfall:
+  - vorhandenes Modul muss im künftigen Modul-Admin sichtbar sein
+  - aktueller Gap (nur read-only Discovery, keine persistente Aktivierung) ist bekannt und wird in PHASE 8 umgesetzt
+
+4) Zukunftssichere Infrastrukturkonfiguration über Admin (Design now, no implementation)
+- Aktuell bleibt Produktion Browser -> LiteSpeed -> PHP -> MySQL.
+- Architektur wird vorbereitet, damit künftige Infrastruktur ohne Core-Umbau administrierbar wird:
+  - Server-Targets (Typ, Host, Port, Base URL, Runtime, Status, Enable/Disable, Test)
+  - Datenbankverbindungen (Typ, Host, Port, DB, User, Secret-Referenz, SSL, Test)
+  - API-Verbindungen (Typ, Base URL, Auth-Modus, Endpoint-Profile, Timeout, Status, Test)
+- Secrets-Prinzip:
+  - keine unnötige Secret-Ausgabe im Frontend
+  - nur Referenz/indirekte Verwaltung im UI, sichere Speicherung serverseitig
+
+5) Generisches Infrastrukturmodell (konzeptionell)
+- Einheitlicher Connection/Service-Ansatz:
+  - `type`
+  - `name`
+  - `configuration`
+  - `credential_reference`
+  - `capabilities`
+  - `status`
+  - `enabled`
+- Dieser Contract gilt als Basis für spätere Tabellen/API/Admin-UI in PHASE 7+.
+
+##### Noch offen (fachlich zu entscheiden vor Implementierungsabschluss)
+- Exakte API-Topologie in PHP (zentraler Router vs. modularisierte Endpoint-Gruppen hinter gemeinsamer Front-Controller-Struktur).
+- Feingranulare Permission-Taxonomie (system/module/infrastructure scopes).
+- Modul-Migrationsvertrag (Versionierung, Rollback-Policy, Fehlerbehandlung).
+- Infrastruktur-Secret-Handling-Strategie (z. B. verschlüsselte Speicherung vs. externe Secret-Provider-Referenzen).
+- Umfang der ersten Release-Welle für Infrastruktur-Admin (MVP vs. vollständiges Modell).
+
+##### Bewusst später zu implementieren (nicht Teil dieses Auftrags)
+- Jegliche PHP-Codeimplementierung.
+- Jegliche SQL-Ausführung oder DB-Migration.
+- Jegliche Produktionsänderung/Deploy-Anpassung/Löschung.
+- Feinschliff-UI/CSS-Implementierung über die Architekturvorgaben hinaus.
 
 #### Required whitelist redesign after PHP migration
 - PHP application files
