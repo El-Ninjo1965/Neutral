@@ -14,6 +14,8 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Application and module semantics separated; Neutral remains an application.
 [x] GPS module remains the reference module; no second GPS implementation created.
 [x] Module metadata normalized so discovered modules are treated as modules, not app entries.
+[x] PHP module runtime and admin module API are live on production (`/api/modules`, `/api/admin/modules/*`) with persisted lifecycle state in MySQL.
+[x] Security behavior for module admin writes verified live: unauthenticated requests return `401`; missing/invalid CSRF returns `403`.
 [x] Core loader path resolution improved for app-root portability.
 [x] Framework tests for module lifecycle pass: `node --test tests/master-framework.test.js`.
 [x] GitHub workflow for branch protection respected: feature branch + PR + CodeQL + merge.

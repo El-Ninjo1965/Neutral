@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T12:32:16.238Z",
+  "generatedAt": "2026-08-25T06:14:25.477Z",
   "files": {
     "app/index.js": {
       "path": "app/index.js",
@@ -14,13 +14,13 @@
     },
     "app/modules/gps/module.json": {
       "path": "app/modules/gps/module.json",
-      "hash": "ee5b09bb1c33ae26a38753a9522c3b00136b298fdda8ca63e45175ebaa6637e0",
-      "size": 1769
+      "hash": "3c12a7aa8b5581f7c92226b13a8d499cb150510ac4a05bc5e4681d316c28a354",
+      "size": 1772
     },
     "app/modules/index.json": {
       "path": "app/modules/index.json",
-      "hash": "c7f07cfa5dca515afe42317c7e3ef9144da8aafef5d14b0bc85d9bcbe90727e3",
-      "size": 397
+      "hash": "60ae14d00377ada3094670c6db0f12f43b2ba9b058c7d38bd83970158289d34c",
+      "size": 400
     },
     "apps/neutral-app/app-info.json": {
       "path": "apps/neutral-app/app-info.json",
@@ -31,6 +31,91 @@
       "path": "apps/neutral-app/index.html",
       "hash": "e093a4e759f78883d4715272c31ee2cb01e71cb804e5c2e294fd9658f5413b8e",
       "size": 335
+    },
+    "core/php/bootstrap.php": {
+      "path": "core/php/bootstrap.php",
+      "hash": "fd2aed05f68e07f13a64ca5bedf392fc5b77a1f1ba758573d5aa6bda6032536e",
+      "size": 1038
+    },
+    "core/php/src/AppConfig.php": {
+      "path": "core/php/src/AppConfig.php",
+      "hash": "e2bbf12108a9f84af6bc4421ab99b5549a26de944ea8e91ae90a53f4951d989e",
+      "size": 2938
+    },
+    "core/php/src/AppLogger.php": {
+      "path": "core/php/src/AppLogger.php",
+      "hash": "dbc35599f4fb2ff21c2c4667f5ed3d117e54312a43ef5748c1130f69e32f9808",
+      "size": 2191
+    },
+    "core/php/src/AppRuntime.php": {
+      "path": "core/php/src/AppRuntime.php",
+      "hash": "cba7d9074466fd57d81f326201dcd974325c10759b28fa1f70623473c39f88d5",
+      "size": 3717
+    },
+    "core/php/src/CoreDataSeeder.php": {
+      "path": "core/php/src/CoreDataSeeder.php",
+      "hash": "2e209818488d5751cccd22af6ebf8c774f32221c69a7f188f6eb479ccc5a0e5d",
+      "size": 9223
+    },
+    "core/php/src/Database.php": {
+      "path": "core/php/src/Database.php",
+      "hash": "c4dff58a4b27361ac3ef510517adcd8c5844abdc8e553bf34ecb10074368a6fc",
+      "size": 6291
+    },
+    "core/php/src/EnvLoader.php": {
+      "path": "core/php/src/EnvLoader.php",
+      "hash": "7f11d5f17b54c0ab39c6c37fab6feb0ed43201b17b09e398be0d6dc2c86ba7e0",
+      "size": 4420
+    },
+    "core/php/src/InfrastructureCatalog.php": {
+      "path": "core/php/src/InfrastructureCatalog.php",
+      "hash": "448dbd53119f68ef93e3577224e2ec94b2368619fe2c072e1211827c2859e3a9",
+      "size": 1098
+    },
+    "core/php/src/JsonResponse.php": {
+      "path": "core/php/src/JsonResponse.php",
+      "hash": "95363c6e4baa791561a15ac09e9cbfc3f797ca5de9eff1813545204f8b3b6857",
+      "size": 1316
+    },
+    "core/php/src/Phase4AuthRbac.php": {
+      "path": "core/php/src/Phase4AuthRbac.php",
+      "hash": "6ef42107d3bf40690c319443d73af68dcf16cfaa9b6d13e577a937790c18a422",
+      "size": 43408
+    },
+    "core/php/src/Phase6AdminStorage.php": {
+      "path": "core/php/src/Phase6AdminStorage.php",
+      "hash": "754077c791f096e904a46c075de5cf612aa7bf11fcdc0da26367d492c01819bb",
+      "size": 9540
+    },
+    "core/php/src/Phase7ModuleRuntime.php": {
+      "path": "core/php/src/Phase7ModuleRuntime.php",
+      "hash": "2b072d6c56586ba1e9c1dbad7708fb65fca78b3912c376a74d5d650aeb664ea2",
+      "size": 18689
+    },
+    "core/php/src/PrerequisiteChecker.php": {
+      "path": "core/php/src/PrerequisiteChecker.php",
+      "hash": "1596581292e078965aac02b862c613663655bd215adf932967a4ed1f58ed466e",
+      "size": 4221
+    },
+    "core/php/src/SchemaMigrator.php": {
+      "path": "core/php/src/SchemaMigrator.php",
+      "hash": "223a965aa10ecd35f149a73bd1bdf6a688cb39648cc405983ca35bcac05be329",
+      "size": 13845
+    },
+    "core/php/src/Security.php": {
+      "path": "core/php/src/Security.php",
+      "hash": "bb9712a716f826fbc73e4d175e0ca47d9e85c7f390c6bf7a4c9d3b3cc1a62c47",
+      "size": 1684
+    },
+    "core/php/src/SetupInstaller.php": {
+      "path": "core/php/src/SetupInstaller.php",
+      "hash": "ddd00470511a6453302a29bac0c55655b12ef61a01627a8ce51e05a81290ce3a",
+      "size": 10061
+    },
+    "core/php/src/SetupStateStore.php": {
+      "path": "core/php/src/SetupStateStore.php",
+      "hash": "548c5177099c0181233c29784c1ee4b15fe5443d0bc3285ffb4bcfe92c5260f9",
+      "size": 3603
     },
     "package-lock.json": {
       "path": "package-lock.json",
@@ -114,8 +199,8 @@
     },
     "platform/core-loader.js": {
       "path": "platform/core-loader.js",
-      "hash": "db8278029bc0064cd3fe3594536cec131d89d3075ba34e1d120264e5a2725942",
-      "size": 15317
+      "hash": "e001607840d6a007846c24113e81551d61b6e8ba867503f2f1474fa71e4a05d9",
+      "size": 16556
     },
     "platform/core-runtime.js": {
       "path": "platform/core-runtime.js",
@@ -179,18 +264,18 @@
     },
     "platform/module-interface.js": {
       "path": "platform/module-interface.js",
-      "hash": "fa2c8128162e296b75405196d1cceafb561028cd21f412084b8ef223bb67cd64",
-      "size": 7618
+      "hash": "1622ed44fe2773516c7fb08a767c48cf1d96f7b9f1a42bc45da851748bad50ba",
+      "size": 7696
     },
     "platform/module-manager.js": {
       "path": "platform/module-manager.js",
-      "hash": "62b757f2c4cb2a4c1603a13fa695ed1c082ceb3b0bffc3db94a643a739d7fc0d",
-      "size": 10760
+      "hash": "5ff28da6c6d98ac7ec8ebe79f9e8c51094c228f7ea2634ecd1b34212973eeb12",
+      "size": 11610
     },
     "platform/module-registry.js": {
       "path": "platform/module-registry.js",
-      "hash": "c399a206d3e31b8f70f5b3892df6d41a1bb90aea90c16aa435fbbd103820236c",
-      "size": 8539
+      "hash": "b43d0cfd9d736f335171fb9428c4fb669ae11f51790d258d6aad95066f5168d4",
+      "size": 8807
     },
     "platform/provider-manager.js": {
       "path": "platform/provider-manager.js",
@@ -234,8 +319,8 @@
     },
     "server/config/index.js": {
       "path": "server/config/index.js",
-      "hash": "c14a2aeb723b42ff2e173cfe072d7160102303f28c5247da03f599e494a9a6d9",
-      "size": 6967
+      "hash": "8a03f9f181b53486c426165f93fa0b17496a3e32fdc9defcc1f5a04523581c11",
+      "size": 7629
     },
     "server/database/connection.js": {
       "path": "server/database/connection.js",
@@ -322,50 +407,90 @@
       "hash": "aa19517bddbb926baab7e6cf01c560eb4931b94188bc3b764f084c61e8de96d8",
       "size": 8124
     },
+    "webroot/admin/audit-view.js": {
+      "path": "webroot/admin/audit-view.js",
+      "hash": "d2b748f7320c3f17e00c01b47d30901f46cbb82d9617f463bdd3559c6837fa59",
+      "size": 3235
+    },
     "webroot/admin/common.js": {
       "path": "webroot/admin/common.js",
-      "hash": "f0e1adcd973b056abe1f0df82c1e590697bb5f494234e1388be1cad241d9c7be",
-      "size": 5411
+      "hash": "8e066955a15ab0a80adf32e2f1993f0b0110051ded07c89f1f58c93c34c67019",
+      "size": 5273
     },
     "webroot/admin/index.js": {
       "path": "webroot/admin/index.js",
-      "hash": "1a449aff735abefdbf2bbc8f31dab6ece106229e287544c220153a80ecb166f6",
-      "size": 11971
+      "hash": "2ca1e7dc108e575f3909af3f70d93ed9fde004e493eebfeb941fd7376e1e020a",
+      "size": 10724
+    },
+    "webroot/admin/modules-view.js": {
+      "path": "webroot/admin/modules-view.js",
+      "hash": "f925706fae3ec7b7bec3cfff617addd36d67a38cf715d16f1f9d1069ea9501ec",
+      "size": 5654
     },
     "webroot/admin/roles-view.js": {
       "path": "webroot/admin/roles-view.js",
-      "hash": "731acf81471cc4b4dfcbc22fe89ff9aef199616fed336da07e5313b95a4cb5a5",
-      "size": 7643
+      "hash": "e827aa923872959f3023dc4efc1b0e6b8d66564cf68442843f14b8bba1c83d84",
+      "size": 7039
     },
     "webroot/admin/settings-view.js": {
       "path": "webroot/admin/settings-view.js",
-      "hash": "78200212ba80d8b2009e09f44249af16b2afc72bd173c011d4646b08d4f09624",
-      "size": 7093
+      "hash": "534a9d21d0911cd8d49ee29af316d0a0bf58a78d2827898bd3838e58a3cc011b",
+      "size": 7117
     },
     "webroot/admin/users-view.js": {
       "path": "webroot/admin/users-view.js",
-      "hash": "cce118b87f8d80e8592f0b792dec4793b55b367fadf12089f085589d8babba93",
-      "size": 8257
+      "hash": "80ce067da1657ff56376166e83da7a195a9f384b45039b296e7b8e53a2970d0e",
+      "size": 9867
     },
     "webroot/admin-init.js": {
       "path": "webroot/admin-init.js",
-      "hash": "84aaa964266c57c7a6eef47a15734c3bc3e117a2ecd15a926d4cb384d9562bd9",
-      "size": 4012
+      "hash": "aaf8e764ae6ed1947d6814c318a81ac046fdc8978d0fcb727e23ab47b9aefe05",
+      "size": 5391
     },
     "webroot/admin.html": {
       "path": "webroot/admin.html",
-      "hash": "06131f57f1865f8f3646eb8ebaedfb30fe768e3750b6cb4cb06d97ab92068e0f",
-      "size": 6010
+      "hash": "7093abc9ce14721e2162853b8f41fadced4e330544799596fa0d877892fee483",
+      "size": 6121
+    },
+    "webroot/api/.htaccess": {
+      "path": "webroot/api/.htaccess",
+      "hash": "761081c13ab532041affb1887a912296403620ee540e564f9aae14b54e24b129",
+      "size": 305
+    },
+    "webroot/api/index.php": {
+      "path": "webroot/api/index.php",
+      "hash": "fa98364b38166bbef29fbb7fe1dc939d5db73c2cb2b954751dbcd4a0d1fc5827",
+      "size": 18006
+    },
+    "webroot/api/setup/install.php": {
+      "path": "webroot/api/setup/install.php",
+      "hash": "5a72a617feaa630940b631546bdc5154d51e09cd7f93ce95cb34472c6bf6a079",
+      "size": 1289
+    },
+    "webroot/api/setup/status.php": {
+      "path": "webroot/api/setup/status.php",
+      "hash": "27430d7ffa6d343768fcffd254ba7539ca4d2b7a0311e0ccd900ab2811daf67c",
+      "size": 570
+    },
+    "webroot/api/status.php": {
+      "path": "webroot/api/status.php",
+      "hash": "871edb8f3572db171eb71a867e31437ff38be611dba2dc1682e2bb618d8c004a",
+      "size": 1405
     },
     "webroot/api-client.js": {
       "path": "webroot/api-client.js",
-      "hash": "e1449dcf666ac678c35739b24d8bb2622a936a18a5f1e6c7484e20df907c7d78",
-      "size": 4104
+      "hash": "83bcd2f95079e53893de4f40f9707d2e03863f2887d96cea6dcf76af9d131f88",
+      "size": 7137
     },
     "webroot/dev.html": {
       "path": "webroot/dev.html",
       "hash": "de14e18bfcd2262f90f959c41c77d3639223270c224a5de334f5acf512bfe74b",
       "size": 6668
+    },
+    "webroot/diagnose.php": {
+      "path": "webroot/diagnose.php",
+      "hash": "557a3dd2bef97e2786ddb4f33ae9bb41659ffff5a0e707e6733e8e8956e0f67e",
+      "size": 25171
     },
     "webroot/index.html": {
       "path": "webroot/index.html",
@@ -374,8 +499,8 @@
     },
     "webroot/master-ui.js": {
       "path": "webroot/master-ui.js",
-      "hash": "7c576103e1cd272ec8ff3183b2cfd89c04670ec730f5410c39aa33c91ab820d8",
-      "size": 178461
+      "hash": "2af2d85dba6c833d1452b9083c2d812fd579d72881001018ff8a969218ac3e29",
+      "size": 179300
     },
     "webroot/setup.html": {
       "path": "webroot/setup.html",
@@ -384,8 +509,8 @@
     },
     "webroot/setup.php": {
       "path": "webroot/setup.php",
-      "hash": "1ac5341715c8fe355678ef0da1c8c794a421d83a5453e2bbbb80981c525acbd0",
-      "size": 42787
+      "hash": "d5c64569cc4e42b0a5a55864f2b4db60a63e6958c5bcdee55481794f308cfc46",
+      "size": 7367
     },
     "webroot/style.css": {
       "path": "webroot/style.css",

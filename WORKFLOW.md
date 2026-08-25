@@ -10,6 +10,8 @@ Aktueller Stand
 * Die zentrale Modulverwaltung verwendet jetzt einen sauberen Lifecycle: `DISCOVER -> REGISTER/INSTALL -> INACTIVE`; `discoverModules()` aktiviert keine Module mehr automatisch.
 * Module werden relativ zum aktuellen Installationspfad aufgelöst; harte Root-Pfade werden vermieden.
 * App- und Modulverwaltung bleiben getrennt; echte Module müssen als `type: "module"` registriert werden, nicht als App-Objekt.
+* Der PHP-Backendpfad für Module ist live verifiziert: Discovery, Install/Register, Activate/Deactivate laufen über `/webroot/api` gegen MySQL-persistente Zustände.
+* Sicherheitsverhalten für Admin-Schreiboperationen bleibt verbindlich: ohne Session `401`, mit ungültigem/fehlendem CSRF `403`.
 
 Verbindliche Regeln
 
