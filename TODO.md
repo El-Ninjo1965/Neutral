@@ -72,14 +72,15 @@ This file is the current task ledger for the project. It must stay aligned with 
 ### Application and module integration
 [x] Test the admin area against the real backend.
   - Verified against live PHP/MySQL API: users, roles/permissions, settings, sessions, audit, auth/me, login/logout and CSRF-protected writes.
-[?] Test module discovery and administration against the real backend.
-  - BLOCKED (live-verified): authenticated production requests to `/api/modules`, `/api/admin/modules`, `/api/admin/modules/gps`, `/api/admin/modules/gps/activate`, and `/api/admin/modules/gps/deactivate` return JSON `404 Not found` from the PHP API router.
-  - Current code state confirms this: `webroot/api/index.php` has no module admin routes and `webroot/admin/index.js` still renders the modules section as placeholder text.
-[?] Test GPS module behavior on the real system.
-  - BLOCKED by missing PHP module runtime endpoints (`/api/modules*` / `/api/admin/modules*`) on the live backend.
-[?] Test module activation and deactivation persistence.
-  - BLOCKED by missing PHP module lifecycle endpoints on the live backend.
-[ ] Ensure Neutral remains represented as an application, not as a module.
+[x] Test module discovery and administration against the real backend.
+  - Verified live on `https://www.turbolikes.com/index/app/neutral/webroot/api`: `/api/modules`, `/api/admin/modules`, `/api/admin/modules/gps`, `/api/admin/modules/gps/install`, `/api/admin/modules/gps/activate`, `/api/admin/modules/gps/deactivate`.
+  - PHP router now exposes generic module lifecycle endpoints and no GPS-only special route is required.
+[x] Test GPS module behavior on the real system.
+  - Verified: GPS is discovered through the generic module discovery API, not through a separate implementation path.
+[x] Test module activation and deactivation persistence.
+  - Verified live: `DISCOVERED -> INACTIVE -> ACTIVE -> INACTIVE` and state remains persistent on repeated reads.
+[x] Ensure Neutral remains represented as an application, not as a module.
+  - Verified: only GPS appears in module discovery/admin endpoints; Neutral itself is not registered as a module.
 
 ### Portability and configuration
 [ ] Verify installation path portability across real server layouts.
@@ -91,6 +92,8 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
   - Extended `webroot/diagnose.php` and verified on the live host with sanitized output, including safe DB host/port/name/user reporting and localhost vs 127.0.0.1 MySQL comparison.
 [ ] Perform a complete end-to-end production test.
+[x] Re-run live security/runtime checks for module admin writes.
+  - Verified live: unauthenticated module write returns `401`, missing/invalid CSRF returns `403`, authenticated session write with valid CSRF succeeds.
 [ ] Update deployment documentation to reflect the actual host conditions.
 [ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.
 
