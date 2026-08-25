@@ -1,0 +1,108 @@
+<?php
+declare(strict_types=1);
+
+namespace Neutral\Core;
+
+final class AppConfig
+{
+    /** @var array<string, string> */
+    private array $env;
+
+    /**
+     * @param array<string, string> $env
+     */
+    public function __construct(array $env)
+    {
+        $this->env = $env;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function env(): array
+    {
+        return $this->env;
+    }
+
+    public function appId(): string
+    {
+        return trim($this->env['APP_ID'] ?? $this->env['DEFAULT_APP_ID'] ?? 'neutral-app');
+    }
+
+    public function appName(): string
+    {
+        return trim($this->env['APP_NAME'] ?? 'Neutral Platform');
+    }
+
+    public function apiBase(): string
+    {
+        $value = trim($this->env['API_BASE'] ?? '/api');
+        if ($value === '') {
+            return '/api';
+        }
+        return str_starts_with($value, '/') ? $value : '/' . $value;
+    }
+
+    public function environment(): string
+    {
+        $value = strtolower(trim($this->env['APP_ENV'] ?? $this->env['NODE_ENV'] ?? 'production'));
+        return $value === '' ? 'production' : $value;
+    }
+
+    public function isDebug(): bool
+    {
+        $debug = strtolower(trim($this->env['APP_DEBUG'] ?? ''));
+        if ($debug !== '') {
+            return in_array($debug, ['1', 'true', 'yes', 'on'], true);
+        }
+        return $this->environment() !== 'production';
+    }
+
+    /**
+     * @return array{
+     *   type:string,
+     *   host:string,
+     *   port:string,
+     *   name:string,
+     *   user:string,
+     *   password:string,
+     *   url:string
+     * }
+     */
+    public function database(): array
+    {
+        $dbType = trim($this->env['DB_TYPE'] ?? $this->env['MYSQL_TYPE'] ?? 'mysql');
+        $dbHost = trim($this->env['DB_HOST'] ?? $this->env['MYSQL_HOST'] ?? '127.0.0.1');
+        $dbPort = trim($this->env['DB_PORT'] ?? $this->env['MYSQL_PORT'] ?? '3306');
+        $dbName = trim($this->env['DB_NAME'] ?? $this->env['MYSQL_DATABASE'] ?? '');
+        $dbUser = trim($this->env['DB_USER'] ?? $this->env['MYSQL_USER'] ?? '');
+        $dbPassword = trim($this->env['DB_PASSWORD'] ?? $this->env['MYSQL_PASSWORD'] ?? '');
+        $dbUrl = trim($this->env['DB_URL'] ?? $this->env['DATABASE_URL'] ?? '');
+
+        return [
+            'type' => $dbType !== '' ? $dbType : 'mysql',
+            'host' => $dbHost,
+            'port' => $dbPort,
+            'name' => $dbName,
+            'user' => $dbUser,
+            'password' => $dbPassword,
+            'url' => $dbUrl,
+        ];
+    }
+
+    /**
+     * @param list<string> $requiredKeys
+     * @return list<string>
+     */
+    public function missingKeys(array $requiredKeys): array
+    {
+        $missing = [];
+        foreach ($requiredKeys as $key) {
+            $value = trim((string) ($this->env[$key] ?? ''));
+            if ($value === '') {
+                $missing[] = $key;
+            }
+        }
+        return $missing;
+    }
+}
