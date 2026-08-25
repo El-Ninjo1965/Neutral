@@ -43,20 +43,27 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Result: the public host is serving PHP, not the repo’s Node server.
 
 ### Production environment and .env verification
-[?] Verify the real host .env file at `/home/web1819/.env` directly from the production host filesystem.
-  - Blocked: real FTPS access to the production server is not available from this execution environment. The configured FTPS login for `ftp.turbolikes.com` failed with `530 Login authentication failed`.
-  - This means the live `/home/web1819/.env` file cannot be treated as verified from this workspace; the repository code still expects it on the real host, but the file cannot be measured here.
-[?] Validate the actual DB credentials, user grants, host, and port on the real production host.
-  - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without server access.
-[ ] Confirm whether the public webroot path `PUBLIC_WEBROOT_PATH` resolves to the real app folder on the host.
-[ ] Confirm whether `PUBLIC_URL` matches the live app root and serves the expected files on the production server.
-[ ] Verify whether the hosted server is ignoring the .env values entirely because the HTTP requests are served by LiteSpeed/PHP instead of the Node process.
+[x] Implement a deployable PHP diagnostics page for real-host environment verification without exposing secrets.
+ - Added `webroot/diagnose.php`, which reads the expected host env path when available, reports only status flags, masks credentials, checks DB connectivity without mutating data, and exposes a copyable report.
+ - Deployed and verified through the live host URL: `https://www.turbolikes.com/index/app/neutral/webroot/diagnose.php`.
+[x] Verify the real host .env file at `/home/web1819/.env` directly from the production host filesystem.
+ - Verified through the deployed PHP diagnostics page: `/home/web1819/.env` exists, is readable, and is being loaded by the live PHP process.
+[x] Validate the actual DB credentials, user grants, host, and port on the real production host.
+ - Verified: both `localhost:3306` and `127.0.0.1:3306` succeed for the configured MySQL user on the live host; the DB name resolves and the app user is accepted.
+[x] Confirm whether the public webroot path `PUBLIC_WEBROOT_PATH` resolves to the real app folder on the host.
+ - Verified: `/home/web1819/public_html/index/app/neutral` exists and is readable; the production webroot is `/home/web1819/public_html/index/app/neutral/webroot`.
+[x] Confirm whether `PUBLIC_URL` matches the live app root and serves the expected files on the production server.
+ - Verified: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` and the deployed diagnostics page both respond with HTTP 200.
+[x] Verify whether the hosted server is ignoring the .env values entirely because the HTTP requests are served by LiteSpeed/PHP instead of the Node process.
+ - Result: the live PHP process reads the real host .env successfully; the runtime is PHP/LiteSpeed and the environment values are active on the host.
 
 ### Database and connectivity
-[?] Clarify MySQL credentials, DB user, grants, host and port configuration.
-  - Blocked: current live evidence shows access denied for the configured app user; credentials/grants are not yet verified on the host.
-[ ] Verify DB host and configuration values used by the production server.
-[ ] Repair the actual server-to-DB connection for Neutral.
+[x] Clarify MySQL credentials, DB user, grants, host and port configuration.
+  - Verified through live diagnostics: configured DB user authenticates successfully against MySQL on both `localhost:3306` and `127.0.0.1:3306`.
+[x] Verify DB host and configuration values used by the production server.
+  - Verified through live diagnostics: real host `.env` is readable and DB host/port are active in the running PHP process.
+[x] Repair the actual server-to-DB connection for Neutral.
+  - Current verification result: read-only connectivity check is successful; no schema or data mutation was performed.
 [ ] Verify server-side storage is usable for online data persistence.
 [ ] Validate browser vs server storage separation in actual runtime conditions.
 
@@ -74,7 +81,8 @@ This file is the current task ledger for the project. It must stay aligned with 
 [ ] Check whether the app can operate without hardcoded production paths.
 
 ### Diagnostics and deployment
-[ ] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
+[x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
+  - Extended `webroot/diagnose.php` and verified on the live host with sanitized output, including safe DB host/port/name/user reporting and localhost vs 127.0.0.1 MySQL comparison.
 [ ] Perform a complete end-to-end production test.
 [ ] Update deployment documentation to reflect the actual host conditions.
 [ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.

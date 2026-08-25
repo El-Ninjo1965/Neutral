@@ -6,7 +6,10 @@ const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
-const envFile = path.join(projectRoot, '.env.deploy');
+const envFiles = [
+  path.join(projectRoot, '.env.ftp.deploy'),
+  path.join(projectRoot, '.env.deploy')
+];
 const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
@@ -30,6 +33,7 @@ const allowedEntries = [
   'webroot/index.html',
   'webroot/setup.html',
   'webroot/setup.php',
+  'webroot/diagnose.php',
   'webroot/admin.html',
   'webroot/dev.html',
   'webroot/style.css',
@@ -178,7 +182,11 @@ function buildRemoteDeleteTargets(deleteCandidates, ftpTargetDir) {
 }
 
 function getConfig() {
-  const parsed = parseEnvFile(envFile);
+  const parsed = {};
+  for (const envFile of envFiles) {
+    Object.assign(parsed, parseEnvFile(envFile));
+  }
+
   const merged = { ...parsed, ...process.env };
   const normalized = {};
   for (const key of required) {
