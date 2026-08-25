@@ -78,7 +78,13 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Fixed follow-up frontend auth handling in `webroot/admin-init.js` to consume the backend response envelope (`{ ok, data }`) correctly, preventing false "Server session missing" resets after a successful server login.
   - Bound `ApiClient` explicitly to `window.ApiClient` in `webroot/api-client.js` so repeated login attempts can always create the server auth client from `master-ui.js`.
   - Fixed nested-install API base resolution in `webroot/master-ui.js` and `webroot/admin-init.js` so admin auth requests target `/index/app/neutral/webroot/api/*` on production instead of the non-existent root `/api/*` path.
-  - Validation in repository runtime: `node --check webroot/master-ui.js webroot/admin-init.js webroot/api-client.js`, `node --test tests/session-auth.test.js tests/admin-api.test.js --test-reporter=spec`, `npm test -- --test-reporter=spec`.
+  - Hardened admin/developer shell auth sourcing in `webroot/master-ui.js`: server session hydration via `/api/auth/me` now runs before page access checks, and local browser-auth state is ignored as authority on auth-gated pages.
+  - Validation in repository runtime: `node --check webroot/master-ui.js webroot/admin-init.js webroot/api-client.js`, `node --test tests/session-auth.test.js tests/admin-api.test.js tests/master-framework.test.js --test-reporter=spec`, `npm test -- --test-reporter=spec`.
+[x] Upgrade `webroot/setup.php` to a CMS-style install/recovery user flow.
+  - Step 1 remains `Install now` via existing `SetupInstaller` (prerequisites, migration, core seed).
+  - Step 2 provisions server users via existing `Phase4UserService` and DB/RBAC roles (admin required, developer optional).
+  - Existing server-side admin/developer users are detected and can be kept or reset; reset demotes/inactivates prior role holders before finalizing.
+  - Setup is server-side locked again after successful user provisioning; reopening requires explicit recovery enablement via env (`CORE_SETUP_RECOVERY_ENABLED`, optional `CORE_SETUP_RECOVERY_KEY`).
 [~] Re-verify the full admin browser login UX on the live host after the frontend auth fixes.
   - Pending from this environment: no real interactive browser session is available here to directly validate "admin menu remains visible" and absence of the two UI error messages after login.
 [x] Test module discovery and administration against the real backend.

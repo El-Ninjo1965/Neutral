@@ -41,7 +41,79 @@
     return name ? name.charAt(0).toUpperCase() : 'A';
   };
 
+  const isServerAuthPage = pageType === 'admin' || pageType === 'developer';
+  let serverAuthenticatedUser = null;
+
+  const extractApiData = (result) => {
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+      return null;
+    }
+    const envelope = result.data;
+    if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
+      return null;
+    }
+    return envelope.data;
+  };
+
+  const applyServerIdentity = (identityData) => {
+    const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
+      ? identityData.user
+      : null;
+    if (!userRecord) {
+      return null;
+    }
+
+    const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
+      ? identityData.roles
+      : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
+    const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
+      ? identityData.permissions
+      : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
+
+    const normalizedUser = {
+      ...userRecord,
+      roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
+      permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
+      status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
+    };
+
+    const normalizedSession = {
+      sessionId: 'server-session',
+      status: 'active',
+      authContext: {
+        source: 'server-session'
+      }
+    };
+
+    serverAuthenticatedUser = normalizedUser;
+    if (window.CoreAuth && typeof window.CoreAuth === 'object') {
+      window.CoreAuth.currentUser = normalizedUser;
+      window.CoreAuth.currentSession = normalizedSession;
+    }
+    if (window.UserModule && typeof window.UserModule === 'object') {
+      window.UserModule.currentUser = normalizedUser;
+      window.UserModule.currentSession = normalizedSession;
+    }
+
+    return normalizedUser;
+  };
+
+  const clearServerIdentity = () => {
+    serverAuthenticatedUser = null;
+    if (window.CoreAuth && typeof window.CoreAuth === 'object') {
+      window.CoreAuth.currentUser = null;
+      window.CoreAuth.currentSession = null;
+    }
+    if (window.UserModule && typeof window.UserModule === 'object') {
+      window.UserModule.currentUser = null;
+      window.UserModule.currentSession = null;
+    }
+  };
+
   const getCurrentUser = () => {
+    if (isServerAuthPage) {
+      return serverAuthenticatedUser;
+    }
     if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
       const user = window.UserModule.getCurrentUser();
       if (user) return user;
@@ -3152,59 +3224,6 @@
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    const extractApiData = (result) => {
-      if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
-        return null;
-      }
-      const envelope = result.data;
-      if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
-        return null;
-      }
-      return envelope.data;
-    };
-
-    const applyServerIdentity = (identityData) => {
-      const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
-        ? identityData.user
-        : null;
-      if (!userRecord) {
-        return null;
-      }
-
-      const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
-        ? identityData.roles
-        : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
-      const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
-        ? identityData.permissions
-        : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
-
-      const normalizedUser = {
-        ...userRecord,
-        roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
-        permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
-        status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
-      };
-
-      const normalizedSession = {
-        sessionId: 'server-session',
-        status: 'active',
-        authContext: {
-          source: 'server-session'
-        }
-      };
-
-      if (window.CoreAuth && typeof window.CoreAuth === 'object') {
-        window.CoreAuth.currentUser = normalizedUser;
-        window.CoreAuth.currentSession = normalizedSession;
-      }
-      if (window.UserModule && typeof window.UserModule === 'object') {
-        window.UserModule.currentUser = normalizedUser;
-        window.UserModule.currentSession = normalizedSession;
-      }
-
-      return normalizedUser;
-    };
-
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
@@ -3327,6 +3346,23 @@
 
   const init = async () => {
     await ensureRuntime();
+    if (isServerAuthPage) {
+      clearServerIdentity();
+      const sessionApiClient = typeof window.ApiClient === 'function'
+        ? new window.ApiClient(resolveRuntimeApiClientBase())
+        : null;
+      if (sessionApiClient) {
+        const sessionResult = await sessionApiClient.me();
+        const sessionData = extractApiData(sessionResult);
+        if (sessionResult.ok && sessionData && sessionData.user) {
+          applyServerIdentity({
+            user: sessionData.user,
+            roles: Array.isArray(sessionData.roles) ? sessionData.roles : [],
+            permissions: Array.isArray(sessionData.permissions) ? sessionData.permissions : []
+          });
+        }
+      }
+    }
     const currentUser = getCurrentUser();
     const targetPage = resolveRoleRoute(currentUser);
     const currentPath = window.location.pathname.replace(/^\//, '');
