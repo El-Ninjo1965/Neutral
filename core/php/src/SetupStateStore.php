@@ -75,6 +75,14 @@ final class SetupStateStore
     /**
      * @return array<string, mixed>
      */
+    public function reset(): array
+    {
+        return $this->save($this->defaultState());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function defaultState(): array
     {
         return [
