@@ -10,6 +10,7 @@ final class Database
 {
     private AppConfig $config;
     private ?PDO $pdo = null;
+    private ?PDO $serverPdo = null;
 
     public function __construct(AppConfig $config)
     {
@@ -26,20 +27,25 @@ final class Database
             throw new \RuntimeException('Missing required PHP extension: pdo_mysql');
         }
 
-        $database = $this->config->database();
-        [$dsn, $user, $password] = $this->resolveConnectionConfig($database);
-
-        try {
-            $this->pdo = new PDO($dsn, $user, $password, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
-        } catch (PDOException $exception) {
-            throw new \RuntimeException('Database connection failed: ' . $exception->getMessage(), 0, $exception);
-        }
+        $connection = $this->connectionConfig();
+        $this->pdo = $this->connectWithConfig($connection, true);
 
         return $this->pdo;
+    }
+
+    public function connectServer(): PDO
+    {
+        if ($this->serverPdo instanceof PDO) {
+            return $this->serverPdo;
+        }
+
+        if (!extension_loaded('pdo_mysql')) {
+            throw new \RuntimeException('Missing required PHP extension: pdo_mysql');
+        }
+
+        $connection = $this->connectionConfig();
+        $this->serverPdo = $this->connectWithConfig($connection, false);
+        return $this->serverPdo;
     }
 
     public function ping(): bool
@@ -54,11 +60,69 @@ final class Database
     }
 
     /**
-     * @param array{type:string,host:string,port:string,name:string,user:string,password:string,url:string} $database
-     * @return array{0:string,1:string,2:string}
+     * @return array{
+     *   ok:bool,
+     *   created:bool,
+     *   existing:bool,
+     *   message:string
+     * }
      */
-    private function resolveConnectionConfig(array $database): array
+    public function ensureDatabaseExists(): array
     {
+        $connection = $this->connectionConfig();
+        if ($connection['name'] === '') {
+            throw new \RuntimeException('Database name is missing in DB configuration.');
+        }
+
+        try {
+            $server = $this->connectServer();
+        } catch (\Throwable $exception) {
+            return [
+                'ok' => false,
+                'created' => false,
+                'existing' => false,
+                'message' => 'Could not connect to MySQL server for database preparation: ' . $exception->getMessage(),
+            ];
+        }
+
+        try {
+            $statement = $server->prepare('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = :name LIMIT 1');
+            $statement->execute([':name' => $connection['name']]);
+            $existing = (bool) $statement->fetchColumn();
+            if ($existing) {
+                return [
+                    'ok' => true,
+                    'created' => false,
+                    'existing' => true,
+                    'message' => 'Database already exists.',
+                ];
+            }
+
+            $quotedName = '`' . str_replace('`', '``', $connection['name']) . '`';
+            $server->exec('CREATE DATABASE IF NOT EXISTS ' . $quotedName . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+
+            return [
+                'ok' => true,
+                'created' => true,
+                'existing' => false,
+                'message' => 'Database created successfully.',
+            ];
+        } catch (\Throwable $exception) {
+            return [
+                'ok' => false,
+                'created' => false,
+                'existing' => false,
+                'message' => 'Database creation is not permitted or failed: ' . $exception->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{type:string,host:string,port:string,name:string,user:string,password:string,url:string}
+     */
+    public function connectionConfig(): array
+    {
+        $database = $this->config->database();
         if ($database['url'] !== '') {
             $parts = parse_url($database['url']);
             if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
@@ -76,18 +140,22 @@ final class Database
             $user = (string) ($parts['user'] ?? '');
             $password = (string) ($parts['pass'] ?? '');
 
-            if ($name === '' || $user === '') {
-                throw new \RuntimeException('DB URL must include database name and username.');
+            if ($user === '') {
+                throw new \RuntimeException('DB URL must include username.');
             }
 
             return [
-                sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $name),
-                $user,
-                $password,
+                'type' => 'mysql',
+                'host' => $host,
+                'port' => $port,
+                'name' => $name,
+                'user' => $user,
+                'password' => $password,
+                'url' => $database['url'],
             ];
         }
 
-        if ($database['host'] === '' || $database['port'] === '' || $database['name'] === '' || $database['user'] === '') {
+        if ($database['host'] === '' || $database['port'] === '' || $database['user'] === '') {
             throw new \RuntimeException('Incomplete database configuration in environment.');
         }
 
@@ -95,10 +163,29 @@ final class Database
             throw new \RuntimeException('Unsupported DB_TYPE: ' . $database['type']);
         }
 
-        return [
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $database['host'], $database['port'], $database['name']),
-            $database['user'],
-            $database['password'],
-        ];
+        return $database;
+    }
+
+    /**
+     * @param array{type:string,host:string,port:string,name:string,user:string,password:string,url:string} $connection
+     */
+    private function connectWithConfig(array $connection, bool $withDatabase): PDO
+    {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s%s;charset=utf8mb4',
+            $connection['host'],
+            $connection['port'],
+            ($withDatabase && trim($connection['name']) !== '') ? ';dbname=' . $connection['name'] : ''
+        );
+
+        try {
+            return new PDO($dsn, $connection['user'], $connection['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+        } catch (PDOException $exception) {
+            throw new \RuntimeException('Database connection failed: ' . $exception->getMessage(), 0, $exception);
+        }
     }
 }

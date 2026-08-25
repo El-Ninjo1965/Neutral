@@ -29,5 +29,10 @@ if (!isset($status['status']) || !is_string($status['status'])) {
     exit(1);
 }
 
+if (!isset($status['migrationState']) || !is_array($status['migrationState'])) {
+    fwrite(STDERR, "Setup installer did not return migration state.\n");
+    exit(1);
+}
+
 echo "PHP core smoke test passed.\n";
 exit(0);

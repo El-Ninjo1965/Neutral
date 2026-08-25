@@ -332,13 +332,39 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - bind full module admin lifecycle UI/flows in PHASE 6+ without duplicating existing module registry logic
 
 #### PHASE 5 – Setup / Migration / Bootstrap
-- [ ] OFFEN
+- [~] IN ARBEIT (MySQL-Installationsbasis umgesetzt, produktive Ausführung noch ausstehend)
 - Description: Implement a versioned setup and bootstrap sequence for environment validation, DB checks, schema version checks, initial schema creation, first admin creation, and migration execution.
 - Dependencies: PHASE 2, PHASE 3, PHASE 4
 - Affected components: setup pages, bootstrap controller, schema_migrations table, installation state logic, admin bootstrap logic
-- Status: not started
+- Status: core setup/migration/bootstrap implementation added for PHP/MySQL; execution against production DB remains pending explicit migration approval
 - Test criterion: an empty production DB can be recognized as uninitialized, system schema can be created in a versioned way, and setup cannot safely run repeatedly without guarded state
-- Result/Notes: setup remains read-only until the production DB is explicitly approved for schema creation under the migration plan
+- Result/Notes:
+  - Implemented:
+    - `core/php/src/SchemaMigrator.php` (versioned core schema migration runner using `schema_migrations`)
+    - `core/php/src/CoreDataSeeder.php` (roles, permissions, role_permissions, bootstrap admin from `.env`, core settings, setup_status sync)
+    - `core/php/src/Database.php` extended with:
+      - parsed connection metadata
+      - server-level connection (`connectServer`)
+      - safe DB existence preparation (`ensureDatabaseExists`) with explicit permission/error reporting
+    - `core/php/src/SetupInstaller.php` extended to:
+      - evaluate migration readiness in status
+      - normalize stale legacy `ACTIVE` setup state when prerequisites fail
+      - run DB preparation -> migrations -> seed sequence on install
+      - keep install idempotent and non-destructive
+    - `webroot/setup.php` replaced by install-focused env-driven setup UI (no legacy manual/Node setup form path)
+  - MySQL schema scope implemented for authoritative online core state:
+    - `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `sessions`, `settings`, `audit_log`, `modules`, `module_state`, `module_migrations`, `setup_status`, `backups`, `release_state`, `schema_migrations`
+    - user ID convention preserved (`AUTO_INCREMENT` starts at 101; bootstrap user seeded as ID 101 when absent)
+  - Validation executed:
+    - `php -l` for all changed PHP files (pass)
+    - `php core/php/tests/smoke.php` (pass)
+    - `npm test -- --test-reporter=spec` (92/92 pass, no regression)
+    - setup flow smoke (`php -S` + `setup.php`, `api/setup/status.php`, repeated `api/setup/install.php`):
+      - status exposes blocked migration state when `pdo_mysql` is missing
+      - repeated install calls remain stable/idempotent (same blocked response)
+  - Current local environment limitation:
+    - `pdo_mysql` missing in local PHP CLI; full migration execution and DB schema creation cannot be run locally until extension is available.
+    - installer now reports this explicitly and avoids destructive actions.
 
 #### PHASE 6 – Admin-System
 - [~] IN ARBEIT (Bedien-/Fachkonzept definiert, Implementierung offen)
