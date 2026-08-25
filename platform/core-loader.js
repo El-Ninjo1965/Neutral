@@ -49,6 +49,30 @@
         }
     ]);
 
+    const getCurrentAppRoot = () => {
+        if (typeof window === 'undefined' || !window.location || !window.location.pathname) {
+            return '/';
+        }
+
+        const trimmedPath = window.location.pathname.replace(/\/+$/, '');
+        if (!trimmedPath || trimmedPath === '/') {
+            return '/';
+        }
+
+        const segments = trimmedPath.split('/').filter(Boolean);
+        const webrootIndex = segments.lastIndexOf('webroot');
+        if (webrootIndex > 0) {
+            return `/${segments.slice(0, webrootIndex).join('/')}`;
+        }
+
+        const lastSegment = segments[segments.length - 1] || '';
+        if (lastSegment.includes('.') || lastSegment === 'app') {
+            return `/${segments.slice(0, -1).join('/')}`;
+        }
+
+        return `/${segments.join('/')}`;
+    };
+
     const toAbsolutePath = (basePath, candidate) => {
         if (!candidate) {
             return null;
@@ -63,17 +87,25 @@
         }
 
         const normalizedBase = (typeof basePath === 'string' && basePath.trim()) ? basePath.trim() : '/';
+        const resolvedBase = /^(https?:)?\/\//i.test(normalizedBase)
+            ? normalizedBase
+            : (() => {
+                const baseDirectory = normalizedBase.startsWith('/')
+                    ? normalizedBase
+                    : `${getCurrentAppRoot().replace(/\/$/, '')}/${normalizedBase.replace(/^\.\//, '')}`;
+                return baseDirectory.endsWith('/') ? baseDirectory : `${baseDirectory}/`;
+            })();
 
         if (typeof window !== 'undefined' && window.location && window.location.origin) {
-            const baseUrl = /^(https?:)?\/\//i.test(normalizedBase)
-                ? normalizedBase
-                : `${window.location.origin}${normalizedBase.startsWith('/') ? normalizedBase : `/${normalizedBase}`}`;
+            const baseUrl = /^(https?:)?\/\//i.test(resolvedBase)
+                ? resolvedBase
+                : `${window.location.origin}${resolvedBase.startsWith('/') ? resolvedBase : `/${resolvedBase}`}`;
             const safeBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
             const resolved = new URL(candidate.replace(/^\.\//, ''), safeBaseUrl);
             return resolved.pathname + resolved.search;
         }
 
-        const plainBase = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`;
+        const plainBase = resolvedBase.endsWith('/') ? resolvedBase : `${resolvedBase}/`;
         return `${plainBase.replace(/\/$/, '')}/${candidate.replace(/^\.\//, '')}`;
     };
 

@@ -14,7 +14,10 @@
         AVAILABLE: 'available',
         INSTALLED: 'installed',
         ENABLED: 'enabled',
-        DISABLED: 'disabled'
+        ACTIVE: 'enabled',
+        DISABLED: 'disabled',
+        INACTIVE: 'disabled',
+        ERROR: 'error'
     });
 
     const ModuleInterface = {
@@ -47,7 +50,7 @@
                 apiVersion: typeof manifest.apiVersion === 'string' && manifest.apiVersion.trim()
                     ? manifest.apiVersion.trim()
                     : null,
-                type: manifest.type || 'framework',
+                type: manifest.type || 'module',
                 description: typeof manifest.description === 'string'
                     ? manifest.description
                     : '',

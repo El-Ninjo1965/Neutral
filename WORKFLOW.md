@@ -7,6 +7,9 @@ Aktueller Stand
 * Der aktuelle Quellcode ist die maßgebliche Referenz.
 * Der lokale Node-Host-Binding-Fix wurde implementiert: Standard-Host ist `0.0.0.0`; zusätzlich werden `HOST`, `PUBLIC_HOST` und `SERVER_HOST` berücksichtigt.
 * Die lokale Runtime funktioniert. Das verbleibende Problem ist die öffentliche Produktionsanbindung an `https://www.turbolikes.com`.
+* Die zentrale Modulverwaltung verwendet jetzt einen sauberen Lifecycle: `DISCOVER -> REGISTER/INSTALL -> INACTIVE`; `discoverModules()` aktiviert keine Module mehr automatisch.
+* Module werden relativ zum aktuellen Installationspfad aufgelöst; harte Root-Pfade werden vermieden.
+* App- und Modulverwaltung bleiben getrennt; echte Module müssen als `type: "module"` registriert werden, nicht als App-Objekt.
 
 Verbindliche Regeln
 
