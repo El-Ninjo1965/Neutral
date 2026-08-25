@@ -39,6 +39,16 @@ Der Versuch, mit der konfigurierten FTPS-Identität auf den Produktionsserver zu
 
 Damit ist der direkte Zugriff auf das reale Produktions-Dateisystem derzeit nicht möglich. Es kann daher keine produktive Verifikation von `/home/web1819/.env`, `/home/web1819/public_html/...` oder der tatsächlichen MySQL-Host-Konfiguration aus dieser Umgebung erfolgen. Alle späteren Erkenntnisse zu `.env`, DB-Zugang und Webroot müssen als nicht verifiziert behandelt werden, bis realer Serverzugriff hergestellt ist.
 
+### Status-Update (verifiziert)
+
+Der bestehende Repository-Deploypfad über `scripts/manual-ftps-deploy.js` wurde erfolgreich verwendet, um den Diagnose-Endpunkt auf den Live-Host zu übertragen. Die Seite ist unter `https://www.turbolikes.com/index/app/neutral/webroot/diagnose.php` erreichbar und liefert einen bereinigten Produktionsreport.
+
+Damit ist über den produktiven PHP-Prozess verifiziert:
+
+- `/home/web1819/.env` existiert und ist lesbar.
+- `/home/web1819/public_html/index/app/neutral/webroot` ist vorhanden und aktiv.
+- MySQL-Verbindungen mit `localhost:3306` und `127.0.0.1:3306` sind erfolgreich.
+
 ## Produktionsbestand
 
 > Module werden nicht automatisch aktiviert. Der Laufzeit-Discovery-Prozess registriert Module nur als installiert/inaktiv und wartet auf den Admin-Entscheid. Dadurch bleibt die Application (`Neutral`) von der Modulverwaltung getrennt. Module müssen als `type: "module"` definiert werden.

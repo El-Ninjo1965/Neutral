@@ -228,6 +228,12 @@ $dbName = trim((string) ($env['DB_NAME'] ?? ''));
 $dbUser = trim((string) ($env['DB_USER'] ?? ''));
 $dbPassword = trim((string) ($env['DB_PASSWORD'] ?? ''));
 $dbUrl = trim((string) ($env['DB_URL'] ?? $env['DATABASE_URL'] ?? ''));
+$dbConfig = [
+    'host' => $dbHost !== '' ? $dbHost : 'MISSING',
+    'port' => $dbPort !== '' ? $dbPort : 'MISSING',
+    'name' => $dbName !== '' ? $dbName : 'MISSING',
+    'user' => $dbUser !== '' ? $dbUser : 'MISSING',
+];
 
 $mysqlAttempts = [];
 $pdoAvailable = extension_loaded('pdo_mysql');
@@ -313,6 +319,8 @@ foreach ($requiredKeys as $key) {
     $reportText .= '- ' . $key . ': ' . ($envStatus[$key] ?? 'MISSING') . "\n";
 }
 $reportText .= "\nMYSQL\n";
+$reportText .= '- DB_HOST: ' . $dbConfig['host'] . "\n";
+$reportText .= '- DB_PORT: ' . $dbConfig['port'] . "\n";
 foreach ($mysqlAttempts as $attempt) {
     $reportText .= '- ' . $attempt['host'] . ':' . $attempt['port'] . ' => ' . $attempt['status'];
     if (!empty($attempt['error'])) {
@@ -350,6 +358,7 @@ if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
             'passenger' => $passenger ?? 'MISSING',
         ],
         'env' => $envStatus,
+        'db_config' => $dbConfig,
         'db_url' => parseDbUrlSummary($dbUrl),
         'mysql' => $mysqlAttempts,
         'webroot' => $webrootStatus,

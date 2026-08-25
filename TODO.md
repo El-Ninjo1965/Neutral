@@ -58,10 +58,12 @@ This file is the current task ledger for the project. It must stay aligned with 
  - Result: the live PHP process reads the real host .env successfully; the runtime is PHP/LiteSpeed and the environment values are active on the host.
 
 ### Database and connectivity
-[?] Clarify MySQL credentials, DB user, grants, host and port configuration.
-  - Blocked: current live evidence shows access denied for the configured app user; credentials/grants are not yet verified on the host.
-[ ] Verify DB host and configuration values used by the production server.
-[ ] Repair the actual server-to-DB connection for Neutral.
+[x] Clarify MySQL credentials, DB user, grants, host and port configuration.
+  - Verified through live diagnostics: configured DB user authenticates successfully against MySQL on both `localhost:3306` and `127.0.0.1:3306`.
+[x] Verify DB host and configuration values used by the production server.
+  - Verified through live diagnostics: real host `.env` is readable and DB host/port are active in the running PHP process.
+[x] Repair the actual server-to-DB connection for Neutral.
+  - Current verification result: read-only connectivity check is successful; no schema or data mutation was performed.
 [ ] Verify server-side storage is usable for online data persistence.
 [ ] Validate browser vs server storage separation in actual runtime conditions.
 
@@ -79,7 +81,8 @@ This file is the current task ledger for the project. It must stay aligned with 
 [ ] Check whether the app can operate without hardcoded production paths.
 
 ### Diagnostics and deployment
-[ ] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
+[x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
+  - Extended `webroot/diagnose.php` and verified on the live host with sanitized output, including safe DB host/port/name/user reporting and localhost vs 127.0.0.1 MySQL comparison.
 [ ] Perform a complete end-to-end production test.
 [ ] Update deployment documentation to reflect the actual host conditions.
 [ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.
