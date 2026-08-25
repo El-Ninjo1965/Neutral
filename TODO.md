@@ -84,7 +84,12 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Step 1 remains `Install now` via existing `SetupInstaller` (prerequisites, migration, core seed).
   - Step 2 provisions server users via existing `Phase4UserService` and DB/RBAC roles (admin required, developer optional).
   - Existing server-side admin/developer users are detected and can be kept or reset; reset demotes/inactivates prior role holders before finalizing.
-  - Setup is server-side locked again after successful user provisioning; reopening requires explicit recovery enablement via env (`CORE_SETUP_RECOVERY_ENABLED`, optional `CORE_SETUP_RECOVERY_KEY`).
+  - Follow-up refactor: `setup.php` is now a standalone install/reset surface without automatic lock or auto-removal; manual deletion is an operational decision.
+[x] Implement full Neutral application reset via setup core components.
+  - Added reset flow in `SetupInstaller::resetApplicationState()` (drop core managed application tables + schema migration markers, reset setup state, remove legacy fallback state files).
+  - Added installation evidence detection in `SetupInstaller::status()` so existing server-side installs are recognized from DB/migration/user state, not only from persisted setup-state flags.
+  - `setup.php` now enforces POST + CSRF + explicit destructive confirmation (`RESET NEUTRAL`) before reset execution.
+  - Reset scope intentionally excludes environment/deploy/infrastructure files (`.env*`, FTPS config, deploy config, git/project files).
 [~] Re-verify the full admin browser login UX on the live host after the frontend auth fixes.
   - Pending from this environment: no real interactive browser session is available here to directly validate "admin menu remains visible" and absence of the two UI error messages after login.
 [x] Test module discovery and administration against the real backend.

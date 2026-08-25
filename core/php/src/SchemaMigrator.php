@@ -8,6 +8,22 @@ use PDO;
 final class SchemaMigrator
 {
     private const MIGRATION_TABLE = 'schema_migrations';
+    private const CORE_TABLES = [
+        'roles',
+        'permissions',
+        'users',
+        'user_roles',
+        'role_permissions',
+        'sessions',
+        'settings',
+        'modules',
+        'module_state',
+        'module_migrations',
+        'setup_status',
+        'audit_log',
+        'backups',
+        'release_state',
+    ];
 
     private Database $database;
 
@@ -255,6 +271,14 @@ final class SchemaMigrator
             'skipped' => $skipped,
             'pending' => $status['pending'],
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function managedTables(): array
+    {
+        return array_values(array_unique(array_merge(self::CORE_TABLES, [self::MIGRATION_TABLE])));
     }
 
     private function migrationTableExists(PDO $pdo): bool

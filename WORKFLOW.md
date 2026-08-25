@@ -28,7 +28,8 @@ Verbindliche Regeln
 * Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
 * Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
 * Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
-* `setup.php` bleibt nach erfolgreicher Installation serverseitig gesperrt; erneute Setup-Freigabe ist nur als kontrollierter Recovery-Modus über ENV (`CORE_SETUP_RECOVERY_ENABLED`, optional `CORE_SETUP_RECOVERY_KEY`) zulässig.
+* `setup.php` ist ein optionales Installations-/Reset-Werkzeug und keine Runtime-Abhängigkeit. Es bleibt in der Testphase bewusst manuell aufrufbar; keine automatische Sperrung und keine automatische Löschung.
+* Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
 
 Produktionsumgebung: tatsächlicher Befund
 
