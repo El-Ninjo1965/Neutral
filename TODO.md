@@ -367,11 +367,11 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - installer now reports this explicitly and avoids destructive actions.
 
 #### PHASE 6 – Admin-System
-- [~] IN ARBEIT (Bedien-/Fachkonzept definiert, Implementierung offen)
+- [~] IN ARBEIT (erste serverseitig wirksame Admin-Vertiefung umgesetzt)
 - Description: Rebuild admin flows for users, roles, settings, system health, and config management using PHP/MySQL-backed server logic.
 - Dependencies: PHASE 3, PHASE 4, PHASE 5
 - Affected components: admin controllers, settings model, user management, role management, dashboard pages, security checks
-- Status: interaction and information architecture defined for implementation
+- Status: IA definiert; erste PHASE-6-Umsetzung liefert serverseitig wirksame Settings-/Audit-Verknüpfung und erweiterte Admin-Navigation
 - Test criterion: admin workflows work from server-side state and enforce role-based access
 - Result/Notes:
   - UI target is tablet/PC first with left explorer-style navigation as primary structure.
@@ -384,10 +384,46 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - System / Diagnose
     - Logs / Audit
     - Updates / Backup
-  - Current gap analysis:
-    - Existing admin UI (`webroot/admin/*`) currently exposes only users/roles/settings views.
-    - No module management view exists yet in admin router.
-    - Existing server route `/api/modules` is read-only module manifest listing; no register/activate/deactivate endpoints.
+  - In this phase step implemented:
+    - New backend service layer for admin persistence bridge:
+      - `core/php/src/Phase6AdminStorage.php`
+        - `Phase6SettingsService`: prefers MySQL `settings` table, falls back to existing file store only when DB path is unavailable in current runtime.
+        - `Phase6AuditService`: writes/reads audit entries from MySQL `audit_log`, with controlled fallback for local non-MySQL runtime.
+    - `webroot/api/index.php` now:
+      - uses `Phase6SettingsService` for `/api/admin/settings`
+      - adds audit endpoint `/api/admin/audit`
+      - records audit events for `user.create/update/delete`, `role.create/update/delete`, `settings.update`
+      - keeps existing server-side auth/RBAC/CSRF checks for all write operations.
+    - `core/php/src/Phase4AuthRbac.php` permission catalog extended with `audit.read`.
+    - Admin UI navigation in `webroot/admin/index.js` expanded toward target groups:
+      - Dashboard
+      - Users
+      - Roles & Permissions
+      - Modules
+      - Settings
+      - System / Diagnostics
+      - Logs / Audit
+      - Updates / Backups
+    - New audit view:
+      - `webroot/admin/audit-view.js`
+      - wired in `webroot/admin.html` and `webroot/admin-init.js`
+    - `webroot/api-client.js` extended with:
+      - `getAuditEntries(...)`
+      - `getStatus()` (required by current admin init flow).
+  - Validation executed for this step:
+    - `php -l` on changed PHP files (pass)
+    - `node --check` on changed JS files (pass)
+    - `php core/php/tests/smoke.php` (pass)
+    - `npm test -- --test-reporter=spec` (92/92 pass)
+    - PHP runtime smoke (`php -S`) for:
+      - `/api/auth/login`
+      - `/api/admin/settings` (write with CSRF)
+      - `/api/admin/audit` (read)
+      - `/api/auth/me`
+  - Current gap analysis (remaining):
+    - Module lifecycle admin controls are still pending (PHASE 8 dependency).
+    - Users/Roles/Auth runtime persistence is still primarily PHASE-4 transitional logic and must be fully moved to authoritative MySQL in follow-up PHASE-6 steps.
+    - Local PHP CLI still lacks `pdo_mysql`; MySQL-first runtime path cannot be fully exercised locally until extension is available.
   - Required functional concept:
     - Benutzer: list/create/edit/status activate/deactivate/delete + role assignments.
     - Rollen & Rechte: role CRUD, permission catalog visibility, role-permission assignment, user-role assignment, server-enforced checks.

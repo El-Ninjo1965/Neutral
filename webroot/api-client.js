@@ -203,6 +203,17 @@ class ApiClient {
     return this.get('/api/admin/sessions');
   }
 
+  async getAuditEntries(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        params.set(key, String(value));
+      }
+    });
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return this.get(`/api/admin/audit${suffix}`);
+  }
+
   // Setup endpoints
   async getSetupStatus() {
     return this.get('/api/setup/status');
@@ -219,6 +230,10 @@ class ApiClient {
   // Database endpoints
   async getDatabaseStatus() {
     return this.get('/api/database/status');
+  }
+
+  async getStatus() {
+    return this.get('/api/status');
   }
 
   async testDatabase(databaseConfig) {
