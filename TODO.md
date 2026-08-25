@@ -72,9 +72,13 @@ This file is the current task ledger for the project. It must stay aligned with 
 ### Application and module integration
 [x] Test the admin area against the real backend.
   - Verified against live PHP/MySQL API: users, roles/permissions, settings, sessions, audit, auth/me, login/logout and CSRF-protected writes.
-[ ] Test module discovery and administration against the real backend.
-[ ] Test GPS module behavior on the real system.
-[ ] Test module activation and deactivation persistence.
+[?] Test module discovery and administration against the real backend.
+  - BLOCKED (live-verified): authenticated production requests to `/api/modules`, `/api/admin/modules`, `/api/admin/modules/gps`, `/api/admin/modules/gps/activate`, and `/api/admin/modules/gps/deactivate` return JSON `404 Not found` from the PHP API router.
+  - Current code state confirms this: `webroot/api/index.php` has no module admin routes and `webroot/admin/index.js` still renders the modules section as placeholder text.
+[?] Test GPS module behavior on the real system.
+  - BLOCKED by missing PHP module runtime endpoints (`/api/modules*` / `/api/admin/modules*`) on the live backend.
+[?] Test module activation and deactivation persistence.
+  - BLOCKED by missing PHP module lifecycle endpoints on the live backend.
 [ ] Ensure Neutral remains represented as an application, not as a module.
 
 ### Portability and configuration
@@ -464,6 +468,7 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
       - OPEN: some domain/validation failures still surface as HTTP 500 (e.g. protected bootstrap delete, invalid role payload) and should be normalized to consistent 4xx API responses in a dedicated follow-up.
   - Current gap analysis (remaining):
     - Module lifecycle admin controls are still pending (PHASE 8 dependency).
+    - Live check confirms module backend routes are currently not implemented in PHP API (`404` for `/api/modules*` and `/api/admin/modules*`), so module/GPS runtime verification is blocked until those endpoints exist.
     - Production-host MySQL E2E verification is now VERIFIED (live host, live PHP/LiteSpeed runtime, controlled migration path executed).
     - Settings/audit path still includes controlled fallback behavior in `Phase6AdminStorage`; production-authoritative operation is verified when MySQL runtime is available.
   - Follow-up production verification and fixes:
