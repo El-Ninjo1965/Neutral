@@ -48,6 +48,11 @@ Damit ist über den produktiven PHP-Prozess verifiziert:
 - `/home/web1819/.env` existiert und ist lesbar.
 - `/home/web1819/public_html/index/app/neutral/webroot` ist vorhanden und aktiv.
 - MySQL-Verbindungen mit `localhost:3306` und `127.0.0.1:3306` sind erfolgreich.
+- Storage-Metadaten aus Live-Diagnose:
+  - `server/runtime` existiert und ist beschreibbar.
+  - `server/runtime/data` ist aktuell nicht vorhanden.
+  - `config/` unter dem App-Root ist aktuell nicht vorhanden.
+  - In `web1819_neutral_app` wurden per read-only Metadatenabfrage aktuell `0` Tabellen festgestellt.
 
 ## Produktionsbestand
 
