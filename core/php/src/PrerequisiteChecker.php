@@ -43,8 +43,8 @@ final class PrerequisiteChecker
             'current' => PHP_VERSION,
         ];
         $checks['php_extensions'] = [
-            'ok' => extension_loaded('json') && extension_loaded('pdo'),
-            'required' => ['json', 'pdo'],
+            'ok' => extension_loaded('json') && extension_loaded('pdo') && extension_loaded('pdo_mysql'),
+            'required' => ['json', 'pdo', 'pdo_mysql'],
             'current' => [
                 'json' => extension_loaded('json'),
                 'pdo' => extension_loaded('pdo'),

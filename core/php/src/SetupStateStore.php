@@ -103,6 +103,13 @@ final class SetupStateStore
             ],
             'configuration' => [],
             'checks' => [],
+            'migrationState' => [
+                'status' => 'SETUP_REQUIRED',
+                'message' => 'Schema migration status not checked yet.',
+                'applied' => [],
+                'pending' => [],
+                'total' => 0,
+            ],
             'updatedAt' => gmdate('c'),
         ];
     }
