@@ -13,6 +13,7 @@ use Neutral\Core\Phase4SettingsService;
 use Neutral\Core\Phase4UserService;
 use Neutral\Core\Phase6AuditService;
 use Neutral\Core\Phase6SettingsService;
+use Neutral\Core\Phase7ModuleRuntime;
 use Neutral\Core\Security;
 
 $runtime = neutral_bootstrap();
@@ -24,6 +25,7 @@ $roleService = new Phase4RoleService($store, $database);
 $userService = new Phase4UserService($store, $roleService, $config, $database);
 $settingsService = new Phase6SettingsService($database, new Phase4SettingsService($store));
 $auditService = new Phase6AuditService($database, $store);
+$moduleRuntime = new Phase7ModuleRuntime($database, $runtime->projectRoot());
 $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/server/runtime'), $database);
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
 
@@ -78,12 +80,19 @@ function parse_json_body(): array
  */
 function require_permission_or_fail(?array $identity, Phase4AuthManager $authManager, string $permission, bool $needsCsrf, array $headers): void
 {
-    if (!$identity || !$authManager->hasPermission($identity, $permission)) {
+    if (!$identity) {
+        JsonResponse::error('Not authenticated.', 401);
+    }
+    if (!$authManager->hasPermission($identity, $permission)) {
         JsonResponse::error('Insufficient privileges.', 403, ['permission' => $permission]);
     }
     if ($needsCsrf && (($identity['via'] ?? '') === 'session')) {
         $provided = $headers['x-csrf-token'] ?? '';
-        Security::assertValidCsrfToken(is_string($provided) ? $provided : null);
+        try {
+            Security::assertValidCsrfToken(is_string($provided) ? $provided : null);
+        } catch (Throwable $exception) {
+            JsonResponse::error('Invalid CSRF token.', 403, ['code' => 'CSRF_INVALID']);
+        }
     }
 }
 
@@ -243,6 +252,12 @@ if ($route === 'auth/me' && $method === 'GET') {
     ]);
 }
 
+if ($route === 'modules' && $method === 'GET') {
+    JsonResponse::success([
+        'modules' => $moduleRuntime->discover(),
+    ]);
+}
+
 if ($route === 'admin/sessions' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'session.read', false, $headers);
     JsonResponse::success(['sessions' => $authManager->listSessions()]);
@@ -369,6 +384,73 @@ if ($route === 'admin/audit' && $method === 'GET') {
         'limit' => (int) ($_GET['limit'] ?? 100),
     ];
     JsonResponse::success(['entries' => $auditService->list($filters)]);
+}
+
+if ($route === 'admin/modules' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    JsonResponse::success([
+        'modules' => $moduleRuntime->listForAdmin(),
+    ]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)$#', $route, $matches) === 1 && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/install$#', $route, $matches) === 1 && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    try {
+        $module = $moduleRuntime->install($matches[1], actor_user_id($identity));
+    } catch (RuntimeException $exception) {
+        if ($exception->getMessage() === 'Module not discovered.') {
+            JsonResponse::error('Module not discovered.', 404, ['moduleId' => $matches[1]]);
+        }
+        throw $exception;
+    }
+    $auditService->log('module.install', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
+        'status' => (string) ($module['status'] ?? 'inactive'),
+        'lifecycleState' => (string) ($module['lifecycleState'] ?? 'INACTIVE'),
+    ]);
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/activate$#', $route, $matches) === 1 && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    try {
+        $module = $moduleRuntime->activate($matches[1], actor_user_id($identity));
+    } catch (RuntimeException $exception) {
+        if ($exception->getMessage() === 'Module not registered.') {
+            JsonResponse::error('Module not registered.', 404, ['moduleId' => $matches[1]]);
+        }
+        throw $exception;
+    }
+    $auditService->log('module.activate', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
+        'status' => (string) ($module['status'] ?? 'active'),
+        'lifecycleState' => (string) ($module['lifecycleState'] ?? 'ACTIVE'),
+    ]);
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/deactivate$#', $route, $matches) === 1 && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    try {
+        $module = $moduleRuntime->deactivate($matches[1], actor_user_id($identity));
+    } catch (RuntimeException $exception) {
+        if ($exception->getMessage() === 'Module not registered.') {
+            JsonResponse::error('Module not registered.', 404, ['moduleId' => $matches[1]]);
+        }
+        throw $exception;
+    }
+    $auditService->log('module.deactivate', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
+        'status' => (string) ($module['status'] ?? 'inactive'),
+        'lifecycleState' => (string) ($module['lifecycleState'] ?? 'INACTIVE'),
+    ]);
+    JsonResponse::success(['module' => $module]);
 }
 
 if ($route === 'database/status' && $method === 'GET') {

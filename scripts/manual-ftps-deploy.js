@@ -46,6 +46,7 @@ const allowedEntries = [
   'webroot/admin/common.js',
   'webroot/admin/index.js',
   'webroot/admin/audit-view.js',
+  'webroot/admin/modules-view.js',
   'webroot/admin/roles-view.js',
   'webroot/admin/settings-view.js',
   'webroot/admin/users-view.js',

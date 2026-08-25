@@ -49,7 +49,7 @@
       // Verify we have admin components
       if (typeof AdminCommon === 'undefined' || typeof AdminUsersView === 'undefined' || 
           typeof AdminRolesView === 'undefined' || typeof AdminSettingsView === 'undefined' ||
-          typeof AdminAuditView === 'undefined' ||
+          typeof AdminAuditView === 'undefined' || typeof AdminModulesView === 'undefined' ||
           typeof AdminRouter === 'undefined') {
         console.error('Admin components not loaded');
         return;
@@ -128,6 +128,7 @@
       window.adminRoles = window.adminRouter.views.roles;
       window.adminSettings = window.adminRouter.views.settings;
       window.adminAudit = window.adminRouter.views.audit;
+      window.adminModules = window.adminRouter.views.modules;
     };
 
     // Check if document is already ready

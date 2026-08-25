@@ -95,13 +95,10 @@ class AdminRouter {
       sessions: new AdminSessionsView(apiClient),
       settings: new AdminSettingsView(apiClient),
       audit: new AdminAuditView(apiClient),
+      modules: new AdminModulesView(apiClient),
       dashboard: new AdminPlaceholderView(
         'Dashboard',
         'Operational summary widgets are prepared and will be expanded as additional server-backed modules become available.'
-      ),
-      modules: new AdminPlaceholderView(
-        'Modules',
-        'Module lifecycle administration (discover/register/install/activate/deactivate) is planned as the next dedicated phase with server-backed state.'
       ),
       updates: new AdminPlaceholderView(
         'Updates & Backups',

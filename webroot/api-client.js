@@ -214,6 +214,30 @@ class ApiClient {
     return this.get(`/api/admin/audit${suffix}`);
   }
 
+  async discoverModules() {
+    return this.get('/api/modules');
+  }
+
+  async getAdminModules() {
+    return this.get('/api/admin/modules');
+  }
+
+  async getAdminModule(moduleId) {
+    return this.get(`/api/admin/modules/${moduleId}`);
+  }
+
+  async installModule(moduleId) {
+    return this.post(`/api/admin/modules/${moduleId}/install`, {});
+  }
+
+  async activateModule(moduleId) {
+    return this.post(`/api/admin/modules/${moduleId}/activate`, {});
+  }
+
+  async deactivateModule(moduleId) {
+    return this.post(`/api/admin/modules/${moduleId}/deactivate`, {});
+  }
+
   // Setup endpoints
   async getSetupStatus() {
     return this.get('/api/setup/status');
