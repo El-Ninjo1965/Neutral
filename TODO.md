@@ -200,22 +200,53 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
 - Result/Notes: Production host is not a valid Node runtime host; Node app is not active in production.
 
 #### PHASE 1 – Zielarchitektur
-- [~] IN ARBEIT
+- [x] ERLEDIGT (Design finalisiert, keine Implementierung)
 - Description: Define and confirm the target production architecture: PHP + MySQL as server core; browser LocalStorage/IndexedDB for offline-first; no Node production runtime; no Passenger requirement; no parallel server stack.
 - Dependencies: PHASE 0
 - Affected components: webroot, server runtime, documentation, app/frontend integration contracts, module API contracts
-- Status: architecture draft accepted as the production-fit target pending explicit approval to start implementation
+- Status: architecture definition completed as binding target for production on cPanel/LiteSpeed
 - Test criterion: target architecture fits cPanel/LiteSpeed + PHP + MySQL host and does not require Node or a background server process
-- Result/Notes: recommended target is PHP + MySQL; Node remains a local reference implementation only, not a production requirement
+- Result/Notes:
+  - Final productive chain is fixed: Browser/App -> LiteSpeed -> PHP -> MySQL.
+  - PHP + MySQL is the only productive server core. Node/Passenger is explicitly not a production prerequisite.
+  - No parallel Node/PHP/JSON/SQLite/MySQL server architecture is allowed.
+  - Offline-first remains client-side only (LocalStorage/IndexedDB), not authoritative server persistence.
+  - Authoritative online persistence is MySQL.
+  - Production baseline remains the verified cPanel/LiteSpeed host with `/api/*` currently 404 on public host.
+  - Existing Node assets are classified as follows:
+    - **Fachlich übernehmen (domain logic):** auth/session/roles/users/settings/audit/backup/release semantics from `server/services/*`, module lifecycle semantics from `platform/module-*`, setup semantics from `webroot/setup.php` and setup APIs.
+    - **Nach PHP portieren:** API routing in `server/bootstrap/server.js`, service logic in `server/services/*`, persistence semantics now in `config/*.json` and `server/runtime/*`.
+    - **Ersetzen:** JSON/file persistence (`config/*.json`, `sessions.json`, `audit-log.json`) by MySQL tables; token-header-centric admin write flows by session + permission model on PHP side.
+    - **Entfallen (produktiv):** Node HTTP runtime (`server/server.js`) as hosting requirement, file-authoritative admin state, Node-specific deploy assumptions.
+    - **Nicht mehr benötigt nach Migration:** server-authoritative JSON/SQLite fallback storage paths and Node runtime dependency on public host.
 
 #### PHASE 2 – Datenmodell / MySQL-Schema
-- [ ] OFFEN
+- [x] ERLEDIGT (fachliches Schema-Design, keine DB-Ausführung)
 - Description: Define authoritative server data model for users, roles, permissions, sessions, settings, audit, modules, module state, schema migrations, setup state, backups, release state, and CatchTrack data.
 - Dependencies: PHASE 1
 - Affected components: proposed PHP model layer, MySQL schema, migration scripts, deployment docs, admin contracts
-- Status: design only; no schema execution on production DB
+- Status: conceptual schema completed; still pending implementation and migration approval
 - Test criterion: every table maps to a concrete function; no unnecessary or speculative tables; user IDs retain reserved range 0-100 and real users start at 101
-- Result/Notes: no MySQL tables will be created before the schema concept is approved and versioned
+- Result/Notes:
+  - No MySQL table is created in this phase.
+  - User-ID convention is fixed and preserved: IDs 0-100 reserved; real users start at 101; first real admin user is 101.
+  - Core table design (conceptual):
+    - `users`: purpose=user accounts; key fields=`id BIGINT`, `username`, `email`, `password_hash`, `status`, `display_name`, timestamps; PK=`id`; indexes=`username unique`, `email unique`, `status`; supports login/admin user management.
+    - `roles`: purpose=role definitions; key fields=`id BIGINT`, `role_key`, `name`, `description`, `is_system`, timestamps; PK=`id`; unique index on `role_key`; supports RBAC role model.
+    - `permissions`: purpose=permission catalog; key fields=`id BIGINT`, `permission_key`, `description`, `scope`; PK=`id`; unique index on `permission_key`; supports server-side authorization.
+    - `user_roles`: purpose=user-role assignment; key fields=`user_id`, `role_id`, `assigned_at`, `assigned_by`; PK composite (`user_id`,`role_id`); FK to `users`,`roles`; indexes on both FKs; supports many-to-many role assignment.
+    - `role_permissions`: purpose=role-permission mapping; key fields=`role_id`,`permission_id`,`granted_at`; PK composite (`role_id`,`permission_id`); FK to `roles`,`permissions`; supports RBAC grants.
+    - `sessions`: purpose=server sessions; key fields=`session_id`, `user_id`, `csrf_token`, `issued_at`, `last_seen_at`, `expires_at`, `status`, `ip`, `user_agent`; PK=`session_id`; FK=`user_id`; indexes on `user_id`,`expires_at`,`status`; supports auth lifecycle.
+    - `settings`: purpose=system/app settings; key fields=`setting_key`, `setting_value_json`, `updated_by`, `updated_at`; PK=`setting_key`; FK `updated_by` -> `users.id` nullable; supports admin settings.
+    - `modules`: purpose=module registry metadata; key fields=`id BIGINT`, `module_key`, `name`, `version`, `manifest_json`, `filesystem_path`, `is_present`, timestamps; PK=`id`; unique index on `module_key`; supports discovery/registry separation.
+    - `module_state`: purpose=runtime/module status per module; key fields=`module_id`, `status`, `is_enabled`, `installed_version`, `last_error`, `changed_by`, `changed_at`; PK=`module_id`; FK=`module_id`->`modules.id`; supports activation/deactivation persistence.
+    - `module_migrations`: purpose=module-specific migration history; key fields=`id`, `module_id`, `migration_key`, `applied_at`; unique (`module_id`,`migration_key`); FK to `modules`; supports module install/update lifecycle.
+    - `schema_migrations`: purpose=core schema versioning; key fields=`id`, `migration_key`, `checksum`, `applied_at`; unique `migration_key`; supports deterministic setup/migration.
+    - `setup_status`: purpose=installation/bootstrap status; key fields=`id` (singleton), `status`, `current_step`, `details_json`, `updated_at`, `updated_by`; supports setup state without JSON files.
+    - `audit_log`: purpose=immutable operational audit; key fields=`id BIGINT`, `action`, `resource`, `resource_id`, `actor_user_id`, `details_json`, `result`, `created_at`; PK=`id`; FK `actor_user_id`; indexes on `action`, `resource`, `created_at`; supports traceability.
+    - `backups`: purpose=backup metadata; key fields=`id BIGINT`, `backup_key`, `label`, `provider`, `status`, `file_ref`, `meta_json`, timestamps; unique `backup_key`; supports backup inventory.
+    - `release_state`: purpose=release/health status; key fields=`id` (singleton), `version`, `environment`, `status`, `maintenance_mode`, `maintenance_reason`, `checks_json`, `checked_at`; supports release readiness endpoints.
+  - Deferred/minimal now: CatchTrack domain tables and advanced sync queue tables remain out of core until exact functional requirements are approved in PHASE 9/10.
 
 #### PHASE 3 – PHP-Core
 - [ ] OFFEN
@@ -245,13 +276,38 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
 - Result/Notes: setup remains read-only until the production DB is explicitly approved for schema creation under the migration plan
 
 #### PHASE 6 – Admin-System
-- [ ] OFFEN
+- [~] IN ARBEIT (Bedien-/Fachkonzept definiert, Implementierung offen)
 - Description: Rebuild admin flows for users, roles, settings, system health, and config management using PHP/MySQL-backed server logic.
 - Dependencies: PHASE 3, PHASE 4, PHASE 5
 - Affected components: admin controllers, settings model, user management, role management, dashboard pages, security checks
-- Status: not started
+- Status: interaction and information architecture defined for implementation
 - Test criterion: admin workflows work from server-side state and enforce role-based access
-- Result/Notes: admin must no longer depend on JSON file-based state as the authoritative storage
+- Result/Notes:
+  - UI target is tablet/PC first with left explorer-style navigation as primary structure.
+  - Required nav groups:
+    - Dashboard
+    - Benutzer
+    - Rollen & Berechtigungen
+    - Module
+    - Einstellungen
+    - System / Diagnose
+    - Logs / Audit
+    - Updates / Backup
+  - Current gap analysis:
+    - Existing admin UI (`webroot/admin/*`) currently exposes only users/roles/settings views.
+    - No module management view exists yet in admin router.
+    - Existing server route `/api/modules` is read-only module manifest listing; no register/activate/deactivate endpoints.
+  - Required functional concept:
+    - Benutzer: list/create/edit/status activate/deactivate/delete + role assignments.
+    - Rollen & Rechte: role CRUD, permission catalog visibility, role-permission assignment, user-role assignment, server-enforced checks.
+    - Module: discover file presence, register, install/migrate, activate/deactivate, detect missing/present, persist state, enforce lifecycle transitions.
+  - GPS module diagnosis:
+    - `app/modules/gps/module.json` and `/api/modules` discovery can expose module metadata.
+    - Admin cannot currently activate/deactivate GPS because module control endpoints and module UI are missing.
+    - Browser-side `ModuleManager.discoverModules()` intentionally re-registers discovered modules as `installed` + `active=false`; status is not persisted server-side.
+  - Canonical module lifecycle for future implementation:
+    - Discovery -> Registrierung -> Installation/Migration -> Aktivierung -> Nutzung -> Deaktivierung -> optionale Entfernung
+    - Clear separation required between module files, registry metadata, runtime state, module-owned data, and migration history.
 
 #### PHASE 7 – API / Routing
 - [ ] OFFEN
@@ -412,6 +468,70 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
 - Schritt 5 [x]: TODO/WORKFLOW/Whitelist-Deploy-Einordnung abgeschlossen.
   - Aktuelle Allowlist enthält weder `TODO.md` noch `WORKFLOW.md`.
   - Zielentscheidung: `TODO.md` künftig deploybar mitführen; `WORKFLOW.md` standardmäßig repository-only, außer explizit für Serverbetrieb benötigt.
+
+#### Designprotokoll 2026-08-25 – Analyseauftrag (4 Aufgaben, ohne Implementierung)
+
+##### Aufgabe 1 [x] – PHASE 1 Zielarchitektur finalisiert
+- Prüfbasis: `TODO.md`, `WORKFLOW.md`, `server.md`, Repository-Stand, read-only Produktionschecks (`/api/status`=404, `/webroot/setup.php`=200, `/webroot/admin.html`=200, FTPS-Bestand bestätigt).
+- Verbindliche Zielarchitektur:
+  - Browser/App -> LiteSpeed -> PHP -> MySQL
+  - keine Node/Passenger-Produktivvoraussetzung
+  - keine parallele Hybrid-Serverarchitektur
+  - Offline-first rein clientseitig
+  - MySQL als einzige autoritative Online-Persistenz
+
+##### Aufgabe 2 [x] – Admin- und Bedienkonzept definiert
+- IA/UX-Entscheidung:
+  - Primärnavigation links als Explorer-Struktur (tablet/PC-first), hierarchisch erweiterbar.
+  - Mindeststruktur: Dashboard, Benutzer, Rollen & Berechtigungen, Module, Einstellungen, System/Diagnose, Logs/Audit, Updates/Backup.
+- Benutzerverwaltung (soll später vollständig serverseitig durchsetzbar sein):
+  - Anzeigen, Anlegen, Bearbeiten, Aktivieren/Deaktivieren, Löschen (berechtigungsabhängig), Rollenzuweisung, Statusanzeige.
+- Rollen/Berechtigungen:
+  - Rollen-CRUD, Berechtigungs-Katalog, Role-Permission-Zuweisung, User-Role-Zuweisung, serverseitige Enforcement.
+- Modulverwaltung (verbindliche Soll-Funktion):
+  - Discovery vorhandener Modulordner
+  - Auswertung Modulmetadaten
+  - Anzeige aller gefundenen/registrierten Module
+  - Registrierung, Installation/Migration, Aktivierung, Deaktivierung
+  - Persistenter Modulstatus
+  - Erkennung vorhanden/fehlend
+  - Kein Auto-Aktivieren nur durch Dateivorhandensein
+- Root-Cause GPS im Admin:
+  - GPS-Dateien/Manifest sind vorhanden (`app/modules/gps`), Discovery-Endpunkt ist read-only verfügbar.
+  - Bestehende Admin-UI hat keine Modulansicht und keine Modul-Steuer-API für activate/deactivate.
+  - Bestehender Browser-ModuleManager persistiert Aktivzustand nicht serverseitig; Discovery registriert auf `installed` + `active=false`.
+
+##### Aufgabe 3 [x] – PHASE 2 Datenmodell / MySQL-Schema entworfen (fachlich)
+- Kernentitäten finalisiert: users, roles, permissions, user_roles, role_permissions, sessions, settings, modules, module_state, module_migrations, schema_migrations, setup_status, audit_log, backups, release_state.
+- Reservierte User-ID-Konvention bleibt unverändert:
+  - 0-100 reserviert
+  - erste reale Benutzer-ID: 101
+- Keine spekulativen Zusatztabellen als Pflichtbestandteil:
+  - CatchTrack-/Domänentabellen und erweiterte Sync-Tabellen nur nach fachlicher Detailfreigabe in späteren Phasen.
+
+##### Aufgabe 4 [x] – Migration / Altbestand / Deployment-Design festgelegt
+- Klassifikation des aktuellen Bestands (Designstand):
+  - **BEHALTEN (bis Migration abgeschlossen):** `webroot/` Assets, Diagnose-/Setup-Oberflächen, relevante App-/Modulmetadaten, zentrale Dokumente (`TODO.md`).
+  - **NACH PHP PORTIEREN:** Node-Serverrouten und Services aus `server/bootstrap/server.js` und `server/services/*`.
+  - **ERSETZEN:** JSON-/Dateipersistenz (`config/*.json`, `sessions.json`, `audit-log.json`) durch MySQL.
+  - **MIGRIEREN:** bestehende Rollen-, Nutzer-, Settings-, Modul-, Setup-, Audit-, Backup- und Release-Zustände in das MySQL-Modell.
+  - **LÖSCHEN (später, freigegeben, kontrolliert):** Node-Produktivruntime-Artefakte erst nach verifizierter PHP-Inbetriebnahme.
+  - **MANUELL PRÜFEN:** `developer.php`, `developer-diagnose.log`, `server/runtime/setup-debug.log`, `server/runtime/setup-state.json`, historische runtime/log-Artefakte.
+  - **PRODUKTIONSDATEN – NICHT ANFASSEN:** `.env`, Uploads, Backups, host-generierte Logs/Serverdaten.
+- Deploy-Sollregeln (verbindlich als Design):
+  - neu lokal + remote fehlt -> upload
+  - lokal geändert -> upload
+  - identischer Inhalt -> skip
+  - lokal gelöscht -> im normalen Deploy kein Auto-Delete remote
+  - `.env`, Uploads, Backups, Produktionsdaten -> niemals überschreiben/löschen im Normal-Deploy
+  - Bereinigung nur als separater, explizit freigegebener Vorgang
+- Whitelist/Bestandskategorien für das künftige PHP-Deployment:
+  - Repository-only: `WORKFLOW.md`, CI/Tooling, lokale Scripts, Tests
+  - Normal deploybar: PHP-Core/API/Admin/Module/Assets/Setup/Migrationen/`TODO.md`
+  - Produktiv geschützt (nie überschreiben): `.env`, Uploads, Backups, persistente Host-Daten
+  - Nur Erstinstallation/Migration: einmalige Bootstrap-/Schema-Initialisierung
+  - Nur kontrollierte Bereinigung: Legacy-Node-Artefaktentfernung
+  - Niemals deployen: lokale Secret-/Entwicklungsartefakte, `node_modules/`, Git-Metadaten
 
 #### Required whitelist redesign after PHP migration
 - PHP application files

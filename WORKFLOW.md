@@ -16,7 +16,8 @@ Verbindliche Regeln
 * Der reale Runtime-Check erfolgt immer über die Live-API und nicht nur über die PHP-Setup-Seite.
 * Der produktive Host darf nicht als „aktiv“ gelten, wenn `/api/*` auf dem öffentlichen Host weiterhin 404 liefert.
 * `server.md` und die Allowlist in `scripts/manual-ftps-deploy.js` bleiben die verbindliche Quelle für produktive Datei- und Deploy-Entscheidungen.
-* Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen, außer wenn der Nutzer sie ausdrücklich für die GitHub-Synchronisierung freigegeben hat.
+* Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
+* `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
 
 Produktionsumgebung: tatsächlicher Befund
 
@@ -73,8 +74,9 @@ Dokumentierte Arbeiten
 GitHub-Sync-Regel
 
 * Nach Abschluss der Validierung und Dokumentation muss der Arbeitsstand final auf GitHub synchronisiert werden.
-* Arbeitsstände, die für die weitere KI-/Agenten-Verarbeitung auf GitHub benötigt werden, werden mit `git add`, `git commit` und `git push` veröffentlicht.
-* Der Commit muss die Workflow-Dokumentation und alle zugehörigen Änderungen enthalten.
+* Kein direkter Push auf `main`: verbindlicher Weg ist Branch -> Pull Request -> Checks -> Merge -> Verifikation.
+* Arbeitsstände, die für die weitere KI-/Agenten-Verarbeitung auf GitHub benötigt werden, werden per Commit auf einem Arbeitsbranch veröffentlicht und anschließend per PR nach `main` gemerged.
+* Der Commit muss die Workflow-Dokumentation und alle zugehörigen Änderungen enthalten, sofern diese inhaltlich betroffen sind.
 
 Technische Abschlusskorrekturen
 
@@ -99,5 +101,10 @@ Realer Nachweis und Validierung
 Deploy-/GitHub-Status
 
 * Die finalen Änderungen wurden im Repository validiert und dokumentiert.
-* Danach erfolgt der Abschluss mit `git add`, `git commit`, `git push` auf `main`.
-* Der GitHub-Sync ist Bestandteil der sauberen Agenten-/Workflow-Verarbeitung und muss die aktualisierte Workflow-Dokumentation mit einschließen.
+* Danach erfolgt der Abschluss über den PR-Workflow gegen `main` (kein direkter `main`-Push).
+* Der GitHub-Sync ist Bestandteil der sauberen Agenten-/Workflow-Verarbeitung und muss die aktualisierte Workflow-Dokumentation einschließen, wenn sich Regeln/Arbeitsabläufe geändert haben.
+
+Deploy-Dokumentationsregel
+
+* `TODO.md` soll künftig regulär mit dem Repository synchronisiert werden.
+* `WORKFLOW.md` bleibt grundsätzlich Repository-Dokumentation und wird nicht automatisch auf den Produktionsserver übertragen, außer es gibt einen expliziten Betriebsgrund.
