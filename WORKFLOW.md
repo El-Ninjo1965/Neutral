@@ -18,6 +18,10 @@ Verbindliche Regeln
 * `server.md` und die Allowlist in `scripts/manual-ftps-deploy.js` bleiben die verbindliche Quelle für produktive Datei- und Deploy-Entscheidungen.
 * Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
 * `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
+* Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
+* Keine hartcodierten Produktionspfade in Architektur-/Implementierungsentscheidungen; Runtime-Pfade müssen konfigurationsbasiert und installationspfadunabhängig sein.
+* Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
+* Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
 
 Produktionsumgebung: tatsächlicher Befund
 
@@ -108,3 +112,9 @@ Deploy-Dokumentationsregel
 
 * `TODO.md` soll künftig regulär mit dem Repository synchronisiert werden.
 * `WORKFLOW.md` bleibt grundsätzlich Repository-Dokumentation und wird nicht automatisch auf den Produktionsserver übertragen, außer es gibt einen expliziten Betriebsgrund.
+
+Admin-/Infrastruktur-Architekturregel (dauerhaft)
+
+* Das Admin-System ist Desktop/Tablet-first und nutzt primär eine linke, hierarchische Explorer-Navigation.
+* Infrastrukturverwaltung wird generisch modelliert (`type`, `name`, `configuration`, `credential_reference`, `capabilities`, `status`, `enabled`) und nicht auf einzelne Runtime-Typen fest verdrahtet.
+* Node.js kann künftig als Integrationstyp geführt werden, ist aber keine aktuelle Produktionsvoraussetzung.
