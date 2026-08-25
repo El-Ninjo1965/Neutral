@@ -9,10 +9,12 @@ Die aktuelle Produktionsprüfung zeigt:
 - Live-Host: LiteSpeed / cPanel Shared Webspace
 - PHP: 8.5.9
 - PHP-Setup-Endpunkt: erreichbar (`/index/app/neutral/webroot/setup.php`)
+- Diagnose-Endpunkt: erreichbar (`/index/app/neutral/webroot/diagnose.php`)
 - Node/Passenger: auf dem öffentlichen Host nicht nachweisbar als nutzbarer Produktionsruntime
 - öffentliche `/api/*`-Routen: HTTP 404
-- MySQL: `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'`
-- Produktionspfad `/home/web1819/.env`: in dieser Ausführungsumgebung nicht vorhanden; die Repository-Umgebung enthält eine lokale `.env` im Projektroot, aber diese ist nicht derselbe Host-Pfad und darf nicht als produktive Host-Konfiguration behandelt werden.
+- EchtHost-Umgebung: `/home/web1819/.env` existiert, ist lesbar und wird vom PHP-Prozess erfolgreich gelesen.
+- DB-Verbindung: `localhost:3306` und `127.0.0.1:3306` sind beide mit dem konfigurierten DB-Benutzer auf dem Live-Host erreichbar; der DB-Name und der User wurden aus der echten Host-.env geladen.
+- Produktionspfad `/home/web1819/public_html/index/app/neutral/webroot`: existiert, ist lesbar und dient als aktives PHP-Webroot.
 
 Entscheidung: Der Host ist im aktuellen produktiven Zustand kein nutzbarer Node-Backend-Host. Die vorhandene Node-API im Repository bleibt die Referenzarchitektur, aber sie darf nicht als zweite parallele Produktivlösung implementiert werden. Für den echten Shared-Host muss die produktive API-/Serverfunktionalität in einer PHP/LiteSpeed-kompatiblen Form abgebildet werden, sofern der Host keine Node- oder Passenger-Umgebung bereitstellt.
 
