@@ -275,11 +275,13 @@ test('app config exposes a single neutral app name', () => {
 
 test('user and admin shells expose shared navigation anchors', () => {
   const userHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/index.html'), 'utf8');
+  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../core/php/views/admin-ui.php'), 'utf8');
   const adminHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/admin.html'), 'utf8');
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);
-  assert.match(adminHtml, /id="appModuleNav"/);
-  assert.match(adminHtml, /id="brandName"/);
-  assert.match(adminHtml, /id="topbarTitle"/);
+  assert.match(adminPhp, /id="appModuleNav"/);
+  assert.match(adminPhp, /id="brandName"/);
+  assert.match(adminPhp, /id="topbarTitle"/);
+  assert.match(adminHtml, /admin\.php/);
 });

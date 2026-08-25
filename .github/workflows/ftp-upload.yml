@@ -71,6 +71,7 @@ jobs:
           copy_file webroot/setup.html
           copy_file webroot/setup.php
           copy_file webroot/diagnose.php
+          copy_file webroot/admin.php
           copy_file webroot/admin.html
           copy_file webroot/dev.html
           copy_file webroot/style.css

@@ -2065,7 +2065,7 @@ const createServer = ({ modulesDir = appModulesDir } = {}) => http.createServer(
 const handleStaticRequest = (url, req, res, modulesDir) => {
   let requestPath = decodeURIComponent(url.pathname);
 
-  if (requestPath === '/admin.html' || requestPath === '/dev.html') {
+  if (requestPath === '/admin.html' || requestPath === '/admin.php' || requestPath === '/dev.html') {
     const adminToken = process.env.ADMIN_ACCESS_TOKEN;
     const suppliedToken = req.headers['x-admin-access-token'];
     if (!adminToken || suppliedToken !== adminToken) {
