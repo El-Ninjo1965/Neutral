@@ -36,7 +36,7 @@ final class AppConfig
 
     public function apiBase(): string
     {
-        $value = trim($this->env['API_BASE'] ?? '/api');
+        $value = trim($this->env['API_BASE'] ?? $this->env['NEUTRAL_API_BASE'] ?? $this->env['APP_API_BASE'] ?? '/api');
         if ($value === '') {
             return '/api';
         }

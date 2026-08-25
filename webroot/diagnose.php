@@ -152,15 +152,41 @@ function describePath($path) {
     ];
 }
 
-$envCandidatePaths = [
-    '/home/web1819/.env',
-    '/home/web1819/public_html/.env',
-    '/home/web1819/public_html/index/app/neutral/.env',
-    dirname(__DIR__) . '/.env',
-    dirname(__DIR__) . '/.env.local',
-    dirname(__DIR__) . '/.env.production',
-    dirname(__DIR__) . '/.env.deploy',
+$projectRoot = dirname(__DIR__);
+$knownSharedHostRoots = [
+    '/home/web1819',
+    '/home/web1819/public_html',
+    '/home/web1819/public_html/index/app/neutral',
 ];
+$candidateRoots = [
+    $projectRoot,
+    dirname($projectRoot),
+    dirname(dirname($projectRoot)),
+    (string) getenv('NEUTRAL_APP_ROOT'),
+    (string) getenv('NEUTRAL_INSTALL_ROOT'),
+    (string) getenv('APP_ROOT'),
+    (string) getenv('INSTALL_ROOT'),
+    (string) ($_SERVER['DOCUMENT_ROOT'] ?? ''),
+];
+$candidateRoots = array_merge($candidateRoots, $knownSharedHostRoots);
+$candidateRoots = array_values(array_unique(array_filter(array_map(static function ($value) {
+    return is_string($value) ? rtrim(trim($value), "/\\") : '';
+}, $candidateRoots))));
+
+$envCandidatePaths = [];
+foreach ($candidateRoots as $root) {
+    $envCandidatePaths[] = $root . '/.env';
+    $envCandidatePaths[] = $root . '/.env.local';
+    $envCandidatePaths[] = $root . '/.env.production';
+    $envCandidatePaths[] = $root . '/.env.development';
+    $envCandidatePaths[] = $root . '/.env.deploy';
+    $envCandidatePaths[] = $root . '/index/app/neutral/.env';
+}
+$explicitEnvFile = trim((string) getenv('NEUTRAL_ENV_FILE'));
+if ($explicitEnvFile !== '') {
+    array_unshift($envCandidatePaths, $explicitEnvFile);
+}
+$envCandidatePaths = array_values(array_unique(array_filter($envCandidatePaths)));
 
 $env = [];
 foreach ($envCandidatePaths as $candidatePath) {
@@ -202,8 +228,20 @@ if (array_key_exists('DB_URL', $env) || array_key_exists('DATABASE_URL', $env)) 
     $envStatus['DB_URL'] = statusForDbUrl($dbUrlRaw);
 }
 
-$expectedWebroot = '/home/web1819/public_html/index/app/neutral';
-$webRootPath = '/home/web1819/public_html/index/app/neutral/webroot';
+$configuredPublicRoot = rtrim(trim((string) ($env['PUBLIC_WEBROOT_PATH'] ?? '')), "/\\");
+$scriptWebrootPath = rtrim((string) (realpath(__DIR__) ?: __DIR__), "/\\");
+$expectedWebroot = $configuredPublicRoot !== '' ? $configuredPublicRoot : rtrim($projectRoot, "/\\");
+$webRootPath = basename($expectedWebroot) === 'webroot'
+    ? $expectedWebroot
+    : $expectedWebroot . '/webroot';
+$activeEnvCandidate = null;
+foreach ($envCandidatePaths as $candidatePath) {
+    if (is_file($candidatePath) && is_readable($candidatePath)) {
+        $activeEnvCandidate = $candidatePath;
+        break;
+    }
+}
+$sharedHostEnvPath = '/home/web1819/.env';
 $webrootStatus = [
     'app_root' => describePath($expectedWebroot),
     'webroot' => describePath($webRootPath),
@@ -211,7 +249,6 @@ $webrootStatus = [
     'admin_html' => describePath($webRootPath . '/admin.html'),
 ];
 
-$projectRoot = dirname(__DIR__);
 $configDir = $projectRoot . '/config';
 $runtimeDir = $projectRoot . '/server/runtime';
 $runtimeDataDir = $runtimeDir . '/data';
@@ -384,11 +421,13 @@ $storageStatus = [
 
 $reportText = "PRODUCTION DIAGNOSTICS\n======================\n\n";
 $reportText .= "HOST\n";
-$reportText .= '- /home/web1819 exists: ' . (file_exists('/home/web1819') ? 'yes' : 'no') . "\n";
-$reportText .= '- /home/web1819/.env exists: ' . (file_exists('/home/web1819/.env') ? 'yes' : 'no') . "\n";
-$reportText .= '- /home/web1819/.env readable: ' . (is_readable('/home/web1819/.env') ? 'yes' : 'no') . "\n";
+$reportText .= '- active env candidate: ' . ($activeEnvCandidate ?? 'NONE_FOUND') . "\n";
+$reportText .= '- shared-host fallback env exists: ' . (file_exists($sharedHostEnvPath) ? 'yes' : 'no') . "\n";
+$reportText .= '- shared-host fallback env readable: ' . (is_readable($sharedHostEnvPath) ? 'yes' : 'no') . "\n";
 $reportText .= '- PUBLIC_WEBROOT_PATH: ' . ($env['PUBLIC_WEBROOT_PATH'] ?? 'MISSING') . "\n";
 $reportText .= '- PUBLIC_URL: ' . ($env['PUBLIC_URL'] ?? 'MISSING') . "\n";
+$reportText .= '- expected app root: ' . $expectedWebroot . "\n";
+$reportText .= '- script webroot: ' . $scriptWebrootPath . "\n";
 $reportText .= "\nRUNTIME\n";
 $reportText .= '- PHP version: ' . $phpVersion . "\n";
 $reportText .= '- PHP SAPI: ' . $phpSapi . "\n";
@@ -435,9 +474,12 @@ if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
     $payload = [
         'result' => 'PRODUCTION_DIAGNOSTICS',
         'host' => [
-            '/home/web1819' => file_exists('/home/web1819'),
-            '/home/web1819/.env' => file_exists('/home/web1819/.env'),
-            '/home/web1819/.env_readable' => is_readable('/home/web1819/.env'),
+            'active_env_candidate' => $activeEnvCandidate,
+            'shared_host_fallback_env_path' => $sharedHostEnvPath,
+            'shared_host_fallback_env_exists' => file_exists($sharedHostEnvPath),
+            'shared_host_fallback_env_readable' => is_readable($sharedHostEnvPath),
+            'expected_app_root' => $expectedWebroot,
+            'script_webroot' => $scriptWebrootPath,
             'public_webroot' => file_exists($webRootPath),
         ],
         'php' => [
@@ -495,9 +537,11 @@ if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
         <div class="card">
             <h2>Host</h2>
             <table>
-                <tr><td>/home/web1819 exists</td><td class="<?= file_exists('/home/web1819') ? 'ok' : 'bad' ?>"><?= file_exists('/home/web1819') ? 'yes' : 'no' ?></td></tr>
-                <tr><td>/home/web1819/.env exists</td><td class="<?= file_exists('/home/web1819/.env') ? 'ok' : 'bad' ?>"><?= file_exists('/home/web1819/.env') ? 'yes' : 'no' ?></td></tr>
-                <tr><td>/home/web1819/.env readable</td><td class="<?= is_readable('/home/web1819/.env') ? 'ok' : 'bad' ?>"><?= is_readable('/home/web1819/.env') ? 'yes' : 'no' ?></td></tr>
+                <tr><td>active env candidate</td><td><code><?= htmlspecialchars((string) ($activeEnvCandidate ?? 'NONE_FOUND'), ENT_QUOTES, 'UTF-8') ?></code></td></tr>
+                <tr><td>shared-host fallback env exists</td><td class="<?= file_exists($sharedHostEnvPath) ? 'ok' : 'warn' ?>"><?= file_exists($sharedHostEnvPath) ? 'yes' : 'no' ?></td></tr>
+                <tr><td>shared-host fallback env readable</td><td class="<?= is_readable($sharedHostEnvPath) ? 'ok' : 'warn' ?>"><?= is_readable($sharedHostEnvPath) ? 'yes' : 'no' ?></td></tr>
+                <tr><td>expected app root path</td><td><code><?= htmlspecialchars((string) $expectedWebroot, ENT_QUOTES, 'UTF-8') ?></code></td></tr>
+                <tr><td>script webroot path</td><td><code><?= htmlspecialchars((string) $scriptWebrootPath, ENT_QUOTES, 'UTF-8') ?></code></td></tr>
                 <tr><td>public webroot exists</td><td class="<?= file_exists($webRootPath) ? 'ok' : 'bad' ?>"><?= file_exists($webRootPath) ? 'yes' : 'no' ?></td></tr>
                 <tr><td>expected app root</td><td class="<?= file_exists($expectedWebroot) ? 'ok' : 'bad' ?>"><?= file_exists($expectedWebroot) ? 'yes' : 'no' ?></td></tr>
             </table>
