@@ -2,6 +2,19 @@
 
 Dieser Leitfaden beschreibt den minimalen, produktiven Betriebbestand der Neutral-Serveranwendung. Der Deploy darf ausschließlich diesen Bestand enthalten; das komplette Repository darf nicht an den Server übertragen werden.
 
+## Verifizierte Produktionsfakten
+
+Die aktuelle Produktionsprüfung zeigt:
+
+- Live-Host: LiteSpeed / cPanel Shared Webspace
+- PHP: 8.5.9
+- PHP-Setup-Endpunkt: erreichbar (`/index/app/neutral/webroot/setup.php`)
+- Node/Passenger: auf dem öffentlichen Host nicht nachweisbar als nutzbarer Produktionsruntime
+- öffentliche `/api/*`-Routen: HTTP 404
+- MySQL: `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'`
+
+Entscheidung: Der Host ist im aktuellen produktiven Zustand kein nutzbarer Node-Backend-Host. Die vorhandene Node-API im Repository bleibt die Referenzarchitektur, aber sie darf nicht als zweite parallele Produktivlösung implementiert werden. Für den echten Shared-Host muss die produktive API-/Serverfunktionalität in einer PHP/LiteSpeed-kompatiblen Form abgebildet werden, sofern der Host keine Node- oder Passenger-Umgebung bereitstellt.
+
 ## Produktionsbestand
 
 > Module werden nicht automatisch aktiviert. Der Laufzeit-Discovery-Prozess registriert Module nur als installiert/inaktiv und wartet auf den Admin-Entscheid. Dadurch bleibt die Application (`Neutral`) von der Modulverwaltung getrennt. Module müssen als `type: "module"` definiert werden.
