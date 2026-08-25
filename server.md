@@ -12,8 +12,20 @@ Die aktuelle Produktionsprüfung zeigt:
 - Node/Passenger: auf dem öffentlichen Host nicht nachweisbar als nutzbarer Produktionsruntime
 - öffentliche `/api/*`-Routen: HTTP 404
 - MySQL: `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'`
+- Produktionspfad `/home/web1819/.env`: in dieser Ausführungsumgebung nicht vorhanden; die Repository-Umgebung enthält eine lokale `.env` im Projektroot, aber diese ist nicht derselbe Host-Pfad und darf nicht als produktive Host-Konfiguration behandelt werden.
 
 Entscheidung: Der Host ist im aktuellen produktiven Zustand kein nutzbarer Node-Backend-Host. Die vorhandene Node-API im Repository bleibt die Referenzarchitektur, aber sie darf nicht als zweite parallele Produktivlösung implementiert werden. Für den echten Shared-Host muss die produktive API-/Serverfunktionalität in einer PHP/LiteSpeed-kompatiblen Form abgebildet werden, sofern der Host keine Node- oder Passenger-Umgebung bereitstellt.
+
+## Konfigurationsprüfung: .env / DB_URL / DB_HOST
+
+Die Codepfade zeigen ausdrücklich:
+
+- `server/config/index.js` sucht nach `.env`-Dateien in Produktivpfaden, einschließlich `/home/web1819/.env`.
+- `webroot/setup.php` versucht dieselben Host-Pfade und verwendet dieselbe Host-Konvention, aber nur, wenn diese Dateien auf dem eigentlichen Host-Dateisystem existieren.
+- `server/database/connection.js` verwendet für die tatsächliche Verbindung `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` und `DB_PASSWORD`; `DB_URL` ist in diesem Pfad nicht der primäre Verbindungswert.
+- `webroot/setup.php` baut `DB_URL` aus `DB_TYPE`, `DB_HOST`, `DB_PORT`, `DB_NAME` und `DB_USER` und nutzt `DB_URL` nur als vorhandene Konfigurationsquelle bzw. als Anzeige-/Serialisierungsergebnis.
+
+Das bedeutet: Ein `DB_URL`-Platzhalter wie `mysql://...:DEIN_DB_PASSWORT@127.0.0.1:3306/...` ist in diesem Codepfad nur dann relevant, wenn der Host wirklich über diese Werte verfügt und der Code sie tatsächlich liest. In der aktuellen gemessenen Umgebung ist der echte Host-Pfad `/home/web1819/.env` nicht vorhanden, daher bleibt die Host-DB-Authentifizierung als unverified/blocked dokumentiert.
 
 ## Produktionsbestand
 
