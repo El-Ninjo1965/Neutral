@@ -154,13 +154,13 @@ final class Phase4PasswordHasher
 
 final class Phase4RoleService
 {
-    private const FILE = 'admin-roles.json';
-
     private Phase4JsonStore $store;
+    private ?Database $database;
 
-    public function __construct(Phase4JsonStore $store)
+    public function __construct(Phase4JsonStore $store, ?Database $database = null)
     {
         $this->store = $store;
+        $this->database = $database;
     }
 
     /**
@@ -168,18 +168,15 @@ final class Phase4RoleService
      */
     public function all(): array
     {
-        $snapshot = $this->loadWithDefaults();
-        return array_values($snapshot['roles']);
+        $pdo = $this->requireDatabase()->connect();
+        return $this->loadRoles($pdo);
     }
 
     public function get(string $roleId): ?array
     {
-        foreach ($this->all() as $role) {
-            if ((string) ($role['id'] ?? '') === $roleId || (string) ($role['role'] ?? '') === $roleId) {
-                return $role;
-            }
-        }
-        return null;
+        $pdo = $this->requireDatabase()->connect();
+        $roles = $this->loadRoles($pdo, $roleId);
+        return $roles[0] ?? null;
     }
 
     /**
@@ -206,33 +203,31 @@ final class Phase4RoleService
      */
     public function create(array $payload): array
     {
-        $snapshot = $this->loadWithDefaults();
+        $pdo = $this->requireDatabase()->connect();
         $roleKey = strtolower(trim((string) ($payload['name'] ?? $payload['role'] ?? '')));
         if ($roleKey === '' || strlen($roleKey) < 3) {
             throw new \RuntimeException('Role name must have at least 3 characters.');
         }
-
-        if (isset($snapshot['rolesByRole'][$roleKey])) {
+        if ($this->get($roleKey)) {
             throw new \RuntimeException('Role already exists: ' . $roleKey);
         }
-
         $permissions = $this->normalizePermissions($payload['permissions'] ?? []);
-        $now = gmdate('c');
-        $id = 'role-' . preg_replace('/[^a-z0-9\-]/', '-', $roleKey);
-        $role = [
-            'id' => $id,
-            'name' => $roleKey,
-            'role' => $roleKey,
-            'description' => trim((string) ($payload['description'] ?? '')),
-            'permissions' => $permissions,
-            'isSystem' => false,
-            'createdAt' => $now,
-            'updatedAt' => $now,
-        ];
-
-        $snapshot['roles'][] = $role;
-        $this->persist($snapshot['roles']);
-        return $role;
+        $statement = $pdo->prepare('
+            INSERT INTO roles (role_key, name, description, is_system, created_at, updated_at)
+            VALUES (:role_key, :name, :description, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ');
+        $statement->execute([
+            ':role_key' => $roleKey,
+            ':name' => $roleKey,
+            ':description' => trim((string) ($payload['description'] ?? '')),
+        ]);
+        $roleDbId = (int) $pdo->lastInsertId();
+        $this->syncRolePermissions($pdo, $roleDbId, $permissions);
+        $created = $this->get($roleKey);
+        if (!$created) {
+            throw new \RuntimeException('Role could not be loaded after creation.');
+        }
+        return $created;
     }
 
     /**
@@ -240,55 +235,47 @@ final class Phase4RoleService
      */
     public function update(string $roleId, array $payload): array
     {
-        $snapshot = $this->loadWithDefaults();
-        $index = null;
-        foreach ($snapshot['roles'] as $offset => $role) {
-            if ((string) ($role['id'] ?? '') === $roleId || (string) ($role['role'] ?? '') === $roleId) {
-                $index = $offset;
-                break;
-            }
-        }
-        if ($index === null) {
+        $pdo = $this->requireDatabase()->connect();
+        $current = $this->loadRoleRow($pdo, $roleId);
+        if ($current === null) {
             throw new \RuntimeException('Role not found: ' . $roleId);
         }
-
-        $current = $snapshot['roles'][$index];
-        if (($current['isSystem'] ?? false) === true) {
+        if ((int) ($current['is_system'] ?? 0) === 1) {
             throw new \RuntimeException('System roles cannot be modified.');
         }
-
-        $updated = $current;
+        $roleDbId = (int) ($current['id'] ?? 0);
+        $description = trim((string) ($current['description'] ?? ''));
         if (array_key_exists('description', $payload)) {
-            $updated['description'] = trim((string) $payload['description']);
+            $description = trim((string) $payload['description']);
         }
+        $statement = $pdo->prepare('UPDATE roles SET description = :description, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
+        $statement->execute([
+            ':id' => $roleDbId,
+            ':description' => $description,
+        ]);
         if (array_key_exists('permissions', $payload)) {
-            $updated['permissions'] = $this->normalizePermissions($payload['permissions']);
+            $permissions = $this->normalizePermissions($payload['permissions']);
+            $this->syncRolePermissions($pdo, $roleDbId, $permissions);
         }
-        $updated['updatedAt'] = gmdate('c');
-        $snapshot['roles'][$index] = $updated;
-        $this->persist($snapshot['roles']);
+        $updated = $this->get((string) ($current['role_key'] ?? $roleId));
+        if (!$updated) {
+            throw new \RuntimeException('Role could not be loaded after update.');
+        }
         return $updated;
     }
 
     public function delete(string $roleId): void
     {
-        $snapshot = $this->loadWithDefaults();
-        $remaining = [];
-        $deleted = false;
-        foreach ($snapshot['roles'] as $role) {
-            if ((string) ($role['id'] ?? '') === $roleId || (string) ($role['role'] ?? '') === $roleId) {
-                if (($role['isSystem'] ?? false) === true) {
-                    throw new \RuntimeException('System roles cannot be deleted.');
-                }
-                $deleted = true;
-                continue;
-            }
-            $remaining[] = $role;
-        }
-        if (!$deleted) {
+        $pdo = $this->requireDatabase()->connect();
+        $current = $this->loadRoleRow($pdo, $roleId);
+        if ($current === null) {
             throw new \RuntimeException('Role not found: ' . $roleId);
         }
-        $this->persist($remaining);
+        if ((int) ($current['is_system'] ?? 0) === 1) {
+            throw new \RuntimeException('System roles cannot be deleted.');
+        }
+        $statement = $pdo->prepare('DELETE FROM roles WHERE id = :id');
+        $statement->execute([':id' => (int) ($current['id'] ?? 0)]);
     }
 
     /**
@@ -312,92 +299,136 @@ final class Phase4RoleService
     }
 
     /**
-     * @return array{roles:list<array<string,mixed>>,rolesByRole:array<string,array<string,mixed>>}
+     * @return list<array<string,mixed>>
      */
-    private function loadWithDefaults(): array
+    private function loadRoles(\PDO $pdo, ?string $identifier = null): array
     {
-        $defaults = $this->defaultRoles();
-        $raw = $this->store->read(self::FILE, ['roles' => $defaults]);
-        $roles = is_array($raw['roles'] ?? null) && $raw['roles'] !== [] ? $raw['roles'] : $defaults;
-
-        $normalized = [];
-        $byRole = [];
-        foreach ($roles as $role) {
-            if (!is_array($role)) {
+        $where = '';
+        $params = [];
+        if ($identifier !== null && trim($identifier) !== '') {
+            $where = 'WHERE r.role_key = :role_key';
+            $params[':role_key'] = trim(strtolower($identifier));
+            if (ctype_digit($identifier)) {
+                $where = 'WHERE r.role_key = :role_key OR r.id = :role_id';
+                $params[':role_id'] = (int) $identifier;
+            }
+        }
+        $statement = $pdo->prepare("
+            SELECT
+                r.id,
+                r.role_key,
+                r.name,
+                r.description,
+                r.is_system,
+                r.created_at,
+                r.updated_at,
+                GROUP_CONCAT(DISTINCT p.permission_key ORDER BY p.permission_key SEPARATOR ',') AS permission_keys
+            FROM roles r
+            LEFT JOIN role_permissions rp ON rp.role_id = r.id
+            LEFT JOIN permissions p ON p.id = rp.permission_id
+            $where
+            GROUP BY r.id, r.role_key, r.name, r.description, r.is_system, r.created_at, r.updated_at
+            ORDER BY r.role_key ASC
+        ");
+        $statement->execute($params);
+        $roles = [];
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
                 continue;
             }
-            $roleKey = strtolower(trim((string) ($role['role'] ?? $role['name'] ?? '')));
+            $roleKey = strtolower(trim((string) ($row['role_key'] ?? '')));
             if ($roleKey === '') {
                 continue;
             }
-            $entry = [
-                'id' => (string) ($role['id'] ?? 'role-' . $roleKey),
-                'name' => (string) ($role['name'] ?? $roleKey),
-                'role' => $roleKey,
-                'description' => (string) ($role['description'] ?? ''),
-                'permissions' => $this->normalizePermissions($role['permissions'] ?? []),
-                'isSystem' => (bool) (($role['isSystem'] ?? false) === true),
-                'createdAt' => (string) ($role['createdAt'] ?? gmdate('c')),
-                'updatedAt' => (string) ($role['updatedAt'] ?? gmdate('c')),
-            ];
-            $normalized[] = $entry;
-            $byRole[$roleKey] = $entry;
-        }
-
-        if ($normalized === []) {
-            $normalized = $defaults;
-            foreach ($defaults as $role) {
-                $byRole[(string) $role['role']] = $role;
+            $permissions = [];
+            $rawPermissions = (string) ($row['permission_keys'] ?? '');
+            if ($rawPermissions !== '') {
+                $permissions = array_values(array_filter(array_map('trim', explode(',', $rawPermissions)), static fn (string $value): bool => $value !== ''));
             }
-        }
-
-        return ['roles' => $normalized, 'rolesByRole' => $byRole];
-    }
-
-    /**
-     * @param list<array<string,mixed>> $roles
-     */
-    private function persist(array $roles): void
-    {
-        $this->store->write(self::FILE, ['roles' => array_values($roles)]);
-    }
-
-    /**
-     * @return list<array<string,mixed>>
-     */
-    private function defaultRoles(): array
-    {
-        $now = gmdate('c');
-        $roles = [];
-        foreach (Phase4AuthRbac::ROLE_PERMISSIONS as $role => $permissions) {
             $roles[] = [
-                'id' => 'role-' . $role,
-                'name' => $role,
-                'role' => $role,
-                'description' => $role === 'admin' ? 'System administrator' : ucfirst($role) . ' role',
+                'id' => $roleKey,
+                'name' => (string) ($row['name'] ?? $roleKey),
+                'role' => $roleKey,
+                'description' => (string) ($row['description'] ?? ''),
                 'permissions' => $permissions,
-                'isSystem' => true,
-                'createdAt' => $now,
-                'updatedAt' => $now,
+                'isSystem' => ((int) ($row['is_system'] ?? 0)) === 1,
+                'createdAt' => (string) ($row['created_at'] ?? ''),
+                'updatedAt' => (string) ($row['updated_at'] ?? ''),
             ];
         }
         return $roles;
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    private function loadRoleRow(\PDO $pdo, string $roleId): ?array
+    {
+        $params = [':role_key' => strtolower(trim($roleId))];
+        $where = 'role_key = :role_key';
+        if (ctype_digit($roleId)) {
+            $where = '(role_key = :role_key OR id = :role_id)';
+            $params[':role_id'] = (int) $roleId;
+        }
+        $statement = $pdo->prepare("SELECT id, role_key, description, is_system FROM roles WHERE $where LIMIT 1");
+        $statement->execute($params);
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param list<string> $permissionKeys
+     */
+    private function syncRolePermissions(\PDO $pdo, int $roleId, array $permissionKeys): void
+    {
+        $pdo->prepare('DELETE FROM role_permissions WHERE role_id = :role_id')->execute([':role_id' => $roleId]);
+        if ($permissionKeys === []) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($permissionKeys), '?'));
+        $statement = $pdo->prepare("SELECT id, permission_key FROM permissions WHERE permission_key IN ($placeholders)");
+        $statement->execute($permissionKeys);
+        $permissionRows = $statement->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($permissionRows) || count($permissionRows) !== count($permissionKeys)) {
+            throw new \RuntimeException('One or more permissions are not available in database.');
+        }
+        $insert = $pdo->prepare('
+            INSERT INTO role_permissions (role_id, permission_id, granted_at)
+            VALUES (:role_id, :permission_id, CURRENT_TIMESTAMP)
+        ');
+        foreach ($permissionRows as $permissionRow) {
+            if (!is_array($permissionRow)) {
+                continue;
+            }
+            $insert->execute([
+                ':role_id' => $roleId,
+                ':permission_id' => (int) ($permissionRow['id'] ?? 0),
+            ]);
+        }
+    }
+
+    private function requireDatabase(): Database
+    {
+        if (!$this->database instanceof Database) {
+            throw new \RuntimeException('MySQL role storage is not configured.');
+        }
+        return $this->database;
     }
 }
 
 final class Phase4UserService
 {
-    private const FILE = 'admin-users.json';
-
     private Phase4JsonStore $store;
     private Phase4RoleService $roles;
     private AppConfig $config;
+    private ?Database $database;
 
-    public function __construct(Phase4JsonStore $store, Phase4RoleService $roles, AppConfig $config)
+    public function __construct(Phase4JsonStore $store, Phase4RoleService $roles, AppConfig $config, ?Database $database = null)
     {
         $this->store = $store;
         $this->roles = $roles;
         $this->config = $config;
+        $this->database = $database;
     }
 
     /**
@@ -406,33 +437,67 @@ final class Phase4UserService
      */
     public function allPublic(array $filters = []): array
     {
-        $users = $this->load()['users'];
-        $q = strtolower(trim((string) ($filters['q'] ?? '')));
-        $role = strtolower(trim((string) ($filters['role'] ?? '')));
+        $pdo = $this->requireDatabase()->connect();
+        $q = trim((string) ($filters['q'] ?? ''));
         $status = strtolower(trim((string) ($filters['status'] ?? '')));
+        $role = strtolower(trim((string) ($filters['role'] ?? '')));
 
-        $filtered = [];
-        foreach ($users as $user) {
-            if ($q !== '') {
-                $haystack = strtolower((string) ($user['username'] ?? '') . ' ' . (string) ($user['email'] ?? '') . ' ' . (string) ($user['displayName'] ?? ''));
-                if (!str_contains($haystack, $q)) {
-                    continue;
-                }
+        $where = [];
+        $params = [];
+        if ($q !== '') {
+            $where[] = '(u.username LIKE :q OR u.email LIKE :q OR u.display_name LIKE :q)';
+            $params[':q'] = '%' . $q . '%';
+        }
+        if ($status !== '') {
+            $where[] = 'u.status = :status';
+            $params[':status'] = $status;
+        }
+        if ($role !== '') {
+            if (ctype_digit($role)) {
+                $where[] = 'EXISTS (
+                    SELECT 1 FROM user_roles urf
+                    JOIN roles rf ON rf.id = urf.role_id
+                    WHERE urf.user_id = u.id AND (rf.role_key = :role_key OR rf.id = :role_id)
+                )';
+                $params[':role_id'] = (int) $role;
+                $params[':role_key'] = $role;
+            } else {
+                $where[] = 'EXISTS (
+                    SELECT 1 FROM user_roles urf
+                    JOIN roles rf ON rf.id = urf.role_id
+                    WHERE urf.user_id = u.id AND rf.role_key = :role_key
+                )';
+                $params[':role_key'] = $role;
             }
-            if ($status !== '' && strtolower((string) ($user['status'] ?? '')) !== $status) {
+        }
+        $whereSql = $where === [] ? '' : ('WHERE ' . implode(' AND ', $where));
+        $statement = $pdo->prepare("
+            SELECT
+                u.id,
+                u.username,
+                u.email,
+                u.display_name,
+                u.status,
+                u.password_hash,
+                u.created_at,
+                u.updated_at,
+                GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR ',') AS role_keys
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            $whereSql
+            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
+            ORDER BY u.id ASC
+        ");
+        $statement->execute($params);
+        $public = [];
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
                 continue;
             }
-            if ($role !== '') {
-                $roles = is_array($user['roles'] ?? null) ? $user['roles'] : [];
-                $lowerRoles = array_map(static fn ($item) => strtolower((string) $item), $roles);
-                if (!in_array($role, $lowerRoles, true)) {
-                    continue;
-                }
-            }
-            $filtered[] = $this->publicUser($user);
+            $public[] = $this->publicUser($this->hydrateUserRow($row));
         }
-
-        return $filtered;
+        return $public;
     }
 
     public function getPublicById(string $id): ?array
@@ -446,7 +511,7 @@ final class Phase4UserService
      */
     public function create(array $payload): array
     {
-        $snapshot = $this->load();
+        $pdo = $this->requireDatabase()->connect();
         $username = trim((string) ($payload['username'] ?? ''));
         $email = strtolower(trim((string) ($payload['email'] ?? '')));
         $password = (string) ($payload['password'] ?? '');
@@ -459,40 +524,36 @@ final class Phase4UserService
         if ($password === '' || strlen($password) < 8) {
             throw new \RuntimeException('Password must have at least 8 characters.');
         }
-        foreach ($snapshot['users'] as $user) {
-            if (strtolower((string) ($user['username'] ?? '')) === strtolower($username)) {
-                throw new \RuntimeException('Username already exists.');
-            }
-            if (strtolower((string) ($user['email'] ?? '')) === $email) {
-                throw new \RuntimeException('Email already exists.');
-            }
+        $duplicate = $pdo->prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
+        $duplicate->execute([
+            ':username' => $username,
+            ':email' => $email,
+        ]);
+        if ($duplicate->fetchColumn() !== false) {
+            throw new \RuntimeException('Username or email already exists.');
         }
-
         $roles = $this->normalizeRoles($payload['roles'] ?? [$payload['role'] ?? 'user']);
-        $permissions = $this->normalizePermissions($payload['permissions'] ?? []);
-        $now = gmdate('c');
-        $id = $snapshot['nextId'];
-        if ($id < 101) {
-            $id = 101;
+        $statement = $pdo->prepare('
+            INSERT INTO users (username, email, password_hash, status, display_name, created_at, updated_at)
+            VALUES (:username, :email, :password_hash, :status, :display_name, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ');
+        $statement->execute([
+            ':username' => $username,
+            ':email' => $email,
+            ':password_hash' => Phase4PasswordHasher::hash($password),
+            ':status' => $this->normalizeStatus((string) ($payload['status'] ?? 'active')),
+            ':display_name' => trim((string) ($payload['displayName'] ?? $username)),
+        ]);
+        $userId = (int) $pdo->lastInsertId();
+        if ($userId < 101) {
+            throw new \RuntimeException('User ID allocation is below reserved boundary.');
         }
-        $snapshot['nextId'] = $id + 1;
-
-        $user = [
-            'id' => (string) $id,
-            'username' => $username,
-            'email' => $email,
-            'displayName' => trim((string) ($payload['displayName'] ?? $username)),
-            'status' => $this->normalizeStatus((string) ($payload['status'] ?? 'active')),
-            'roles' => $roles,
-            'permissions' => $permissions,
-            'passwordHash' => Phase4PasswordHasher::hash($password),
-            'createdAt' => $now,
-            'updatedAt' => $now,
-        ];
-
-        $snapshot['users'][] = $user;
-        $this->persist($snapshot);
-        return $this->publicUser($user);
+        $this->syncUserRoles($pdo, $userId, $roles);
+        $created = $this->getById((string) $userId);
+        if (!$created) {
+            throw new \RuntimeException('User could not be loaded after creation.');
+        }
+        return $this->publicUser($created);
     }
 
     /**
@@ -500,25 +561,23 @@ final class Phase4UserService
      */
     public function update(string $id, array $payload): array
     {
-        $snapshot = $this->load();
-        $index = $this->indexOf($snapshot['users'], $id);
-        if ($index < 0) {
+        $pdo = $this->requireDatabase()->connect();
+        $user = $this->getById($id);
+        if (!$user) {
             throw new \RuntimeException('User not found: ' . $id);
         }
-        $user = $snapshot['users'][$index];
-
         if (array_key_exists('email', $payload)) {
             $email = strtolower(trim((string) $payload['email']));
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new \RuntimeException('Email is invalid.');
             }
-            foreach ($snapshot['users'] as $candidate) {
-                if ((string) ($candidate['id'] ?? '') === $id) {
-                    continue;
-                }
-                if (strtolower((string) ($candidate['email'] ?? '')) === $email) {
-                    throw new \RuntimeException('Email already exists.');
-                }
+            $duplicate = $pdo->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(:email) AND id <> :id LIMIT 1');
+            $duplicate->execute([
+                ':email' => $email,
+                ':id' => (int) $id,
+            ]);
+            if ($duplicate->fetchColumn() !== false) {
+                throw new \RuntimeException('Email already exists.');
             }
             $user['email'] = $email;
         }
@@ -532,9 +591,6 @@ final class Phase4UserService
         if (array_key_exists('roles', $payload) || array_key_exists('role', $payload)) {
             $user['roles'] = $this->normalizeRoles($payload['roles'] ?? [$payload['role'] ?? 'user']);
         }
-        if (array_key_exists('permissions', $payload)) {
-            $user['permissions'] = $this->normalizePermissions($payload['permissions']);
-        }
         if (array_key_exists('password', $payload) && trim((string) $payload['password']) !== '') {
             $password = (string) $payload['password'];
             if (strlen($password) < 8) {
@@ -542,26 +598,44 @@ final class Phase4UserService
             }
             $user['passwordHash'] = Phase4PasswordHasher::hash($password);
         }
-        $user['updatedAt'] = gmdate('c');
-
-        $snapshot['users'][$index] = $user;
-        $this->persist($snapshot);
-        return $this->publicUser($user);
+        $statement = $pdo->prepare('
+            UPDATE users
+            SET email = :email,
+                display_name = :display_name,
+                status = :status,
+                password_hash = :password_hash,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id
+        ');
+        $statement->execute([
+            ':id' => (int) $id,
+            ':email' => (string) ($user['email'] ?? ''),
+            ':display_name' => (string) ($user['displayName'] ?? ''),
+            ':status' => (string) ($user['status'] ?? 'active'),
+            ':password_hash' => (string) ($user['passwordHash'] ?? ''),
+        ]);
+        $roles = is_array($user['roles'] ?? null) ? $user['roles'] : ['user'];
+        $this->syncUserRoles($pdo, (int) $id, $roles);
+        $updated = $this->getById($id);
+        if (!$updated) {
+            throw new \RuntimeException('User could not be loaded after update.');
+        }
+        return $this->publicUser($updated);
     }
 
     public function delete(string $id): void
     {
-        $snapshot = $this->load();
-        $index = $this->indexOf($snapshot['users'], $id);
-        if ($index < 0) {
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->prepare('SELECT id FROM users WHERE id = :id LIMIT 1');
+        $statement->execute([':id' => (int) $id]);
+        if ($statement->fetchColumn() === false) {
             throw new \RuntimeException('User not found: ' . $id);
         }
-        $userId = (int) ($snapshot['users'][$index]['id'] ?? 0);
+        $userId = (int) $id;
         if ($userId === 101) {
             throw new \RuntimeException('User 101 cannot be deleted.');
         }
-        array_splice($snapshot['users'], $index, 1);
-        $this->persist($snapshot);
+        $pdo->prepare('DELETE FROM users WHERE id = :id')->execute([':id' => $userId]);
     }
 
     public function authenticate(string $username, string $password): ?array
@@ -570,31 +644,68 @@ final class Phase4UserService
         if ($username === '' || $password === '') {
             return null;
         }
-        $snapshot = $this->load();
-        foreach ($snapshot['users'] as $user) {
-            if (strtolower((string) ($user['username'] ?? '')) !== strtolower($username)) {
-                continue;
-            }
-            if (($user['status'] ?? 'active') !== 'active') {
-                return null;
-            }
-            $hash = (string) ($user['passwordHash'] ?? '');
-            if ($hash !== '' && Phase4PasswordHasher::verify($password, $hash)) {
-                return $user;
-            }
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->prepare('
+            SELECT
+                u.id,
+                u.username,
+                u.email,
+                u.display_name,
+                u.status,
+                u.password_hash,
+                u.created_at,
+                u.updated_at,
+                GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR \',\') AS role_keys
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            WHERE LOWER(u.username) = LOWER(:username)
+            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
+            LIMIT 1
+        ');
+        $statement->execute([':username' => $username]);
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
             return null;
+        }
+        $user = $this->hydrateUserRow($row);
+        if (($user['status'] ?? 'inactive') !== 'active') {
+            return null;
+        }
+        $hash = (string) ($user['passwordHash'] ?? '');
+        if ($hash !== '' && Phase4PasswordHasher::verify($password, $hash)) {
+            return $user;
         }
         return null;
     }
 
     public function getById(string $id): ?array
     {
-        foreach ($this->load()['users'] as $user) {
-            if ((string) ($user['id'] ?? '') === $id) {
-                return $user;
-            }
+        if (!ctype_digit($id)) {
+            return null;
         }
-        return null;
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->prepare('
+            SELECT
+                u.id,
+                u.username,
+                u.email,
+                u.display_name,
+                u.status,
+                u.password_hash,
+                u.created_at,
+                u.updated_at,
+                GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR \',\') AS role_keys
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            WHERE u.id = :id
+            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
+            LIMIT 1
+        ');
+        $statement->execute([':id' => (int) $id]);
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        return is_array($row) ? $this->hydrateUserRow($row) : null;
     }
 
     /**
@@ -621,76 +732,10 @@ final class Phase4UserService
             'displayName' => (string) ($user['displayName'] ?? ''),
             'status' => (string) ($user['status'] ?? 'active'),
             'roles' => is_array($user['roles'] ?? null) ? array_values($user['roles']) : [],
-            'permissions' => is_array($user['permissions'] ?? null) ? array_values($user['permissions']) : [],
+            'permissions' => $this->effectivePermissions($user),
             'createdAt' => (string) ($user['createdAt'] ?? ''),
             'updatedAt' => (string) ($user['updatedAt'] ?? ''),
         ];
-    }
-
-    /**
-     * @return array{users:list<array<string,mixed>>,nextId:int}
-     */
-    private function load(): array
-    {
-        $defaults = [
-            'users' => [],
-            'nextId' => 101,
-        ];
-        $data = $this->store->read(self::FILE, $defaults);
-        $users = is_array($data['users'] ?? null) ? $data['users'] : [];
-        if ($users === []) {
-            $env = $this->config->env();
-            $bootstrapUsername = trim((string) ($env['CORE_BOOTSTRAP_USERNAME'] ?? ''));
-            $bootstrapPassword = (string) ($env['CORE_BOOTSTRAP_PASSWORD'] ?? '');
-            if ($bootstrapUsername !== '' && strlen($bootstrapPassword) >= 8) {
-                $now = gmdate('c');
-                $users[] = [
-                    'id' => '101',
-                    'username' => $bootstrapUsername,
-                    'email' => strtolower($bootstrapUsername) . '@localhost',
-                    'displayName' => 'Bootstrap Administrator',
-                    'status' => 'active',
-                    'roles' => ['admin'],
-                    'permissions' => [],
-                    'passwordHash' => Phase4PasswordHasher::hash($bootstrapPassword),
-                    'createdAt' => $now,
-                    'updatedAt' => $now,
-                ];
-                $data['users'] = $users;
-                $data['nextId'] = 102;
-                $this->store->write(self::FILE, $data);
-            }
-        }
-        $highest = 100;
-        foreach ($users as $user) {
-            $id = (int) ($user['id'] ?? 0);
-            if ($id > $highest) {
-                $highest = $id;
-            }
-        }
-        $nextId = max((int) ($data['nextId'] ?? 101), $highest + 1, 101);
-        return ['users' => $users, 'nextId' => $nextId];
-    }
-
-    /**
-     * @param array{users:list<array<string,mixed>>,nextId:int} $snapshot
-     */
-    private function persist(array $snapshot): void
-    {
-        $this->store->write(self::FILE, $snapshot);
-    }
-
-    /**
-     * @param list<array<string,mixed>> $users
-     */
-    private function indexOf(array $users, string $id): int
-    {
-        foreach ($users as $index => $user) {
-            if ((string) ($user['id'] ?? '') === $id) {
-                return $index;
-            }
-        }
-        return -1;
     }
 
     /**
@@ -717,26 +762,15 @@ final class Phase4UserService
         if ($roles === []) {
             $roles = ['user'];
         }
-        return $roles;
-    }
-
-    /**
-     * @param mixed $permissions
-     * @return list<string>
-     */
-    private function normalizePermissions($permissions): array
-    {
-        if (!is_array($permissions)) {
-            return [];
-        }
-        $normalized = [];
-        foreach ($permissions as $permission) {
-            $value = trim((string) $permission);
-            if (Phase4AuthRbac::isValidPermission($value)) {
-                $normalized[] = $value;
+        $resolved = [];
+        foreach ($roles as $role) {
+            $resolvedRole = $this->roles->get($role);
+            if (!$resolvedRole) {
+                throw new \RuntimeException('Unknown role: ' . $role);
             }
+            $resolved[] = (string) ($resolvedRole['role'] ?? $role);
         }
-        return array_values(array_unique($normalized));
+        return array_values(array_unique($resolved));
     }
 
     private function normalizeStatus(string $status): string
@@ -747,6 +781,70 @@ final class Phase4UserService
             throw new \RuntimeException('Invalid user status: ' . $status);
         }
         return $value;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private function hydrateUserRow(array $row): array
+    {
+        $roles = [];
+        $roleKeys = trim((string) ($row['role_keys'] ?? ''));
+        if ($roleKeys !== '') {
+            $roles = array_values(array_filter(array_map('trim', explode(',', $roleKeys)), static fn (string $value): bool => $value !== ''));
+        }
+        return [
+            'id' => (string) ($row['id'] ?? ''),
+            'username' => (string) ($row['username'] ?? ''),
+            'email' => (string) ($row['email'] ?? ''),
+            'displayName' => (string) ($row['display_name'] ?? ''),
+            'status' => (string) ($row['status'] ?? 'active'),
+            'roles' => $roles,
+            'permissions' => [],
+            'passwordHash' => (string) ($row['password_hash'] ?? ''),
+            'createdAt' => (string) ($row['created_at'] ?? ''),
+            'updatedAt' => (string) ($row['updated_at'] ?? ''),
+        ];
+    }
+
+    /**
+     * @param list<string> $roleKeys
+     */
+    private function syncUserRoles(\PDO $pdo, int $userId, array $roleKeys): void
+    {
+        $pdo->prepare('DELETE FROM user_roles WHERE user_id = :user_id')->execute([':user_id' => $userId]);
+        if ($roleKeys === []) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($roleKeys), '?'));
+        $statement = $pdo->prepare("SELECT id, role_key FROM roles WHERE role_key IN ($placeholders)");
+        $statement->execute($roleKeys);
+        $rows = $statement->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($rows) || count($rows) !== count($roleKeys)) {
+            throw new \RuntimeException('One or more roles are not available in database.');
+        }
+        $insert = $pdo->prepare('
+            INSERT INTO user_roles (user_id, role_id, assigned_at, assigned_by)
+            VALUES (:user_id, :role_id, CURRENT_TIMESTAMP, NULL)
+        ');
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $insert->execute([
+                ':user_id' => $userId,
+                ':role_id' => (int) ($row['id'] ?? 0),
+            ]);
+        }
+    }
+
+    private function requireDatabase(): Database
+    {
+        if (!$this->database instanceof Database) {
+            throw new \RuntimeException('MySQL user storage is not configured.');
+        }
+        return $this->database;
     }
 }
 
@@ -794,12 +892,13 @@ final class Phase4SettingsService
 
 final class Phase4SessionRegistry
 {
-    private const FILE = 'auth-sessions.json';
     private Phase4JsonStore $store;
+    private ?Database $database;
 
-    public function __construct(Phase4JsonStore $store)
+    public function __construct(Phase4JsonStore $store, ?Database $database = null)
     {
         $this->store = $store;
+        $this->database = $database;
     }
 
     /**
@@ -807,18 +906,49 @@ final class Phase4SessionRegistry
      */
     public function upsert(string $sessionId, array $identity): void
     {
-        $snapshot = $this->store->read(self::FILE, ['sessions' => []]);
-        $sessions = is_array($snapshot['sessions'] ?? null) ? $snapshot['sessions'] : [];
-        $sessions[$sessionId] = array_merge($sessions[$sessionId] ?? [], $identity, ['updatedAt' => gmdate('c')]);
-        $this->store->write(self::FILE, ['sessions' => $sessions]);
+        if ($sessionId === '') {
+            return;
+        }
+        $pdo = $this->requireDatabase()->connect();
+        $rawUserId = (string) ($identity['userId'] ?? '');
+        $userId = ctype_digit($rawUserId) ? (int) $rawUserId : null;
+        $csrfToken = isset($_SESSION['_csrf_token']) && is_string($_SESSION['_csrf_token']) ? $_SESSION['_csrf_token'] : null;
+        $issuedAt = (string) ($identity['issuedAt'] ?? gmdate('c'));
+        $lastSeenAt = (string) ($identity['lastSeenAt'] ?? gmdate('c'));
+        $expiresAt = (string) ($identity['expiresAt'] ?? gmdate('c'));
+        $statement = $pdo->prepare('
+            INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, status, ip, user_agent)
+            VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :status, :ip, :user_agent)
+            ON DUPLICATE KEY UPDATE
+                user_id = VALUES(user_id),
+                csrf_token = VALUES(csrf_token),
+                last_seen_at = VALUES(last_seen_at),
+                expires_at = VALUES(expires_at),
+                status = VALUES(status),
+                ip = VALUES(ip),
+                user_agent = VALUES(user_agent)
+        ');
+        $statement->execute([
+            ':session_id' => $sessionId,
+            ':user_id' => $userId,
+            ':csrf_token' => $csrfToken,
+            ':issued_at' => $this->toMysqlDateTime($issuedAt),
+            ':last_seen_at' => $this->toMysqlDateTime($lastSeenAt),
+            ':expires_at' => $this->toMysqlDateTime($expiresAt),
+            ':status' => (string) ($identity['status'] ?? 'active'),
+            ':ip' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            ':user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+        ]);
     }
 
     public function remove(string $sessionId): void
     {
-        $snapshot = $this->store->read(self::FILE, ['sessions' => []]);
-        $sessions = is_array($snapshot['sessions'] ?? null) ? $snapshot['sessions'] : [];
-        unset($sessions[$sessionId]);
-        $this->store->write(self::FILE, ['sessions' => $sessions]);
+        if ($sessionId === '') {
+            return;
+        }
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->prepare('DELETE FROM sessions WHERE session_id = :session_id');
+        $statement->execute([':session_id' => $sessionId]);
     }
 
     /**
@@ -826,26 +956,51 @@ final class Phase4SessionRegistry
      */
     public function listPublic(): array
     {
-        $snapshot = $this->store->read(self::FILE, ['sessions' => []]);
-        $sessions = is_array($snapshot['sessions'] ?? null) ? $snapshot['sessions'] : [];
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->query('
+            SELECT session_id, user_id, status, issued_at, last_seen_at, expires_at
+            FROM sessions
+            ORDER BY last_seen_at DESC
+            LIMIT 500
+        ');
+        if ($statement === false) {
+            throw new \RuntimeException('Could not read sessions.');
+        }
         $public = [];
-        foreach ($sessions as $sessionId => $session) {
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $session) {
             if (!is_array($session)) {
                 continue;
             }
             $public[] = [
-                'sessionId' => (string) $sessionId,
-                'userId' => (string) ($session['userId'] ?? ''),
-                'username' => (string) ($session['username'] ?? ''),
-                'roles' => is_array($session['roles'] ?? null) ? $session['roles'] : [],
+                'sessionId' => (string) ($session['session_id'] ?? ''),
+                'userId' => $session['user_id'] !== null ? (string) $session['user_id'] : '',
+                'username' => '',
+                'roles' => [],
                 'status' => (string) ($session['status'] ?? 'active'),
-                'issuedAt' => (string) ($session['issuedAt'] ?? ''),
-                'lastSeenAt' => (string) ($session['lastSeenAt'] ?? ''),
-                'expiresAt' => (string) ($session['expiresAt'] ?? ''),
-                'updatedAt' => (string) ($session['updatedAt'] ?? ''),
+                'issuedAt' => (string) ($session['issued_at'] ?? ''),
+                'lastSeenAt' => (string) ($session['last_seen_at'] ?? ''),
+                'expiresAt' => (string) ($session['expires_at'] ?? ''),
+                'updatedAt' => (string) ($session['last_seen_at'] ?? ''),
             ];
         }
         return $public;
+    }
+
+    private function toMysqlDateTime(string $value): string
+    {
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return gmdate('Y-m-d H:i:s');
+        }
+        return gmdate('Y-m-d H:i:s', $timestamp);
+    }
+
+    private function requireDatabase(): Database
+    {
+        if (!$this->database instanceof Database) {
+            throw new \RuntimeException('MySQL session storage is not configured.');
+        }
+        return $this->database;
     }
 }
 
@@ -929,7 +1084,19 @@ final class Phase4AuthManager
             return null;
         }
 
+        $userId = (string) ($identity['userId'] ?? '');
+        $user = $userId !== '' ? $this->users->getById($userId) : null;
+        if (!$user || (string) ($user['status'] ?? 'inactive') !== 'active') {
+            $this->logout();
+            return null;
+        }
+        $roles = is_array($user['roles'] ?? null) ? array_values($user['roles']) : ['user'];
+        $permissions = $this->users->effectivePermissions($user);
+
         $identity['lastSeenAt'] = gmdate('c');
+        $identity['roles'] = $roles;
+        $identity['permissions'] = $permissions;
+        $identity['status'] = 'active';
         $_SESSION['auth_identity'] = $identity;
         $this->sessions->upsert(session_id(), $identity);
         return $identity;
