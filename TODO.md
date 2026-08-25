@@ -101,6 +101,12 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Verified live: `DISCOVERED -> INACTIVE -> ACTIVE -> INACTIVE` and state remains persistent on repeated reads.
 [x] Ensure Neutral remains represented as an application, not as a module.
   - Verified: only GPS appears in module discovery/admin endpoints; Neutral itself is not registered as a module.
+[x] Move admin entry to server-side protected PHP gate (`webroot/admin.php`).
+  - Implemented canonical entry: browser now requests `admin.php`, PHP checks session identity and `admin` role **before** delivering the admin UI.
+  - Unauthorized/no-session requests no longer receive the protected admin shell; they now receive explicit HTTP `401` (auth required) or `403` (access denied) pages.
+  - Existing admin UI JavaScript remains intact and is now rendered from `core/php/views/admin-ui.php` only for authorized admin sessions.
+  - `webroot/admin.html` is retained as compatibility redirect to `admin.php` to avoid parallel admin runtime paths.
+  - Added targeted tests (`tests/admin-php-entry.test.js`) covering: no session, non-admin session, admin session, runtime without `setup.php`, and basic PHP API regression checks.
 
 ### Portability and configuration
 [~] Verify installation path portability across real server layouts.

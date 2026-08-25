@@ -161,7 +161,7 @@
     }
 
     if (hasRole(user, 'developer') || hasRole(user, 'admin') || hasPermission(user, 'system:view')) {
-      return 'admin.html';
+      return 'admin.php';
     }
 
     return 'index.html';
@@ -1069,7 +1069,7 @@
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
             }
             if (result && result.ok) {
-              setTimeout(() => { window.location.replace('admin.html'); }, 500);
+              setTimeout(() => { window.location.replace('admin.php'); }, 500);
             }
           }
         } catch (error) {
@@ -3022,7 +3022,7 @@
     if (pageType !== 'admin' && canViewAdmin(currentUser)) {
       if (adminSection) adminSection.classList.remove('hidden');
       if (adminMenu) {
-        adminMenu.innerHTML = '<button type="button" class="nav-item" data-view="admin:dashboard" data-href="admin.html">Administration</button>';
+        adminMenu.innerHTML = '<button type="button" class="nav-item" data-view="admin:dashboard" data-href="admin.php">Administration</button>';
       }
     } else if (adminSection) {
       adminSection.classList.add('hidden');
@@ -3308,7 +3308,7 @@
         } else if (window.CoreAuth && typeof window.CoreAuth.logout === 'function') {
           await window.CoreAuth.logout();
         }
-        const target = pageType === 'developer' ? 'dev.html' : pageType === 'admin' ? 'admin.html' : 'index.html';
+        const target = pageType === 'developer' ? 'dev.html' : pageType === 'admin' ? 'admin.php' : 'index.html';
         window.location.replace(target);
       });
     }
@@ -3375,7 +3375,7 @@
         window.location.replace(targetPage);
         return;
       }
-      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath && targetPage !== 'admin.html') {
+      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath && targetPage !== 'admin.php') {
         window.location.replace(targetPage);
         return;
       }
