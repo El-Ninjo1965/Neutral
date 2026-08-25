@@ -77,6 +77,7 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Fixed admin login flow in `webroot/master-ui.js`: the server auth endpoints (`/api/auth/login` -> `/api/auth/me`) are now the authoritative login path; local `UserModule/CoreAuth` can no longer block a valid server login.
   - Fixed follow-up frontend auth handling in `webroot/admin-init.js` to consume the backend response envelope (`{ ok, data }`) correctly, preventing false "Server session missing" resets after a successful server login.
   - Bound `ApiClient` explicitly to `window.ApiClient` in `webroot/api-client.js` so repeated login attempts can always create the server auth client from `master-ui.js`.
+  - Fixed nested-install API base resolution in `webroot/master-ui.js` and `webroot/admin-init.js` so admin auth requests target `/index/app/neutral/webroot/api/*` on production instead of the non-existent root `/api/*` path.
   - Validation in repository runtime: `node --check webroot/master-ui.js webroot/admin-init.js webroot/api-client.js`, `node --test tests/session-auth.test.js tests/admin-api.test.js --test-reporter=spec`, `npm test -- --test-reporter=spec`.
 [~] Re-verify the full admin browser login UX on the live host after the frontend auth fixes.
   - Pending from this environment: no real interactive browser session is available here to directly validate "admin menu remains visible" and absence of the two UI error messages after login.
