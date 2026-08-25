@@ -25,20 +25,31 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] PHP setup surface verified: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200 with PHP/8.5.9.
 [x] MySQL access issue verified: `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'` is a live server credential/grant problem, not a local repo bug.
 [x] Node/Passenger runtime on the public production server is not available as an exposed runtime: no public Node route, no `node` in PATH, no reachable Port 3000, no active Passenger mapping.
+[x] Production env path check: `/home/web1819/.env` is not present in this execution environment; the repo’s local `.env` is a different file and must not be treated as the live host config.
+[x] Repository config loads `.env` candidates from `/home/web1819` and `resolveRuntimeEnvFile` in `webroot/setup.php` specifically checks those paths; this means the production host file is only active when present on the host filesystem.
 
 ## Current open work
 
 ### Production runtime and backend
 [x] Determine the actual production backend mechanism for the real LiteSpeed/cPanel host.
-  - Decision: use the real shared-host context as the source of truth. The public host is PHP/LiteSpeed and does not expose a usable Node runtime.
+  - Decision: the public host is PHP/LiteSpeed and does not expose a usable Node runtime.
 [x] Verify whether a PHP/LiteSpeed integration can be used cleanly with the existing Node-based architecture.
-  - Verified fact: the repo’s Node server remains the reference implementation, but it is not directly public on the production host. The live host requires a PHP/LiteSpeed-compatible production path before API routing can be considered active.
+  - Verified fact: the repo’s Node server remains the reference implementation, but it is not directly public on the production host. The live host still requires a PHP/LiteSpeed-compatible production path before API routing can be considered active.
 [x] Check whether a usable Node/Passenger runtime is available on the production server.
-  - Result: not available, as evidenced by the host returning 404 for `/api/*` and no active runtime in the cPanel/shared-host context.
+  - Result: not available in the measurable host context.
 [x] Establish the actual public API routing on the production server.
   - Result: missing / inactive. Public `/api/*` returns 404.
 [x] Verify the server backend and runtime entry points used by the live host.
-  - Result: the live server is serving PHP, not the repo’s Node server. The repo Node server remains the fallback local/reference backend.
+  - Result: the public host is serving PHP, not the repo’s Node server.
+
+### Production environment and .env verification
+[?] Verify the real host .env file at `/home/web1819/.env` directly from the production host filesystem.
+  - Current evidence: the file is absent from this execution environment, so direct host verification is blocked here. The repository code explicitly searches `/home/web1819/.env`, but the file cannot be measured from the mounted workspace.
+[?] Validate the actual DB credentials, user grants, host, and port on the real production host.
+  - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without access to the host filesystem.
+[ ] Confirm whether the public webroot path `PUBLIC_WEBROOT_PATH` resolves to the real app folder on the host.
+[ ] Confirm whether `PUBLIC_URL` matches the live app root and serves the expected files on the production server.
+[ ] Verify whether the hosted server is ignoring the .env values entirely because the HTTP requests are served by LiteSpeed/PHP instead of the Node process.
 
 ### Database and connectivity
 [?] Clarify MySQL credentials, DB user, grants, host and port configuration.
@@ -66,6 +77,30 @@ This file is the current task ledger for the project. It must stay aligned with 
 [ ] Perform a complete end-to-end production test.
 [ ] Update deployment documentation to reflect the actual host conditions.
 [ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.
+
+## Dependency order
+
+Production runtime
+  ↓
+Backend selection and routing
+  ↓
+Database connectivity
+  ↓
+Server storage / persistence
+  ↓
+Admin and module runtime
+  ↓
+GPS module validation
+  ↓
+End-to-end deployment test
+
+## Notes
+
+- The repository still contains a valid Node-based server architecture, but the live production host does not expose a usable Node runtime or public `/api` route.
+- Code-level evidence confirms that the app is designed to read `/home/web1819/.env` and `/home/web1819/public_html/...` when those files exist on the host, but this execution environment does not expose those paths.
+- The code also confirms that `DB_URL` is optional; `server/database/connection.js` uses `DB_HOST`, `DB_PORT`, `DB_NAME`, and `DB_USER`/`DB_PASSWORD` for the actual MySQL connection, while `webroot/setup.php` only reads `DB_URL` as a fallback display/serialization value.
+- No parallel backend or duplicate module manager should be created while the live runtime stack remains unresolved.
+- This TODO file is the live task registry and must stay aligned with host facts and code state.
 
 ## Dependency order
 
