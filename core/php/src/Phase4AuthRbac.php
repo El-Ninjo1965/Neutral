@@ -773,6 +773,25 @@ final class Phase4UserService
         return array_values(array_unique($resolved));
     }
 
+    /**
+     * @param mixed $permissions
+     * @return list<string>
+     */
+    private function normalizePermissions($permissions): array
+    {
+        if (!is_array($permissions)) {
+            return [];
+        }
+        $normalized = [];
+        foreach ($permissions as $permission) {
+            $value = trim((string) $permission);
+            if (Phase4AuthRbac::isValidPermission($value)) {
+                $normalized[] = $value;
+            }
+        }
+        return array_values(array_unique($normalized));
+    }
+
     private function normalizeStatus(string $status): string
     {
         $value = strtolower(trim($status));

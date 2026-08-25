@@ -16,6 +16,8 @@ Verbindliche Regeln
 * Der reale Runtime-Check erfolgt immer über die Live-API und nicht nur über die PHP-Setup-Seite.
 * Der produktive Host darf nicht als „aktiv“ gelten, wenn `/api/*` auf dem öffentlichen Host weiterhin 404 liefert.
 * `server.md` und die Allowlist in `scripts/manual-ftps-deploy.js` bleiben die verbindliche Quelle für produktive Datei- und Deploy-Entscheidungen.
+* Für LiteSpeed-Shared-Hosting muss die API-Routing-Fallback-Regel in `webroot/api/.htaccess` aktiv bleiben, damit `/webroot/api/*` zuverlässig über `index.php` ausgeführt wird.
+* Deploys müssen die produktiven PHP-Core/API-Dateien (`core/php/*`, `webroot/api/*`) enthalten; ein Setup-only Deploy ohne diese Dateien gilt nicht als produktionsfähig.
 * Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
 * `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
 * Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
