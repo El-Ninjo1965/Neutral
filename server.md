@@ -27,6 +27,16 @@ Die Codepfade zeigen ausdrücklich:
 
 Das bedeutet: Ein `DB_URL`-Platzhalter wie `mysql://...:DEIN_DB_PASSWORT@127.0.0.1:3306/...` ist in diesem Codepfad nur dann relevant, wenn der Host wirklich über diese Werte verfügt und der Code sie tatsächlich liest. In der aktuellen gemessenen Umgebung ist der echte Host-Pfad `/home/web1819/.env` nicht vorhanden, daher bleibt die Host-DB-Authentifizierung als unverified/blocked dokumentiert.
 
+## Realer Serverzugriff
+
+Der Versuch, mit der konfigurierten FTPS-Identität auf den Produktionsserver zuzugreifen, war in dieser Umgebung nicht erfolgreich:
+
+- Ziel: `ftp.turbolikes.com:21`
+- Login: `neutral@turbolikes.com`
+- Ergebnis: `530 Login authentication failed`
+
+Damit ist der direkte Zugriff auf das reale Produktions-Dateisystem derzeit nicht möglich. Es kann daher keine produktive Verifikation von `/home/web1819/.env`, `/home/web1819/public_html/...` oder der tatsächlichen MySQL-Host-Konfiguration aus dieser Umgebung erfolgen. Alle späteren Erkenntnisse zu `.env`, DB-Zugang und Webroot müssen als nicht verifiziert behandelt werden, bis realer Serverzugriff hergestellt ist.
+
 ## Produktionsbestand
 
 > Module werden nicht automatisch aktiviert. Der Laufzeit-Discovery-Prozess registriert Module nur als installiert/inaktiv und wartet auf den Admin-Entscheid. Dadurch bleibt die Application (`Neutral`) von der Modulverwaltung getrennt. Module müssen als `type: "module"` definiert werden.

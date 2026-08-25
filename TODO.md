@@ -44,9 +44,10 @@ This file is the current task ledger for the project. It must stay aligned with 
 
 ### Production environment and .env verification
 [?] Verify the real host .env file at `/home/web1819/.env` directly from the production host filesystem.
-  - Current evidence: the file is absent from this execution environment, so direct host verification is blocked here. The repository code explicitly searches `/home/web1819/.env`, but the file cannot be measured from the mounted workspace.
+  - Blocked: real FTPS access to the production server is not available from this execution environment. The configured FTPS login for `ftp.turbolikes.com` failed with `530 Login authentication failed`.
+  - This means the live `/home/web1819/.env` file cannot be treated as verified from this workspace; the repository code still expects it on the real host, but the file cannot be measured here.
 [?] Validate the actual DB credentials, user grants, host, and port on the real production host.
-  - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without access to the host filesystem.
+  - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without server access.
 [ ] Confirm whether the public webroot path `PUBLIC_WEBROOT_PATH` resolves to the real app folder on the host.
 [ ] Confirm whether `PUBLIC_URL` matches the live app root and serves the expected files on the production server.
 [ ] Verify whether the hosted server is ignoring the .env values entirely because the HTTP requests are served by LiteSpeed/PHP instead of the Node process.
