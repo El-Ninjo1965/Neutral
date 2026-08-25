@@ -43,11 +43,85 @@ function render_auth_required_page(): void
     <div class="auth-card">
       <h2>Authentication required</h2>
       <p class="subtle">Please sign in with an authorized administrator account first.</p>
+      <div class="form-grid" style="margin-top:12px;">
+        <div class="form-field">
+          <label for="loginUsername">Username</label>
+          <input id="loginUsername" type="text" value="admin" autocomplete="username">
+        </div>
+        <div class="form-field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" value="" autocomplete="current-password">
+        </div>
+        <div class="action-list">
+          <button id="loginBtn" class="primary" type="button">Sign in</button>
+        </div>
+        <div id="authMessage" class="message info">Sign in with your configured administrator account.</div>
+      </div>
       <div class="action-list">
         <a class="nav-item" href="index.html">Return to platform</a>
       </div>
     </div>
   </div>
+  <script>
+  (function () {
+    const loginButton = document.getElementById('loginBtn');
+    const usernameInput = document.getElementById('loginUsername');
+    const passwordInput = document.getElementById('loginPassword');
+    const authMessage = document.getElementById('authMessage');
+
+    if (!loginButton || !usernameInput || !passwordInput || !authMessage) {
+      return;
+    }
+
+    const setMessage = function (text, mode) {
+      authMessage.className = mode === 'error' ? 'message error' : 'message info';
+      authMessage.textContent = text;
+    };
+
+    const login = async function () {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      if (!username || !password) {
+        setMessage('Please enter username and password.', 'error');
+        return;
+      }
+
+      loginButton.disabled = true;
+      setMessage('Signing in...', 'info');
+      try {
+        const response = await fetch('api/auth/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: username, password: password }),
+        });
+        const payload = await response.json().catch(function () { return {}; });
+        if (!response.ok || !payload || payload.ok !== true) {
+          const message = payload && payload.error && payload.error.message
+            ? payload.error.message
+            : 'Authentication failed.';
+          setMessage(message, 'error');
+          return;
+        }
+        window.location.replace('admin.php');
+      } catch (_error) {
+        setMessage('Authentication request failed.', 'error');
+      } finally {
+        loginButton.disabled = false;
+      }
+    };
+
+    loginButton.addEventListener('click', login);
+    passwordInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        login();
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
 <?php

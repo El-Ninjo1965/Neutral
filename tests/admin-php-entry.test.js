@@ -162,6 +162,8 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     const result = await request('/admin.php', { port: serverPort });
     assert.equal(result.statusCode, 401);
     assert.match(result.body, /Authentication required/i);
+    assert.match(result.body, /id="loginBtn"/);
+    assert.match(result.body, /api\/auth\/login/);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 

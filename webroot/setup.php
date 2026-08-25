@@ -527,7 +527,7 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
               </div>
               <div class="action-row">
                 <button type="submit">Apply user provisioning</button>
-                <a class="btn" href="admin.html">Open admin</a>
+                <a class="btn" href="admin.php">Open admin</a>
               </div>
             </form>
           <?php endif; ?>
