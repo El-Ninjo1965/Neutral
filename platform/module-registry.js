@@ -213,6 +213,7 @@
                     name: implementation.name || manifest.name,
                     displayName: implementation.displayName || manifest.displayName || implementation.name || manifest.name,
                     version: implementation.version || manifest.version,
+                    type: implementation.type || manifest.type || 'module',
                     description: implementation.description || manifest.description,
                     manifest,
                     admin: implementation.admin || manifest.admin || null,
@@ -224,7 +225,10 @@
                         : [...manifest.permissions],
                     capabilities: Array.isArray(implementation.capabilities)
                         ? [...implementation.capabilities]
-                        : [...manifest.capabilities]
+                        : [...manifest.capabilities],
+                    status: implementation.status || manifest.status || 'inactive',
+                    active: !!implementation.active,
+                    enabled: !!implementation.enabled
                 };
 
                 registry.set(module.id, module);

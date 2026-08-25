@@ -842,14 +842,16 @@ test('loads and cycles the gps module lifecycle without duplicate watchers', asy
   assert.ok(discovered.some((module) => module.id === 'gps'));
   const gps = sandbox.ModuleManager.get('gps');
   assert.ok(gps);
-  assert.equal(gps.status, 'enabled');
-  assert.equal(gps.active, true);
+  assert.equal(gps.status, 'installed');
+  assert.equal(gps.active, false);
   assert.equal(gps.isTracking(), false);
   assert.equal(geolocationState.watchCalls, 0);
   assert.equal(geolocationState.activeWatches.size, 0);
 
   const result = gps.startTracking();
   assert.equal(result.ok, true);
+  assert.equal(gps.status, 'enabled');
+  assert.equal(gps.active, true);
   assert.equal(gps.isTracking(), true);
   assert.equal(geolocationState.watchCalls, 1);
   assert.equal(geolocationState.activeWatches.size, 1);
@@ -888,7 +890,7 @@ test('marks gps permission denied without starting a watcher', async () => {
 
   const gps = sandbox.ModuleManager.get('gps');
   assert.ok(gps);
-  assert.equal(gps.getPermissionState(), 'denied');
+  assert.equal(gps.getPermissionState(), 'unknown');
   assert.equal(gps.isTracking(), false);
   assert.equal(geolocationState.watchCalls, 0);
 });

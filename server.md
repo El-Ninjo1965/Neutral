@@ -4,6 +4,8 @@ Dieser Leitfaden beschreibt den minimalen, produktiven Betriebbestand der Neutra
 
 ## Produktionsbestand
 
+> Module werden nicht automatisch aktiviert. Der Laufzeit-Discovery-Prozess registriert Module nur als installiert/inaktiv und wartet auf den Admin-Entscheid. Dadurch bleibt die Application (`Neutral`) von der Modulverwaltung getrennt. Module müssen als `type: "module"` definiert werden.
+
 | Repository-Pfad | Zielpfad auf dem Server | Begründung |
 | --- | --- | --- |
 | package.json | /package.json | Node-Startpunkt und Runtime-Abhängigkeiten. |

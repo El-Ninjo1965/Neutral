@@ -109,13 +109,32 @@
                 }
 
                 try {
-                    this.install(registered.id);
-                    this.initialize(registered.id);
-                    this.enable(registered.id);
+                    const existing = this.get(registered.id);
+                    const nextDefinition = {
+                        ...registered,
+                        type: registered.type || (registered.manifest && registered.manifest.type) || 'module',
+                        status: existing && (existing.active || existing.enabled)
+                            ? 'enabled'
+                            : 'installed',
+                        active: !!(existing && (existing.active || existing.enabled)),
+                        enabled: !!(existing && (existing.active || existing.enabled))
+                    };
+
+                    if (existing) {
+                        this.unregister(registered.id);
+                    }
+
+                    this.register({
+                        ...existing,
+                        ...nextDefinition,
+                        status: 'installed',
+                        active: false,
+                        enabled: false
+                    });
                 } catch (error) {
                     if (window.CoreErrorHandler) {
                         window.CoreErrorHandler.handle(error, {
-                            type: 'module-discovery-activate',
+                            type: 'module-discovery-register',
                             moduleId: registered.id
                         });
                     }
