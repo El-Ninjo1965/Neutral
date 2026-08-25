@@ -17,13 +17,14 @@ use Neutral\Core\Security;
 
 $runtime = neutral_bootstrap();
 $config = $runtime->config();
+$database = $runtime->database();
 
 $store = new Phase4JsonStore($runtime->projectRoot() . '/config');
-$roleService = new Phase4RoleService($store);
-$userService = new Phase4UserService($store, $roleService, $config);
-$settingsService = new Phase6SettingsService($runtime->database(), new Phase4SettingsService($store));
-$auditService = new Phase6AuditService($runtime->database(), $store);
-$sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/server/runtime'));
+$roleService = new Phase4RoleService($store, $database);
+$userService = new Phase4UserService($store, $roleService, $config, $database);
+$settingsService = new Phase6SettingsService($database, new Phase4SettingsService($store));
+$auditService = new Phase6AuditService($database, $store);
+$sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/server/runtime'), $database);
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
 
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));

@@ -410,6 +410,17 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - `webroot/api-client.js` extended with:
       - `getAuditEntries(...)`
       - `getStatus()` (required by current admin init flow).
+  - Follow-up phase step implemented (transition reduction for PHASE 4 auth/RBAC/session):
+    - `core/php/src/Phase4AuthRbac.php` now uses authoritative MySQL persistence for:
+      - users (`users`)
+      - roles (`roles`)
+      - permissions via role assignment (`permissions`, `role_permissions`)
+      - user-role mapping (`user_roles`)
+      - sessions (`sessions`)
+    - Transitional file-backed authority for auth/user/role/session runtime has been removed from the PHP API path.
+    - `Phase4AuthManager::identityFromSession()` now rehydrates the active user from MySQL on each request and recomputes effective permissions server-side.
+    - `webroot/api/index.php` now wires `Phase4RoleService`, `Phase4UserService`, and `Phase4SessionRegistry` with the shared `Database` service (MySQL path), while keeping API contracts and admin UI endpoints stable.
+    - User-ID policy remains enforced (`0-100` reserved, `101` protected, created users must allocate >= `101`).
   - Validation executed for this step:
     - `php -l` on changed PHP files (pass)
     - `node --check` on changed JS files (pass)
@@ -420,10 +431,20 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
       - `/api/admin/settings` (write with CSRF)
       - `/api/admin/audit` (read)
       - `/api/auth/me`
+  - Validation executed for follow-up phase step:
+    - `php -l core/php/src/Phase4AuthRbac.php` (pass)
+    - `php -l webroot/api/index.php` (pass)
+    - `php core/php/tests/smoke.php` (pass)
+    - `npm test -- --test-reporter=spec` (92/92 pass)
+    - runtime smoke via `php -S`:
+      - `/api/status` returns `database.state=error` with explicit `Missing required PHP extension: pdo_mysql` in this local environment
+      - `/api/auth/login` and `/api/auth/logout` return HTTP 500 while `pdo_mysql` is unavailable (no simulated success)
+      - `/api/auth/me` remains protected (401 without authenticated session)
+      - `/api/admin/users` and `/api/admin/roles` remain protected (403 without identity/permission)
   - Current gap analysis (remaining):
     - Module lifecycle admin controls are still pending (PHASE 8 dependency).
-    - Users/Roles/Auth runtime persistence is still primarily PHASE-4 transitional logic and must be fully moved to authoritative MySQL in follow-up PHASE-6 steps.
-    - Local PHP CLI still lacks `pdo_mysql`; MySQL-first runtime path cannot be fully exercised locally until extension is available.
+    - End-to-end login/logout/user CRUD/role CRUD/session lifecycle verification against a real MySQL runtime is still pending because local PHP CLI lacks `pdo_mysql`.
+    - Settings/audit path still includes controlled fallback behavior in `Phase6AdminStorage`; production-authoritative operation requires MySQL runtime availability.
   - Required functional concept:
     - Benutzer: list/create/edit/status activate/deactivate/delete + role assignments.
     - Rollen & Rechte: role CRUD, permission catalog visibility, role-permission assignment, user-role assignment, server-enforced checks.
