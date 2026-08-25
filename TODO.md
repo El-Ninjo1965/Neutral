@@ -86,16 +86,16 @@ This file is the current task ledger for the project. It must stay aligned with 
 
 ### Portability and configuration
 [~] Verify installation path portability across real server layouts.
-  - Verified by code/runtime audit: PHP/Node runtime roots are derived from installation context (`projectRoot`, `DOCUMENT_ROOT`, env overrides), not a fixed single host path.
-  - Remaining step: validate the same behavior on at least one additional non-`/home/web1819` installation target.
+  - Verified by isolated alternate-installation simulation: Node config resolves `projectRoot` and `webRootDir` from `NEUTRAL_APP_ROOT` / `NEUTRAL_INSTALL_ROOT` / active working directory instead of any fixed host path, and PHP `EnvLoader::defaultCandidates()` prioritizes the active install directory before the documented `/home/web1819` shared-host fallback candidates.
+  - Remaining gap: no second real host layout is available in this environment, so a real non-`/home/web1819` deployment has not been verified on a second physical server yet.
 [x] Confirm env/config handling for production deployment.
   - Verified live via `/webroot/api/status` and `/webroot/diagnose.php?format=json`: active env candidate is resolved at runtime and DB/API config is read from environment values without exposing secrets.
 [x] Verify central config values for BASE_URL / API_BASE / DB_* remain portable.
   - Updated PHP config parsing to accept `API_BASE`, `NEUTRAL_API_BASE`, and `APP_API_BASE` aliases (aligned with Node runtime behavior).
   - Live verification confirms effective API base remains `/api`; DB values remain environment-driven (`DB_*`/`MYSQL_*` aliases).
 [~] Check whether the app can operate without hardcoded production paths.
-  - Removed host-fixed path assumptions from diagnostics output; host checks now report runtime-derived paths and active env candidate resolution.
-  - Known `/home/web1819*` references remain only as documented optional shared-host fallback candidates (not as mandatory runtime roots).
+  - Verified in isolated runtime tests: the app resolves project-root and env paths from installation context and explicit env overrides; the `/home/web1819*` entries remain optional shared-host fallback candidates only.
+  - Remaining gap: a second real server layout still needs to be observed to confirm full host-level portability beyond the simulated install-root check.
 
 ### Diagnostics and deployment
 [x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
