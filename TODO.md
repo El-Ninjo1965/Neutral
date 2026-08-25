@@ -183,3 +183,321 @@ End-to-end deployment test
 - No code should be reimplemented or duplicated while the root runtime and host route remain unresolved.
 - The next work must determine the actual viable production runtime and route before changing the architecture.
 - This TODO file is the live task list; it must be kept current with each relevant technical step.
+
+## Architecture decision and controlled PHP + MySQL migration roadmap
+
+Decision gate: the currently verified production host is cPanel + LiteSpeed + PHP 8.5.9 with reachable MySQL on localhost:3306 and no usable Node/Passenger runtime. The target architecture for the production server is therefore PHP + MySQL as the authoritative server core, with browser-side LocalStorage/IndexedDB kept for genuine offline-first data only. No parallel Node/PHP/JSON/SQLite/MySQL hybrid server runtime is allowed.
+
+### Phase ledger
+
+#### PHASE 0 – Bestandsaufnahme
+- [x] ERLEDIGT
+- Description: Confirm current production reality, runtime constraints, auth/model/data flows, and failed Node runtime assumptions.
+- Dependencies: none
+- Affected components: WORKFLOW.md, TODO.md, server.md, package.json, package scripts, server bootstrap, PHP webroot, diagnose page
+- Status: completed and documented with production facts
+- Test criterion: Live diagnostics confirm LiteSpeed/PHP active, Node missing, MySQL reachable, /api/* 404
+- Result/Notes: Production host is not a valid Node runtime host; Node app is not active in production.
+
+#### PHASE 1 – Zielarchitektur
+- [~] IN ARBEIT
+- Description: Define and confirm the target production architecture: PHP + MySQL as server core; browser LocalStorage/IndexedDB for offline-first; no Node production runtime; no Passenger requirement; no parallel server stack.
+- Dependencies: PHASE 0
+- Affected components: webroot, server runtime, documentation, app/frontend integration contracts, module API contracts
+- Status: architecture draft accepted as the production-fit target pending explicit approval to start implementation
+- Test criterion: target architecture fits cPanel/LiteSpeed + PHP + MySQL host and does not require Node or a background server process
+- Result/Notes: recommended target is PHP + MySQL; Node remains a local reference implementation only, not a production requirement
+
+#### PHASE 2 – Datenmodell / MySQL-Schema
+- [ ] OFFEN
+- Description: Define authoritative server data model for users, roles, permissions, sessions, settings, audit, modules, module state, schema migrations, setup state, backups, release state, and CatchTrack data.
+- Dependencies: PHASE 1
+- Affected components: proposed PHP model layer, MySQL schema, migration scripts, deployment docs, admin contracts
+- Status: design only; no schema execution on production DB
+- Test criterion: every table maps to a concrete function; no unnecessary or speculative tables; user IDs retain reserved range 0-100 and real users start at 101
+- Result/Notes: no MySQL tables will be created before the schema concept is approved and versioned
+
+#### PHASE 3 – PHP-Core
+- [ ] OFFEN
+- Description: Create the minimal PHP app/core foundation: bootstrap, config loading, environment validation, DB access layer, exception handling, response format, logging, security hooks, and app lifecycle.
+- Dependencies: PHASE 1, PHASE 2
+- Affected components: new PHP entry points, config/bootstrap files, shared DB layer, error handling, app bootstrap, security wrapper
+- Status: not started
+- Test criterion: PHP core boots under LiteSpeed/PHP and reads env config without needing Node or Passenger
+- Result/Notes: must not duplicate the old Node server boot path or create parallel runtime logic
+
+#### PHASE 4 – Auth / Users / Roles / Permissions
+- [ ] OFFEN
+- Description: Rebuild the server-side auth and authorization system using PHP + MySQL: users, login/logout, sessions, password hashing, RBAC, permissions, abuse protection, CSRF, and admin auth flows.
+- Dependencies: PHASE 3
+- Affected components: auth controllers, user model/service, role model/service, permission model/service, session handling, password hashing, middleware
+- Status: not started
+- Test criterion: authenticated requests resolve identity and authorization from MySQL-backed state; no file-based user store remains authoritative for production
+- Result/Notes: must preserve user ID convention and role semantics from the current Neutral model
+
+#### PHASE 5 – Setup / Migration / Bootstrap
+- [ ] OFFEN
+- Description: Implement a versioned setup and bootstrap sequence for environment validation, DB checks, schema version checks, initial schema creation, first admin creation, and migration execution.
+- Dependencies: PHASE 2, PHASE 3, PHASE 4
+- Affected components: setup pages, bootstrap controller, schema_migrations table, installation state logic, admin bootstrap logic
+- Status: not started
+- Test criterion: an empty production DB can be recognized as uninitialized, system schema can be created in a versioned way, and setup cannot safely run repeatedly without guarded state
+- Result/Notes: setup remains read-only until the production DB is explicitly approved for schema creation under the migration plan
+
+#### PHASE 6 – Admin-System
+- [ ] OFFEN
+- Description: Rebuild admin flows for users, roles, settings, system health, and config management using PHP/MySQL-backed server logic.
+- Dependencies: PHASE 3, PHASE 4, PHASE 5
+- Affected components: admin controllers, settings model, user management, role management, dashboard pages, security checks
+- Status: not started
+- Test criterion: admin workflows work from server-side state and enforce role-based access
+- Result/Notes: admin must no longer depend on JSON file-based state as the authoritative storage
+
+#### PHASE 7 – API / Routing
+- [ ] OFFEN
+- Description: Define the production API strategy for PHP-only hosting: central router or a small set of PHP endpoint handlers, request validation, auth checks, response format, and API versioning.
+- Dependencies: PHASE 3, PHASE 4, PHASE 5, PHASE 6
+- Affected components: /api routes, router logic, frontend API client contracts, compatibility layer, response schema
+- Status: not started
+- Test criterion: frontend requests hit stable PHP entry points and are not coupled to Node/Port 3000
+- Result/Notes: prefer a clean PHP API layer over ad-hoc Node emulation
+
+#### PHASE 8 – Module-System
+- [ ] OFFEN
+- Description: Rebuild the module registry, module status, install/enable/disable/update flows, and module migration support on top of PHP + MySQL without creating independent module storage silos.
+- Dependencies: PHASE 2, PHASE 3, PHASE 7
+- Affected components: module registry, module_state table, module migrations, app-level module registration, admin module UI
+- Status: not started
+- Test criterion: module installation, activation, and migrations are versioned and store authoritative state in MySQL
+- Result/Notes: module storage remains centralized in the server-core data model
+
+#### PHASE 9 – Offline-/Sync-System
+- [ ] OFFEN
+- Description: Define client-local offline first behavior separately from server-authoritative online data. Keep LocalStorage/IndexedDB for offline capture, GPS, and local caches; server handles online identities, settings, modules, and sync state.
+- Dependencies: PHASE 1, PHASE 2, PHASE 7
+- Affected components: browser storage, sync service, schema for sync queue, server sync endpoints, client data model
+- Status: not started
+- Test criterion: local browser state is clearly separated from central server state; no direct use of local JSON or SQLite as server-core persistence
+- Result/Notes: LocalStorage/IndexedDB remain client-only, not server-authoritative persistence
+
+#### PHASE 10 – Existing module migration
+- [ ] OFFEN
+- Description: Evaluate each current module and app feature for what can be ported as-is, what must be reimplemented, what can be removed, and what must be remapped to it. Ensure the old Node module semantics remain functionally preserved in the new server core.
+- Dependencies: PHASE 8, PHASE 9
+- Affected components: app modules, app shell, UI integration, module metadata, admin and GPS functionality
+- Status: not started
+- Test criterion: each module has a defined server-side state model and a migration plan; no orphaned modules remain
+- Result/Notes: module behavior must be preserved as a functional requirement, not by copying the old implementation details 1:1
+
+#### PHASE 11 – Frontend-Anbindung
+- [ ] OFFEN
+- Description: Adapt the browser/front-end code to the PHP-backed API and server state; maintain the app shell while removing dependence on Node-only routes or Port 3000 assumptions.
+- Dependencies: PHASE 7, PHASE 9, PHASE 10
+- Affected components: webroot UI, admin pages, app shell, API client, module loaders, browser state handling
+- Status: not started
+- Test criterion: app pages work against PHP endpoints and do not rely on public Node hosting or local-only API assumptions
+- Result/Notes: this phase must be explicit and must not be treated as a hidden runtime fallback
+
+#### PHASE 12 – Deployment / Env / Whitelist-Analyse
+- [x] ERLEDIGT (Analyse/Design, read-only)
+- Description: Audit the existing FTPS/cPanel deployment, env configuration, allow-list logic, and file comparison mechanics before changing any deployment behavior. The goal is to determine why near-all files appear as new on each deploy and to isolate the real causes before changing code.
+- Dependencies: PHASE 3, PHASE 7, PHASE 11
+- Affected components: `.env`, deploy whitelist, `scripts/manual-ftps-deploy.js`, FTP/FTPS upload logic, remote/local comparison, timestamps, file sizes, hash/checksum logic, file inventory, deployment policy
+- Status: completed (read-only analysis executed on 2026-08-25; no deploy logic change)
+- Test criterion: deploy analysis clearly explains the current file synchronization behavior, identifies any differential comparison bugs, and describes the required target state for the PHP migration
+- Result/Notes: root cause documented. `scripts/manual-ftps-deploy.js` computes local hash diff (`upload/update/keep`) but ignores it during transfer and always runs `lftp mirror -R --only-newer` over the full staging tree. Because `.deploy-staging` is rebuilt on each run via `fs.copyFileSync`, staged mtimes become newer and `--only-newer` tends to re-upload unchanged files. No remote hash-based file-to-file comparison is performed.
+
+#### PHASE 12A – Produktionsbereinigung / Altbestand
+- [x] ERLEDIGT (Inventarisierung/Klassifizierung, read-only)
+- Description: Create a controlled production cleanup plan for the legacy Node/JSON/SQLite/runtime architecture. Before any deletion, the production server must be inventoried and every file/dir must be classified as keep, migrate, replace, delete or manual-review. This phase is separate from ordinary deployment and MUST NOT be executed as a blind full wipe.
+- Dependencies: PHASE 12, PHASE 13
+- Affected components: live production webroot, runtime dirs, config dirs, server/runtime, SQLite files, JSON state files, Node app artifacts, old API routes, old setup/bootstrap files, backups, env files, uploads, persistent data directories
+- Status: completed for analysis scope (inventory and classification created; no cleanup executed)
+- Test criterion: a complete inventory exists before any deletion, sensitive files are protected and classified, and deletion is explicitly deferred until a controlled migration pass is approved
+- Result/Notes: remote inventory was collected read-only via FTPS listing. No deletion, overwrite, migration, schema change, or deploy-script change was executed.
+
+#### PHASE 12B – Erstinstallation vs. normales Deployment
+- [x] ERLEDIGT (Soll-Design, no execution)
+- Description: Distinguish the migration/first-install workflow from normal later deployments. First installation is a controlled migration of the live environment, while normal deployment is a Git-based code sync that must never touch production data or `.env` values.
+- Dependencies: PHASE 12, PHASE 12A
+- Affected components: installation scripts, deployment docs, production environment policy, deployment allowlist, config management, data protection rules
+- Status: completed for design scope (policy separation defined)
+- Test criterion: the process clearly separates initial migration steps from later standard deploy steps, and ensures `.env`, uploads, persistent data and production credentials are never overwritten by routine deploy logic
+- Result/Notes: normal deployment is non-destructive sync only; first-install/migration and cleanup remain explicit, separate, approved procedures.
+
+#### PHASE 13 – Produktionsinstallation
+- [ ] OFFEN
+- Description: Install the new PHP + MySQL target on the verified production host structure using the existing FTPS/cPanel deployment path; validate environment and initialize schema in a controlled workflow.
+- Dependencies: PHASE 5, PHASE 12, PHASE 12A, PHASE 12B
+- Affected components: real webroot, real app root, live env file, live DB schema, setup flow, admin bootstrap, runtime directories, production files to be migrated or replaced
+- Status: not started
+- Test criterion: app boots and setup completes without Node/Passenger, without port 3000, and without a background server process; production data and `.env` remain protected
+- Result/Notes: production DB remains untouched until schema migration and setup are ready and approved
+
+#### PHASE 14 – Tests
+- [ ] OFFEN
+- Description: Execute only relevant read-only and functional tests that validate PHP core, setup flow, MySQL schema, API routes, and module flows without altering production data.
+- Dependencies: PHASE 11, PHASE 12, PHASE 12A, PHASE 12B, PHASE 13
+- Affected components: test suite, PHP validation commands, API smoke tests, admin & module flow checks, MySQL schema verification, deployment validation
+- Status: not started
+- Test criterion: relevant tests pass in a safe environment; no production data mutation is performed
+- Result/Notes: test commands must not create or modify live production data
+
+#### PHASE 15 – Abschaltung / Entfernung des alten Node-Pfades
+- [ ] OFFEN
+- Description: Remove or retire the Node production runtime dependency once the PHP + MySQL path is validated. No hidden parallel runtime remains.
+- Dependencies: PHASE 13, PHASE 14
+- Affected components: package scripts, deployment docs, workflow docs, startup instructions, host assumptions, legacy runtime files and references
+- Status: not started
+- Test criterion: production runtime is defined by PHP + MySQL only; Node is no longer a required runtime for public hosting
+- Result/Notes: this must be explicit and complete, not partial or mixed
+
+#### PHASE 16 – Abschließende Produktionsprüfung
+- [ ] OFFEN
+- Description: Run final end-to-end verification of setup, admin, permissions, module registration, API routing, DB persistence, offline first sync behavior, and deployment safety.
+- Dependencies: PHASE 14, PHASE 15
+- Affected components: final production host, DB schema, PHP API, admin portal, module state, setup and migrations, deployment policy
+- Status: not started
+- Test criterion: live system works on cPanel + LiteSpeed + PHP + MySQL without Node or Passenger; no manual DB fixes required after deployment
+- Result/Notes: final sign-off only after the architecture and migration plan have been validated in production conditions
+
+### Deployment, env and whitelist requirement set
+- [x] ERLEDIGT (Analyse abgeschlossen)
+- Description: The deploy mechanism must be treated as a security and migration control surface, not an automatic file-flush. This analysis must be completed before any deployment or cleanup logic is modified.
+- Dependencies: PHASE 12
+- Affected components: `.env`, deployment whitelist, local file inventory, remote file inventory, FTP/FTPS sync logic, timestamp handling, file-size comparison, checksum comparison, new-file detection, modified-file detection, unchanged-file detection, deleted-file detection
+- Status: completed (2026-08-25 analysis run)
+- Test criterion: the deploy code is able to explain the reason why near-all files appear as new on each deployment and proposes a deterministic fix; no deploy change is made before root cause analysis is documented
+- Result/Notes: root cause and target rules documented below; implementation intentionally deferred.
+
+#### Required deploy analysis tasks
+- Determine why the current deploy uploads almost all whitelisted files on each run.
+- Confirm whether a real differential comparison exists or whether the logic is effectively comparing unreliable metadata.
+- Verify whether local and remote files are compared using the same normalization, path representation, timestamp format and file-size semantics.
+- Document whether time zone, OS-specific path casing, permissions, timestamps or empty files are causing false positives.
+- Determine whether the current deploy is effectively rebuilding the remote state from scratch or simply re-uploading the full allowlist each time.
+- Define a safe target behavior: new file -> upload, modified file -> upload, unchanged file -> skip, local deleted file -> do not auto-delete production file, production deletion -> only through a controlled cleanup/migration step.
+- Decide whether the deploy logic must be changed only after the root cause is proven and agreed.
+
+#### Analyseprotokoll 2026-08-25 (verbindlich, read-only)
+- Schritt 0 [x]: `TODO.md` vollständig gelesen; `WORKFLOW.md` vollständig gelesen.
+- Schritt 0 [x]: `WORKFLOW.md` auf GitHub `main` nachgewiesen (Datei vorhanden).
+- Schritt 0 [x]: Produktionsserver-Prüfung via FTPS-Listing: `WORKFLOW.md` nicht vorhanden, `TODO.md` nicht vorhanden.
+- Schritt 1 [x]: Bestandsvergleich erstellt (A=GitHub-main, B=lokale Arbeitskopie, C=Produktion).
+  - A vs. B: identischer Track-Set (228 Dateien); lokal abweichend im Working Tree nur `.env` und `TODO.md`.
+  - C: produktiv vorhanden 91 Dateien plus 18 Verzeichnisse (read-only erfasst).
+- Schritt 1 [x]: Produktionsklassifizierung durchgeführt.
+  - **BEHALTEN**: `app/`, `apps/`, `platform/`, `server/api/`, `server/bootstrap/`, `server/config/`, `server/database/`, `server/middleware/input-validation.js`, `server/services/`, `webroot/`, `package.json`, `package-lock.json`.
+  - **PRODUKTIONSDATEN – NICHT ANFASSEN**: `.env` (server-only), `logs/`, `developer-logs/`, `.ftpquota`, host/runtime-generierte Logs.
+  - **MANUELL PRÜFEN**: `developer.php`, `developer-diagnose.log`, `server/runtime/setup-debug.log`, `server/runtime/setup-state.json` (Betriebs-/Migrationsrelevanz vor Löschung prüfen).
+  - **MIGRIEREN/ERSETZEN (bei PHP-Zielarchitektur, noch nicht ausführen)**: verbleibende Node-only Runtime-Komponenten unter `server/` und `platform/` gemäß späteren PHP-Core/API-Phasen.
+  - **LÖSCHEN**: keine Datei freigegeben; Löschung ausdrücklich zurückgestellt bis kontrollierte Bereinigungsfreigabe.
+- Schritt 2 [x]: FTPS Root-Cause Analyse abgeschlossen.
+  - Ursache bestätigt: Uploadentscheidung im Transferpfad basiert nicht auf dem vorher berechneten Hash-Diff, sondern auf `mirror -R --only-newer` des gesamten Staging-Baums.
+  - Ursache bestätigt: Staging-Rebuild setzt neuere mtimes, wodurch unveränderte Dateien als „newer“ erscheinen können.
+  - Ursache wahrscheinlich: dadurch entsteht der Effekt „nahezu alles wird erneut übertragen“.
+  - Ursache ausgeschlossen: fehlender Hash-Algorithmusfehler im lokalen Manifest-Hashing (SHA-256 ist korrekt für lokale Änderungsdetektion).
+  - Weitere Prüfung erforderlich: Server-seitiges FTPS-Zeitstempelverhalten/Zeitzone pro Dateityp, falls nach Logikfix Restabweichungen bleiben.
+- Schritt 3 [x]: Soll-Deploy-Logik definiert (nur Design).
+  - lokal neu + remote fehlt => übertragen
+  - lokal geändert => übertragen
+  - unverändert => nicht übertragen
+  - remote vorhanden, lokal gelöscht => standardmäßig nicht löschen
+  - `.env`, Uploads, Backups, Produktionsdaten => nie überschreiben/löschen im normalen Deploy
+  - Bereinigung/Löschung => separater, freigegebener Kontrollvorgang
+- Schritt 4 [x]: `webroot/diagnose.php` bewertet.
+  - Zweck: Host-/Runtime-/DB-Read-only Diagnoseoberfläche plus JSON-Report.
+  - Risiko: liefert Infrastruktur-/Konfigurations-Metadaten; ohne gesetztes `NEUTRAL_DIAGNOSE_TOKEN` öffentlich aufrufbar.
+  - Empfehlung: nicht dauerhaft offen lassen; nur geschützt (Token + Zugriffsbeschränkung) oder temporär für Supporteinsätze.
+- Schritt 5 [x]: TODO/WORKFLOW/Whitelist-Deploy-Einordnung abgeschlossen.
+  - Aktuelle Allowlist enthält weder `TODO.md` noch `WORKFLOW.md`.
+  - Zielentscheidung: `TODO.md` künftig deploybar mitführen; `WORKFLOW.md` standardmäßig repository-only, außer explizit für Serverbetrieb benötigt.
+
+#### Required whitelist redesign after PHP migration
+- PHP application files
+- API entry points / PHP routers / API handlers
+- module files and module metadata
+- CSS / JS / HTML assets
+- setup / bootstrap / install flow
+- migration scripts and migration manifests
+- diagnosis scripts, only if deliberately retained
+- runtime/config files that are explicitly managed by the application
+- production data directories and files
+- `.env` files outside the public webroot and excluded from regular deployment
+- uploads and media files
+- temporary/cache files
+- backup storage
+
+Rules:
+- `.env` must never be overwritten by standard application deployment.
+- production data must never be deleted or overwritten by standard deployment.
+- uploads must never be deleted or overwritten by standard deployment.
+- migration-generated files must be separated from user-created data and server-managed persistent state.
+- the deploy allowlist must be reduced to the real runtime needs of the PHP app, not recycled from the Node architecture.
+
+### Production cleanup requirement set
+- [ ] OFFEN
+- Description: Before deleting any legacy runtime artifacts, the production host must be inventoried and every item must be classified before removal. This is a separate, explicit migration step and not a side effect of deployment.
+- Dependencies: PHASE 12A, PHASE 12B, PHASE 13
+- Affected components: old Node files, legacy API structure, JSON persistence, SQLite files, config directories, server/runtime directories, legacy setup/bootstrap files, old runtime artifacts, other unneeded host-managed files
+- Status: not started
+- Test criterion: every production item is classified as keep/migrate/replace/delete/manual-review before any removal; sensitive files are excluded; no mass deletion occurs without approval
+- Result/Notes: old neutral runtime artifacts are removed only in a controlled migration window and not by a general deploy process
+
+#### Required cleanup inventory and classification
+- Full production inventory of files and directories before any deletion.
+- Categorization for each item: retain, migrate, replace, delete, manual review.
+- Explicit protection for: `.env`, production data, user/account data, upload storage, backup storage, other host-managed files.
+- Explicit review of: Node files, old API folder(s), legacy JSON storage, SQLite files, `config/`, `server/runtime/`, old setup files, old bootstrap files, runtime artefacts no longer required by PHP.
+- Keep `diagnose.php` only if it is still intentionally required as a safe read-only diagnostic tool; otherwise classify it as retained for controlled diagnostics and explicitly document why.
+- Deletion only after inventory and approval, never as a blind “delete everything not in whitelist” step.
+
+### Required dependency order for implementation approval
+- PHASE 0 – Bestandsaufnahme
+- PHASE 1 – Zielarchitektur
+- PHASE 2 – Datenmodell / MySQL-Schema
+- PHASE 3 – PHP-Core
+- PHASE 4 – Auth / Users / Roles / Permissions
+- PHASE 5 – Setup / Migration / Bootstrap
+- PHASE 6 – Admin-System
+- PHASE 7 – API / Routing
+- PHASE 8 – Module-System
+- PHASE 9 – Offline-/Sync-System
+- PHASE 10 – Existing module migration
+- PHASE 11 – Frontend-Anbindung
+- PHASE 12 – Deployment / Env / Whitelist-Analyse
+- PHASE 12A – Produktionsbereinigung / Altbestand
+- PHASE 12B – Erstinstallation vs. normales Deployment
+- PHASE 13 – Produktionsinstallation
+- PHASE 14 – Tests
+- PHASE 15 – Abschaltung / Entfernung des alten Node-Pfades
+- PHASE 16 – Abschließende Produktionsprüfung
+
+This order is intentional: architecture and data model come first, deploy/path policy is evaluated before migration cleanup, the production migration is explicitly separated from normal deployment, and tests are performed only after the production migration path is defined and controlled.
+
+### Core architecture summary
+- Server runtime target: PHP + MySQL
+- Client runtime target: browser LocalStorage/IndexedDB for offline-first only
+- Authoritative online persistence: MySQL
+- Node runtime: not required in production; retained only as a local reference implementation until formal deprecation
+- SQLite/JSON: not accepted as authoritative production server storage for the long-term architecture
+- Parallel runtime stacks: forbidden
+
+### Hard constraints
+- No production DB modifications before the schema plan is approved.
+- No migration execution before the migration mechanism is versioned and documented.
+- No Node/PHP/SQLite/JSON hybrid server stack after migration begins.
+- No code-level implementation without updating this TODO to reflect the current phase and dependencies.
+
+### Definition of migration completion
+Migration is complete only when all of the following are true:
+- PHP + MySQL is the only authoritative production server architecture
+- Node is not a production requirement for the public host
+- required MySQL schema is versioned and installed through a controlled migration process
+- setup/bootstrap works without manual DB editing
+- admin/user/auth/roles/permissions work from server-side MySQL storage
+- module lifecycle uses the core registry + module state + module migrations
+- API endpoints run through the PHP server path and not through Node/Port 3000
+- offline-first browser behavior is clearly separated from server-authoritative state
+- deployment on cPanel/LiteSpeed is deterministic and repeatable
+- final production verification passes without data mutation or hidden runtime fallbacks
