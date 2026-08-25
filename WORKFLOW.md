@@ -27,6 +27,8 @@ Verbindliche Regeln
 * Hostspezifische Pfade wie `/home/web1819/*` dürfen nur als optionale Shared-Hosting-Fallback-Kandidaten geführt werden; die effektiven Runtime-/Env-Pfade müssen aus Installationskontext, `DOCUMENT_ROOT` und expliziten Env-Overrides auflösbar sein.
 * Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
 * Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
+* Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
+* `setup.php` bleibt nach erfolgreicher Installation serverseitig gesperrt; erneute Setup-Freigabe ist nur als kontrollierter Recovery-Modus über ENV (`CORE_SETUP_RECOVERY_ENABLED`, optional `CORE_SETUP_RECOVERY_KEY`) zulässig.
 
 Produktionsumgebung: tatsächlicher Befund
 
