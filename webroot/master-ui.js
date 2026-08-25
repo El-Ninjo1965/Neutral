@@ -261,6 +261,16 @@
     return origin.replace(/\/+$/, '');
   };
 
+  const resolveRuntimeApiClientBase = () => {
+    const origin = resolveRuntimeOrigin().replace(/\/+$/, '');
+    const pathname = typeof window !== 'undefined' && window.location && typeof window.location.pathname === 'string'
+      ? window.location.pathname
+      : '/';
+    const basePath = pathname.replace(/\/[^/]*$/, '');
+    const normalizedBasePath = basePath === '/' ? '' : basePath.replace(/\/+$/, '');
+    return `${origin}${normalizedBasePath}`;
+  };
+
   const fetchJson = async (url, fallback = { ok: false }, options = {}) => {
     try {
       const response = await fetch(url, { cache: 'no-store', ...options });
@@ -3198,7 +3208,7 @@
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient(window.location.origin || '')
+          ? new window.ApiClient(resolveRuntimeApiClientBase())
           : null;
         const usernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('loginPassword');
@@ -3269,7 +3279,7 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient(window.location.origin || '')
+          ? new window.ApiClient(resolveRuntimeApiClientBase())
           : null;
         if (serverApiClient) {
           await serverApiClient.logout();

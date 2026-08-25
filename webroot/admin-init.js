@@ -59,13 +59,18 @@
       const roleElement = document.getElementById('summaryRoleBadge');
       const userRole = roleElement ? roleElement.textContent.toLowerCase() : 'admin';
 
-      // Initialize API client with auth using the current host/origin so the UI works on the real deployment host.
+      // Initialize API client using the current deployment base path so /api resolves correctly on nested installs.
       const currentOrigin = (window.location && window.location.origin && window.location.origin !== 'null')
-        ? window.location.origin
+        ? window.location.origin.replace(/\/+$/, '')
         : (window.location && window.location.protocol && window.location.hostname)
-          ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`
+          ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`.replace(/\/+$/, '')
           : 'http://localhost';
-      const apiClient = new ApiClient(currentOrigin);
+      const pathname = window.location && typeof window.location.pathname === 'string'
+        ? window.location.pathname
+        : '/';
+      const basePath = pathname.replace(/\/[^/]*$/, '');
+      const normalizedBasePath = basePath === '/' ? '' : basePath.replace(/\/+$/, '');
+      const apiClient = new ApiClient(`${currentOrigin}${normalizedBasePath}`);
       apiClient.setAuthRole(userRole);
 
       const statusResult = await apiClient.getStatus();
