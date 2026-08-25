@@ -107,6 +107,11 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Existing admin UI JavaScript remains intact and is now rendered from `core/php/views/admin-ui.php` only for authorized admin sessions.
   - `webroot/admin.html` is retained as compatibility redirect to `admin.php` to avoid parallel admin runtime paths.
   - Added targeted tests (`tests/admin-php-entry.test.js`) covering: no session, non-admin session, admin session, runtime without `setup.php`, and basic PHP API regression checks.
+[x] Repaired admin entry authentication handoff for no-session access on `admin.php`.
+  - Root-cause trace: message `User is not valid or not active.` is produced in browser local-auth (`platform/core-auth.js`) when the legacy local login path is used, not by PHP `/api/auth/login`.
+  - `webroot/admin.php` now serves a server-auth login form on HTTP `401` and posts credentials directly to PHP `/api/auth/login`, then redirects back to `admin.php` after a successful session login.
+  - `webroot/setup.php` "Open admin" now links to `admin.php` directly (instead of `admin.html`) to keep the canonical PHP entry in setup UX.
+  - Regression coverage updated: `tests/admin-php-entry.test.js` now additionally checks that the `401` response exposes the server login action (`/api/auth/login`) while still not delivering admin shell markup.
 
 ### Portability and configuration
 [~] Verify installation path portability across real server layouts.
