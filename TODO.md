@@ -100,7 +100,9 @@ This file is the current task ledger for the project. It must stay aligned with 
 ### Diagnostics and deployment
 [x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
   - Extended `webroot/diagnose.php` and verified on the live host with sanitized output, including safe DB host/port/name/user reporting and localhost vs 127.0.0.1 MySQL comparison.
-[ ] Perform a complete end-to-end production test.
+[x] Perform a complete end-to-end production test.
+  - Verified on the live host: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200 with PHP 8.5.9; `https://www.turbolikes.com/index/app/neutral/webroot/diagnose.php?format=json` returns HTTP 200 and reports active runtime/env resolution without secret leakage; `https://www.turbolikes.com/index/app/neutral/webroot/api/modules` returns HTTP 200 with the discovered GPS module payload.
+  - This confirms the public PHP/LiteSpeed production path is serving the real app entry points end-to-end without requiring Node/Passenger or a public `/api/*` reverse-proxy layer.
 [x] Re-run live security/runtime checks for module admin writes.
   - Verified live: unauthenticated module write returns `401`, missing/invalid CSRF returns `403`, authenticated session write with valid CSRF succeeds.
 [x] Update deployment documentation to reflect the actual host conditions.
