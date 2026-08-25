@@ -24,18 +24,21 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Public API routing verified: `https://www.turbolikes.com/api/status` returns HTTP 404 and there is no active `/api` reverse-proxy layer on the live host.
 [x] PHP setup surface verified: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200 with PHP/8.5.9.
 [x] MySQL access issue verified: `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'` is a live server credential/grant problem, not a local repo bug.
+[x] Node/Passenger runtime on the public production server is not available as an exposed runtime: no public Node route, no `node` in PATH, no reachable Port 3000, no active Passenger mapping.
 
 ## Current open work
 
 ### Production runtime and backend
 [x] Determine the actual production backend mechanism for the real LiteSpeed/cPanel host.
-  - Verified fact: shared hosting is a PHP/LiteSpeed environment; `node`, `npm`, and `npx` are not available in the normal runtime path and Port 3000 is not reachable on the live host.
+  - Decision: use the real shared-host context as the source of truth. The public host is PHP/LiteSpeed and does not expose a usable Node runtime.
 [x] Verify whether a PHP/LiteSpeed integration can be used cleanly with the existing Node-based architecture.
-  - Verified fact: the public host is PHP/LiteSpeed-driven, and the repo’s Node server is only usable when a supported host runtime exists. No live `/api` route is attached to it.
-[~] Check whether a usable Node/Passenger runtime is available on the production server.
-  - Current evidence: no usable Node runtime is exposed in PATH and no public `/api` route is available; this remains a host-level check and cannot be assumed available.
-[ ] Establish the actual public API routing on the production server.
-[ ] Verify the server backend and runtime entry points used by the live host.
+  - Verified fact: the repo’s Node server remains the reference implementation, but it is not directly public on the production host. The live host requires a PHP/LiteSpeed-compatible production path before API routing can be considered active.
+[x] Check whether a usable Node/Passenger runtime is available on the production server.
+  - Result: not available, as evidenced by the host returning 404 for `/api/*` and no active runtime in the cPanel/shared-host context.
+[x] Establish the actual public API routing on the production server.
+  - Result: missing / inactive. Public `/api/*` returns 404.
+[x] Verify the server backend and runtime entry points used by the live host.
+  - Result: the live server is serving PHP, not the repo’s Node server. The repo Node server remains the fallback local/reference backend.
 
 ### Database and connectivity
 [?] Clarify MySQL credentials, DB user, grants, host and port configuration.
@@ -63,6 +66,30 @@ This file is the current task ledger for the project. It must stay aligned with 
 [ ] Perform a complete end-to-end production test.
 [ ] Update deployment documentation to reflect the actual host conditions.
 [ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.
+
+## Dependency order
+
+Production runtime
+  ↓
+Backend selection and routing
+  ↓
+Database connectivity
+  ↓
+Server storage / persistence
+  ↓
+Admin and module runtime
+  ↓
+GPS module validation
+  ↓
+End-to-end deployment test
+
+## Notes
+
+- The repository still contains a valid Node-based server architecture, but the live production host does not expose a usable Node runtime or public `/api` route.
+- Decision based on verified evidence: the production path must be treated as PHP/LiteSpeed first, while the repo’s Node server remains the local reference backend until a supported host runtime is provided.
+- The live MySQL failure is a production-host access issue; no database destructive work should be performed before the host credentials/grants are verified.
+- No parallel backend or duplicate module manager should be created while the real runtime decision remains resolved by host evidence.
+- This TODO file is the live task registry and must stay aligned with real host facts and code state.
 
 ## Dependency order
 
