@@ -87,6 +87,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 ### Portability and configuration
 [~] Verify installation path portability across real server layouts.
   - Verified by isolated alternate-installation simulation: Node config resolves `projectRoot` and `webRootDir` from `NEUTRAL_APP_ROOT` / `NEUTRAL_INSTALL_ROOT` / active working directory instead of any fixed host path, and PHP `EnvLoader::defaultCandidates()` prioritizes the active install directory before the documented `/home/web1819` shared-host fallback candidates.
+  - Scope verified by code + tests: PHP runtime paths (`dirname(__DIR__)`, `__DIR__`, `DOCUMENT_ROOT`), Node reference paths (`resolveProjectRoot`, `process.cwd()`), env resolution order, setup/diagnose/api bootstrap paths, module runtime root, and deploy allowlists/paths all resolve from runtime/install context first.
   - Remaining gap: no second real host layout is available in this environment, so a real non-`/home/web1819` deployment has not been verified on a second physical server yet.
 [x] Confirm env/config handling for production deployment.
   - Verified live via `/webroot/api/status` and `/webroot/diagnose.php?format=json`: active env candidate is resolved at runtime and DB/API config is read from environment values without exposing secrets.
@@ -95,6 +96,8 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Live verification confirms effective API base remains `/api`; DB values remain environment-driven (`DB_*`/`MYSQL_*` aliases).
 [~] Check whether the app can operate without hardcoded production paths.
   - Verified in isolated runtime tests: the app resolves project-root and env paths from installation context and explicit env overrides; the `/home/web1819*` entries remain optional shared-host fallback candidates only.
+  - Path classification confirmed: `/home/web1819*` is documented shared-host fallback only; `/workspaces/Neutral` appears as local development/runtime context only; no mandatory hardcoded production root was found in active runtime path resolution.
+  - Node/API base alignment updated for portability consistency: `config/index.js` now resolves `API_BASE || NEUTRAL_API_BASE || APP_API_BASE || '/api'`, matching server/PHP behavior.
   - Remaining gap: a second real server layout still needs to be observed to confirm full host-level portability beyond the simulated install-root check.
 
 ### Diagnostics and deployment

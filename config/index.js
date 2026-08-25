@@ -92,7 +92,7 @@ const loadDotEnv = () => {
 loadDotEnv();
 
 const projectRoot = resolveProjectRoot();
-const apiBase = normalizeEnvValue(process.env.API_BASE || process.env.NEUTRAL_API_BASE || '/api', '/api');
+const apiBase = normalizeEnvValue(process.env.API_BASE || process.env.NEUTRAL_API_BASE || process.env.APP_API_BASE || '/api', '/api');
 
 module.exports = {
   environment: process.env.NODE_ENV || 'development',
