@@ -1,9 +1,88 @@
 'use strict';
 
-/**
- * Admin Panel Main Router
- * Manages navigation between admin views
- */
+class AdminPlaceholderView {
+  constructor(title, description) {
+    this.title = title;
+    this.description = description;
+  }
+
+  async init(container) {
+    container.innerHTML = `
+      <div class="admin-placeholder">
+        <h2>${this.title}</h2>
+        <p>${this.description}</p>
+      </div>
+    `;
+  }
+}
+
+class AdminPermissionsView {
+  constructor(apiClient) {
+    this.api = apiClient;
+  }
+
+  async init(container) {
+    const result = await this.api.getPermissions();
+    const permissions = result.ok && Array.isArray(result.data.permissions) ? result.data.permissions : [];
+    container.innerHTML = `
+      <div class="admin-permissions-view">
+        <div class="section-header">
+          <h2>Permission Catalog</h2>
+        </div>
+        ${permissions.length
+          ? `<div class="permission-list">${permissions.map((permission) => `<span class="chip">${permission}</span>`).join('')}</div>`
+          : '<p class="empty-state">Permission catalog is not available.</p>'
+        }
+      </div>
+    `;
+  }
+}
+
+class AdminSessionsView {
+  constructor(apiClient) {
+    this.api = apiClient;
+  }
+
+  async init(container) {
+    const result = await this.api.getSessions();
+    const sessions = result.ok && Array.isArray(result.data.sessions) ? result.data.sessions : [];
+
+    container.innerHTML = `
+      <div class="admin-sessions-view">
+        <div class="section-header">
+          <h2>Sessions</h2>
+        </div>
+        ${sessions.length
+          ? `
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Roles</th>
+                  <th>Status</th>
+                  <th>Issued</th>
+                  <th>Expires</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sessions.map((session) => `
+                  <tr>
+                    <td>${session.username || session.userId || '—'}</td>
+                    <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
+                    <td>${session.status || 'active'}</td>
+                    <td>${session.issuedAt || '—'}</td>
+                    <td>${session.expiresAt || '—'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `
+          : '<p class="empty-state">No tracked sessions available.</p>'
+        }
+      </div>
+    `;
+  }
+}
 
 class AdminRouter {
   constructor(apiClient) {
@@ -12,541 +91,162 @@ class AdminRouter {
     this.views = {
       users: new AdminUsersView(apiClient),
       roles: new AdminRolesView(apiClient),
-      settings: new AdminSettingsView(apiClient)
+      permissions: new AdminPermissionsView(apiClient),
+      sessions: new AdminSessionsView(apiClient),
+      settings: new AdminSettingsView(apiClient),
+      infrastructure: new AdminPlaceholderView(
+        'Infrastructure',
+        'This area is prepared for future generic connection/service administration (databases, APIs, servers, integrations) without binding the core to one runtime type.'
+      ),
+      diagnostics: new AdminPlaceholderView(
+        'Diagnostics',
+        'Diagnostics and operational health controls are staged for upcoming phases.'
+      )
     };
   }
 
-  // Initialize admin panel
   async init(container) {
     this.container = container;
     this.renderLayout();
     this.setupNavigation();
-    
-    // Load and display users view by default
     await this.showView('users');
   }
 
-  // Render main layout
   renderLayout() {
     this.container.innerHTML = `
       <div class="admin-panel">
-        <div class="admin-sidebar">
+        <aside class="admin-sidebar">
           <div class="admin-logo">
-            <h1>Admin Panel</h1>
+            <h1>Administration</h1>
+            <p>Neutral Core</p>
           </div>
+
           <nav class="admin-nav">
-            <ul>
-              <li><a href="#" class="nav-link" data-view="users">
-                <span class="icon">👥</span> Users
-              </a></li>
-              <li><a href="#" class="nav-link" data-view="roles">
-                <span class="icon">🔐</span> Roles
-              </a></li>
-              <li><a href="#" class="nav-link" data-view="settings">
-                <span class="icon">⚙️</span> Settings
-              </a></li>
-            </ul>
+            <div class="admin-nav-group">
+              <h3>Identity</h3>
+              <a href="#" class="nav-link" data-view="users">Users</a>
+              <a href="#" class="nav-link" data-view="roles">Roles</a>
+              <a href="#" class="nav-link" data-view="permissions">Permissions</a>
+              <a href="#" class="nav-link" data-view="sessions">Sessions</a>
+            </div>
+            <div class="admin-nav-group">
+              <h3>System</h3>
+              <a href="#" class="nav-link" data-view="settings">Settings</a>
+              <a href="#" class="nav-link" data-view="infrastructure">Infrastructure</a>
+              <a href="#" class="nav-link" data-view="diagnostics">Diagnostics</a>
+            </div>
           </nav>
+
           <div class="admin-footer">
             <button class="btn btn-sm btn-secondary" onclick="adminRouter.logout()">Logout</button>
           </div>
-        </div>
+        </aside>
 
-        <div class="admin-content">
-          <div class="admin-header">
+        <section class="admin-content">
+          <header class="admin-header">
             <div class="breadcrumb">
-              <span id="breadcrumb-text">Dashboard</span>
+              <span id="breadcrumb-text">Users</span>
             </div>
             <div class="admin-user-info">
               <span id="current-user">Admin</span>
             </div>
-          </div>
+          </header>
 
-          <div class="admin-main" id="admin-main">
-            <!-- Views will be loaded here -->
-          </div>
-        </div>
+          <main class="admin-main" id="admin-main"></main>
+        </section>
       </div>
     `;
-
-    // Add admin styles
     this.injectStyles();
   }
 
-  // Setup navigation handlers
   setupNavigation() {
     const navLinks = this.container.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
+    navLinks.forEach((link) => {
+      link.addEventListener('click', async (event) => {
+        event.preventDefault();
         const viewName = link.dataset.view;
-        this.showView(viewName);
-        
-        // Update active nav item
-        navLinks.forEach(l => l.classList.remove('active'));
+        await this.showView(viewName);
+        navLinks.forEach((item) => item.classList.remove('active'));
         link.classList.add('active');
       });
     });
   }
 
-  // Show a view
   async showView(viewName) {
-    if (!this.views[viewName]) {
-      console.error(`View ${viewName} not found`);
+    const view = this.views[viewName];
+    if (!view) {
       return;
     }
-
-    const view = this.views[viewName];
     const mainContainer = document.getElementById('admin-main');
-    
-    // Update breadcrumb
     const breadcrumbText = document.getElementById('breadcrumb-text');
     if (breadcrumbText) {
       breadcrumbText.textContent = this.formatViewName(viewName);
     }
-
-    // Initialize view
     await view.init(mainContainer);
     this.currentView = viewName;
   }
 
-  // Format view name for display
   formatViewName(name) {
     const names = {
       users: 'User Management',
       roles: 'Role Management',
-      settings: 'System Settings'
+      permissions: 'Permission Catalog',
+      sessions: 'Session Overview',
+      settings: 'System Settings',
+      infrastructure: 'Infrastructure',
+      diagnostics: 'Diagnostics'
     };
     return names[name] || name;
   }
 
-  // Logout
   logout() {
-    if (confirm('Are you sure you want to logout?')) {
+    if (confirm('Logout now?')) {
       window.location.href = '/';
     }
   }
 
-  // Inject admin styles
   injectStyles() {
-    if (document.getElementById('admin-styles')) return;
+    if (document.getElementById('admin-styles')) {
+      return;
+    }
 
     const style = document.createElement('style');
     style.id = 'admin-styles';
     style.textContent = `
-      .admin-panel {
-        display: flex;
-        height: 100vh;
-        background-color: #f5f5f5;
-      }
-
-      .admin-sidebar {
-        width: 250px;
-        background-color: #2c3e50;
-        color: white;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-
-      .admin-logo {
-        padding: 20px;
-        border-bottom: 1px solid #34495e;
-      }
-
-      .admin-logo h1 {
-        margin: 0;
-        font-size: 1.3em;
-      }
-
-      .admin-nav {
-        flex: 1;
-        padding: 20px 0;
-      }
-
-      .admin-nav ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .admin-nav li {
-        margin: 0;
-      }
-
-      .nav-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        color: #bdc3c7;
-        text-decoration: none;
-        transition: all 0.3s ease;
-      }
-
-      .nav-link:hover,
-      .nav-link.active {
-        background-color: #34495e;
-        color: white;
-        border-left: 3px solid #3498db;
-      }
-
-      .nav-link .icon {
-        margin-right: 10px;
-        font-size: 1.2em;
-      }
-
-      .admin-footer {
-        padding: 20px;
-        border-top: 1px solid #34495e;
-      }
-
-      .admin-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-
-      .admin-header {
-        background-color: white;
-        padding: 15px 30px;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .breadcrumb {
-        font-size: 1.2em;
-        font-weight: 500;
-        color: #2c3e50;
-      }
-
-      .admin-user-info {
-        color: #7f8c8d;
-        font-size: 0.9em;
-      }
-
-      .admin-main {
-        flex: 1;
-        overflow-y: auto;
-        padding: 30px;
-      }
-
-      .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #ecf0f1;
-      }
-
-      .section-header h2 {
-        margin: 0;
-        color: #2c3e50;
-      }
-
-      /* Table Styles */
-      .admin-table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: white;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      }
-
-      .admin-table th {
-        background-color: #34495e;
-        color: white;
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-      }
-
-      .admin-table td {
-        padding: 12px;
-        border-bottom: 1px solid #ecf0f1;
-      }
-
-      .admin-table tr:hover {
-        background-color: #f9f9f9;
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 8px;
-      }
-
-      /* Form Styles */
-      .admin-form {
-        background-color: white;
-        padding: 20px;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      }
-
-      .admin-form h3 {
-        margin-top: 0;
-        color: #2c3e50;
-      }
-
-      .form-group {
-        margin-bottom: 15px;
-      }
-
-      .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
-        color: #2c3e50;
-      }
-
-      .form-group input,
-      .form-group select,
-      .form-group textarea {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #bdc3c7;
-        border-radius: 4px;
-        font-size: 1em;
-        font-family: inherit;
-      }
-
-      .form-group input:focus,
-      .form-group select:focus,
-      .form-group textarea:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
-      }
-
-      .form-group small {
-        display: block;
-        margin-top: 4px;
-        color: #7f8c8d;
-        font-size: 0.9em;
-      }
-
-      .form-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-      }
-
-      /* Badge Styles */
-      .badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 3px;
-        font-size: 0.85em;
-        font-weight: 500;
-      }
-
-      .badge-admin { background-color: #e74c3c; color: white; }
-      .badge-developer { background-color: #3498db; color: white; }
-      .badge-user { background-color: #2ecc71; color: white; }
-      .badge-viewer { background-color: #95a5a6; color: white; }
-
-      .badge-active { background-color: #27ae60; color: white; }
-      .badge-inactive { background-color: #95a5a6; color: white; }
-      .badge-pending { background-color: #f39c12; color: white; }
-      .badge-archived { background-color: #7f8c8d; color: white; }
-
-      /* Alert Styles */
-      .alert {
-        padding: 15px 20px;
-        margin-bottom: 15px;
-        border-radius: 4px;
-        border-left: 4px solid;
-      }
-
-      .alert-success {
-        background-color: #d4edda;
-        border-left-color: #28a745;
-        color: #155724;
-      }
-
-      .alert-error {
-        background-color: #f8d7da;
-        border-left-color: #dc3545;
-        color: #721c24;
-      }
-
-      .alert-info {
-        background-color: #d1ecf1;
-        border-left-color: #17a2b8;
-        color: #0c5460;
-      }
-
-      .alert .close {
-        float: right;
-        background: none;
-        border: none;
-        font-size: 1.5em;
-        cursor: pointer;
-        opacity: 0.7;
-      }
-
-      .alert .close:hover {
-        opacity: 1;
-      }
-
-      /* Button Styles */
-      .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        font-size: 1em;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .btn-primary {
-        background-color: #3498db;
-        color: white;
-      }
-
-      .btn-primary:hover {
-        background-color: #2980b9;
-      }
-
-      .btn-secondary {
-        background-color: #95a5a6;
-        color: white;
-      }
-
-      .btn-secondary:hover {
-        background-color: #7f8c8d;
-      }
-
-      .btn-info {
-        background-color: #17a2b8;
-        color: white;
-      }
-
-      .btn-danger {
-        background-color: #dc3545;
-        color: white;
-      }
-
-      .btn-danger:hover {
-        background-color: #c82333;
-      }
-
-      .btn-sm {
-        padding: 4px 8px;
-        font-size: 0.85em;
-      }
-
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      .empty-state {
-        text-align: center;
-        color: #7f8c8d;
-        padding: 40px 20px;
-        font-size: 1.1em;
-      }
-
-      .permission-checkbox {
-        display: inline-flex;
-        align-items: center;
-        margin-right: 15px;
-        margin-bottom: 10px;
-      }
-
-      .permission-checkbox input {
-        width: auto;
-        margin-right: 8px;
-      }
-
-      fieldset {
-        border: 1px solid #ecf0f1;
-        border-radius: 4px;
-        padding: 15px;
-        margin-bottom: 20px;
-      }
-
-      legend {
-        font-weight: 600;
-        color: #2c3e50;
-        padding: 0 10px;
-      }
-
-      details {
-        cursor: pointer;
-      }
-
-      summary {
-        font-weight: 500;
-        color: #3498db;
-        user-select: none;
-      }
-
-      details ul {
-        margin-top: 10px;
-        margin-left: 20px;
-        list-style: disc;
-      }
-
-      details li {
-        color: #7f8c8d;
-        font-size: 0.9em;
-      }
-
-      /* Responsive */
-      @media (max-width: 768px) {
-        .admin-panel {
-          flex-direction: column;
-        }
-
-        .admin-sidebar {
-          width: 100%;
-          flex-direction: row;
-        }
-
-        .admin-nav {
-          flex: 1;
-          padding: 0;
-        }
-
-        .admin-nav ul {
-          display: flex;
-        }
-
-        .nav-link {
-          flex: 1;
-          border-left: none;
-          border-bottom: 3px solid transparent;
-          justify-content: center;
-        }
-
-        .nav-link.active {
-          border-left: none;
-          border-bottom: 3px solid #3498db;
-        }
-
-        .admin-main {
-          padding: 15px;
-        }
+      .admin-panel { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 40px); background: #f6f8fc; }
+      .admin-sidebar { background: #1f2937; color: #f8fafc; display: flex; flex-direction: column; }
+      .admin-logo { padding: 22px 20px 16px; border-bottom: 1px solid rgba(148,163,184,.2); }
+      .admin-logo h1 { margin: 0; font-size: 1.2rem; }
+      .admin-logo p { margin: 8px 0 0; color: #cbd5e1; font-size: .82rem; }
+      .admin-nav { padding: 16px; display: grid; gap: 16px; }
+      .admin-nav-group h3 { margin: 0 0 8px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+      .nav-link { display: block; padding: 10px 12px; border-radius: 10px; color: #e2e8f0; text-decoration: none; font-weight: 600; }
+      .nav-link:hover,.nav-link.active { background: rgba(59,130,246,.24); color: #fff; }
+      .admin-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(148,163,184,.2); }
+      .admin-content { display: flex; flex-direction: column; min-width: 0; }
+      .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+      .breadcrumb { font-weight: 700; color: #0f172a; }
+      .admin-main { padding: 22px 24px; overflow: auto; }
+      .admin-placeholder p { color: #475569; max-width: 760px; }
+      .permission-list { display: flex; flex-wrap: wrap; gap: 8px; }
+      .inline-form { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto auto; gap: 8px; margin-bottom: 14px; }
+      .inline-form input,.inline-form select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; }
+      .badge { display: inline-flex; border-radius: 999px; padding: 3px 8px; font-size: .75rem; font-weight: 700; }
+      .badge-active { background: #dcfce7; color: #166534; }
+      .badge-inactive { background: #fee2e2; color: #991b1b; }
+      .badge-pending { background: #fef3c7; color: #92400e; }
+      .badge-archived { background: #e2e8f0; color: #334155; }
+      .chip { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: #e0e7ff; color: #1e3a8a; font-weight: 600; font-size: .8rem; }
+      @media (max-width: 980px) {
+        .admin-panel { grid-template-columns: 1fr; }
+        .admin-sidebar { position: sticky; top: 0; z-index: 3; }
+        .inline-form { grid-template-columns: 1fr; }
       }
     `;
-
     document.head.appendChild(style);
   }
 }
 
-// Global reference for onclick handlers
-let adminRouter = null;
-let adminUsers = null;
-let adminRoles = null;
-let adminSettings = null;
-
-// Export for browser
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminRouter;
 }

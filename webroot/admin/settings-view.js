@@ -6,7 +6,7 @@
  */
 
 // Utility function to escape HTML
-const escapeHtml = (value) => String(value ?? '')
+const escapeHtmlSettings = (value) => String(value ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
@@ -69,12 +69,12 @@ class AdminSettingsView {
         
         <div class="form-group">
           <label for="appName">Application Name *</label>
-          <input type="text" id="appName" name="appName" required value="${escapeHtml(this.settings.appName || 'Neutral App')}" />
+          <input type="text" id="appName" name="appName" required value="${escapeHtmlSettings(this.settings.appName || 'Neutral App')}" />
         </div>
 
         <div class="form-group">
           <label for="appId">Application ID *</label>
-          <input type="text" id="appId" name="appId" required value="${escapeHtml(this.settings.appId || 'neutral-app')}" />
+          <input type="text" id="appId" name="appId" required value="${escapeHtmlSettings(this.settings.appId || 'neutral-app')}" />
           <small>Lowercase, no spaces (for system use)</small>
         </div>
       </fieldset>

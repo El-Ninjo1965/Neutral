@@ -12,6 +12,7 @@ require_once __DIR__ . '/src/SetupStateStore.php';
 require_once __DIR__ . '/src/PrerequisiteChecker.php';
 require_once __DIR__ . '/src/InfrastructureCatalog.php';
 require_once __DIR__ . '/src/SetupInstaller.php';
+require_once __DIR__ . '/src/Phase4AuthRbac.php';
 
 /**
  * @param array{project_root?:string, register_error_handler?:bool} $options

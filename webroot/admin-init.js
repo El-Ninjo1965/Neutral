@@ -67,6 +67,37 @@
       const apiClient = new ApiClient(currentOrigin);
       apiClient.setAuthRole(userRole);
 
+      const statusResult = await apiClient.getStatus();
+      const environment = statusResult && statusResult.ok && statusResult.data
+        ? String(statusResult.data.environment || 'production')
+        : 'production';
+      if (environment !== 'production') {
+        apiClient.setAuthToken('neutral-dev-token');
+      }
+
+      const meResult = await apiClient.me();
+      const hasAuthenticatedContext = !!(
+        meResult.ok &&
+        meResult.data &&
+        (meResult.data.user || (Array.isArray(meResult.data.roles) && meResult.data.roles.length > 0))
+      );
+      if (!hasAuthenticatedContext) {
+        const authMessage = document.getElementById('authMessage');
+        const authPanel = document.getElementById('authPanel');
+        const appShell = document.getElementById('appShell');
+        if (authMessage) {
+          authMessage.className = 'message error';
+          authMessage.textContent = 'Server session missing. Please sign in again.';
+        }
+        if (authPanel) {
+          authPanel.classList.remove('hidden');
+        }
+        if (appShell) {
+          appShell.classList.add('hidden');
+        }
+        return;
+      }
+
       // Create the admin router
       window.adminRouter = new AdminRouter(apiClient);
 

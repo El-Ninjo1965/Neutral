@@ -293,13 +293,43 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
   - Core must expose reusable setup/admin/module/infrastructure management for future apps without core rewrites.
 
 #### PHASE 4 – Auth / Users / Roles / Permissions
-- [ ] OFFEN
+- [~] IN ARBEIT (Core-Basis umgesetzt, MySQL-Persistenz noch offen)
 - Description: Rebuild the server-side auth and authorization system using PHP + MySQL: users, login/logout, sessions, password hashing, RBAC, permissions, abuse protection, CSRF, and admin auth flows.
 - Dependencies: PHASE 3
 - Affected components: auth controllers, user model/service, role model/service, permission model/service, session handling, password hashing, middleware
-- Status: not started
+- Status: core server auth/RBAC/session foundation implemented in PHP API; production-authoritative MySQL persistence is still pending PHASE 5 migration work
 - Test criterion: authenticated requests resolve identity and authorization from MySQL-backed state; no file-based user store remains authoritative for production
-- Result/Notes: must preserve user ID convention and role semantics from the current Neutral model
+- Result/Notes:
+  - Implemented in this phase step:
+    - `core/php/src/Phase4AuthRbac.php`
+    - `webroot/api/index.php`
+    - `webroot/api-client.js`
+    - `webroot/admin/index.js`
+    - `webroot/admin/users-view.js`
+    - `webroot/admin/roles-view.js`
+    - `webroot/admin/settings-view.js`
+    - `webroot/admin/common.js`
+    - `webroot/admin-init.js`
+    - `webroot/master-ui.js`
+    - `webroot/admin.html`
+  - Implemented behavior:
+    - server-side login/logout/me with secure password hashing, session lifecycle, CSRF check for state-changing session requests
+    - RBAC base with role->permission and user->role assignment, server-enforced permission checks on admin endpoints
+    - user CRUD with reserved ID policy preserved (`101` protected as bootstrap user, next IDs from 102+)
+    - role CRUD with built-in role protection
+    - permission catalog and session overview endpoints
+    - bootstrap admin seeding from `.env` (`CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD`) when no user exists
+    - admin UI foundation upgraded to grouped left-navigation and connected user/role/settings flows including user search/filter
+    - generic infrastructure area placeholder retained for future connection/service management without runtime-specific lock-in
+  - Validation executed:
+    - `php -l core/php/src/Phase4AuthRbac.php`
+    - `php -l webroot/api/index.php`
+    - `php core/php/tests/smoke.php`
+    - manual PHP runtime smoke via `php -S ...` + `/api/auth/login`, `/api/auth/me`, `/api/admin/settings`, `/api/admin/permissions`, `/api/admin/sessions`, `/api/auth/logout`
+    - `npm test -- --test-reporter=spec` (92/92 passed)
+  - Open for next phases:
+    - migrate auth/user/role/session persistence from transitional file store to authoritative MySQL-backed schema
+    - bind full module admin lifecycle UI/flows in PHASE 6+ without duplicating existing module registry logic
 
 #### PHASE 5 – Setup / Migration / Bootstrap
 - [ ] OFFEN

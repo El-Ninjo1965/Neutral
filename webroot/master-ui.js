@@ -3144,6 +3144,9 @@
 
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
+        const serverApiClient = typeof window.ApiClient === 'function'
+          ? new window.ApiClient(window.location.origin || '')
+          : null;
         const usernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('loginPassword');
         const username = usernameInput ? usernameInput.value.trim() : 'Developer';
@@ -3163,6 +3166,18 @@
           return;
         }
 
+        if (serverApiClient) {
+          const serverLogin = await serverApiClient.login(username, password);
+          if (!serverLogin.ok) {
+            const authMessage = document.getElementById('authMessage');
+            if (authMessage) {
+              authMessage.className = 'message error';
+              authMessage.textContent = serverLogin.error || 'Server authentication failed.';
+            }
+            return;
+          }
+        }
+
         const user = result.data && result.data.user ? result.data.user : null;
         const target = resolveRoleRoute(user);
         if (target && target !== window.location.pathname.replace(/^\//, '')) {
@@ -3178,6 +3193,12 @@
 
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
+        const serverApiClient = typeof window.ApiClient === 'function'
+          ? new window.ApiClient(window.location.origin || '')
+          : null;
+        if (serverApiClient) {
+          await serverApiClient.logout();
+        }
         if (window.UserModule && typeof window.UserModule.logout === 'function') {
           await window.UserModule.logout();
         } else if (window.CoreAuth && typeof window.CoreAuth.logout === 'function') {
