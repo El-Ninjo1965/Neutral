@@ -43,11 +43,14 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Result: the public host is serving PHP, not the repo’s Node server.
 
 ### Production environment and .env verification
+[~] Implement a deployable PHP diagnostics page for real-host environment verification without exposing secrets.
+ - Added `webroot/diagnose.php`, which reads the expected host env path when available, reports only status flags, masks credentials, checks DB connectivity without mutating data, and exposes a copyable report.
+ - This does not verify the live host by itself; it prepares the production-side diagnostic endpoint for use once the host is reachable.
 [?] Verify the real host .env file at `/home/web1819/.env` directly from the production host filesystem.
-  - Blocked: real FTPS access to the production server is not available from this execution environment. The configured FTPS login for `ftp.turbolikes.com` failed with `530 Login authentication failed`.
-  - This means the live `/home/web1819/.env` file cannot be treated as verified from this workspace; the repository code still expects it on the real host, but the file cannot be measured here.
+ - Blocked: real FTPS access to the production server is not available from this execution environment. The configured FTPS login for `ftp.turbolikes.com` failed with `530 Login authentication failed`.
+ - This means the live `/home/web1819/.env` file cannot be treated as verified from this workspace; the repository code still expects it on the real host, but the file cannot be measured here.
 [?] Validate the actual DB credentials, user grants, host, and port on the real production host.
-  - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without server access.
+ - Blocked: the live MySQL failure is confirmed, but the host-side credentials, grants, and DB user mapping cannot be verified from this runtime environment without server access.
 [ ] Confirm whether the public webroot path `PUBLIC_WEBROOT_PATH` resolves to the real app folder on the host.
 [ ] Confirm whether `PUBLIC_URL` matches the live app root and serves the expected files on the production server.
 [ ] Verify whether the hosted server is ignoring the .env values entirely because the HTTP requests are served by LiteSpeed/PHP instead of the Node process.
