@@ -85,10 +85,17 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Verified: only GPS appears in module discovery/admin endpoints; Neutral itself is not registered as a module.
 
 ### Portability and configuration
-[ ] Verify installation path portability across real server layouts.
-[ ] Confirm env/config handling for production deployment.
-[ ] Verify central config values for BASE_URL / API_BASE / DB_* remain portable.
-[ ] Check whether the app can operate without hardcoded production paths.
+[~] Verify installation path portability across real server layouts.
+  - Verified by code/runtime audit: PHP/Node runtime roots are derived from installation context (`projectRoot`, `DOCUMENT_ROOT`, env overrides), not a fixed single host path.
+  - Remaining step: validate the same behavior on at least one additional non-`/home/web1819` installation target.
+[x] Confirm env/config handling for production deployment.
+  - Verified live via `/webroot/api/status` and `/webroot/diagnose.php?format=json`: active env candidate is resolved at runtime and DB/API config is read from environment values without exposing secrets.
+[x] Verify central config values for BASE_URL / API_BASE / DB_* remain portable.
+  - Updated PHP config parsing to accept `API_BASE`, `NEUTRAL_API_BASE`, and `APP_API_BASE` aliases (aligned with Node runtime behavior).
+  - Live verification confirms effective API base remains `/api`; DB values remain environment-driven (`DB_*`/`MYSQL_*` aliases).
+[~] Check whether the app can operate without hardcoded production paths.
+  - Removed host-fixed path assumptions from diagnostics output; host checks now report runtime-derived paths and active env candidate resolution.
+  - Known `/home/web1819*` references remain only as documented optional shared-host fallback candidates (not as mandatory runtime roots).
 
 ### Diagnostics and deployment
 [x] Extend developer diagnostics if needed for the actual Host/PHP/MySQL conditions.
@@ -96,8 +103,9 @@ This file is the current task ledger for the project. It must stay aligned with 
 [ ] Perform a complete end-to-end production test.
 [x] Re-run live security/runtime checks for module admin writes.
   - Verified live: unauthenticated module write returns `401`, missing/invalid CSRF returns `403`, authenticated session write with valid CSRF succeeds.
-[ ] Update deployment documentation to reflect the actual host conditions.
-[ ] Update WORKFLOW.md to reflect the current real-world server and deployment state.
+[x] Update deployment documentation to reflect the actual host conditions.
+  - Added portability findings and fallback-path classification to workflow documentation.
+[x] Update WORKFLOW.md to reflect the current real-world server and deployment state.
 
 ## Dependency order
 

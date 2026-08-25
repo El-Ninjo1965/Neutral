@@ -24,6 +24,7 @@ Verbindliche Regeln
 * `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
 * Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
 * Keine hartcodierten Produktionspfade in Architektur-/Implementierungsentscheidungen; Runtime-Pfade müssen konfigurationsbasiert und installationspfadunabhängig sein.
+* Hostspezifische Pfade wie `/home/web1819/*` dürfen nur als optionale Shared-Hosting-Fallback-Kandidaten geführt werden; die effektiven Runtime-/Env-Pfade müssen aus Installationskontext, `DOCUMENT_ROOT` und expliziten Env-Overrides auflösbar sein.
 * Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
 * Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
 
