@@ -15,6 +15,42 @@
     }
   });
 
+  const ADMIN_LIGHT_THEME = Object.freeze({
+    id: 'light',
+    name: 'Light',
+    description: 'Light administration theme.',
+    config: {
+      '--bg': '#f3f6fb',
+      '--surface': '#ffffff',
+      '--surface-secondary': '#f7f9fd',
+      '--text': '#1c2432',
+      '--text-muted': '#5f7087',
+      '--border': '#dfe7f3',
+      '--primary': '#2f6fed',
+      '--success': '#1ea76d',
+      '--warning': '#d98a00',
+      '--danger': '#d84a5a'
+    }
+  });
+
+  const ADMIN_DARK_THEME = Object.freeze({
+    id: 'dark',
+    name: 'Dark',
+    description: 'Dark administration theme.',
+    config: {
+      '--bg': '#0b1220',
+      '--surface': '#111b2d',
+      '--surface-secondary': '#17263d',
+      '--text': '#edf3ff',
+      '--text-muted': '#9db0c8',
+      '--border': '#23314d',
+      '--primary': '#7aa2ff',
+      '--success': '#59d0a3',
+      '--warning': '#ffbe5c',
+      '--danger': '#ff7b88'
+    }
+  });
+
   const themes = new Map();
   let activeThemeId = DEFAULT_THEME.id;
 
@@ -120,6 +156,8 @@
   };
 
   themes.set(DEFAULT_THEME.id, normalizeTheme(DEFAULT_THEME));
+  themes.set(ADMIN_LIGHT_THEME.id, normalizeTheme(ADMIN_LIGHT_THEME));
+  themes.set(ADMIN_DARK_THEME.id, normalizeTheme(ADMIN_DARK_THEME));
 
   if (!window.ThemeEngine) {
     window.ThemeEngine = ThemeEngine;

@@ -1,13 +1,12 @@
 :root {
   --bg: #f3f6fb;
   --bg-strong: #e9eef8;
-  --panel: #ffffff;
-  --panel-alt: #f7f9fd;
-  --panel-soft: #eef4ff;
-  --line: #dfe7f3;
-  --line-strong: #c9d6ec;
+  --surface: #ffffff;
+  --surface-secondary: #f7f9fd;
+  --surface-tertiary: #eef4ff;
   --text: #1c2432;
-  --muted: #5f7087;
+  --text-muted: #5f7087;
+  --border: #dfe7f3;
   --primary: #2f6fed;
   --primary-strong: #1d4fd7;
   --primary-soft: rgba(47, 111, 237, 0.1);
@@ -17,8 +16,41 @@
   --warning-soft: rgba(217, 138, 0, 0.12);
   --danger: #d84a5a;
   --danger-soft: rgba(216, 74, 90, 0.12);
+  --panel: var(--surface);
+  --panel-alt: var(--surface-secondary);
+  --panel-soft: var(--surface-tertiary);
+  --line: var(--border);
+  --line-strong: #c9d6ec;
+  --muted: var(--text-muted);
   --shadow: 0 16px 36px rgba(31, 52, 84, 0.12);
   --radius: 18px;
+}
+
+body[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-strong: #101b2d;
+  --surface: #111b2d;
+  --surface-secondary: #17263d;
+  --surface-tertiary: #182d45;
+  --text: #edf3ff;
+  --text-muted: #9db0c8;
+  --border: #23314d;
+  --primary: #7aa2ff;
+  --primary-strong: #a6bdff;
+  --primary-soft: rgba(122, 162, 255, 0.18);
+  --success: #59d0a3;
+  --success-soft: rgba(89, 208, 163, 0.16);
+  --warning: #ffbe5c;
+  --warning-soft: rgba(255, 190, 92, 0.18);
+  --danger: #ff7b88;
+  --danger-soft: rgba(255, 123, 136, 0.18);
+  --panel: var(--surface);
+  --panel-alt: var(--surface-secondary);
+  --panel-soft: var(--surface-tertiary);
+  --line: var(--border);
+  --line-strong: #2d3d63;
+  --muted: var(--text-muted);
+  --shadow: 0 18px 38px rgba(3, 7, 18, 0.45);
 }
 
 * {
@@ -29,7 +61,7 @@ html, body {
   margin: 0;
   min-height: 100%;
   font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(180deg, var(--bg) 0%, #edf3fb 100%);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-strong) 100%);
   color: var(--text);
 }
 
@@ -515,12 +547,29 @@ th {
   color: var(--danger);
 }
 
+.theme-toggle {
+  min-width: 92px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-soft);
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+body[data-theme="dark"] .theme-toggle {
+  background: var(--surface-secondary);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .auth-shell {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 28px 18px;
-  background: linear-gradient(180deg, #eef4ff 0%, #f5f8fd 100%);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-strong) 100%);
 }
 
 .auth-card {

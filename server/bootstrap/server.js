@@ -2065,7 +2065,7 @@ const createServer = ({ modulesDir = appModulesDir } = {}) => http.createServer(
 const handleStaticRequest = (url, req, res, modulesDir) => {
   let requestPath = decodeURIComponent(url.pathname);
 
-  if (requestPath === '/admin.html' || requestPath === '/admin.php' || requestPath === '/dev.html') {
+  if (requestPath === '/admin.php' || requestPath === '/dev.html') {
     const adminToken = process.env.ADMIN_ACCESS_TOKEN;
     const suppliedToken = req.headers['x-admin-access-token'];
     if (!adminToken || suppliedToken !== adminToken) {
@@ -2075,7 +2075,7 @@ const handleStaticRequest = (url, req, res, modulesDir) => {
   }
 
   if ((requestPath === '/' || requestPath === '/index.html') && isSetupRequired()) {
-    serveStaticFile(res, path.join(webRootDir, 'setup.html'));
+    serveStaticFile(res, path.join(webRootDir, 'setup.php'));
     return;
   }
 
@@ -2083,8 +2083,8 @@ const handleStaticRequest = (url, req, res, modulesDir) => {
     requestPath = '/index.html';
   }
 
-  if (requestPath === '/setup' || requestPath === '/setup.html') {
-    serveStaticFile(res, path.join(webRootDir, 'setup.html'));
+  if (requestPath === '/setup' || requestPath === '/setup.php') {
+    serveStaticFile(res, path.join(webRootDir, 'setup.php'));
     return;
   }
 

@@ -22,6 +22,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Branch protection issue resolved via valid PR workflow; PR #9 merged to main.
 [x] Repository main synchronized with GitHub after merge.
 [x] WORKFLOW.md and server.md updated to reflect the actual module lifecycle state.
+[x] Phase 1 admin redesign and legacy cleanup completed: `webroot/admin.php` and `webroot/setup.php` are the canonical entry points, `webroot/admin.html` and `webroot/setup.html` are removed, the admin shell uses the minimal header + sidebar layout, and the shared design system includes a light/dark theme switch.
 [x] Production runtime determined: the real host is a LiteSpeed/PHP 8.5.9 shared-webspace environment, not a public Node runtime environment.
 [x] Public API routing verified: `https://www.turbolikes.com/api/status` returns HTTP 404 and there is no active `/api` reverse-proxy layer on the live host.
 [x] PHP setup surface verified: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200 with PHP/8.5.9.
@@ -105,12 +106,12 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Implemented canonical entry: browser now requests `admin.php`, PHP checks session identity and `admin` role **before** delivering the admin UI.
   - Unauthorized/no-session requests no longer receive the protected admin shell; they now receive explicit HTTP `401` (auth required) or `403` (access denied) pages.
   - Existing admin UI JavaScript remains intact and is now rendered from `core/php/views/admin-ui.php` only for authorized admin sessions.
-  - `webroot/admin.html` is retained as compatibility redirect to `admin.php` to avoid parallel admin runtime paths.
+  - No compatibility redirect is retained: the canonical admin entry is `webroot/admin.php` and the legacy HTML entry is removed from the runtime path.
   - Added targeted tests (`tests/admin-php-entry.test.js`) covering: no session, non-admin session, admin session, runtime without `setup.php`, and basic PHP API regression checks.
 [x] Repaired admin entry authentication handoff for no-session access on `admin.php`.
   - Root-cause trace: message `User is not valid or not active.` is produced in browser local-auth (`platform/core-auth.js`) when the legacy local login path is used, not by PHP `/api/auth/login`.
   - `webroot/admin.php` now serves a server-auth login form on HTTP `401` and posts credentials directly to PHP `/api/auth/login`, then redirects back to `admin.php` after a successful session login.
-  - `webroot/setup.php` "Open admin" now links to `admin.php` directly (instead of `admin.html`) to keep the canonical PHP entry in setup UX.
+  - `webroot/setup.php` keeps the canonical PHP admin entry and no legacy HTML redirect remains in the setup UX.
   - Regression coverage updated: `tests/admin-php-entry.test.js` now additionally checks that the `401` response exposes the server login action (`/api/auth/login`) while still not delivering admin shell markup.
 
 ### Portability and configuration
@@ -364,7 +365,7 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
     - `webroot/admin/common.js`
     - `webroot/admin-init.js`
     - `webroot/master-ui.js`
-    - `webroot/admin.html`
+    - `webroot/admin.php`
   - Implemented behavior:
     - server-side login/logout/me with secure password hashing, session lifecycle, CSRF check for state-changing session requests
     - RBAC base with role->permission and user->role assignment, server-enforced permission checks on admin endpoints
@@ -459,7 +460,7 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
       - Updates / Backups
     - New audit view:
       - `webroot/admin/audit-view.js`
-      - wired in `webroot/admin.html` and `webroot/admin-init.js`
+      - wired in `webroot/admin.php` and `webroot/admin-init.js`
     - `webroot/api-client.js` extended with:
       - `getAuditEntries(...)`
       - `getStatus()` (required by current admin init flow).
@@ -712,7 +713,7 @@ Decision gate: the currently verified production host is cPanel + LiteSpeed + PH
 #### Designprotokoll 2026-08-25 – Analyseauftrag (4 Aufgaben, ohne Implementierung)
 
 ##### Aufgabe 1 [x] – PHASE 1 Zielarchitektur finalisiert
-- Prüfbasis: `TODO.md`, `WORKFLOW.md`, `server.md`, Repository-Stand, read-only Produktionschecks (`/api/status`=404, `/webroot/setup.php`=200, `/webroot/admin.html`=200, FTPS-Bestand bestätigt).
+- Prüfbasis: `TODO.md`, `WORKFLOW.md`, `server.md`, Repository-Stand, read-only Produktionschecks (`/api/status`=404, `/webroot/setup.php`=200, `/webroot/admin.php`=200 bei gültiger Admin-Session, FTPS-Bestand bestätigt).
 - Verbindliche Zielarchitektur:
   - Browser/App -> LiteSpeed -> PHP -> MySQL
   - keine Node/Passenger-Produktivvoraussetzung
