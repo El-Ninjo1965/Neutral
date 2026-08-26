@@ -55,8 +55,8 @@ const allowedEntries = [
 ];
 
 const explicitCleanupTargets = [
-  '/index/app/neutral/webroot/admin.html',
-  '/index/app/neutral/webroot/setup.html'
+  '/webroot/admin.html',
+  '/webroot/setup.html'
 ];
 
 function parseEnvFile(filePath) {
