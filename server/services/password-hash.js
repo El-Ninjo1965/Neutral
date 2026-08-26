@@ -10,7 +10,8 @@ const legacyHashPassword = (password) => {
   if (!value) {
     return '';
   }
-  return crypto.createHash('sha256').update(value + LEGACY_SALT).digest('hex');
+  const derived = crypto.scryptSync(value, LEGACY_SALT, 64);
+  return `scrypt$${derived.toString('hex')}`;
 };
 
 const isArgon2Hash = (hash) => typeof hash === 'string' && hash.startsWith('$argon2');
@@ -54,10 +55,8 @@ const verifyPassword = async (password, storedHash) => {
       return `scrypt$${derived}` === storedHash;
     }
 
-    return crypto.timingSafeEqual(
-      Buffer.from(legacyHashPassword(candidate)),
-      Buffer.from(storedHash)
-    );
+    const legacyHash = legacyHashPassword(candidate);
+    return legacyHash === storedHash;
   } catch (error) {
     return false;
   }

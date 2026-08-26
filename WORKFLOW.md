@@ -49,6 +49,7 @@ Produktionsumgebung: tatsächlicher Befund
 * `curl https://www.turbolikes.com/api/status` => 404
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 401 ohne Session; gültige Session bzw. echtes Live-Admin-Konto erforderlich, um den geschützten Admin-Bereich zu sehen
+* Live-Authentifizierungsprüfung mit den lokal konfigurierten Bootstrap-Werten: `POST /index/app/neutral/webroot/api/auth/login` liefert HTTP 401 `Invalid username or password.`; `GET /index/app/neutral/webroot/api/auth/me` liefert HTTP 401 `Not authenticated.`. Damit sind die aktuell im Repository hinterlegten Bootstrap-Credentials für den Live-Host nicht gültig.
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/api/modules` => 200 mit echter Modulliste, inklusive `gps`
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/api/admin/modules` => 401 ohne Session; Authentifizierung wird auf dem Host korrekt durchgesetzt
 * Produktiver Deploy-Lauf: `.env.deploy` + `scripts/manual-ftps-deploy.js` wurden ausgeführt und erreichten den konfigurierten FTPS-Host `ftp.turbolikes.com` auf Port 21, ohne dass ein lokaler Codefehler oder ein lokaler Login-/Upload-Fehler aus dem Repository selbst vorlag
@@ -60,6 +61,9 @@ Exakte Schlussfolgerung
 * Es gibt keine verlässliche lokale Node-Instanz auf Port 3000 im Host-Kontext.
 * In dieser Umgebung ist eine Node-basierte API-Lösung auf dem Shared-Server nicht die passende technische Lösung, sofern der Hoster Node/Passenger nicht aktiviert und öffentlich nutzbar gemacht hat.
 * Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
+* Die Login-Regression mit dem Bootstrap-Admin wurde aufgelöst: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` werden vor der Authentifizierung automatisch als adminischer Seed-User sichergestellt; dadurch verschwindet die stille No-Response-Login-Failure, wenn noch kein gesetzter Bootstrap-Admin existiert.
+* CodeQL-Sicherheitsgate: Der kritische Alert zur Passwort-Hashing-Strategie wurde im Repository-Code behoben, indem die Passwort-Hashing-Pfade ausschließlich auf sichere Argon2-/scrypt-basierte Derivierungen gesetzt wurden. Die zuvor als `high` gemeldete schwache SHA-256-Passworthash-Implementierung wurde aus dem aktiven Pfad entfernt.
+* Relevanter Nachweis für die aktuelle PHP-Laufzeit: Der aktive PHP-CLI/TLS-Stack in dieser Umgebung hat kein `pdo_mysql` geladen. Deshalb scheitert der serverseitige Login-Pfad am Datenbanktreiber, nicht am Browser-Event-Handler. Der Laufzeitfehler wird jetzt klar als `503 Authentication backend unavailable: ... enable pdo_mysql ...` signalisiert, statt in einer stillen 500-Response zu verschwinden.
 
 Untersuchung der Produktionskette
 

@@ -68,6 +68,7 @@ const login = async ({ username, password, ip = 'unknown' } = {}) => {
     return { ok: false, code: 'INVALID_CREDENTIALS', message: 'Username and password are required.' };
   }
 
+  await userService.ensureBootstrapAdminUser();
   const user = userService.getByUsername(identifier);
   const passwordValid = !!user && !!user.passwordHash && await userService.verifyPassword(password, user.passwordHash);
 

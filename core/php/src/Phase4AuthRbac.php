@@ -708,6 +708,60 @@ final class Phase4UserService
         return is_array($row) ? $this->hydrateUserRow($row) : null;
     }
 
+    public function getByUsername(string $username): ?array
+    {
+        $username = trim($username);
+        if ($username === '') {
+            return null;
+        }
+
+        $pdo = $this->requireDatabase()->connect();
+        $statement = $pdo->prepare("
+            SELECT
+                u.id,
+                u.username,
+                u.email,
+                u.display_name,
+                u.status,
+                u.password_hash,
+                u.created_at,
+                u.updated_at,
+                GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR ',') AS role_keys
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            WHERE LOWER(u.username) = LOWER(:username)
+            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
+            LIMIT 1
+        ");
+        $statement->execute([':username' => $username]);
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        return is_array($row) ? $this->hydrateUserRow($row) : null;
+    }
+
+    public function ensureBootstrapAdminFromEnv(): bool
+    {
+        $env = $this->config->env();
+        $username = trim((string) ($env['CORE_BOOTSTRAP_USERNAME'] ?? ''));
+        $password = (string) ($env['CORE_BOOTSTRAP_PASSWORD'] ?? '');
+        if ($username === '' || strlen($password) < 8) {
+            return false;
+        }
+
+        if ($this->getByUsername($username) !== null) {
+            return true;
+        }
+
+        try {
+            $database = $this->requireDatabase();
+            (new CoreDataSeeder($database, $this->config))->seed();
+        } catch (\Throwable $exception) {
+            return false;
+        }
+
+        return $this->getByUsername($username) !== null;
+    }
+
     /**
      * @return list<string>
      */
@@ -1050,6 +1104,7 @@ final class Phase4AuthManager
     public function authenticate(string $username, string $password): ?array
     {
         $this->startSession();
+        $this->users->ensureBootstrapAdminFromEnv();
         $user = $this->users->authenticate($username, $password);
         if (!$user) {
             return null;

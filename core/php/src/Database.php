@@ -24,7 +24,7 @@ final class Database
         }
 
         if (!extension_loaded('pdo_mysql')) {
-            throw new \RuntimeException('Missing required PHP extension: pdo_mysql');
+            throw new \RuntimeException('Missing required PHP extension: pdo_mysql. Enable the PHP MySQL PDO driver before using the admin login/authentication flow.');
         }
 
         $connection = $this->connectionConfig();
@@ -40,7 +40,7 @@ final class Database
         }
 
         if (!extension_loaded('pdo_mysql')) {
-            throw new \RuntimeException('Missing required PHP extension: pdo_mysql');
+            throw new \RuntimeException('Missing required PHP extension: pdo_mysql. Enable the PHP MySQL PDO driver before using the admin login/authentication flow.');
         }
 
         $connection = $this->connectionConfig();

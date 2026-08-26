@@ -122,6 +122,8 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   before(async () => {
     cleanupConfigFiles();
+    process.env.CORE_BOOTSTRAP_USERNAME = 'bootstrap-login-user';
+    process.env.CORE_BOOTSTRAP_PASSWORD = 'correct-horse-battery-staple';
     app = ServerBootstrap.createServer();
     await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve));
     port = app.address().port;
@@ -148,7 +150,19 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.ok(result.cookies.neutral_csrf);
   });
 
-  test('2. Login fails with wrong password', async () => {
+  test('2. Bootstrap admin is created from env values when no seeded admin exists', async () => {
+    const username = process.env.CORE_BOOTSTRAP_USERNAME || 'bootstrap-login-user';
+    const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-horse-battery-staple';
+    const result = await rawRequest('POST', '/api/auth/login', { payload: { username, password } });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.ok, true);
+    assert.ok(result.cookies.neutral_session);
+    assert.ok(result.cookies.neutral_csrf);
+    assert.equal(result.body.user.username, username);
+  });
+
+  test('3. Login fails with wrong password', async () => {
     await createTestUser({ username: 'login-bad', email: 'login-bad@example.com' });
     const result = await rawRequest('POST', '/api/auth/login', { payload: { username: 'login-bad', password: 'wrong-password' } });
 
@@ -157,7 +171,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.equal(result.body.code, 'INVALID_CREDENTIALS');
   });
 
-  test('3. Session is created and reflected in /api/auth/me', async () => {
+  test('4. Session is created and reflected in /api/auth/me', async () => {
     await createTestUser({ username: 'sess-create', email: 'sess-create@example.com' });
     const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'sess-create', password: 'correct-horse-battery-staple' } });
 

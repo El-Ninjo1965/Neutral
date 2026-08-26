@@ -250,6 +250,57 @@ const validateUserData = (userData, options = {}) => {
   };
 };
 
+const ensureBootstrapAdminUser = async () => {
+  const username = String(process.env.CORE_BOOTSTRAP_USERNAME || '').trim();
+  const password = String(process.env.CORE_BOOTSTRAP_PASSWORD || '');
+
+  if (!username || password.length < 8) {
+    return null;
+  }
+
+  const users = getAll();
+  const existing = users.find((candidate) => String(candidate.username || '').trim().toLowerCase() === username.toLowerCase());
+
+  if (existing) {
+    const nextUser = {
+      ...existing,
+      role: 'admin',
+      status: existing.status || 'active',
+      updatedAt: new Date().toISOString()
+    };
+
+    if (typeof nextUser.passwordHash !== 'string' || !nextUser.passwordHash.trim() || !(await verifyPassword(password, nextUser.passwordHash))) {
+      nextUser.passwordHash = await hashPassword(password);
+    }
+
+    const index = users.findIndex((candidate) => candidate.id === existing.id);
+    if (index >= 0) {
+      users[index] = nextUser;
+      persistenceService.saveAdminUsers({ users });
+    }
+
+    return nextUser;
+  }
+
+  const email = `${username.toLowerCase().replace(/\s+/g, '.')}@localhost`;
+  const bootstrapUser = {
+    id: `bootstrap-${crypto.randomBytes(4).toString('hex')}`,
+    username,
+    email,
+    displayName: 'Bootstrap Administrator',
+    role: 'admin',
+    status: 'active',
+    permissions: ['user:read', 'user:write', 'system:view', 'module:read', 'module:update'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    passwordHash: await hashPassword(password)
+  };
+
+  users.push(bootstrapUser);
+  persistenceService.saveAdminUsers({ users });
+  return bootstrapUser;
+};
+
 const isValidEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -266,5 +317,6 @@ module.exports = {
   validateUserData,
   generateUserId,
   migrateLegacyPasswordIfNeeded,
-  hashPassword
+  hashPassword,
+  ensureBootstrapAdminUser
 };

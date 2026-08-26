@@ -72,16 +72,20 @@ final class AppRuntime
                 'line' => $exception->getLine(),
             ]);
 
-            if ($this->expectsJsonResponse()) {
-                JsonResponse::error(
-                    $this->config->isDebug() ? $exception->getMessage() : 'Internal server error.',
-                    500
-                );
+            $message = $this->config->isDebug() ? $exception->getMessage() : 'Internal server error.';
+            $statusCode = 500;
+            if (str_contains($exception->getMessage(), 'pdo_mysql')) {
+                $statusCode = 503;
+                $message = 'Authentication backend unavailable: the PHP MySQL PDO extension is not enabled for this runtime. Enable pdo_mysql before retrying admin login.';
             }
 
-            http_response_code(500);
+            if ($this->expectsJsonResponse()) {
+                JsonResponse::error($message, $statusCode, $this->config->isDebug() ? ['code' => 'UNHANDLED_EXCEPTION'] : []);
+            }
+
+            http_response_code($statusCode);
             header('Content-Type: text/plain; charset=utf-8');
-            echo $this->config->isDebug() ? $exception->getMessage() : 'Internal server error.';
+            echo $message;
             exit;
         });
     }
