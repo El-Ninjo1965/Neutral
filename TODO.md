@@ -31,6 +31,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Production env path check: `/home/web1819/.env` is not present in this execution environment; the repo’s local `.env` is a different file and must not be treated as the live host config.
 [x] Repository config loads `.env` candidates from `/home/web1819` and `resolveRuntimeEnvFile` in `webroot/setup.php` specifically checks those paths; this means the production host file is only active when present on the host filesystem.
 [x] Admin shell advanced from placeholder-only sections to live server-backed dashboard, infrastructure and diagnostics views using the existing admin APIs (`/api/status`, `/api/admin/system/health`, `/api/admin/users`, `/api/admin/sessions`, `/api/admin/modules`, `/api/admin/settings`); no fake data or fake success states are emitted in those sections.
+[x] Infrastructure admin views now include server-backed forms for connections, server endpoint checks, database configuration testing, and backup/maintenance controls, all routed through the live APIs with server-side auth+CSRF rules preserved.
 
 ## Current open work
 

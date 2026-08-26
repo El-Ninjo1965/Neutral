@@ -84,6 +84,7 @@ Dokumentierte Arbeiten
 * Shared-Hosting-LiteSpeed-Umgebung als reale Ursache dokumentiert.
 * Schlussfolgerung: Node/Passenger auf diesem Shared-Hosting nicht geeignet bzw. nicht verfügbar; PHP/LiteSpeed-basierte Lösung erforderlich.
 * Admin-UI-Fortschritt: Dashboard, Infrastruktur- und Diagnostikansichten laden jetzt reale Backend-Daten über vorhandene Admin-APIs; Placeholder-Sichtbarkeit für diese Bereiche wurde durch echte serverseitige Datenabfragen ersetzt.
+* Admin-Read-Status erweitert: Users, Roles, Permissions, Sessions, Modules, Settings, Connections, Server, Database, Diagnostics, Audit, Updates, Backup und Theme/Layout sind in der Admin-Oberfläche als serverseitig nutzbare Bereiche vorbereitet; vorhandene Write-Operationen bleiben durch Auth+Role+CSRF auf dem Backend geschützt und werden nur dort ausgelöst, wo echte API-Mechaniken existieren.
 
 GitHub-Sync-Regel
 
