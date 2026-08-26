@@ -6,7 +6,7 @@
     <title data-app-title>Platform Administration</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body data-page="admin">
+  <body data-page="admin" data-theme="light">
     <div id="accessDenied" class="auth-shell hidden">
       <div class="auth-card">
         <h2>Access denied</h2>
@@ -19,7 +19,7 @@
 
     <div id="authPanel" class="auth-shell">
       <div class="auth-card">
-      <h2 data-auth-title>Platform Administration</h2>
+      <h2 data-auth-title>Neutral Framework Administration</h2>
         <p class="subtle">Sign in to access the administrator workspace.</p>
         <div class="form-grid">
           <div class="form-field">
@@ -41,9 +41,9 @@
     <div id="appShell" class="app-shell hidden">
       <aside class="sidebar shared-shell-sidebar">
         <div class="brand-box shared-shell-brand">
-          <div id="brandMark" class="brand-mark shared-shell-mark">P</div>
+          <div id="brandMark" class="brand-mark shared-shell-mark">N</div>
           <div>
-            <div id="brandName" class="brand-name shared-shell-name">Platform</div>
+            <div id="brandName" class="brand-name shared-shell-name">Neutral Framework Administration</div>
             <div id="brandSubtitle" class="brand-subtitle">Administration</div>
           </div>
         </div>
@@ -64,13 +64,14 @@
         </div>
       </aside>
       <main class="main-panel">
-        <div class="topbar">
-          <div id="topbarTitle" class="topbar-title">Platform Administration</div>
+        <header class="topbar">
+          <div id="topbarTitle" class="topbar-title">Neutral Framework Administration</div>
           <div class="header-actions">
+            <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Dark</button>
             <span id="summaryRoleBadge" class="role-badge developer">developer</span>
             <button id="logoutBtn" class="secondary" type="button">Logout</button>
           </div>
-        </div>
+        </header>
         <div class="summary-row">
           <div class="card">
             <div class="card-header">
@@ -125,6 +126,7 @@
     <script src="../platform/media-manager.js"></script>
     <script src="../platform/local-auth.js"></script>
     <script src="../platform/app.js"></script>
+    <script src="../platform/theme-engine.js"></script>
     <script src="master-ui.js"></script>
     <script src="api-client.js"></script>
     <script src="admin/common.js"></script>
@@ -135,5 +137,45 @@
     <script src="admin/modules-view.js"></script>
     <script src="admin/index.js"></script>
     <script src="admin-init.js"></script>
+    <script>
+      (function () {
+        const body = document.body;
+        const toggleButton = document.getElementById('themeToggleBtn');
+        const storageKey = 'neutral-admin-theme';
+        const applyTheme = (themeId) => {
+          const nextTheme = themeId === 'dark' ? 'dark' : 'light';
+          body.setAttribute('data-theme', nextTheme);
+          if (toggleButton) {
+            toggleButton.textContent = nextTheme === 'dark' ? 'Light' : 'Dark';
+            toggleButton.setAttribute('aria-label', nextTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+          }
+          try {
+            window.localStorage.setItem(storageKey, nextTheme);
+          } catch (error) {
+            // Ignore storage failures gracefully.
+          }
+          if (window.ThemeEngine && typeof window.ThemeEngine.activateTheme === 'function') {
+            const targetTheme = window.ThemeEngine.getTheme && window.ThemeEngine.getTheme(nextTheme);
+            if (targetTheme) {
+              window.ThemeEngine.activateTheme(nextTheme);
+            }
+          }
+        };
+
+        try {
+          const storedTheme = window.localStorage.getItem(storageKey);
+          applyTheme(storedTheme === 'dark' ? 'dark' : 'light');
+        } catch (error) {
+          applyTheme('light');
+        }
+
+        if (toggleButton) {
+          toggleButton.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+          });
+        }
+      })();
+    </script>
   </body>
 </html>

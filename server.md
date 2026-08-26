@@ -78,9 +78,8 @@ Damit ist über den produktiven PHP-Prozess verifiziert:
 | apps/neutral-app/app-info.json | /apps/neutral-app/app-info.json | Produzierter App-Context und App-Identität. |
 | apps/neutral-app/index.html | /apps/neutral-app/index.html | Serviceseitige App-Startseite. |
 | webroot/index.html | /webroot/index.html | Haupt-UI und Landing-Page. |
-| webroot/setup.html | /webroot/setup.html | Initiales Setup/Einrichtungs-Frontend. |
+| webroot/setup.php | /webroot/setup.php | Kanonischer Setup-Einstieg für Installations-/Reset-Vorgänge. |
 | webroot/admin.php | /webroot/admin.php | Serverseitig geschützter Admin-Einstieg (PHP Session/RBAC vor UI-Ausgabe). |
-| webroot/admin.html | /webroot/admin.html | Kompatibilitäts-Redirect auf `/webroot/admin.php`. |
 | webroot/dev.html | /webroot/dev.html | Dev-/Diagnose-UI, die vom Server als statische Route bereitgestellt wird. |
 | webroot/style.css | /webroot/style.css | Standard-Styling für Frontend-Ausgabe. |
 | webroot/master-ui.js | /webroot/master-ui.js | Master-Frontend-Logik. |

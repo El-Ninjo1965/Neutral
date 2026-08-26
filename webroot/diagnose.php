@@ -247,7 +247,7 @@ $webrootStatus = [
     'webroot' => describePath($webRootPath),
     'setup_php' => describePath($webRootPath . '/setup.php'),
     'admin_php' => describePath($webRootPath . '/admin.php'),
-    'admin_html' => describePath($webRootPath . '/admin.html'),
+    'admin_php' => describePath($webRootPath . '/admin.php'),
 ];
 
 $configDir = $projectRoot . '/config';
@@ -459,7 +459,7 @@ $reportText .= '- expected app root exists: ' . (file_exists($expectedWebroot) ?
 $reportText .= '- expected webroot exists: ' . (file_exists($webRootPath) ? 'yes' : 'no') . "\n";
 $reportText .= '- setup.php exists: ' . (file_exists($webRootPath . '/setup.php') ? 'yes' : 'no') . "\n";
 $reportText .= '- admin.php exists: ' . (file_exists($webRootPath . '/admin.php') ? 'yes' : 'no') . "\n";
-$reportText .= '- admin.html exists (redirect compatibility): ' . (file_exists($webRootPath . '/admin.html') ? 'yes' : 'no') . "\n";
+$reportText .= '- admin.html legacy entry: ' . (file_exists($webRootPath . '/admin.html') ? 'yes (removed from canonical flow)' : 'no') . "\n";
 $reportText .= "\nSERVER STORAGE\n";
 $reportText .= '- config dir exists/readable/writable: '
     . ($storageStatus['config_dir']['exists'] ? 'yes' : 'no') . '/'
@@ -616,7 +616,7 @@ if (isset($_GET['format']) && strtolower((string) $_GET['format']) === 'json') {
             <tr><td>expected webroot</td><td class="<?= file_exists($webRootPath) ? 'ok' : 'bad' ?>"><?= file_exists($webRootPath) ? 'yes' : 'no' ?></td></tr>
             <tr><td>setup.php</td><td class="<?= file_exists($webRootPath . '/setup.php') ? 'ok' : 'bad' ?>"><?= file_exists($webRootPath . '/setup.php') ? 'yes' : 'no' ?></td></tr>
             <tr><td>admin.php</td><td class="<?= file_exists($webRootPath . '/admin.php') ? 'ok' : 'bad' ?>"><?= file_exists($webRootPath . '/admin.php') ? 'yes' : 'no' ?></td></tr>
-            <tr><td>admin.html (redirect compatibility)</td><td class="<?= file_exists($webRootPath . '/admin.html') ? 'ok' : 'bad' ?>"><?= file_exists($webRootPath . '/admin.html') ? 'yes' : 'no' ?></td></tr>
+            <tr><td>admin.html legacy entry</td><td class="<?= file_exists($webRootPath . '/admin.html') ? 'warn' : 'ok' ?>"><?= file_exists($webRootPath . '/admin.html') ? 'yes (legacy/removed from canonical flow)' : 'no' ?></td></tr>
         </table>
     </div>
 

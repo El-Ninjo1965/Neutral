@@ -28,8 +28,8 @@ Verbindliche Regeln
 * Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
 * Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
 * Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
-* Der kanonische Admin-Einstieg ist `webroot/admin.php` (serverseitige Session-/Rollenprüfung vor UI-Ausgabe); `webroot/admin.html` bleibt nur als Redirect-Kompatibilitätspfad.
-* `setup.php` ist ein optionales Installations-/Reset-Werkzeug und keine Runtime-Abhängigkeit. Es bleibt in der Testphase bewusst manuell aufrufbar; keine automatische Sperrung und keine automatische Löschung.
+* Der kanonische Admin-Einstieg ist `webroot/admin.php` (serverseitige Session-/Rollenprüfung vor UI-Ausgabe); `webroot/admin.html` wurde entfernt.
+* `setup.php` ist der kanonische Setup-Einstieg für Installations-/Reset-Vorgänge; `webroot/setup.html` wurde entfernt. Die Datei bleibt als manuell aufrufbares, serverseitiges Setup-Werkzeug verfügbar und bleibt keine Runtime-Abhängigkeit.
 * Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
 
 Produktionsumgebung: tatsächlicher Befund
@@ -44,7 +44,7 @@ Produktionsumgebung: tatsächlicher Befund
 * `/api/*` auf der public URL: HTTP 404
 * `curl https://www.turbolikes.com/api/status` => 404
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.html` => 200
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 200 für autorisierte Admin-Session, ansonsten 401/403
 
 Exakte Schlussfolgerung
 
