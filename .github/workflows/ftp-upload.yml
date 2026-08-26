@@ -136,7 +136,7 @@ jobs:
           set net:timeout 30
           set net:max-retries 1
           open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          rm -f "/index/app/neutral/webroot/admin.html"
-          rm -f "/index/app/neutral/webroot/setup.html"
+          rm -f "/webroot/admin.html"
+          rm -f "/webroot/setup.html"
           bye
           EOF
