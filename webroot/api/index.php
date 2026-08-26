@@ -453,6 +453,131 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/deactivate$#', $route, $matches) =
     JsonResponse::success(['module' => $module]);
 }
 
+if ($route === 'admin/system/health' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    $appDatabase = $config->database();
+    $databaseOk = false;
+    $databaseMessage = 'Database is not configured.';
+    try {
+        $databaseOk = $runtime->database()->ping();
+        $databaseMessage = $databaseOk ? 'Database connection is available.' : 'Database ping failed.';
+    } catch (Throwable $exception) {
+        $databaseOk = false;
+        $databaseMessage = $exception->getMessage();
+    }
+    $moduleCount = count($moduleRuntime->discover());
+    JsonResponse::success([
+        'health' => [
+            'status' => $databaseOk ? 'ok' : 'degraded',
+            'state' => $databaseOk ? 'healthy' : 'degraded',
+            'environment' => $config->environment(),
+            'runtime' => [
+                'phpVersion' => PHP_VERSION,
+                'sapi' => php_sapi_name(),
+                'memoryLimit' => ini_get('memory_limit') ?: 'unknown',
+                'diskFree' => disk_free_space($runtime->projectRoot()) ?: null,
+            ],
+            'database' => [
+                'ok' => $databaseOk,
+                'status' => $databaseOk ? 'ready' : 'error',
+                'message' => $databaseMessage,
+                'type' => $appDatabase['type'],
+                'host' => $appDatabase['host'],
+                'port' => $appDatabase['port'],
+                'name' => $appDatabase['name'],
+                'user' => $appDatabase['user'],
+            ],
+            'modules' => $moduleCount,
+            'apps' => 1,
+            'framework' => [
+                'service' => 'neutral-core',
+                'version' => '1.0.0',
+            ],
+        ],
+    ]);
+}
+
+if ($route === 'admin/diagnostics' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    JsonResponse::success([
+        'diagnostics' => [
+            'status' => 'ok',
+            'environment' => $config->environment(),
+            'runtime' => [
+                'phpVersion' => PHP_VERSION,
+                'sapi' => php_sapi_name(),
+                'memoryLimit' => ini_get('memory_limit') ?: 'unknown',
+                'diskFree' => disk_free_space($runtime->projectRoot()) ?: null,
+            ],
+            'database' => [
+                'type' => $config->database()['type'],
+                'host' => $config->database()['host'],
+                'name' => $config->database()['name'],
+                'user' => $config->database()['user'],
+            ],
+            'modules' => count($moduleRuntime->discover()),
+            'apps' => 1,
+            'summary' => 'Neutral PHP runtime is active.',
+        ],
+    ]);
+}
+
+if ($route === 'admin/server' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'server' => [
+            'status' => 'healthy',
+            'environment' => $config->environment(),
+            'phpVersion' => PHP_VERSION,
+            'sapi' => php_sapi_name(),
+            'appId' => $config->appId(),
+            'appName' => $config->appName(),
+            'apiBase' => $config->apiBase(),
+        ],
+    ]);
+}
+
+if ($route === 'server/test' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'result' => [
+            'status' => 'healthy',
+            'environment' => $config->environment(),
+            'phpVersion' => PHP_VERSION,
+            'sapi' => php_sapi_name(),
+            'appId' => $config->appId(),
+            'appName' => $config->appName(),
+            'apiBase' => $config->apiBase(),
+        ],
+    ]);
+}
+
+if ($route === 'admin/database' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    $database = $config->database();
+    $ok = false;
+    $message = 'Database is not configured.';
+    try {
+        $ok = $runtime->database()->ping();
+        $message = $ok ? 'Database connection is available.' : 'Database ping failed.';
+    } catch (Throwable $exception) {
+        $ok = false;
+        $message = $exception->getMessage();
+    }
+    JsonResponse::success([
+        'database' => [
+            'ok' => $ok,
+            'status' => $ok ? 'ready' : 'error',
+            'message' => $message,
+            'type' => $database['type'],
+            'host' => $database['host'],
+            'port' => $database['port'],
+            'name' => $database['name'],
+            'user' => $database['user'],
+        ],
+    ]);
+}
+
 if ($route === 'database/status' && $method === 'GET') {
     $database = $config->database();
     $ok = false;
@@ -474,6 +599,92 @@ if ($route === 'database/status' && $method === 'GET') {
             'port' => $database['port'],
             'name' => $database['name'],
             'user' => $database['user'],
+        ],
+    ]);
+}
+
+if ($route === 'admin/release/status' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    JsonResponse::success([
+        'release' => [
+            'status' => 'operational',
+            'version' => '1.0.0',
+            'updatedAt' => gmdate('c'),
+            'maintenanceMode' => false,
+        ],
+    ]);
+}
+
+if ($route === 'admin/providers' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'providers' => [],
+        'status' => 'not_configured',
+    ]);
+}
+
+if ($route === 'providers' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'providers' => [],
+        'status' => 'not_configured',
+    ]);
+}
+
+if ($route === 'admin/connections' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'connections' => [],
+    ]);
+}
+
+if ($route === 'connections' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'connections' => [],
+    ]);
+}
+
+if ($route === 'admin/backups' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'backups' => [],
+        'status' => 'not_configured',
+    ]);
+}
+
+if ($route === 'backups' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'backups' => [],
+        'status' => 'not_configured',
+    ]);
+}
+
+if ($route === 'admin/backup' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'backups' => [],
+        'status' => 'not_configured',
+    ]);
+}
+
+if ($route === 'admin/updates' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'updates' => [
+            'status' => 'current',
+            'available' => [],
+        ],
+    ]);
+}
+
+if ($route === 'updates' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success([
+        'updates' => [
+            'status' => 'current',
+            'available' => [],
         ],
     ]);
 }

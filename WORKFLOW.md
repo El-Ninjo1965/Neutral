@@ -30,6 +30,7 @@ Verbindliche Regeln
 * Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
 * Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
 * Der kanonische Admin-Einstieg ist `webroot/admin.php` (serverseitige Session-/Rollenprüfung vor UI-Ausgabe); `webroot/admin.html` wurde entfernt. Das Admin-Layout verwendet einen reduzierten Header mit klarer Titelzeile und eine permanente linke Sidebar mit konstanter Navigationsstruktur; der Theme-Wechsel sitzt im Admin-Shell-Menü, nicht mehr im Header.
+* Die PHP-Admin-API muss die gleichen admin-ressourcenfähigen Endpunkte liefern wie das Node-Backend (`/api/admin/system/health`, `/api/admin/diagnostics`, `/api/admin/server`, `/api/admin/database`, `/api/admin/connections`, `/api/admin/providers`, `/api/admin/backups`, `/api/admin/backup`, `/api/admin/release/status`, `/api/admin/updates`); leere oder echte Runtime-Daten gelten als legitime Live-Zustände, keine Platzhalter-Fallbacks.
 * `setup.php` ist der kanonische Setup-Einstieg für Installations-/Reset-Vorgänge; `webroot/setup.html` wurde entfernt. Die Datei bleibt als manuell aufrufbares, serverseitiges Setup-Werkzeug verfügbar und bleibt keine Runtime-Abhängigkeit.
 * Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
 

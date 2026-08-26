@@ -860,10 +860,14 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
-  if (pathname === `${apiBase}/framework` || pathname === `${apiBase}/diagnostics`) {
+  if (pathname === `${apiBase}/framework` || pathname === `${apiBase}/diagnostics` || pathname === `${apiBase}/admin/diagnostics` || pathname === `${apiBase}/admin/diagnostics/`) {
+    if (pathname.includes('/admin/') && !requireAdminAccess(req, res)) {
+      return true;
+    }
     sendJson(res, 200, {
       ok: true,
-      framework: MasterFramework.getDiagnostics()
+      framework: MasterFramework.getDiagnostics(),
+      diagnostics: MasterFramework.getDiagnostics()
     });
     return true;
   }

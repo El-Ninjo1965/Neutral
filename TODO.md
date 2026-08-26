@@ -32,6 +32,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Repository config loads `.env` candidates from `/home/web1819` and `resolveRuntimeEnvFile` in `webroot/setup.php` specifically checks those paths; this means the production host file is only active when present on the host filesystem.
 [x] Admin shell advanced from placeholder-only sections to live server-backed dashboard, infrastructure and diagnostics views using the existing admin APIs (`/api/status`, `/api/admin/system/health`, `/api/admin/users`, `/api/admin/sessions`, `/api/admin/modules`, `/api/admin/settings`); no fake data or fake success states are emitted in those sections.
 [x] Module discovery/admin API repaired: the server now serves `GET /api/admin/modules` and `GET /api/admin/modules/:id`, exposing the real `gps` module manifest from the app module directory so the admin UI can render actual module metadata instead of the empty `No modules discovered` state.
+[x] PHP admin API parity repaired: the live PHP API now exposes the admin health, diagnostics, server, database, backup, providers, connections, release, and updates endpoints expected by the admin UI, returning real runtime data or legitimate empty-state payloads instead of 404/placeholder failures.
 [x] Infrastructure admin views now include server-backed forms for connections, server endpoint checks, database configuration testing, and backup/maintenance controls, all routed through the live APIs with server-side auth+CSRF rules preserved.
 
 ## Actual GitHub sync outcome
