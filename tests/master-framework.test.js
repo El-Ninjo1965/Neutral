@@ -242,6 +242,64 @@ test('loads the current app from the /apps/<app-id>/app-info.json manifest', () 
   assert.equal(app.config.source, 'app-info.json');
 });
 
+test('exposes the discovered GPS module through the admin module API', async () => {
+  const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../app/modules') });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+
+  const port = server.address().port;
+  const requestJson = (pathname, headers = {}) => new Promise((resolve, reject) => {
+    const req = http.get({
+      hostname: '127.0.0.1',
+      port,
+      path: pathname,
+      headers: {
+        'x-admin-access-token': 'test-token',
+        'x-framework-role': 'admin',
+        ...headers
+      }
+    }, (response) => {
+      let body = '';
+      response.on('data', (chunk) => {
+        body += chunk;
+      });
+      response.on('end', () => {
+        try {
+          resolve({
+            statusCode: response.statusCode,
+            body: body ? JSON.parse(body) : {}
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+    req.on('error', reject);
+  });
+
+  try {
+    const listResult = await requestJson('/api/admin/modules');
+    assert.equal(listResult.statusCode, 200);
+    assert.ok(Array.isArray(listResult.body.modules));
+    const gpsModule = listResult.body.modules.find((module) => String(module.id).toLowerCase() === 'gps');
+    assert.ok(gpsModule, 'GPS module should be discoverable through /api/admin/modules');
+
+    const detailResult = await requestJson('/api/admin/modules/gps');
+    assert.equal(detailResult.statusCode, 200);
+    assert.equal(detailResult.body.module.id, 'gps');
+    assert.equal(detailResult.body.module.name, 'GPS');
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
 test('keeps app runtime state isolated for each app instance', () => {
   cleanupRuntimeState();
   const runtime = Framework;

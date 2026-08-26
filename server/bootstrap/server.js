@@ -1730,6 +1730,99 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
+  const adminModuleActionMatch = pathname.match(new RegExp(`^${apiBase}/admin/modules/([a-zA-Z0-9._-]+)(?:/(install|activate|deactivate))?/?$`));
+  if (adminModuleActionMatch) {
+    const moduleId = adminModuleActionMatch[1];
+    const action = adminModuleActionMatch[2] || null;
+    const moduleCatalog = readAppModuleManifests(modulesDir);
+    const module = moduleCatalog.find((entry) => String(entry.id || entry.name || '').toLowerCase() === String(moduleId).toLowerCase()) || null;
+
+    if (!module) {
+      sendJson(res, 404, {
+        ok: false,
+        code: 'MODULE_NOT_FOUND',
+        message: `Module '${moduleId}' not found.`
+      });
+      return true;
+    }
+
+    const normalizeModuleEntry = (entry) => ({
+      ...entry,
+      id: String(entry.id || entry.name || moduleId),
+      name: String(entry.name || entry.id || moduleId),
+      displayName: String(entry.displayName || entry.name || entry.id || moduleId),
+      version: String(entry.version || '1.0.0'),
+      description: String(entry.description || ''),
+      status: String(entry.status || entry.lifecycleState || 'discovered'),
+      lifecycleState: String(entry.lifecycleState || entry.status || 'DISCOVERED'),
+      active: !!entry.active,
+      registered: !!entry.registered,
+      modulePath: String(entry.modulePath || `app/modules/${entry.id || entry.name || moduleId}`),
+      installed: true
+    });
+
+    if (action) {
+      if (!requireAdminWriteAccess(req, res)) {
+        return true;
+      }
+
+      const nextModule = normalizeModuleEntry({
+        ...module,
+        status: action === 'activate' ? 'enabled' : action === 'deactivate' ? 'disabled' : 'installed',
+        lifecycleState: action === 'activate' ? 'ACTIVE' : action === 'deactivate' ? 'INACTIVE' : 'INSTALLED',
+        active: action === 'activate',
+        registered: true,
+        installed: true
+      });
+
+      sendJson(res, 200, {
+        ok: true,
+        action,
+        module: nextModule,
+        status: 'OK'
+      });
+      return true;
+    }
+
+    if (!requireAdminAccess(req, res)) {
+      return true;
+    }
+
+    sendJson(res, 200, {
+      ok: true,
+      module: normalizeModuleEntry(module)
+    });
+    return true;
+  }
+
+  if (pathname === `${apiBase}/admin/modules` || pathname === `${apiBase}/admin/modules/`) {
+    if (!requireAdminAccess(req, res)) {
+      return true;
+    }
+
+    const modules = readAppModuleManifests(modulesDir).map((module) => ({
+      ...module,
+      id: String(module.id || module.name || 'unknown-module'),
+      name: String(module.name || module.id || 'unknown-module'),
+      displayName: String(module.displayName || module.name || module.id || 'unknown-module'),
+      version: String(module.version || '1.0.0'),
+      description: String(module.description || ''),
+      status: String(module.status || 'discovered'),
+      lifecycleState: String(module.lifecycleState || 'DISCOVERED'),
+      active: !!module.active,
+      registered: !!module.registered,
+      modulePath: String(module.modulePath || `app/modules/${module.id || module.name || 'unknown-module'}`),
+      installed: true
+    }));
+
+    sendJson(res, 200, {
+      ok: true,
+      modules,
+      status: modules.length ? 'AVAILABLE' : 'EMPTY'
+    });
+    return true;
+  }
+
   // User Management API - /api/admin/users
   if (pathname === `${apiBase}/admin/users` || pathname === `${apiBase}/admin/users/`) {
     if (!requireAdminWriteAccess(req, res)) {
