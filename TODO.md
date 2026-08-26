@@ -33,6 +33,14 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Admin shell advanced from placeholder-only sections to live server-backed dashboard, infrastructure and diagnostics views using the existing admin APIs (`/api/status`, `/api/admin/system/health`, `/api/admin/users`, `/api/admin/sessions`, `/api/admin/modules`, `/api/admin/settings`); no fake data or fake success states are emitted in those sections.
 [x] Infrastructure admin views now include server-backed forms for connections, server endpoint checks, database configuration testing, and backup/maintenance controls, all routed through the live APIs with server-side auth+CSRF rules preserved.
 
+## Actual GitHub sync outcome
+
+[x] Final admin sync set was committed and merged: `0efd79e` (`Merge pull request #44 from El-Ninjo1965/chore/admin-sync-finalization`).
+[x] Branch workflow completed: branch `chore/admin-sync-finalization` -> PR `#44` -> CodeQL checks passed -> PR merged into `main`.
+[x] Local `main` was synchronized with `origin/main` after merge.
+[x] Deployment status: not executed for this repository change because the production FTPS access described in `server.md` is still blocked by authentication failure (`530 Login authentication failed`); the repository state and PR workflow are therefore the verified delivery state at this time.
+[x] Live verification: repository-level admin/auth/API checks passed locally (`58/58` tests pass); live public deployment verification remains blocked by the host access issue noted above.
+
 ## Current open work
 
 ### Production runtime and backend

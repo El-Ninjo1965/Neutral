@@ -85,6 +85,8 @@ Dokumentierte Arbeiten
 * Schlussfolgerung: Node/Passenger auf diesem Shared-Hosting nicht geeignet bzw. nicht verfügbar; PHP/LiteSpeed-basierte Lösung erforderlich.
 * Admin-UI-Fortschritt: Dashboard, Infrastruktur- und Diagnostikansichten laden jetzt reale Backend-Daten über vorhandene Admin-APIs; Placeholder-Sichtbarkeit für diese Bereiche wurde durch echte serverseitige Datenabfragen ersetzt.
 * Admin-Read-Status erweitert: Users, Roles, Permissions, Sessions, Modules, Settings, Connections, Server, Database, Diagnostics, Audit, Updates, Backup und Theme/Layout sind in der Admin-Oberfläche als serverseitig nutzbare Bereiche vorbereitet; vorhandene Write-Operationen bleiben durch Auth+Role+CSRF auf dem Backend geschützt und werden nur dort ausgelöst, wo echte API-Mechaniken existieren.
+* Tatsächlicher GitHub-Sync-Finalstand: Commit `0efd79e` (`Merge pull request #44 from El-Ninjo1965/chore/admin-sync-finalization`) wurde nach erfolgreichem PR-Check in `main` gemergt. Lokaler `main` wurde danach mit `origin/main` synchronisiert.
+* Deployment-Status: Für diese Repository-Änderung wurde kein Live-Deploy durchgeführt, weil der produktive FTP-/FTPS-Zugriff aus `server.md` weiterhin durch `530 Login authentication failed` blockiert ist; die verifizierte GitHub-/Repo-Synchronisation ist daher der tatsächliche Abschlusszustand dieser Runde.
 
 GitHub-Sync-Regel
 
