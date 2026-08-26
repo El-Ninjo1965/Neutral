@@ -22,6 +22,7 @@ Verbindliche Regeln
 * Deploys müssen die produktiven PHP-Core/API-Dateien (`core/php/*`, `webroot/api/*`) enthalten; ein Setup-only Deploy ohne diese Dateien gilt nicht als produktionsfähig.
 * Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
 * `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
+* Abschlussregel: Ein Arbeitsschritt darf nicht als „abgeschlossen“ gelten, solange er nicht tatsächlich: getestet, in `TODO.md` dokumentiert, in `WORKFLOW.md` dokumentiert, committed, nach GitHub gepusht, über PR/Checks abgesichert, gemergt und mit `main = origin/main` sowie sauberem `git status` verifiziert wurde.
 * Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
 * Keine hartcodierten Produktionspfade in Architektur-/Implementierungsentscheidungen; Runtime-Pfade müssen konfigurationsbasiert und installationspfadunabhängig sein.
 * Hostspezifische Pfade wie `/home/web1819/*` dürfen nur als optionale Shared-Hosting-Fallback-Kandidaten geführt werden; die effektiven Runtime-/Env-Pfade müssen aus Installationskontext, `DOCUMENT_ROOT` und expliziten Env-Overrides auflösbar sein.
