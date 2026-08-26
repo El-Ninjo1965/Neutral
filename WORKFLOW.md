@@ -49,6 +49,7 @@ Produktionsumgebung: tatsächlicher Befund
 * `curl https://www.turbolikes.com/api/status` => 404
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 401 ohne Session; gültige Session bzw. echtes Live-Admin-Konto erforderlich, um den geschützten Admin-Bereich zu sehen
+* Live-Authentifizierungsprüfung mit den lokal konfigurierten Bootstrap-Werten: `POST /index/app/neutral/webroot/api/auth/login` liefert HTTP 401 `Invalid username or password.`; `GET /index/app/neutral/webroot/api/auth/me` liefert HTTP 401 `Not authenticated.`. Damit sind die aktuell im Repository hinterlegten Bootstrap-Credentials für den Live-Host nicht gültig.
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/api/modules` => 200 mit echter Modulliste, inklusive `gps`
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/api/admin/modules` => 401 ohne Session; Authentifizierung wird auf dem Host korrekt durchgesetzt
 * Produktiver Deploy-Lauf: `.env.deploy` + `scripts/manual-ftps-deploy.js` wurden ausgeführt und erreichten den konfigurierten FTPS-Host `ftp.turbolikes.com` auf Port 21, ohne dass ein lokaler Codefehler oder ein lokaler Login-/Upload-Fehler aus dem Repository selbst vorlag
