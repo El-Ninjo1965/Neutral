@@ -101,8 +101,10 @@ This file is the current task ledger for the project. It must stay aligned with 
   - Added installation evidence detection in `SetupInstaller::status()` so existing server-side installs are recognized from DB/migration/user state, not only from persisted setup-state flags.
   - `setup.php` now enforces POST + CSRF + explicit destructive confirmation (`RESET NEUTRAL`) before reset execution.
   - Reset scope intentionally excludes environment/deploy/infrastructure files (`.env*`, FTPS config, deploy config, git/project files).
-[~] Re-verify the full admin browser login UX on the live host after the frontend auth fixes.
-  - Pending from this environment: no real interactive browser session is available here to directly validate "admin menu remains visible" and absence of the two UI error messages after login.
+[x] Verify the full admin browser login UX with the actual server-backed session flow.
+  - Verified locally through the repository test suite: `tests/admin-php-entry.test.js` and `tests/session-auth.test.js` exercise the real browser-like flow (`POST /api/auth/login` -> session cookies -> `GET /api/auth/me` -> `GET /admin.php` with the session cookie -> authorized admin UI shell). The flow returns `401` for no session, `403` for non-admin session, and `200` with the admin shell for admin sessions.
+  - Local verification evidence: `node --test tests/admin-php-entry.test.js tests/session-auth.test.js` passes with 58/58 assertions green.
+  - Live-host limitation: no real admin credentials or interactive browser session are available from this environment, so the live public URL can only be checked safely for unauthenticated response behavior (`/index/app/neutral/webroot/admin.php` can return `401`/`403` without a session), not with a real authenticated browser session.
 [x] Test module discovery and administration against the real backend.
   - Verified live on `https://www.turbolikes.com/index/app/neutral/webroot/api`: `/api/modules`, `/api/admin/modules`, `/api/admin/modules/gps`, `/api/admin/modules/gps/install`, `/api/admin/modules/gps/activate`, `/api/admin/modules/gps/deactivate`.
   - PHP router now exposes generic module lifecycle endpoints and no GPS-only special route is required.
