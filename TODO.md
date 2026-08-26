@@ -39,8 +39,9 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Final admin sync set was committed and merged: `0efd79e` (`Merge pull request #44 from El-Ninjo1965/chore/admin-sync-finalization`).
 [x] Branch workflow completed: branch `chore/admin-sync-finalization` -> PR `#44` -> CodeQL checks passed -> PR merged into `main`.
 [x] Local `main` was synchronized with `origin/main` after merge.
-[x] Deployment status: not executed for this repository change because the production FTPS access described in `server.md` is still blocked by authentication failure (`530 Login authentication failed`); the repository state and PR workflow are therefore the verified delivery state at this time.
-[x] Live verification: repository-level admin/auth/API checks passed locally (`58/58` tests pass); live public deployment verification remains blocked by the host access issue noted above.
+[x] Deployment mechanism validated: the repository’s actual FTPS path using `.env.deploy` + `scripts/manual-ftps-deploy.js` loads the configured host data and successfully executes the production upload against `ftp.turbolikes.com` on port `21` with FTPS mode.
+[x] Live verification completed against the production host for the public PHP entrypoints and module discovery: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200; `https://www.turbolikes.com/index/app/neutral/webroot/admin.php` returns the unauthenticated admin login gate with HTTP 401; `https://www.turbolikes.com/index/app/neutral/webroot/api/modules` returns a real module list including the `gps` module; `GET /api/admin/modules` remains protected and returns HTTP 401 without a valid admin session.
+[x] Live admin sign-in remains restricted by the current production credentials: the repo bootstrap credentials do not authenticate on the live host, so a full authenticated browser/session verification still requires the actual live admin credentials or a fresh live user bootstrap on the host.
 
 ## Current open work
 

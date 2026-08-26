@@ -42,10 +42,13 @@ Produktionsumgebung: tatsächlicher Befund
 * App-Root: direkt im Webspace / FTP-Wurzel, inklusive `package.json`, `server/`, `webroot/`, `.env`
 * `node`, `npm`, `npx` im normalen PATH: nicht vorhanden
 * Port 3000 lokal im Shared-Hosting-Kontext: nicht erreichbar
-* `/api/*` auf der public URL: HTTP 404
+* `/api/*` auf der public URL: HTTP 404, aber der PHP-path unter `/index/app/neutral/webroot/*` ist aktiv und korrekt erreichbar
 * `curl https://www.turbolikes.com/api/status` => 404
 * `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 200 für autorisierte Admin-Session, ansonsten 401/403
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 401 ohne Session; gültige Session bzw. echtes Live-Admin-Konto erforderlich, um den geschützten Admin-Bereich zu sehen
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/api/modules` => 200 mit echter Modulliste, inklusive `gps`
+* `curl https://www.turbolikes.com/index/app/neutral/webroot/api/admin/modules` => 401 ohne Session; Authentifizierung wird auf dem Host korrekt durchgesetzt
+* Produktiver Deploy-Lauf: `.env.deploy` + `scripts/manual-ftps-deploy.js` wurden ausgeführt und erreichten den konfigurierten FTPS-Host `ftp.turbolikes.com` auf Port 21, ohne dass ein lokaler Codefehler oder ein lokaler Login-/Upload-Fehler aus dem Repository selbst vorlag
 
 Exakte Schlussfolgerung
 
