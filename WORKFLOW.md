@@ -61,6 +61,7 @@ Exakte Schlussfolgerung
 * In dieser Umgebung ist eine Node-basierte API-Lösung auf dem Shared-Server nicht die passende technische Lösung, sofern der Hoster Node/Passenger nicht aktiviert und öffentlich nutzbar gemacht hat.
 * Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
 * Die Login-Regression mit dem Bootstrap-Admin wurde aufgelöst: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` werden vor der Authentifizierung automatisch als adminischer Seed-User sichergestellt; dadurch verschwindet die stille No-Response-Login-Failure, wenn noch kein gesetzter Bootstrap-Admin existiert.
+* Relevanter Nachweis für die aktuelle PHP-Laufzeit: Der aktive PHP-CLI/TLS-Stack in dieser Umgebung hat kein `pdo_mysql` geladen. Deshalb scheitert der serverseitige Login-Pfad am Datenbanktreiber, nicht am Browser-Event-Handler. Der Laufzeitfehler wird jetzt klar als `503 Authentication backend unavailable: ... enable pdo_mysql ...` signalisiert, statt in einer stillen 500-Response zu verschwinden.
 
 Untersuchung der Produktionskette
 
