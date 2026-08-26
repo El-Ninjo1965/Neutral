@@ -60,6 +60,7 @@ Exakte Schlussfolgerung
 * Es gibt keine verlässliche lokale Node-Instanz auf Port 3000 im Host-Kontext.
 * In dieser Umgebung ist eine Node-basierte API-Lösung auf dem Shared-Server nicht die passende technische Lösung, sofern der Hoster Node/Passenger nicht aktiviert und öffentlich nutzbar gemacht hat.
 * Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
+* Die Login-Regression mit dem Bootstrap-Admin wurde aufgelöst: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` werden vor der Authentifizierung automatisch als adminischer Seed-User sichergestellt; dadurch verschwindet die stille No-Response-Login-Failure, wenn noch kein gesetzter Bootstrap-Admin existiert.
 
 Untersuchung der Produktionskette
 
