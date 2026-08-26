@@ -192,40 +192,91 @@ class AdminDashboardView {
 }
 
 class AdminInfrastructureView {
-  constructor(apiClient, kind = 'system') {
+  constructor(apiClient, kind = 'infrastructure') {
     this.api = apiClient;
     this.kind = kind;
+    this.snapshot = {};
   }
 
   async init(container) {
     this.container = container;
-    const [connectionsResult, providersResult, backupsResult, releaseResult] = await Promise.all([
-      this.api.get('/api/connections'),
-      this.api.get('/api/providers'),
-      this.api.get('/api/backups'),
-      this.api.get('/api/admin/release/status')
-    ]);
-
-    this.snapshot = {
-      connections: connectionsResult.ok && Array.isArray(connectionsResult.data?.connections) ? connectionsResult.data.connections : [],
-      providers: providersResult.ok && Array.isArray(providersResult.data?.providers) ? providersResult.data.providers : [],
-      backups: backupsResult.ok && Array.isArray(backupsResult.data?.backups) ? backupsResult.data.backups : [],
-      release: releaseResult.ok && releaseResult.data && releaseResult.data.release ? releaseResult.data.release : null
-    };
+    await this.loadData();
     this.render();
   }
 
+  async loadData() {
+    const requests = {
+      connections: this.api.get('/api/connections'),
+      providers: this.api.get('/api/providers'),
+      backups: this.api.get('/api/backups'),
+      release: this.api.get('/api/admin/release/status'),
+      setup: this.api.get('/api/setup/status'),
+      database: this.api.get('/api/database/status'),
+      server: this.api.get('/api/server/test')
+    };
+
+    const results = await Promise.all(Object.entries(requests).map(([key, promise]) => promise.then((result) => [key, result])));
+    const snapshot = {};
+    for (const [key, result] of results) {
+      if (key === 'connections') {
+        snapshot.connections = result.ok && Array.isArray(result.data?.connections) ? result.data.connections : [];
+      } else if (key === 'providers') {
+        snapshot.providers = result.ok && Array.isArray(result.data?.providers) ? result.data.providers : [];
+      } else if (key === 'backups') {
+        snapshot.backups = result.ok && Array.isArray(result.data?.backups) ? result.data.backups : [];
+      } else if (key === 'release') {
+        snapshot.release = result.ok && result.data && result.data.release ? result.data.release : {};
+      } else if (key === 'setup') {
+        snapshot.setup = result.ok && result.data && result.data.setup ? result.data.setup : {};
+      } else if (key === 'database') {
+        snapshot.database = result.ok && result.data && result.data.database ? result.data.database : {};
+      } else if (key === 'server') {
+        snapshot.server = result.ok && result.data && result.data.result ? result.data.result : {};
+      }
+    }
+    this.snapshot = snapshot;
+  }
+
+  getTitle() {
+    if (this.kind === 'connections') return 'Connections';
+    if (this.kind === 'server') return 'Server';
+    if (this.kind === 'database') return 'Database';
+    if (this.kind === 'updates') return 'Updates & Backup';
+    return 'Infrastructure';
+  }
+
   render() {
+    if (this.kind === 'connections') {
+      this.renderConnections();
+      return;
+    }
+    if (this.kind === 'server') {
+      this.renderServer();
+      return;
+    }
+    if (this.kind === 'database') {
+      this.renderDatabase();
+      return;
+    }
+    if (this.kind === 'updates') {
+      this.renderUpdates();
+      return;
+    }
+    this.renderOverview();
+  }
+
+  renderOverview() {
     const connections = this.snapshot.connections || [];
     const providers = this.snapshot.providers || [];
     const backups = this.snapshot.backups || [];
     const release = this.snapshot.release || {};
-    const title = this.kind === 'server' ? 'Server' : this.kind === 'database' ? 'Database' : this.kind === 'connections' ? 'Connections' : 'Infrastructure';
+    const database = this.snapshot.database || {};
+    const server = this.snapshot.server || {};
 
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header">
-          <h2>${title}</h2>
+          <h2>${this.getTitle()}</h2>
         </div>
         <div class="card-grid">
           <div class="card panel-box">
@@ -241,6 +292,22 @@ class AdminInfrastructureView {
             ${providers.length
               ? `<ul class="mini-list">${providers.map((provider) => `<li>${provider.name || provider.providerId || 'Provider'} <span>${provider.active ? 'active' : 'inactive'}</span></li>`).join('')}</ul>`
               : '<p class="empty-state">No providers configured.</p>'}
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Database</h3></div>
+            <dl class="detail-list">
+              <div><dt>Status</dt><dd>${database.status || 'unknown'}</dd></div>
+              <div><dt>Type</dt><dd>${database.type || '—'}</dd></div>
+              <div><dt>Name</dt><dd>${database.name || '—'}</dd></div>
+            </dl>
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Server</h3></div>
+            <dl class="detail-list">
+              <div><dt>Status</dt><dd>${server.status || 'unknown'}</dd></div>
+              <div><dt>Target</dt><dd>${server.serverUrl || server.url || '—'}</dd></div>
+              <div><dt>API</dt><dd>${server.apiBase || '—'}</dd></div>
+            </dl>
           </div>
         </div>
         <div class="card panel-box">
@@ -263,6 +330,329 @@ class AdminInfrastructureView {
         </div>
       </div>
     `;
+  }
+
+  renderConnections() {
+    const connections = this.snapshot.connections || [];
+    const providers = this.snapshot.providers || [];
+    const primaryConnection = connections[0] || {};
+    this.container.innerHTML = `
+      <div class="admin-infrastructure-view">
+        <div class="section-header">
+          <h2>Connections</h2>
+        </div>
+        <div class="card-grid">
+          <div class="card panel-box">
+            <div class="card-header"><h3>Active providers</h3></div>
+            ${providers.length
+              ? `<ul class="mini-list">${providers.map((entry) => `<li>${entry.name || entry.providerId || 'Provider'} <span>${entry.active ? 'active' : 'inactive'}</span></li>`).join('')}</ul>`
+              : '<p class="empty-state">No providers configured.</p>'}
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Current connection</h3></div>
+            <dl class="detail-list">
+              <div><dt>Name</dt><dd>${primaryConnection.connectionId || primaryConnection.name || '—'}</dd></div>
+              <div><dt>Type</dt><dd>${primaryConnection.connectionType || primaryConnection.storageType || '—'}</dd></div>
+              <div><dt>Status</dt><dd>${primaryConnection.status || 'unknown'}</dd></div>
+              <div><dt>Default</dt><dd>${primaryConnection.default ? 'yes' : 'no'}</dd></div>
+            </dl>
+          </div>
+        </div>
+        <div class="card panel-box">
+          <div class="card-header"><h3>Manage connection</h3></div>
+          <form id="connection-form" class="admin-form compact-form">
+            <div class="form-grid">
+              <label>Connection ID<input name="connectionId" value="${this.escape(primaryConnection.connectionId || 'default-connection')}" /></label>
+              <label>App ID<input name="appId" value="neutral-app" /></label>
+              <label>Type<select name="connectionType"><option value="file">File</option><option value="database">Database</option><option value="api">API</option></select></label>
+              <label>Storage Type<select name="storageType"><option value="file">File</option><option value="mysql">MySQL</option><option value="sqlite">SQLite</option></select></label>
+              <label>Server URL<input name="serverUrl" value="${this.escape(primaryConnection.serverUrl || '')}" placeholder="https://api.example.com" /></label>
+              <label>API Base<input name="apiBase" value="${this.escape(primaryConnection.apiBase || '/api')}" /></label>
+              <label>Host<input name="host" value="${this.escape(primaryConnection.host || '')}" /></label>
+              <label>Port<input type="number" name="port" value="${this.escape(primaryConnection.port || '')}" /></label>
+              <label>Database<input name="databaseName" value="${this.escape(primaryConnection.databaseName || '')}" /></label>
+              <label>Username<input name="username" value="${this.escape(primaryConnection.username || '')}" /></label>
+              <label>Credential reference<input name="credentialsRef" value="${this.escape(primaryConnection.credentialsRef || '')}" placeholder="env ref or secret key" /></label>
+              <label>Auth type<select name="authType"><option value="none">None</option><option value="basic">Basic</option><option value="token">Token</option></select></label>
+              <label class="checkbox-label"><input type="checkbox" name="active" ${primaryConnection.active ? 'checked' : ''} /> Active</label>
+              <label class="checkbox-label"><input type="checkbox" name="default" ${primaryConnection.default ? 'checked' : ''} /> Default</label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Save connection</button>
+              <button type="button" class="btn btn-secondary" data-action="reload-connections">Reload</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#connection-form');
+    if (form) {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = {
+          connectionId: formData.get('connectionId') || 'default-connection',
+          appId: formData.get('appId') || 'neutral-app',
+          connectionType: formData.get('connectionType') || 'file',
+          storageType: formData.get('storageType') || 'file',
+          serverUrl: formData.get('serverUrl') || '',
+          apiBase: formData.get('apiBase') || '/api',
+          host: formData.get('host') || '',
+          port: formData.get('port') || '',
+          databaseName: formData.get('databaseName') || '',
+          username: formData.get('username') || '',
+          credentialsRef: formData.get('credentialsRef') || '',
+          authType: formData.get('authType') || 'none',
+          active: formData.get('active') === 'on',
+          default: formData.get('default') === 'on'
+        };
+        const result = await this.api.post('/api/connections', payload);
+        if (result.ok) {
+          this.notify('Connection saved successfully', 'success');
+          await this.init(this.container);
+        } else {
+          this.notify(`Connection save failed: ${result.error || 'Unknown error'}`, 'error');
+        }
+      });
+      const reloadButton = this.container.querySelector('[data-action="reload-connections"]');
+      if (reloadButton) {
+        reloadButton.addEventListener('click', () => this.init(this.container));
+      }
+    }
+  }
+
+  renderServer() {
+    const server = this.snapshot.server || {};
+    const setup = this.snapshot.setup || {};
+    const currentUrl = setup.serverState?.url || server.serverUrl || window.location.origin || 'http://localhost';
+    this.container.innerHTML = `
+      <div class="admin-infrastructure-view">
+        <div class="section-header">
+          <h2>Server</h2>
+        </div>
+        <div class="card-grid">
+          <div class="card panel-box">
+            <div class="card-header"><h3>Runtime status</h3></div>
+            <dl class="detail-list">
+              <div><dt>Status</dt><dd>${server.status || 'unknown'}</dd></div>
+              <div><dt>Reachable</dt><dd>${server.reachable === undefined ? '—' : server.reachable ? 'yes' : 'no'}</dd></div>
+              <div><dt>Target</dt><dd>${currentUrl}</dd></div>
+              <div><dt>API Base</dt><dd>${server.apiBase || setup.serverState?.apiBase || '/api'}</dd></div>
+            </dl>
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Framework metadata</h3></div>
+            <pre class="code-block">${this.safeJson(this.snapshot.setup || {})}</pre>
+          </div>
+        </div>
+        <div class="card panel-box">
+          <div class="card-header"><h3>Test server endpoint</h3></div>
+          <form id="server-form" class="admin-form compact-form">
+            <div class="form-grid">
+              <label>Server URL<input name="serverUrl" value="${this.escape(currentUrl)}" /></label>
+              <label>API Base<input name="apiBase" value="${this.escape(server.apiBase || setup.serverState?.apiBase || '/api')}" /></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Test server</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#server-form');
+    if (form) {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = {
+          serverUrl: formData.get('serverUrl') || currentUrl,
+          apiBase: formData.get('apiBase') || '/api'
+        };
+        const result = await this.api.post('/api/server/test', payload);
+        const response = result.ok && result.data && result.data.result ? result.data.result : result.data || {};
+        if (result.ok) {
+          this.notify(`Server test result: ${response.status || 'ready'}`, 'success');
+          await this.init(this.container);
+        } else {
+          this.notify(`Server test failed: ${result.error || response.message || 'Unknown error'}`, 'error');
+        }
+      });
+    }
+  }
+
+  renderDatabase() {
+    const database = this.snapshot.database || {};
+    const setup = this.snapshot.setup || {};
+    const dbConfig = setup.databaseState || setup.database || {};
+    this.container.innerHTML = `
+      <div class="admin-infrastructure-view">
+        <div class="section-header">
+          <h2>Database</h2>
+        </div>
+        <div class="card-grid">
+          <div class="card panel-box">
+            <div class="card-header"><h3>Current database status</h3></div>
+            <dl class="detail-list">
+              <div><dt>Status</dt><dd>${database.status || 'unknown'}</dd></div>
+              <div><dt>Type</dt><dd>${database.type || dbConfig.type || 'mysql'}</dd></div>
+              <div><dt>Host</dt><dd>${database.host || dbConfig.host || '—'}</dd></div>
+              <div><dt>Name</dt><dd>${database.name || dbConfig.name || '—'}</dd></div>
+              <div><dt>Username</dt><dd>${database.username || dbConfig.username || '—'}</dd></div>
+            </dl>
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Setup state</h3></div>
+            <pre class="code-block">${this.safeJson(dbConfig)}</pre>
+          </div>
+        </div>
+        <div class="card panel-box">
+          <div class="card-header"><h3>Test database configuration</h3></div>
+          <form id="database-form" class="admin-form compact-form">
+            <div class="form-grid">
+              <label>Type<select name="type"><option value="mysql" ${((dbConfig.type || database.type || 'mysql') === 'mysql') ? 'selected' : ''}>MySQL</option><option value="sqlite" ${(dbConfig.type === 'sqlite') ? 'selected' : ''}>SQLite</option><option value="postgresql" ${(dbConfig.type === 'postgresql') ? 'selected' : ''}>PostgreSQL</option></select></label>
+              <label>Host<input name="host" value="${this.escape(dbConfig.host || database.host || '')}" /></label>
+              <label>Port<input type="number" name="port" value="${this.escape(dbConfig.port || database.port || 3306)}" /></label>
+              <label>Name<input name="name" value="${this.escape(dbConfig.name || database.name || '')}" /></label>
+              <label>Username<input name="username" value="${this.escape(dbConfig.username || database.username || '')}" /></label>
+              <label>Credential reference<input name="credentialsRef" value="" placeholder="Prefer a credential reference instead of plain text" /></label>
+              <label>Password<input type="password" name="password" value="" placeholder="Only when needed for live test" /></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Test database</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#database-form');
+    if (form) {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = {
+          type: formData.get('type') || 'mysql',
+          host: formData.get('host') || '',
+          port: Number(formData.get('port') || 3306),
+          name: formData.get('name') || '',
+          username: formData.get('username') || '',
+          password: formData.get('password') || '',
+          credentialsRef: formData.get('credentialsRef') || ''
+        };
+        const result = await this.api.post('/api/database/status', payload);
+        if (result.ok) {
+          this.notify('Database test passed successfully', 'success');
+          await this.init(this.container);
+        } else {
+          this.notify(`Database configuration failed: ${result.error || 'Unknown error'}`, 'error');
+        }
+      });
+    }
+  }
+
+  renderUpdates() {
+    const backups = this.snapshot.backups || [];
+    const release = this.snapshot.release || {};
+    this.container.innerHTML = `
+      <div class="admin-infrastructure-view">
+        <div class="section-header">
+          <h2>Updates & Backup</h2>
+        </div>
+        <div class="card-grid">
+          <div class="card panel-box">
+            <div class="card-header"><h3>Release</h3></div>
+            <dl class="detail-list">
+              <div><dt>Status</dt><dd>${release.maintenanceMode ? 'Maintenance mode' : 'Operational'}</dd></div>
+              <div><dt>Version</dt><dd>${release.version || '—'}</dd></div>
+              <div><dt>Updated</dt><dd>${release.updatedAt || '—'}</dd></div>
+            </dl>
+          </div>
+          <div class="card panel-box">
+            <div class="card-header"><h3>Maintenance state</h3></div>
+            <form id="maintenance-form" class="admin-form compact-form">
+              <label class="checkbox-label"><input type="checkbox" name="maintenanceMode" ${release.maintenanceMode ? 'checked' : ''} /> Enable maintenance mode</label>
+              <label>Reason<input name="reason" value="${this.escape(release.reason || '')}" placeholder="Optional maintenance reason" /></label>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="card panel-box">
+          <div class="card-header"><h3>Backups</h3></div>
+          ${backups.length ? `<ul class="mini-list">${backups.map((backup) => `<li>${backup.label || backup.name || 'Backup'} <span>${backup.status || 'ready'}</span></li>`).join('')}</ul>` : '<p class="empty-state">No backups available yet.</p>'}
+          <form id="backup-form" class="admin-form compact-form">
+            <div class="form-grid">
+              <label>Backup label<input name="label" value="" placeholder="Daily database snapshot" /></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Create backup</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const maintenanceForm = this.container.querySelector('#maintenance-form');
+    if (maintenanceForm) {
+      maintenanceForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(maintenanceForm);
+        const payload = { maintenanceMode: formData.get('maintenanceMode') === 'on', reason: formData.get('reason') || '' };
+        const result = await this.api.post('/api/admin/release/maintenance', payload);
+        if (result.ok) {
+          this.notify('Maintenance state updated', 'success');
+          await this.init(this.container);
+        } else {
+          this.notify(`Maintenance update failed: ${result.error || 'Unknown error'}`, 'error');
+        }
+      });
+    }
+
+    const backupForm = this.container.querySelector('#backup-form');
+    if (backupForm) {
+      backupForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(backupForm);
+        const payload = { label: formData.get('label') || `backup-${new Date().toISOString()}` };
+        const result = await this.api.post('/api/backups', payload);
+        if (result.ok) {
+          this.notify('Backup created', 'success');
+          await this.init(this.container);
+        } else {
+          this.notify(`Backup creation failed: ${result.error || 'Unknown error'}`, 'error');
+        }
+      });
+    }
+  }
+
+  notify(message, type = 'info') {
+    if (window.AdminCommon && typeof window.AdminCommon.showAlert === 'function') {
+      window.AdminCommon.showAlert(message, type);
+      return;
+    }
+    if (typeof alert === 'function') {
+      alert(message);
+    }
+  }
+
+  escape(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  safeJson(data) {
+    try {
+      return JSON.stringify(data || {}, null, 2);
+    } catch {
+      return '[]';
+    }
   }
 }
 
