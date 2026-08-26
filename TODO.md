@@ -22,7 +22,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Branch protection issue resolved via valid PR workflow; PR #9 merged to main.
 [x] Repository main synchronized with GitHub after merge.
 [x] WORKFLOW.md and server.md updated to reflect the actual module lifecycle state.
-[x] Phase 1 admin redesign and legacy cleanup completed: `webroot/admin.php` and `webroot/setup.php` are the canonical entry points, `webroot/admin.html` and `webroot/setup.html` are removed, the admin shell uses the minimal header + sidebar layout, and the shared design system includes a light/dark theme switch.
+[x] Phase 1 admin redesign and legacy cleanup completed: `webroot/admin.php` and `webroot/setup.php` are the canonical entry points, `webroot/admin.html` and `webroot/setup.html` are removed, the admin shell uses the minimal header + sidebar layout, the theme switch is available within the admin shell, and the shared design system uses a consistent light/dark token set for cards, tables, forms, and navigation.
 [x] Production runtime determined: the real host is a LiteSpeed/PHP 8.5.9 shared-webspace environment, not a public Node runtime environment.
 [x] Public API routing verified: `https://www.turbolikes.com/api/status` returns HTTP 404 and there is no active `/api` reverse-proxy layer on the live host.
 [x] PHP setup surface verified: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200 with PHP/8.5.9.
@@ -30,6 +30,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Node/Passenger runtime on the public production server is not available as an exposed runtime: no public Node route, no `node` in PATH, no reachable Port 3000, no active Passenger mapping.
 [x] Production env path check: `/home/web1819/.env` is not present in this execution environment; the repo’s local `.env` is a different file and must not be treated as the live host config.
 [x] Repository config loads `.env` candidates from `/home/web1819` and `resolveRuntimeEnvFile` in `webroot/setup.php` specifically checks those paths; this means the production host file is only active when present on the host filesystem.
+[x] Admin shell advanced from placeholder-only sections to live server-backed dashboard, infrastructure and diagnostics views using the existing admin APIs (`/api/status`, `/api/admin/system/health`, `/api/admin/users`, `/api/admin/sessions`, `/api/admin/modules`, `/api/admin/settings`); no fake data or fake success states are emitted in those sections.
 
 ## Current open work
 

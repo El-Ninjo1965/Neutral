@@ -48,29 +48,21 @@
           </div>
         </div>
         <div class="nav-section shared-shell-nav-section">
-          <div class="nav-section-title">Application</div>
+          <div class="nav-section-title">Main navigation</div>
           <div id="appModuleNav" class="nav-list shared-shell-nav"></div>
-        </div>
-        <div class="user-card">
-          <div id="currentUserInitial" class="avatar">D</div>
-          <div class="user-meta">
-            <div id="currentUserName" class="user-name">Developer</div>
-            <div class="user-id" data-user-display-id>USR-000001</div>
-          </div>
         </div>
         <div class="nav-section">
           <div class="nav-section-title">Administration</div>
           <div id="userMenu" class="nav-list"></div>
         </div>
+        <div class="sidebar-footer">
+          <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Toggle theme</button>
+          <button id="logoutBtn" class="secondary" type="button">Logout</button>
+        </div>
       </aside>
       <main class="main-panel">
         <header class="topbar">
           <div id="topbarTitle" class="topbar-title">Neutral Framework Administration</div>
-          <div class="header-actions">
-            <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Dark</button>
-            <span id="summaryRoleBadge" class="role-badge developer">developer</span>
-            <button id="logoutBtn" class="secondary" type="button">Logout</button>
-          </div>
         </header>
         <div class="summary-row">
           <div class="card">
