@@ -23,7 +23,7 @@ class AdminPermissionsView {
 
   async init(container) {
     const result = await this.api.getPermissions();
-    const permissions = result.ok && Array.isArray(result.data.permissions) ? result.data.permissions : [];
+    const permissions = result.ok ? AdminCommon.unwrapData(result, 'permissions', []) : [];
     container.innerHTML = `
       <div class="admin-permissions-view">
         <div class="section-header">
@@ -45,7 +45,7 @@ class AdminSessionsView {
 
   async init(container) {
     const result = await this.api.getSessions();
-    const sessions = result.ok && Array.isArray(result.data.sessions) ? result.data.sessions : [];
+    const sessions = result.ok ? AdminCommon.unwrapData(result, 'sessions', []) : [];
 
     container.innerHTML = `
       <div class="admin-sessions-view">
@@ -101,14 +101,15 @@ class AdminDashboardView {
       this.api.getSettings()
     ]);
 
-    const runtime = statusResult.ok && statusResult.data && typeof statusResult.data === 'object' ? statusResult.data : {};
-    const health = healthResult.ok && healthResult.data && typeof healthResult.data === 'object' && healthResult.data.health
-      ? healthResult.data.health
-      : (healthResult.ok && healthResult.data ? healthResult.data : {});
-    const users = usersResult.ok && Array.isArray(usersResult.data?.users) ? usersResult.data.users : [];
-    const sessions = sessionsResult.ok && Array.isArray(sessionsResult.data?.sessions) ? sessionsResult.data.sessions : [];
-    const modules = modulesResult.ok && Array.isArray(modulesResult.data?.modules) ? modulesResult.data.modules : [];
-    const settings = settingsResult.ok && settingsResult.data ? settingsResult.data : {};
+    const runtime = statusResult.ok ? AdminCommon.unwrapData(statusResult, null, {}) : {};
+    const healthPayload = healthResult.ok ? AdminCommon.unwrapData(healthResult, null, {}) : {};
+    const health = healthPayload && typeof healthPayload === 'object' && healthPayload.health
+      ? healthPayload.health
+      : healthPayload;
+    const users = usersResult.ok ? AdminCommon.unwrapData(usersResult, 'users', []) : [];
+    const sessions = sessionsResult.ok ? AdminCommon.unwrapData(sessionsResult, 'sessions', []) : [];
+    const modules = modulesResult.ok ? AdminCommon.unwrapData(modulesResult, 'modules', []) : [];
+    const settings = settingsResult.ok ? AdminCommon.unwrapData(settingsResult, 'settings', {}) : {};
 
     this.snapshot = {
       runtime,

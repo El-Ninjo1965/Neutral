@@ -21,12 +21,13 @@ class AdminModulesView {
 
   async loadModules() {
     const result = await this.api.getAdminModules();
-    if (!result.ok || !result.data || !Array.isArray(result.data.modules)) {
+    const modules = AdminCommon.unwrapData(result, 'modules', []);
+    if (!result.ok || !Array.isArray(modules)) {
       this.modules = [];
       AdminCommon.showAlert(`Failed to load modules: ${result.error || 'Unknown error'}`, 'error');
       return;
     }
-    this.modules = result.data.modules;
+    this.modules = modules;
   }
 
   render() {

@@ -40,50 +40,17 @@
 
     <div id="appShell" class="app-shell hidden">
       <aside class="sidebar shared-shell-sidebar">
-        <div class="brand-box shared-shell-brand">
-          <div id="brandMark" class="brand-mark shared-shell-mark">N</div>
-          <div>
-            <div id="brandName" class="brand-name shared-shell-name">Neutral Framework Administration</div>
-            <div id="brandSubtitle" class="brand-subtitle">Administration</div>
-          </div>
-        </div>
-        <div class="nav-section shared-shell-nav-section">
-          <div class="nav-section-title">Main navigation</div>
-          <div id="appModuleNav" class="nav-list shared-shell-nav"></div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-title">Administration</div>
-          <div id="userMenu" class="nav-list"></div>
-        </div>
-        <div class="sidebar-footer">
-          <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Toggle theme</button>
-          <button id="logoutBtn" class="secondary" type="button">Logout</button>
-        </div>
+        <div id="appModuleNav" class="nav-list shared-shell-nav"></div>
+        <div id="userMenu" class="nav-list"></div>
       </aside>
       <main class="main-panel">
         <header class="topbar">
-          <div id="topbarTitle" class="topbar-title">Neutral Framework Administration</div>
+          <div id="topbarTitle" class="topbar-title">Neutral Platform Administration</div>
+          <div class="header-actions">
+            <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Dark</button>
+            <button id="logoutBtn" class="secondary" type="button">Lockout</button>
+          </div>
         </header>
-        <div class="summary-row">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">Administrator</h2>
-            </div>
-            <div class="user-summary">
-              <div>
-                <div id="summaryUsername" class="summary-username">Developer</div>
-                <div class="small-muted" data-user-display-id>USR-000001</div>
-              </div>
-              <span id="summaryStatus" class="status-badge ok">active</span>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">System overview</h2>
-            </div>
-            <div id="activeModules" class="chip-list"><span class="chip">Admin access granted</span></div>
-          </div>
-        </div>
         <div id="mainContent" class="content-wrap"></div>
       </main>
     </div>

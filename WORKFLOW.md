@@ -33,6 +33,8 @@ Verbindliche Regeln
 * Die PHP-Admin-API muss die gleichen admin-ressourcenfähigen Endpunkte liefern wie das Node-Backend (`/api/admin/system/health`, `/api/admin/diagnostics`, `/api/admin/server`, `/api/admin/database`, `/api/admin/connections`, `/api/admin/providers`, `/api/admin/backups`, `/api/admin/backup`, `/api/admin/release/status`, `/api/admin/updates`); leere oder echte Runtime-Daten gelten als legitime Live-Zustände, keine Platzhalter-Fallbacks.
 * `setup.php` ist der kanonische Setup-Einstieg für Installations-/Reset-Vorgänge; `webroot/setup.html` wurde entfernt. Die Datei bleibt als manuell aufrufbares, serverseitiges Setup-Werkzeug verfügbar und bleibt keine Runtime-Abhängigkeit.
 * Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
+* Das Admin-Layout bleibt als Header + permanente Sidebar + Main Content aufgebaut; doppelte Navigationsblöcke und redundante Statuskarten sind nicht Teil des kanonischen Shells. Der Theme-Wechsel und Lockout bleiben in der Header-Aktion, nicht als eigenständiger Navigationsblock.
+* Die Admin-Views lesen die echte API-Envelope-Struktur korrekt aus (`{ ok, data: { ... } }`) und behandeln leere Listen als legitime leere Zustände statt als Fehler.
 
 Produktionsumgebung: tatsächlicher Befund
 

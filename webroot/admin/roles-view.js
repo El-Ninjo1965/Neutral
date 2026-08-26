@@ -24,13 +24,13 @@ class AdminRolesView {
 
   async loadPermissions() {
     const result = await this.api.getPermissions();
-    this.permissions = result.ok && Array.isArray(result.data.permissions) ? result.data.permissions : [];
+    this.permissions = result.ok ? AdminCommon.unwrapData(result, 'permissions', []) : [];
   }
 
   async loadRoles() {
     const result = await this.api.getRoles();
     if (result.ok) {
-      this.roles = result.data.roles || [];
+      this.roles = AdminCommon.unwrapData(result, 'roles', []);
     } else {
       AdminCommon.showAlert(`Failed to load roles: ${result.error}`, 'error');
       this.roles = [];
