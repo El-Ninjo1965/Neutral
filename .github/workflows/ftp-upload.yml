@@ -115,11 +115,28 @@ jobs:
           set net:timeout 30
           set net:max-retries 1
           open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          # Upload only the allowlisted production tree; never remove remote files.
           mirror -R --only-newer --verbose \
             --exclude-glob .env \
             --exclude-glob app-node-test \
             --exclude-glob app-node-test/** \
             "$STAGING_DIR" /
+          bye
+          EOF
+
+      - name: Veraltete HTML-Entrypoints entfernen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          lftp <<EOF
+          set cmd:fail-exit true
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:verify-certificate no
+          set net:timeout 30
+          set net:max-retries 1
+          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
+          rm -f "/index/app/neutral/webroot/admin.html"
+          rm -f "/index/app/neutral/webroot/setup.html"
           bye
           EOF

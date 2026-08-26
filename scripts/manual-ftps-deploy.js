@@ -54,6 +54,11 @@ const allowedEntries = [
   'webroot/api'
 ];
 
+const explicitCleanupTargets = [
+  '/index/app/neutral/webroot/admin.html',
+  '/index/app/neutral/webroot/setup.html'
+];
+
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
     return {};
@@ -269,7 +274,8 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
   ensureLftpInstalled();
 
   const deleteTargets = buildRemoteDeleteTargets(diff.deleteCandidates, config.FTP_TARGET_DIR);
-  const deleteCommands = deleteTargets.map((target) => `rm -f "${target}"`).join('\n');
+  const mergedDeleteTargets = Array.from(new Set([...deleteTargets, ...explicitCleanupTargets]));
+  const deleteCommands = mergedDeleteTargets.map((target) => `rm -f "${target}"`).join('\n');
 
   const commandScript = [
     'set cmd:fail-exit true',
