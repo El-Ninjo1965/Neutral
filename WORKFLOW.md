@@ -1,153 +1,169 @@
-Neutral – Workflow
+# Neutral – Workflow
 
-Aktueller Stand
+## Purpose
 
-* Repository: El-Ninjo1965/Neutral
-* Branch: `main` (synchronisiert mit `origin/main`)
-* Der Quellcode ist die maßgebliche Referenz; die aktuellen dokumentierten Arbeiten sind reine Übergabe-/Pause-Änderungen.
-* Die im Repository verifizierten Code-Fixes sind abgeschlossen: Bootstrap-Admin-Seed, Session-/Login-Regression und CodeQL-Alert für unsichere Passwort-Hashing-Pfade wurden behoben und in `main` integriert.
-* Der produktive Host bleibt der eigentliche offene Punkt: Der öffentliche PHP/LiteSpeed-Host akzeptiert die Repository-Bootstrap-Credentials nicht; `POST /api/auth/login` liefert dort HTTP 401.
-* Die zentrale Modulverwaltung verwendet weiterhin einen sauberen Lifecycle: `DISCOVER -> REGISTER/INSTALL -> INACTIVE`; `discoverModules()` aktiviert keine Module mehr automatisch.
-* Module werden relativ zum aktuellen Installationspfad aufgelöst; harte Root-Pfade werden vermieden.
-* App- und Modulverwaltung bleiben getrennt; echte Module müssen als `type: "module"` registriert werden, nicht als App-Objekt.
-* Der PHP-Backendpfad für Module ist live verifiziert: Discovery, Install/Register, Activate/Deactivate laufen über `/webroot/api` gegen MySQL-persistente Zustände.
-* Sicherheitsverhalten für Admin-Schreiboperationen bleibt verbindlich: ohne Session `401`, mit ungültigem/fehlendem CSRF `403`.
-* Keine unnötige Entwicklung: Wenn der aktive Blocker ein externer Host-/Credential-Zustand ist, sind nur Dokumentation, Verifikation und Workflow-Synchronisierung zulässig, bis der Live-Host-Zustand tatsächlich bestätigt ist.
+Neutral is a modular framework intended to support a reusable core, a neutral application shell, and installable modules. It is not a single hard-coded app and it should not be treated as such.
 
-Verbindliche Regeln
+This file is the current operational workflow and architecture reference for future work. It is not a project history, issue log, or changelog.
 
-* Der reale Runtime-Check erfolgt immer über die Live-API und nicht nur über die PHP-Setup-Seite.
-* Der produktive Host darf nicht als „aktiv“ gelten, wenn `/api/*` auf dem öffentlichen Host weiterhin 404 liefert.
-* `server.md` und die Allowlist in `scripts/manual-ftps-deploy.js` bleiben die verbindliche Quelle für produktive Datei- und Deploy-Entscheidungen.
-* Für LiteSpeed-Shared-Hosting muss die API-Routing-Fallback-Regel in `webroot/api/.htaccess` aktiv bleiben, damit `/webroot/api/*` zuverlässig über `index.php` ausgeführt wird.
-* Deploys müssen die produktiven PHP-Core/API-Dateien (`core/php/*`, `webroot/api/*`) enthalten; ein Setup-only Deploy ohne diese Dateien gilt nicht als produktionsfähig.
-* Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
-* Credentials und live Admin-Zustände sind Betriebsgeheimnisse des Hosts und müssen weder im Repository noch in Logs, Commits, Dokumentation oder PRs landen. Eine manuell angelegte Admin-Instanz auf dem Live-Host ist ein Laufzeitzustand, kein Repository-Artefakt.
-* `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
-* Keine unnötige Entwicklung: Wenn der aktuelle Blocker ein externer Live-Host-/Credential-Zustand ist, bleibt nur Dokumentation, Verifikation und Workflowschließung erlaubt, bis der echte Host-Zustand bestätigt ist.
-* Abschlussregel: Ein Arbeitsschritt darf nicht als „abgeschlossen“ gelten, solange er nicht tatsächlich: getestet, in `TODO.md` dokumentiert, in `WORKFLOW.md` dokumentiert, committed, nach GitHub gepusht, über PR/Checks abgesichert, gemergt und mit `main = origin/main` sowie sauberem `git status` verifiziert wurde.
-* Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
-* Keine hartcodierten Produktionspfade in Architektur-/Implementierungsentscheidungen; Runtime-Pfade müssen konfigurationsbasiert und installationspfadunabhängig sein.
-* Hostspezifische Pfade wie `/home/web1819/*` dürfen nur als optionale Shared-Hosting-Fallback-Kandidaten geführt werden; die effektiven Runtime-/Env-Pfade müssen aus Installationskontext, `DOCUMENT_ROOT` und expliziten Env-Overrides auflösbar sein.
-* Modul-Discovery bedeutet nie automatische Aktivierung; der Lifecycle bleibt strikt `DISCOVER -> REGISTER/INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE`.
-* Für Admin/Backend gilt: keine UI-Funktion ohne vorgesehenes serverseitiges Verhalten (keine reine Fassade).
-* Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
-* Der kanonische Admin-Einstieg ist `webroot/admin.php` (serverseitige Session-/Rollenprüfung vor UI-Ausgabe); `webroot/admin.html` wurde entfernt. Das Admin-Layout verwendet einen reduzierten Header mit klarer Titelzeile und eine permanente linke Sidebar mit konstanter Navigationsstruktur; der Theme-Wechsel sitzt im Admin-Shell-Menü, nicht mehr im Header.
-* Die PHP-Admin-API muss die gleichen admin-ressourcenfähigen Endpunkte liefern wie das Node-Backend (`/api/admin/system/health`, `/api/admin/diagnostics`, `/api/admin/server`, `/api/admin/database`, `/api/admin/connections`, `/api/admin/providers`, `/api/admin/backups`, `/api/admin/backup`, `/api/admin/release/status`, `/api/admin/updates`); leere oder echte Runtime-Daten gelten als legitime Live-Zustände, keine Platzhalter-Fallbacks.
-* Verbindliche Schutzregel für Credentials: Keine echte Credential-, Session- oder Host-Admin-Information darf in Commit-Logs, PRs, Issues, Screenshots, Deployment-Manifesten oder Dokumentation gelangen. Ein manuell angelegter Live-Admin auf dem Host ist ein Betriebsschritt, kein Code- oder Repo-Objekt.
-* `setup.php` ist der kanonische Setup-Einstieg für Installations-/Reset-Vorgänge; `webroot/setup.html` wurde entfernt. Die Datei bleibt als manuell aufrufbares, serverseitiges Setup-Werkzeug verfügbar und bleibt keine Runtime-Abhängigkeit.
-* Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
-* Das Admin-Layout bleibt als Header + permanente Sidebar + Main Content aufgebaut; doppelte Navigationsblöcke und redundante Statuskarten sind nicht Teil des kanonischen Shells. Der Theme-Wechsel und Lockout bleiben in der Header-Aktion, nicht als eigenständiger Navigationsblock.
-* Die Admin-Views lesen die echte API-Envelope-Struktur korrekt aus (`{ ok, data: { ... } }`) und behandeln leere Listen als legitime leere Zustände statt als Fehler.
+## Current architecture
 
-Produktionsumgebung: tatsächlicher Befund
+Neutral currently follows this model:
 
-* Webserver: LiteSpeed / cPanel Shared Webspace
-* PHP: 8.5.9
-* PHP SAPI: litespeed
-* OS: Linux x86_64
-* App-Root: direkt im Webspace / FTP-Wurzel, inklusive `package.json`, `server/`, `webroot/`, `.env`
-* `node`, `npm`, `npx` im normalen PATH: nicht vorhanden
-* Port 3000 lokal im Shared-Hosting-Kontext: nicht erreichbar
-* `/api/*` auf der public URL: HTTP 404, aber der PHP-path unter `/index/app/neutral/webroot/*` ist aktiv und korrekt erreichbar
-* `curl https://www.turbolikes.com/api/status` => 404
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/setup.php` => 200
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/admin.php` => 401 ohne Session; gültige Session bzw. echtes Live-Admin-Konto erforderlich, um den geschützten Admin-Bereich zu sehen
-* Live-Authentifizierungsprüfung mit den lokal konfigurierten Bootstrap-Werten: `POST /index/app/neutral/webroot/api/auth/login` liefert HTTP 401 `Invalid username or password.`; `GET /index/app/neutral/webroot/api/auth/me` liefert HTTP 401 `Not authenticated.`. Damit sind die aktuell im Repository hinterlegten Bootstrap-Credentials für den Live-Host nicht gültig.
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/api/modules` => 200 mit echter Modulliste, inklusive `gps`
-* `curl https://www.turbolikes.com/index/app/neutral/webroot/api/admin/modules` => 401 ohne Session; Authentifizierung wird auf dem Host korrekt durchgesetzt
-* Produktiver Deploy-Lauf: `.env.deploy` + `scripts/manual-ftps-deploy.js` wurden ausgeführt und erreichten den konfigurierten FTPS-Host `ftp.turbolikes.com` auf Port 21, ohne dass ein lokaler Codefehler oder ein lokaler Login-/Upload-Fehler aus dem Repository selbst vorlag
+- Core framework services and shared infrastructure
+- App-level shell and management surfaces
+- Module-based extensions that are discovered and registered without being merged into the core by default
 
-Exakte Schlussfolgerung
+The codebase should remain structured around that separation. App-specific logic belongs in app and module layers; the core remains general-purpose infrastructure.
 
-* Die Produktionsumgebung ist ein reines Shared-Webhosting mit LiteSpeed/PHP; sie ist nicht als Node-Backend-Host ausgelegt.
-* Es liegt kein funktionierender Reverse Proxy/Host-Mapping für `/api/*` vor.
-* Es gibt keine verlässliche lokale Node-Instanz auf Port 3000 im Host-Kontext.
-* In dieser Umgebung ist eine Node-basierte API-Lösung auf dem Shared-Server nicht die passende technische Lösung, sofern der Hoster Node/Passenger nicht aktiviert und öffentlich nutzbar gemacht hat.
-* Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
-* Die Login-Regression mit dem Bootstrap-Admin wurde aufgelöst: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` werden vor der Authentifizierung automatisch als adminischer Seed-User sichergestellt; dadurch verschwindet die stille No-Response-Login-Failure, wenn noch kein gesetzter Bootstrap-Admin existiert.
-* CodeQL-Sicherheitsgate: Der kritische Alert zur Passwort-Hashing-Strategie wurde im Repository-Code behoben, indem die Passwort-Hashing-Pfade ausschließlich auf sichere Argon2-/scrypt-basierte Derivierungen gesetzt wurden. Die zuvor als `high` gemeldete schwache SHA-256-Passworthash-Implementierung wurde aus dem aktiven Pfad entfernt.
-* Das Live-Login bleibt weiterhin host- und credentials-abhängig: Der aktuelle öffentliche PHP-Host akzeptiert die Repository-Bootstrap-Credentials nicht mit HTTP 401; der nächste technische Schritt ist deshalb die Prüfung des tatsächlich aktiven Host-Admin-Zustands, nicht eine weitere Repository-Architekturänderung.
-* Relevanter Nachweis für die aktuelle PHP-Laufzeit: Der aktive PHP-CLI/TLS-Stack in dieser Umgebung hat kein `pdo_mysql` geladen. Deshalb scheitert der serverseitige Login-Pfad am Datenbanktreiber, nicht am Browser-Event-Handler. Der Laufzeitfehler wird jetzt klar als `503 Authentication backend unavailable: ... enable pdo_mysql ...` signalisiert, statt in einer stillen 500-Response zu verschwinden.
+## Current runtime reality
 
-Untersuchung der Produktionskette
+The active production runtime is a shared-host PHP/LiteSpeed environment. The public host is not a public Node runtime and does not expose a working root /api/* proxy or a public Node port 3000 service.
 
-* Browser → `https://www.turbolikes.com`
-* Hosting / LiteSpeed / cPanel / PHP
-* fehlende bzw. inaktive Backend-Weiterleitung zu `/api/*`
-* fehlender Node-Backend-Prozess / fehlender Reverse Proxy
+The actual live app path is:
 
-Realer Befund:
+- /index/app/neutral/webroot/*
 
-* Lokale Runtime auf dem Rechner: `curl http://127.0.0.1:3000/api/status` -> HTTP 200 OK.
-* Shared-Hosting-Context: `http://127.0.0.1:3000` -> nicht erreichbar.
-* Öffentliche URL: `curl https://www.turbolikes.com/api/status` -> HTTP 404 Not Found.
-* Öffentliche Root-URL: `curl https://www.turbolikes.com/` -> `301 Moved Permanently` zu einer statischen Seite.
-* konkrete Setup-URLs laufen zwar, aber nicht als API-Endpunkte.
+The canonical runtime entry points are:
 
-Technische Lösung für den echten Host
+- webroot/admin.php
+- webroot/setup.php
+- webroot/api/.htaccess (must continue to route the LiteSpeed PHP API path correctly)
 
-* Die grundsätzliche und technisch saubere Entscheidung ist: Keine Node-/Port-3000-API auf diesem Shared Webspace erzwingen.
-* Stattdessen muss die komplette Setup-/Runtime-Logik als PHP/LiteSpeed-Umgebung arbeiten, inklusive `.env`-Lesung, DB-Prüfung auf dem Server, und Setup-UI, die die vorhandenen Werte serverseitig nutzt.
-* Das `.env` auf dem Host ist lesbar und enthält die relevanten Werte für DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_URL, DATABASE_URL, PORT, HOST.
-* Der DB-Fehler `SQLSTATE[HY000] [1045] Access denied for user 'web1819_neutral_app'@'localhost'` zeigt ein separates Infrastrukturproblem: falsche MySQL-Zugangsdaten oder Grants, nicht automatisch die Node-API als Ursache.
+The repository must not assume that a root-domain Node API is the active production environment.
 
-Dokumentierte Arbeiten
+## Module model
 
-* Node-Host-Binding-Fix implementiert.
-* Lokale Runtime validiert.
-* Public-Host-Proxy-Anbindung geprüft.
-* Shared-Hosting-LiteSpeed-Umgebung als reale Ursache dokumentiert.
-* Schlussfolgerung: Node/Passenger auf diesem Shared-Hosting nicht geeignet bzw. nicht verfügbar; PHP/LiteSpeed-basierte Lösung erforderlich.
-* Admin-UI-Fortschritt: Dashboard, Infrastruktur- und Diagnostikansichten laden jetzt reale Backend-Daten über vorhandene Admin-APIs; Placeholder-Sichtbarkeit für diese Bereiche wurde durch echte serverseitige Datenabfragen ersetzt.
-* Admin-Module-Discovery korrigiert: `GET /api/admin/modules` und `GET /api/admin/modules/:id` liefern jetzt die real aus `app/modules` ermittelten Moduleinträge, inklusive des `gps`-Moduls, sodass die Admin-Oberfläche keine leere `No modules discovered`-Darstellung mehr zeigt, wenn ein reales Modul im Repository existiert.
-* Admin-Read-Status erweitert: Users, Roles, Permissions, Sessions, Modules, Settings, Connections, Server, Database, Diagnostics, Audit, Updates, Backup und Theme/Layout sind in der Admin-Oberfläche als serverseitig nutzbare Bereiche vorbereitet; vorhandene Write-Operationen bleiben durch Auth+Role+CSRF auf dem Backend geschützt und werden nur dort ausgelöst, wo echte API-Mechaniken existieren.
-* Verifizierte Admin-Login-Validierung: Der Browser-/Session-Ablauf wurde lokal validiert: `POST /api/auth/login` setzt die Session- und CSRF-Cookies; `GET /api/auth/me` liefert die Rolleninformationen; `GET /admin.php` mit dieser Session liefert die geschützte Admin-UI. Die echte Live-Host-Login-Session kann aus dieser Umgebung nicht mit realen Admin-Credentials getestet werden; der öffentliche Live-Endpunkt kann deshalb nur sicher als unauthentifizierter `401`/`403`-Pfad geprüft werden.
-* Tatsächlicher GitHub-Sync-Finalstand: Commit `0efd79e` (`Merge pull request #44 from El-Ninjo1965/chore/admin-sync-finalization`) wurde nach erfolgreichem PR-Check in `main` gemergt. Lokaler `main` wurde danach mit `origin/main` synchronisiert.
-* Deployment-Status: Für diese Repository-Änderung wurde kein Live-Deploy durchgeführt, weil der produktive FTP-/FTPS-Zugriff aus `server.md` weiterhin durch `530 Login authentication failed` blockiert ist; die verifizierte GitHub-/Repo-Synchronisation ist daher der tatsächliche Abschlusszustand dieser Runde.
+Modules remain discoverable, registrable, and installable without automatic activation.
 
-GitHub-Sync-Regel
+The effective lifecycle is:
 
-* Nach Abschluss der Validierung und Dokumentation muss der Arbeitsstand final auf GitHub synchronisiert werden.
-* Kein direkter Push auf `main`: verbindlicher Weg ist Branch -> Pull Request -> Checks -> Merge -> Verifikation.
-* Arbeitsstände, die für die weitere KI-/Agenten-Verarbeitung auf GitHub benötigt werden, werden per Commit auf einem Arbeitsbranch veröffentlicht und anschließend per PR nach `main` gemerged.
-* Der Commit muss die Workflow-Dokumentation und alle zugehörigen Änderungen enthalten, sofern diese inhaltlich betroffen sind.
+- DISCOVER
+- REGISTER / INSTALL
+- INACTIVE
+- ACTIVATE
+- ACTIVE
+- DEACTIVATE
 
-Technische Abschlusskorrekturen
+Rules:
 
-* Die produktive `.env`-Auflösung wurde robust auf den echten Shared-Host-Pfad erweitert:
-  * `/home/web1819/.env`
-  * `/home/web1819/public_html/.env`
-  * `/home/web1819/public_html/index/app/neutral/.env`
-  * lokale Entwicklungs- und Fallback-Pfade bleiben weiter nutzbar
-* Die Node-Umgebung respektiert jetzt auch diese produktiven Pfade, bevor sie auf lokale Entwicklungswerte zurückfällt.
-* Die PHP-Setup-Seite verwendet weiterhin die serverseitige `.env`-Konfiguration statt Browser- oder Port-3000-Annahmen.
-* Der Setup-Flow sendet keine echten Datenbankpasswörter mehr an den Browser, wenn die App bereits aus der serverseitigen `.env` läuft.
-* Die produktive Setup-/Installationslogik bleibt auf PHP/LiteSpeed ausgerichtet und vermeidet harte Abhängigkeiten von `/api/*` auf dem Shared Host.
+- Module discovery does not auto-enable modules.
+- Module metadata must be treated as module metadata, not as app entries.
+- Module paths should resolve relative to the active installation context; hard-coded root paths are not the preferred pattern.
+- App and module management remain separate responsibilities.
 
-Realer Nachweis und Validierung
+## Admin, authentication, and sessions
 
-* `php -l webroot/setup.php` => keine Syntaxfehler
-* `npm test -- --test-reporter=spec` => 92 Tests, 0 Failures
-* Die Live-URL `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` liefert die PHP-Setup-Seite korrekt aus.
-* `/api/*` auf dem öffentlichen Host bleibt 404; das ist weiterhin eine Hosting-/Routing-Eigenschaft des Shared-Hostings und kein Repo-Problem.
-* Der Code behandelt dieses Verhalten explizit als Shared-Host-Umgebung, nicht als fehlerhaften Node-Server.
+The canonical admin entry point is:
 
-Deploy-/GitHub-Status
+- webroot/admin.php
 
-* Die finalen Änderungen wurden im Repository validiert und dokumentiert.
-* Danach erfolgt der Abschluss über den PR-Workflow gegen `main` (kein direkter `main`-Push).
-* Der GitHub-Sync ist Bestandteil der sauberen Agenten-/Workflow-Verarbeitung und muss die aktualisierte Workflow-Dokumentation einschließen, wenn sich Regeln/Arbeitsabläufe geändert haben.
+Admin access must remain protected by server-side session checks and role validation; the browser should not be treated as the authority.
 
-Deploy-Dokumentationsregel
+The authoritative server-side auth flow is:
 
-* `TODO.md` soll künftig regulär mit dem Repository synchronisiert werden.
-* `WORKFLOW.md` bleibt grundsätzlich Repository-Dokumentation und wird nicht automatisch auf den Produktionsserver übertragen, außer es gibt einen expliziten Betriebsgrund.
+- POST /api/auth/login
+- GET /api/auth/me
+- protected admin pages behind server-side session checks
 
-Admin-/Infrastruktur-Architekturregel (dauerhaft)
+The real session authority is the server. Local browser state may be used as a client artifact, but it cannot override the server’s auth decision.
 
-* Das Admin-System ist Desktop/Tablet-first und nutzt primär eine linke, hierarchische Explorer-Navigation.
-* Infrastrukturverwaltung wird generisch modelliert (`type`, `name`, `configuration`, `credential_reference`, `capabilities`, `status`, `enabled`) und nicht auf einzelne Runtime-Typen fest verdrahtet.
-* Node.js kann künftig als Integrationstyp geführt werden, ist aber keine aktuelle Produktionsvoraussetzung.
-* Für Admin-Schreiboperationen gilt serverseitig verpflichtend: Session-basierte Authentifizierung + CSRF-Token-Prüfung; UI-Sichtbarkeit ersetzt keine Autorisierung.
-* Der initiale Bootstrap-Admin wird aus `.env` (`CORE_BOOTSTRAP_USERNAME`, `CORE_BOOTSTRAP_PASSWORD`) bereitgestellt; feste produktive Default-Credentials im Code sind unzulässig.
+The admin shell should remain minimal and consistent, with:
+
+- a compact header
+- a persistent left sidebar
+- a single main content area
+- consistent light/dark design tokens and shared component styling
+
+## Security requirements
+
+The following rules are mandatory:
+
+- No secrets, credentials, session tokens, or live admin identity data may be committed to the repository.
+- .env values must remain host-local and must never be checked into git.
+- Do not expose production credentials in logs, commits, screenshots, PRs, or documentation.
+- Admin write operations remain session + role + CSRF protected.
+- Unauthenticated requests must fail with the correct HTTP protection behavior; invalid CSRF must fail as a 403.
+- Browser-local state must not be treated as a substitute for the server-side session.
+
+## Change rules
+
+Work must be minimal and evidence-driven.
+
+- Do not make architectural changes without evidence that the current implementation is wrong.
+- Do not invent modules, alternate admin systems, or duplicate runtime paths.
+- Do not change production behavior to satisfy a stale assumption.
+- Do not treat historical issues as current facts if they have been disproven by current code and runtime checks.
+- If a change affects auth, session handling, deployment, or host runtime assumptions, confirm the actual runtime behavior before proceeding.
+
+## Testing and validation
+
+Before a change is considered complete, the smallest relevant validation must be performed.
+
+Examples:
+
+- targeted auth/session checks for changed login or session logic
+- targeted admin/file-check validation for changed admin or setup flow
+- relevant existing unit tests for the changed behavior
+
+Avoid broad, repeated test runs when the relevant target has already been validated.
+
+## GitHub workflow
+
+All work is expected to follow the repository’s standard branch and PR workflow:
+
+- work on a feature branch
+- commit the change
+- push the branch to origin
+- create or update a pull request against main
+- wait for required checks to complete
+- merge only after checks are green and the branch is ready
+- sync local main with origin/main after merge
+- verify a clean working tree
+
+No direct push to main is permitted.
+
+## Deployment
+
+Production deployment follows the repository’s deployment rules and configuration, not a Node-port assumption.
+
+Relevant references:
+
+- server.md
+- scripts/manual-ftps-deploy.js
+- deployment allowlists and server configuration files used by the project
+
+The deployment path must include the actual production PHP files and API files required by the host; a setup-only deploy is not a valid production deployment.
+
+## Authoritative references
+
+The effective references for future work are:
+
+- VISION.md
+- TODO.md
+- WORKFLOW.md
+- server.md
+- webroot/admin.php
+- webroot/setup.php
+- webroot/api/.htaccess
+- scripts/manual-ftps-deploy.js
+- package.json for local test commands
+
+## Prohibited actions
+
+Agents must not do the following without explicit evidence and a valid reason:
+
+- invent new admin systems or duplicate entry points
+- rewrite architecture based on stale bug history
+- assume root /api/* is the public production route
+- assume Node port 3000 is active in shared hosting
+- commit secrets, real credentials, or host config values
+- keep historical bug descriptions as if they were current state
+- add features or modules without a concrete requirement
+
+## .env and host data handling
+
+- .env files are host-local runtime configuration and must not be committed.
+- Credentials, DB values, session data, and live admin identity are operational secrets.
+- Host-specific values must be treated as runtime state, not as repository content.
+- Any actual production login verification must be performed only with the valid host credentials and only after confirming that the host-side user is real and authorized.
