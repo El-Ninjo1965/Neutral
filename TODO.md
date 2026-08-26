@@ -37,6 +37,7 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Admin shell layout cleaned: duplicate legacy navigation and redundant summary cards were removed from the canonical admin shell, leaving a single compact header with the title and theme/lockout controls plus a permanent sidebar and main content area.
 [x] Module list parsing fixed: the admin UI now unwraps the real API envelope from `/api/admin/modules` before reading `modules`, which removes the false `Failed to load modules: unknown error` state while preserving legitimate empty state handling.
 [x] Bootstrap admin login regression fixed: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` now auto-create or update the admin user before credential validation, and the session-auth regression suite passes on the real login flow.
+[x] CodeQL security fix applied: the password-hash service no longer uses SHA-256 password hashing; it now uses Argon2/scrypt-based secure password derivation and the high-severity secret-hashing alert is removed from the repository code path.
 [~] PHP admin login in this runtime remains blocked by the local PHP driver state: the active CLI/PHP runtime here does not include `pdo_mysql`, so the server-side auth endpoint fails at the database layer. The route now returns an explicit `503`/actionable message instead of a silent 500, and the environment fix is to enable the MySQL PDO driver for the active PHP runtime.
 
 ## Actual GitHub sync outcome
