@@ -8,6 +8,27 @@ This file is the current task ledger for the project. It must stay aligned with 
 - [ ] open
 - [?] unclear or blocked
 
+## Übergabestand / Pause
+
+Der Repository-Stand ist aktuell stabil und für die im Code nachgewiesenen Probleme bereits gelöst: Bootstrap-Admin-Seed, Login-/Session-Regression und der CodeQL-Alert für unsichere Passwort-Hashing-Pfade wurden im Repository behoben und in `main` integriert.
+
+Wirklich offen bleibt ausschließlich der Live-Host-/Credential-Zustand auf dem produktiven PHP/LiteSpeed-Host. Der Code selbst ist nicht mehr der aktive Blocker.
+
+- Der öffentliche Live-Host bedient die echte App unter `/index/app/neutral/webroot/*`; Root-`/api/*` ist nicht der aktive Produktionspfad.
+- Die im Repository hinterlegten Bootstrap-Credentials sind auf dem Live-Host nicht gültig; `POST /api/auth/login` liefert dort weiterhin HTTP 401.
+- Ein manuell angelegter Live-Admin ist ein Betriebszustand des Hosts und kein Repository-Artefakt.
+- Der echte nächste Schritt ist die Validierung des host-seitigen Admin-Users bzw. der Live-Credentials, nicht eine weitere Architektur- oder Code-Änderung im Repository.
+
+Der Status ist deshalb ein klarer Pause-/Übergabestand: Code-Fix und GitHub-Workflow sind abgeschlossen; Live-Login verifiziert sich nur mit gültigen Host-Credentials.
+
+## GitHub & Security status
+
+- PR #52: merged to `main`.
+- CodeQL required check: green on the final fix commit.
+- Main branch: synchronized with `origin/main`.
+- Working tree: clean after final docs sync; no code or secret changes are committed beyond the documentation handoff.
+- Security rule: credentials, session state and live admin data remain operational secrets; they are never committed, logged, or documented in repo state.
+
 ## Completed and verified
 
 [x] Module lifecycle repaired: discovery no longer auto-enables modules.
@@ -38,16 +59,20 @@ This file is the current task ledger for the project. It must stay aligned with 
 [x] Module list parsing fixed: the admin UI now unwraps the real API envelope from `/api/admin/modules` before reading `modules`, which removes the false `Failed to load modules: unknown error` state while preserving legitimate empty state handling.
 [x] Bootstrap admin login regression fixed: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` now auto-create or update the admin user before credential validation, and the session-auth regression suite passes on the real login flow.
 [x] CodeQL security fix applied: the password-hash service no longer uses SHA-256 password hashing; it now uses Argon2/scrypt-based secure password derivation and the high-severity secret-hashing alert is removed from the repository code path.
-[~] PHP admin login in this runtime remains blocked by the local PHP driver state: the active CLI/PHP runtime here does not include `pdo_mysql`, so the server-side auth endpoint fails at the database layer. The route now returns an explicit `503`/actionable message instead of a silent 500, and the environment fix is to enable the MySQL PDO driver for the active PHP runtime.
+[x] PR #52 merged to `main`: the repository fix for the bootstrap login regression and the CodeQL security remediation are in the merged `main` branch.
+[x] `main` synchronized with `origin/main`: local repository state matches the remote default branch after merge.
+[~] Live admin authentication remains host-state dependent: the current public host still rejects the repository bootstrap credentials with HTTP 401, so a valid live admin session is still pending confirmation of the actual host credential state.
 
 ## Actual GitHub sync outcome
 
 [x] Final admin sync set was committed and merged: `0efd79e` (`Merge pull request #44 from El-Ninjo1965/chore/admin-sync-finalization`).
 [x] Branch workflow completed: branch `chore/admin-sync-finalization` -> PR `#44` -> CodeQL checks passed -> PR merged into `main`.
 [x] Local `main` was synchronized with `origin/main` after merge.
+[x] PR #52 merged into `main` after the bootstrap login fix and the CodeQL password-hashing fix passed the required checks.
 [x] Deployment mechanism validated: the repository’s actual FTPS path using `.env.deploy` + `scripts/manual-ftps-deploy.js` loads the configured host data and successfully executes the production upload against `ftp.turbolikes.com` on port `21` with FTPS mode.
 [x] Live verification completed against the production host for the public PHP entrypoints and module discovery: `https://www.turbolikes.com/index/app/neutral/webroot/setup.php` returns HTTP 200; `https://www.turbolikes.com/index/app/neutral/webroot/admin.php` returns the unauthenticated admin login gate with HTTP 401; `https://www.turbolikes.com/index/app/neutral/webroot/api/modules` returns a real module list including the `gps` module; `GET /api/admin/modules` remains protected and returns HTTP 401 without a valid admin session.
-[x] Live admin sign-in remains restricted by the current production credentials: the repo bootstrap credentials do not authenticate on the live host, so a full authenticated browser/session verification still requires the actual live admin credentials or a fresh live user bootstrap on the host.
+[x] Live admin sign-in remains restricted by the current production credentials: the repository bootstrap credentials do not authenticate on the live host, so a full authenticated browser/session verification still requires the actual live admin credentials or a fresh live user bootstrap on the host.
+[x] A manual host-side admin/user creation or update may exist as operational state. This is not a repository artifact and must not be described as a committed code change.
 [x] Live verification against the public host using the repository-local bootstrap env values: `POST /index/app/neutral/webroot/api/auth/login` returned HTTP 401 `Invalid username or password.` and `GET /index/app/neutral/webroot/api/auth/me` returned HTTP 401 `Not authenticated.`; the live credentials currently in use are therefore not valid for the production session path.
 
 ## Current open work

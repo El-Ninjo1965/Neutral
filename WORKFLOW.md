@@ -3,15 +3,16 @@ Neutral – Workflow
 Aktueller Stand
 
 * Repository: El-Ninjo1965/Neutral
-* Branch: main
-* Der aktuelle Quellcode ist die maßgebliche Referenz.
-* Der lokale Node-Host-Binding-Fix wurde implementiert: Standard-Host ist `0.0.0.0`; zusätzlich werden `HOST`, `PUBLIC_HOST` und `SERVER_HOST` berücksichtigt.
-* Die lokale Runtime funktioniert. Das verbleibende Problem ist die öffentliche Produktionsanbindung an `https://www.turbolikes.com`.
-* Die zentrale Modulverwaltung verwendet jetzt einen sauberen Lifecycle: `DISCOVER -> REGISTER/INSTALL -> INACTIVE`; `discoverModules()` aktiviert keine Module mehr automatisch.
+* Branch: `main` (synchronisiert mit `origin/main`)
+* Der Quellcode ist die maßgebliche Referenz; die aktuellen dokumentierten Arbeiten sind reine Übergabe-/Pause-Änderungen.
+* Die im Repository verifizierten Code-Fixes sind abgeschlossen: Bootstrap-Admin-Seed, Session-/Login-Regression und CodeQL-Alert für unsichere Passwort-Hashing-Pfade wurden behoben und in `main` integriert.
+* Der produktive Host bleibt der eigentliche offene Punkt: Der öffentliche PHP/LiteSpeed-Host akzeptiert die Repository-Bootstrap-Credentials nicht; `POST /api/auth/login` liefert dort HTTP 401.
+* Die zentrale Modulverwaltung verwendet weiterhin einen sauberen Lifecycle: `DISCOVER -> REGISTER/INSTALL -> INACTIVE`; `discoverModules()` aktiviert keine Module mehr automatisch.
 * Module werden relativ zum aktuellen Installationspfad aufgelöst; harte Root-Pfade werden vermieden.
 * App- und Modulverwaltung bleiben getrennt; echte Module müssen als `type: "module"` registriert werden, nicht als App-Objekt.
 * Der PHP-Backendpfad für Module ist live verifiziert: Discovery, Install/Register, Activate/Deactivate laufen über `/webroot/api` gegen MySQL-persistente Zustände.
 * Sicherheitsverhalten für Admin-Schreiboperationen bleibt verbindlich: ohne Session `401`, mit ungültigem/fehlendem CSRF `403`.
+* Keine unnötige Entwicklung: Wenn der aktive Blocker ein externer Host-/Credential-Zustand ist, sind nur Dokumentation, Verifikation und Workflow-Synchronisierung zulässig, bis der Live-Host-Zustand tatsächlich bestätigt ist.
 
 Verbindliche Regeln
 
@@ -21,7 +22,9 @@ Verbindliche Regeln
 * Für LiteSpeed-Shared-Hosting muss die API-Routing-Fallback-Regel in `webroot/api/.htaccess` aktiv bleiben, damit `/webroot/api/*` zuverlässig über `index.php` ausgeführt wird.
 * Deploys müssen die produktiven PHP-Core/API-Dateien (`core/php/*`, `webroot/api/*`) enthalten; ein Setup-only Deploy ohne diese Dateien gilt nicht als produktionsfähig.
 * Keine Secrets oder echte `.env`-Inhalte werden in das Git-Repository übernommen.
+* Credentials und live Admin-Zustände sind Betriebsgeheimnisse des Hosts und müssen weder im Repository noch in Logs, Commits, Dokumentation oder PRs landen. Eine manuell angelegte Admin-Instanz auf dem Live-Host ist ein Laufzeitzustand, kein Repository-Artefakt.
 * `TODO.md` ist das verbindliche, lebende Arbeitsprotokoll und muss bei Analyse-/Designaufträgen nach jedem abgeschlossenen Arbeitsschritt aktualisiert werden.
+* Keine unnötige Entwicklung: Wenn der aktuelle Blocker ein externer Live-Host-/Credential-Zustand ist, bleibt nur Dokumentation, Verifikation und Workflowschließung erlaubt, bis der echte Host-Zustand bestätigt ist.
 * Abschlussregel: Ein Arbeitsschritt darf nicht als „abgeschlossen“ gelten, solange er nicht tatsächlich: getestet, in `TODO.md` dokumentiert, in `WORKFLOW.md` dokumentiert, committed, nach GitHub gepusht, über PR/Checks abgesichert, gemergt und mit `main = origin/main` sowie sauberem `git status` verifiziert wurde.
 * Neutral wird als portable Core-Plattform geführt; app-spezifische Funktionen gehören in den Application Layer bzw. in Module, nicht als Core-Sonderlogik.
 * Keine hartcodierten Produktionspfade in Architektur-/Implementierungsentscheidungen; Runtime-Pfade müssen konfigurationsbasiert und installationspfadunabhängig sein.
@@ -31,6 +34,7 @@ Verbindliche Regeln
 * Für Admin-/Developer-Auth gilt serverseitige Session-Authorität: `/api/auth/login` + `/api/auth/me` sind maßgeblich; lokaler Browser-Auth-State darf auf diesen Seiten nicht als primäre Wahrheitsquelle dienen.
 * Der kanonische Admin-Einstieg ist `webroot/admin.php` (serverseitige Session-/Rollenprüfung vor UI-Ausgabe); `webroot/admin.html` wurde entfernt. Das Admin-Layout verwendet einen reduzierten Header mit klarer Titelzeile und eine permanente linke Sidebar mit konstanter Navigationsstruktur; der Theme-Wechsel sitzt im Admin-Shell-Menü, nicht mehr im Header.
 * Die PHP-Admin-API muss die gleichen admin-ressourcenfähigen Endpunkte liefern wie das Node-Backend (`/api/admin/system/health`, `/api/admin/diagnostics`, `/api/admin/server`, `/api/admin/database`, `/api/admin/connections`, `/api/admin/providers`, `/api/admin/backups`, `/api/admin/backup`, `/api/admin/release/status`, `/api/admin/updates`); leere oder echte Runtime-Daten gelten als legitime Live-Zustände, keine Platzhalter-Fallbacks.
+* Verbindliche Schutzregel für Credentials: Keine echte Credential-, Session- oder Host-Admin-Information darf in Commit-Logs, PRs, Issues, Screenshots, Deployment-Manifesten oder Dokumentation gelangen. Ein manuell angelegter Live-Admin auf dem Host ist ein Betriebsschritt, kein Code- oder Repo-Objekt.
 * `setup.php` ist der kanonische Setup-Einstieg für Installations-/Reset-Vorgänge; `webroot/setup.html` wurde entfernt. Die Datei bleibt als manuell aufrufbares, serverseitiges Setup-Werkzeug verfügbar und bleibt keine Runtime-Abhängigkeit.
 * Die Entfernung von `webroot/setup.php` auf Produktion ist ein separater manueller Betriebs-Schritt und darf nicht durch Runtime-Code vorausgesetzt werden.
 * Das Admin-Layout bleibt als Header + permanente Sidebar + Main Content aufgebaut; doppelte Navigationsblöcke und redundante Statuskarten sind nicht Teil des kanonischen Shells. Der Theme-Wechsel und Lockout bleiben in der Header-Aktion, nicht als eigenständiger Navigationsblock.
@@ -63,6 +67,7 @@ Exakte Schlussfolgerung
 * Daher ist die technische Lösung auf diesem Host eine PHP/LiteSpeed-basierte Setup- und Runtime-Lösung, nicht die Node-Architektur per Port 3000.
 * Die Login-Regression mit dem Bootstrap-Admin wurde aufgelöst: `CORE_BOOTSTRAP_USERNAME` / `CORE_BOOTSTRAP_PASSWORD` werden vor der Authentifizierung automatisch als adminischer Seed-User sichergestellt; dadurch verschwindet die stille No-Response-Login-Failure, wenn noch kein gesetzter Bootstrap-Admin existiert.
 * CodeQL-Sicherheitsgate: Der kritische Alert zur Passwort-Hashing-Strategie wurde im Repository-Code behoben, indem die Passwort-Hashing-Pfade ausschließlich auf sichere Argon2-/scrypt-basierte Derivierungen gesetzt wurden. Die zuvor als `high` gemeldete schwache SHA-256-Passworthash-Implementierung wurde aus dem aktiven Pfad entfernt.
+* Das Live-Login bleibt weiterhin host- und credentials-abhängig: Der aktuelle öffentliche PHP-Host akzeptiert die Repository-Bootstrap-Credentials nicht mit HTTP 401; der nächste technische Schritt ist deshalb die Prüfung des tatsächlich aktiven Host-Admin-Zustands, nicht eine weitere Repository-Architekturänderung.
 * Relevanter Nachweis für die aktuelle PHP-Laufzeit: Der aktive PHP-CLI/TLS-Stack in dieser Umgebung hat kein `pdo_mysql` geladen. Deshalb scheitert der serverseitige Login-Pfad am Datenbanktreiber, nicht am Browser-Event-Handler. Der Laufzeitfehler wird jetzt klar als `503 Authentication backend unavailable: ... enable pdo_mysql ...` signalisiert, statt in einer stillen 500-Response zu verschwinden.
 
 Untersuchung der Produktionskette
