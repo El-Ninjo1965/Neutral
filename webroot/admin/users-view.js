@@ -25,13 +25,13 @@ class AdminUsersView {
 
   async loadRoles() {
     const result = await this.api.getRoles();
-    this.roles = result.ok && Array.isArray(result.data.roles) ? result.data.roles : [];
+    this.roles = result.ok ? AdminCommon.unwrapData(result, 'roles', []) : [];
   }
 
   async loadUsers() {
     const result = await this.api.searchUsers(this.filters);
     if (result.ok) {
-      this.users = Array.isArray(result.data.users) ? result.data.users : [];
+      this.users = Array.isArray(AdminCommon.unwrapData(result, 'users', [])) ? AdminCommon.unwrapData(result, 'users', []) : [];
     } else {
       AdminCommon.showAlert(`Failed to load users: ${result.error}`, 'error');
       this.users = [];

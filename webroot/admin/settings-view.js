@@ -30,7 +30,7 @@ class AdminSettingsView {
   async loadSettings() {
     const result = await this.api.getSettings();
     if (result.ok) {
-      this.settings = result.data.settings;
+      this.settings = AdminCommon.unwrapData(result, 'settings', {});
     } else {
       AdminCommon.showAlert(`Failed to load settings: ${result.error}`, 'error');
       this.settings = {
@@ -182,7 +182,7 @@ class AdminSettingsView {
     const result = await this.api.updateSettings(data);
     if (result.ok) {
       AdminCommon.showAlert('Settings saved successfully', 'success');
-      this.settings = result.data.settings;
+      this.settings = AdminCommon.unwrapData(result, 'settings', this.settings || {});
     } else {
       AdminCommon.showAlert(`Failed to save settings: ${result.error}`, 'error');
     }

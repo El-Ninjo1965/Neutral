@@ -15,9 +15,7 @@ class AdminAuditView {
 
   async loadEntries() {
     const result = await this.api.getAuditEntries(this.filters);
-    this.entries = result.ok && result.data && Array.isArray(result.data.entries)
-      ? result.data.entries
-      : [];
+    this.entries = result.ok ? AdminCommon.unwrapData(result, 'entries', []) : [];
   }
 
   render() {

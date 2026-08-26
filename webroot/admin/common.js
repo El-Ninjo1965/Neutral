@@ -14,6 +14,26 @@ const escapeHtmlCommon = (value) => String(value ?? '')
   .replace(/'/g, '&#039;');
 
 const AdminCommon = {
+  unwrapData(result, key = null, fallback = null) {
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+      return fallback;
+    }
+
+    const payload = result.data && result.data.ok === true && result.data.data && typeof result.data.data === 'object'
+      ? result.data.data
+      : result.data;
+
+    if (key === null) {
+      return payload;
+    }
+
+    const nestedValue = Object.prototype.hasOwnProperty.call(payload, key)
+      ? payload[key]
+      : (Object.prototype.hasOwnProperty.call(result.data, key) ? result.data[key] : fallback);
+
+    return nestedValue === undefined ? fallback : nestedValue;
+  },
+
   // Create a form container
   createForm(id, title, fields, onSubmit) {
     const form = document.createElement('form');

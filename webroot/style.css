@@ -230,6 +230,8 @@ pre {
 .topbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   min-height: 52px;
   padding-bottom: 18px;
   margin-bottom: 20px;
@@ -243,7 +245,10 @@ pre {
 }
 
 .header-actions {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .badge,
