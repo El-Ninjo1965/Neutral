@@ -69,6 +69,24 @@ The existing repository and the live tests support a small set of concrete deplo
 
 The actual public request path was tested with two disposable files uploaded to the live app root using the same FTPS deployment account and the same public document root as `app.turbolikes.com`:
 
+The public host was then tested against multiple live domains and URLs, including:
+
+- `https://app.turbolikes.com/`
+- `https://www.turbolikes.com/`
+- `https://turbolikes.com/`
+- `https://app.turbolikes.com/index.html`
+- `https://www.turbolikes.com/index/web-app/`
+- `https://www.turbolikes.com/index/app/neutral/webroot/api/status`
+
+All of them returned the same public host response:
+
+- `HTTP/2 200`
+- `server: openresty/1.31.1.1`
+- `text/html`
+- `One moment, please...`
+
+This proves the challenge layer is not limited to one path, one file type, one subdomain, or one public root. It affects the whole public host layer in front of the application origin. Static HTML and PHP are both blocked at the web-server layer. That means the challenge is not evidence of a missing `pdo_mysql` extension, nor of a bad app route. It is evidence of a public host interception before the application can run.
+
 - a static HTML probe (`cpanel-runtime-check.html`)
 - a PHP probe (`cpanel-runtime-check.php`)
 
