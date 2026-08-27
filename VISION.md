@@ -113,6 +113,24 @@ Dadurch soll erreicht werden:
 * unterschiedliche Apps können unterschiedliche Designs verwenden.
 * nicht benötigte Funktionen müssen nicht Bestandteil jeder Anwendung sein.
 
+### Web-App als eigenständiger Client
+
+Die Web-App ist als eigenständiger öffentlicher Client zu verstehen, der mit der Neutral-API über öffentliche HTTPS-Endpunkte kommuniziert. Sie darf nicht von localhost, 127.0.0.1, internen Ports, lokalen Entwicklungsservern oder hostinternen Annahmen abhängen.
+
+Die maßgebliche Public-API-Basis ist:
+
+* https://www.turbolikes.com/index/app/neutral/webroot/api/
+
+Der konkrete Web-App-Client-Pfad für Entwicklung und Test bleibt separat:
+
+* https://www.turbolikes.com/index/web-app/
+
+Dieser Pfad muss auf den tatsächlichen Web-App-Document-Root des Hostings verweisen. Er darf nicht durch den Neutral-Serverpfad `/index/app/neutral/webroot/` ersetzt werden. Der Web-App-Einstiegspunkt ist ein eigener öffentlich erreichbarer Clientpfad; der Server-/Anwendungsbereich von Neutral bleibt getrennt davon.
+
+Der aktuelle Live-Check hat den tatsächlichen Stand bestätigt: Der Web-App-FTP-Account liefert das echte Web-App-Bundle im chrooted Root `/`; die öffentliche URL `/index/web-app/` liefert dagegen weiterhin den veralteten Platzhalter und 404s für CSS/JS-Assets. Daher ist die Host-Mapping für diese URL der noch offene, entscheidende Punkt. Die Web-App-Architektur bleibt als eigener Client definiert, aber die öffentliche Live-URL muss noch auf denselben Dokument-Root wie der FTP-Root verweisen, bevor ein echter Browser-/Mobiltest als erfolgreich gelten kann.
+
+Der Client muss Login, Session, RBAC, Module, GPS und Logout auf Basis dieser öffentlichen API verarbeiten. Lokale Entwickler- oder Preview-Pfade sind nur als lokale Hilfsmechanik zu behandeln, nicht als Produktionsvoraussetzung.
+
 ⸻
 
 1.6 Offline First
