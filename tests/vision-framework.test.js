@@ -273,15 +273,15 @@ test('app config exposes a single neutral app name', () => {
   assert.equal(typeof context.window.ConfigManager.get('bootstrap').developerPasswordHash, 'string');
 });
 
-test('user and admin shells expose shared navigation anchors', () => {
+test('user shell keeps shared navigation while admin shell stays single-column and sidebar-free', () => {
   const userHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/index.html'), 'utf8');
   const adminPhp = fs.readFileSync(path.resolve(__dirname, '../core/php/views/admin-ui.php'), 'utf8');
   const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../webroot/admin.php'), 'utf8');
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);
-  assert.match(adminPhp, /id="appModuleNav"/);
-  assert.match(adminPhp, /id="brandName"/);
+  assert.doesNotMatch(adminPhp, /shared-shell-sidebar|appModuleNav|userMenu/);
   assert.match(adminPhp, /id="topbarTitle"/);
+  assert.match(adminPhp, /id="mainContent"/);
   assert.match(adminPhpEntry, /admin.php|admin-ui/);
 });
