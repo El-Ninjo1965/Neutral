@@ -2,9 +2,13 @@
 
 const assert = require('node:assert');
 const { test, describe } = require('node:test');
-const { compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
+const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
+  test('gps standalone entry is allowlisted for deployment', () => {
+    assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
+  });
+
   test('new file is uploaded', () => {
     const previous = {
       'index.html': { hash: 'old-index', size: 10 },
