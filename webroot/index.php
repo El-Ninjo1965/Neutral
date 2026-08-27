@@ -67,6 +67,7 @@ header('X-Neutral-Entry: php');
     <script src="../platform/media-manager.js"></script>
     <script src="../platform/local-auth.js"></script>
     <script src="../platform/app.js"></script>
+    <script src="api-client.js"></script>
     <script src="user-app.js"></script>
   </body>
 </html>

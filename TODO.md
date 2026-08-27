@@ -46,6 +46,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Repository tests covering API, auth, storage, module lifecycle, and admin flow all pass locally.
 - [x] Real DB-backed production login verification succeeded for the live admin and Tester accounts against the public PHP route; both sessions were validated using the server-side auth/session contract and the real RBAC roles returned by /api/auth/me.
 - [x] Public production routing is now served via the PHP entry point and does not render the stale developer preview banner; live unauthenticated and invalid-credential API responses return expected 401 behavior.
+- [x] Fixed the production browser login path: the public shell now loads `api-client.js` before `user-app.js`, so the browser uses `/api/auth/login` and the server-side session flow instead of falling back to the local developer bootstrap on non-localhost runtime.
 
 ## Open tasks
 
