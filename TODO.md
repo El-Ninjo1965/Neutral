@@ -5,8 +5,8 @@ This is the current operational task ledger for the repository. It is intentiona
 ## Current project status
 
 - Repository: El-Ninjo1965/Neutral
-- Current branch: main
-- GitHub sync: main is synchronized with origin/main.
+- Current branch: chore/auto-sync-deploy
+- GitHub sync: the active working branch is chore/auto-sync-deploy tracking origin/chore/auto-sync-deploy; PR #61 remains the active review branch.
 - Neutral remains a modular framework with a core layer and module-based extensions.
 - Canonical admin entry point: webroot/admin.php
 - Canonical setup entry point: webroot/setup.php
@@ -35,8 +35,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Keep the server deployment and public web-app deployment separated in both the repository logic and the deployment target model.
 - [x] Confirm the public web-app runtime path `/index/web-app/` resolves to the dedicated host directory `/home/web1819/public_html/index/web-app/` and remains separate from the Neutral server deployment path.
 - [x] Correct the repository-side split deployment logic so the public web-app bundle is staged separately from the server bundle and not uploaded into the server app area.
-- [ ] Refresh the live web-app FTPS credential used by the local `.env.web-app.deploy` to the current cPanel password for `web-app@turbolikes.com`; the active value still rejects authentication (`530 Login authentication failed`), so the live public web-app deploy remains blocked until that credential is updated.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the active FTPS credential is refreshed and the live web-app upload succeeds.
+- [x] Verify the live FTPS account and public HTTPS bundle: the dedicated web-app account authenticates successfully with the current cPanel username `wep-app@turbolikes.com`, the root `/` is valid for the web-app chroot, and `/index/web-app/` serves the current bundle from `/home/web1819/public_html/index/web-app/`.
+- [x] Validate the live public API login and session flow with the Developer test account: login to `/index/app/neutral/webroot/api/auth/login` succeeds, `/api/auth/me` returns the authenticated user, and role/permission data is present for the active session.
 
 ## Open tasks
 
