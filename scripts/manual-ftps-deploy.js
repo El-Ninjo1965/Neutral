@@ -13,6 +13,11 @@ const envFiles = [
 const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
+const webAppEntries = [
+  'platform',
+  'webroot'
+];
+
 const allowedEntries = [
   'package.json',
   'package-lock.json',
@@ -225,21 +230,34 @@ function copyDirectory(srcDir, destDir) {
   }
 }
 
-function buildStagingTree() {
+function buildStagingTree(mode = 'server') {
   const stagingRoot = path.join(projectRoot, '.deploy-staging');
   fs.rmSync(stagingRoot, { recursive: true, force: true });
   fs.mkdirSync(stagingRoot, { recursive: true });
 
   const missing = [];
+  const selectedEntries = mode === 'web-app' ? webAppEntries : allowedEntries;
 
-  for (const entry of allowedEntries) {
+  for (const entry of selectedEntries) {
     const sourcePath = path.join(projectRoot, entry);
     if (!fs.existsSync(sourcePath)) {
       missing.push(entry);
       continue;
     }
 
-    const targetPath = path.join(stagingRoot, entry);
+    let targetPath;
+    if (mode === 'web-app') {
+      if (entry === 'platform') {
+        targetPath = path.join(stagingRoot, 'index', 'platform');
+      } else if (entry === 'webroot') {
+        targetPath = path.join(stagingRoot, 'index', 'web-app');
+      } else {
+        targetPath = path.join(stagingRoot, entry);
+      }
+    } else {
+      targetPath = path.join(stagingRoot, entry);
+    }
+
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
 
     const stat = fs.statSync(sourcePath);
@@ -302,7 +320,7 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/manual-ftps-deploy.js [--dry-run]\n\nCreates a staging directory containing only the allowlisted production files and uploads only changed/newer files to the remote server.\n`);
+  console.log(`Usage: node scripts/manual-ftps-deploy.js [--dry-run] [--web-app]\n\nCreates a staging directory containing only the allowlisted production files and uploads only changed/newer files to the remote server.\n--web-app stages the public client under /index/web-app/ and /index/platform/ while preserving the legacy server staging as the default mode.\n`);
 }
 
 function main() {
@@ -313,6 +331,7 @@ function main() {
     return;
   }
 
+  const mode = args.has('--web-app') ? 'web-app' : 'server';
   const dryRun = args.has('--dry-run') || args.has('--preview');
   const config = getConfig();
   const missingConfig = required.filter((key) => !String(config[key] || '').trim());
@@ -322,7 +341,7 @@ function main() {
     process.exit(1);
   }
 
-  const { stagingRoot, missing } = buildStagingTree();
+  const { stagingRoot, missing } = buildStagingTree(mode);
   const stagedFiles = [];
   const currentManifestFiles = collectManifestFiles(stagingRoot);
   const previousManifest = readDeploymentManifest();
@@ -343,6 +362,7 @@ function main() {
 
   const output = {
     status: dryRun ? 'DRY_RUN' : 'READY',
+    mode,
     stagingDir: stagingRoot,
     filesQueued: stagedFiles.length,
     files: stagedFiles.sort(),
@@ -380,6 +400,7 @@ if (require.main === module) {
 module.exports = {
   allowedEntries,
   buildStagingTree,
+  webAppEntries,
   buildRemoteDeleteTargets,
   collectManifestFiles,
   compareDeploymentFiles,

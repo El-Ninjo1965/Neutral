@@ -1,12 +1,23 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const assert = require('node:assert');
 const { test, describe } = require('node:test');
-const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
+const { allowedEntries, webAppEntries, compareDeploymentFiles, buildStagingTree } = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
   test('gps standalone entry is allowlisted for deployment', () => {
     assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
+  });
+
+  test('web app deploy mode stages the public client under /index/web-app and /index/platform', () => {
+    const { stagingRoot, missing } = buildStagingTree('web-app');
+    assert.deepStrictEqual(missing, []);
+    assert.ok(webAppEntries.includes('platform'));
+    assert.ok(webAppEntries.includes('webroot'));
+    assert.ok(fs.existsSync(path.join(stagingRoot, 'index', 'platform', 'core.js')));
+    assert.ok(fs.existsSync(path.join(stagingRoot, 'index', 'web-app', 'index.html')));
   });
 
   test('new file is uploaded', () => {
