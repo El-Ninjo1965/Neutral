@@ -26,6 +26,7 @@ const allowedEntries = [
   'server/services',
   'app/index.js',
   'app/modules/index.json',
+  'app/modules/gps/index.html',
   'app/modules/gps/index.js',
   'app/modules/gps/module.json',
   'apps/neutral-app/app-info.json',
@@ -285,7 +286,7 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
     'set ftp:ssl-protect-data true',
     'set ssl:verify-certificate no',
     `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
-    `mirror -R --only-newer --verbose --parallel=2 --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
+    `mirror -R --only-newer --verbose --parallel=1 --no-perms --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
     deleteCommands ? deleteCommands : '',
     'bye'
   ].filter(Boolean).join('\n');

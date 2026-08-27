@@ -153,6 +153,8 @@ The current manual FTPS deploy script reads deployment credentials in this order
 - `.env.deploy`
 - process environment overrides
 
+The current shared-host FTPS deploy flow uses a host-safe mirror mode without remote permission synchronization and without parallel upload races; deployment reliability is more important than upload concurrency on this host.
+
 Only the allowlisted production tree may be staged and uploaded; deploy credentials and host-local `.env` files are never committed.
 
 The deployment path must include the actual production PHP files and API files required by the host; a setup-only deploy is not a valid production deployment.

@@ -22,6 +22,7 @@ const allowedEntries = [
   'server/services',
   'app/index.js',
   'app/modules/index.json',
+  'app/modules/gps/index.html',
   'app/modules/gps/index.js',
   'app/modules/gps/module.json',
   'apps/neutral-app/app-info.json',
