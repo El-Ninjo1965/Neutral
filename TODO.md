@@ -33,8 +33,10 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
 - [x] Implement the repository-side automation guardrails for the separate deployment flow: `scripts/auto-sync.js`, `scripts/auto-watch.js`, and a GitHub workflow that deploys the server and web-app bundles independently.
 - [x] Keep the server deployment and public web-app deployment separated in both the repository logic and the deployment target model.
-- [ ] Resolve the external FTPS account configuration for the public web-app target: the configured web-app account currently rejects the upload with `421 Home directory not available`, so the live public web-app deployment cannot be completed until that host-side FTP target is corrected.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the external web-app FTPS account is corrected.
+- [x] Confirm the public web-app runtime path `/index/web-app/` resolves to the dedicated host directory `/home/web1819/public_html/index/web-app/` and remains separate from the Neutral server deployment path.
+- [x] Correct the repository-side split deployment logic so the public web-app bundle is staged separately from the server bundle and not uploaded into the server app area.
+- [ ] Refresh the live web-app FTPS credential used by the local `.env.web-app.deploy` to the current cPanel password for `web-app@turbolikes.com`; the active value still rejects authentication (`530 Login authentication failed`), so the live public web-app deploy remains blocked until that credential is updated.
+- [ ] Request and complete the real browser/mobile live test with the project owner after the active FTPS credential is refreshed and the live web-app upload succeeds.
 
 ## Open tasks
 
