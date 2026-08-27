@@ -49,6 +49,29 @@ The repository work does not need a rewrite of the app core to reach the server.
 4. FTP/SFTP-only delivery is acceptable as a deployment mechanism, but it must not become the runtime source of truth. The trusted runtime remains the public Neutral PHP API and server-side session/auth decisions. FTP or SFTP is only for publishing the static files to the correct public root.
 5. No local auth fallback is acceptable as a production replacement, even if a temporary host fix is delayed. The server must remain the authority for user identity, session, permissions, and modules.
 
+### Final self-service assessment for the current cPanel account
+
+From the repo and the live tests, the real self-service options available to the account are limited to the public host configuration itself:
+
+- create public subdomains and assign document roots,
+- set PHP version and PHP extensions via cPanel,
+- manage .htaccess / rewrite rules,
+- map domains and subdomains to public folders,
+- use FTP/FTPS to publish static and PHP files,
+- use public HTML/PHP under the selected document root.
+
+The following variants were checked against the actual public host behavior:
+
+- Same-origin under `https://app.turbolikes.com/` with `app/api` or `/api` — not reachable because the public host intercepts before the actual document root is served.
+- Separate API subdomain `https://api.turbolikes.com/` — not reachable because the challenge is host-level and affects multiple domains and public roots.
+- Main domain root `https://turbolikes.com/` — also challenged before origin, so the issue is not specific to the app subdomain.
+- Alternate public roots or directories — not reachable in practice because every tested public URL is handled by the same OpenResty challenge layer.
+- Public PHP frontcontroller routes — still blocked before PHP executes, so a repo-side frontcontroller cannot bypass the host challenge.
+
+The important conclusion is that the host challenge is not caused by Neutral, not caused by PHP, not caused by the app path, and not caused by `pdo_mysql` in the local Codespace. It is a public host-layer problem. In the account’s own cPanel configuration, there is no self-service route that can force a public request to bypass the shared-host challenge layer without changing the host’s public routing or security layer.
+
+The repository remains compatible with the eventual correct host configuration, but no self-service cPanel-only workaround has been found that can make the app public on the current shared-host setup without the host side changing the challenge/public routing behavior.
+
 ### Direct production origin test: new app subdomain
 
 The public host was re-tested against the new subdomain `https://app.turbolikes.com/` using the dedicated FTPS deployment account and a disposable origin probe. The proven result is:
