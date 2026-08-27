@@ -78,6 +78,9 @@ final class Phase7ModuleRuntime
 
         return array_map(function (array $module): array {
             $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+            $isInstalled = (bool) ($module['registered'] ?? false);
+            $isActive = (bool) ($module['active'] ?? false);
+            $state = $this->resolveClientState($isInstalled, $isActive);
 
             return [
                 'id' => (string) ($module['id'] ?? ''),
@@ -100,8 +103,14 @@ final class Phase7ModuleRuntime
                 'registered' => (bool) ($module['registered'] ?? false),
                 'status' => (string) ($module['status'] ?? 'discovered'),
                 'lifecycleState' => (string) ($module['lifecycleState'] ?? 'DISCOVERED'),
-                'active' => (bool) ($module['active'] ?? false),
+                'active' => $isActive,
                 'enabled' => (bool) ($module['enabled'] ?? false),
+                'available' => true,
+                'installed' => $isInstalled,
+                'disabled' => $isInstalled && !$isActive,
+                'updateAvailable' => $this->isUpdateAvailable($module),
+                'state' => $state,
+                'installedVersion' => isset($module['installedVersion']) ? (string) $module['installedVersion'] : null,
                 'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
                 'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
@@ -1033,6 +1042,35 @@ final class Phase7ModuleRuntime
         }
 
         return false;
+    }
+
+    private function resolveClientState(bool $isInstalled, bool $isActive): string
+    {
+        if (!$isInstalled) {
+            return 'available';
+        }
+
+        return $isActive ? 'active' : 'disabled';
+    }
+
+    /**
+     * @param array<string,mixed> $module
+     */
+    private function isUpdateAvailable(array $module): bool
+    {
+        $installedVersion = trim((string) ($module['installedVersion'] ?? ''));
+        $serverVersion = trim((string) ($module['version'] ?? ''));
+
+        if ($installedVersion === '' || $serverVersion === '') {
+            return false;
+        }
+
+        if (preg_match('/^[0-9]+(?:\.[0-9]+){0,3}$/', $installedVersion) === 1
+            && preg_match('/^[0-9]+(?:\.[0-9]+){0,3}$/', $serverVersion) === 1) {
+            return version_compare($installedVersion, $serverVersion, '<');
+        }
+
+        return $installedVersion !== $serverVersion;
     }
 
     private function modulePermissionScope(string $moduleId): string

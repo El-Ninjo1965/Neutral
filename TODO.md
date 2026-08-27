@@ -38,6 +38,17 @@ This is the current operational task ledger for the repository. It is intentiona
 - [ ] Inspect cPanel -> Plugins -> Imunify360 (if available) for incidents/firewall entries affecting operator/test traffic; otherwise request a per-host bot-protection exemption from the provider.
 - [ ] Request and complete the real browser/mobile live test after deploy plus Imunify360 handling.
 
+## Current module-runtime remediation (Lite core)
+
+- [x] Reproduce the "0 modules" browser issue against the real production route and trace the chain from `/api/modules` to client-side module loading.
+- [x] Identify the root cause: module asset paths were resolved relative to `/webroot/` in the live URL context, so module JS/manifest requests hit the PHP shell instead of real module files.
+- [x] Add server-side runtime module URLs (`moduleUrl`, `manifestUrl`, `entryUrl`, `downloadUrl`) on `/api/modules` payloads so clients can load module assets from the canonical app prefix.
+- [x] Extend module payload state for Lite-core lifecycle views (`available`, `installed`, `active`, `disabled`, `updateAvailable`, `state`, `installedVersion`).
+- [x] Add public module lifecycle API routes on the existing API surface (`GET /api/modules/{id}`, `/download`, `/updates`, `POST install|activate|disable|uninstall`) with existing permission/audit flow.
+- [x] Update the browser loader to prefer server-provided module URLs over path guesses.
+- [x] Add regression test coverage that verifies loader behavior for server-provided module URLs in the `.../webroot/...` production path.
+- [ ] Deploy these module-runtime/API changes to production and re-run end-to-end browser validation for Admin + Tester including GPS install/activate/disable/uninstall.
+
 ## Verified production scope (2026-08-27)
 
 - [x] `/api/status` returns HTTP 200 with valid JSON on the real production route and confirms PHP/LiteSpeed and MySQL health.

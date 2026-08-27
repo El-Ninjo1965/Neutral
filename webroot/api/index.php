@@ -224,6 +224,143 @@ function module_permissions_payload(array $module, array $roles): array
     ];
 }
 
+/**
+ * @return list<string>
+ */
+function request_path_segments(): array
+{
+    $requestPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
+    return $requestPath === '' ? [] : explode('/', $requestPath);
+}
+
+function public_app_prefix(): string
+{
+    $segments = request_path_segments();
+    if ($segments === []) {
+        return '';
+    }
+
+    $webrootIndex = array_search('webroot', $segments, true);
+    if (is_int($webrootIndex) && $webrootIndex > 0) {
+        return '/' . implode('/', array_slice($segments, 0, $webrootIndex));
+    }
+
+    $apiIndex = array_search('api', $segments, true);
+    if (is_int($apiIndex) && $apiIndex > 0) {
+        return '/' . implode('/', array_slice($segments, 0, $apiIndex));
+    }
+
+    return '';
+}
+
+function normalize_module_filesystem_path(string $modulePath): string
+{
+    $normalized = ltrim(trim($modulePath), '/');
+    if ($normalized === '') {
+        return '';
+    }
+    if (str_starts_with($normalized, 'app/modules/')) {
+        return $normalized;
+    }
+    if (str_starts_with($normalized, 'modules/')) {
+        return 'app/' . $normalized;
+    }
+    return 'app/modules/' . ltrim($normalized, '/');
+}
+
+function join_public_path(string $base, string $relative): string
+{
+    $normalizedBase = rtrim($base, '/');
+    $normalizedRelative = ltrim($relative, '/');
+    if ($normalizedBase === '') {
+        return '/' . $normalizedRelative;
+    }
+    return $normalizedBase . '/' . $normalizedRelative;
+}
+
+/**
+ * @param array<string,mixed> $module
+ * @return array<string,mixed>
+ */
+function append_module_runtime_urls(array $module): array
+{
+    $modulePath = normalize_module_filesystem_path((string) ($module['modulePath'] ?? ''));
+    if ($modulePath === '') {
+        return $module;
+    }
+
+    $prefix = public_app_prefix();
+    $moduleUrl = join_public_path($prefix, $modulePath);
+    $entryName = trim((string) ($module['entry'] ?? 'index.js'));
+    $entryUrl = $entryName === ''
+        ? null
+        : (preg_match('#^(https?:)?//#i', $entryName) === 1
+            ? $entryName
+            : join_public_path($moduleUrl, $entryName));
+
+    $module['modulePath'] = $modulePath;
+    $module['moduleUrl'] = $moduleUrl;
+    $module['manifestUrl'] = join_public_path($moduleUrl, 'module.json');
+    $module['entryUrl'] = $entryUrl;
+    $module['downloadUrl'] = join_public_path($prefix, 'api/modules/' . rawurlencode((string) ($module['id'] ?? '')) . '/download');
+
+    return $module;
+}
+
+/**
+ * @return array<string,mixed>|null
+ */
+function client_module_by_id(Phase7ModuleRuntime $moduleRuntime, string $moduleId, ?array $identity): ?array
+{
+    $normalizedId = strtolower(trim($moduleId));
+    if ($normalizedId === '') {
+        return null;
+    }
+
+    $modules = [];
+    try {
+        $modules = $moduleRuntime->listForClient($identity);
+    } catch (RuntimeException $exception) {
+        $modules = array_map(static function (array $module): array {
+            return array_merge($module, [
+                'available' => true,
+                'installed' => false,
+                'active' => false,
+                'disabled' => false,
+                'updateAvailable' => false,
+                'state' => 'available',
+                'status' => 'discovered',
+                'lifecycleState' => 'DISCOVERED',
+                'installedVersion' => null,
+            ]);
+        }, $moduleRuntime->discover());
+    }
+
+    foreach ($modules as $module) {
+        if (strtolower((string) ($module['id'] ?? '')) === $normalizedId) {
+            return append_module_runtime_urls($module);
+        }
+    }
+    return null;
+}
+
+/**
+ * @return array<string,mixed>|null
+ */
+function discovered_module_by_id(Phase7ModuleRuntime $moduleRuntime, string $moduleId): ?array
+{
+    $normalizedId = strtolower(trim($moduleId));
+    if ($normalizedId === '') {
+        return null;
+    }
+    foreach ($moduleRuntime->discover() as $module) {
+        if (strtolower((string) ($module['id'] ?? '')) === $normalizedId) {
+            return $module;
+        }
+    }
+    return null;
+}
+
 if ($method === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
@@ -355,11 +492,151 @@ if ($route === 'modules' && $method === 'GET') {
             && trim((string) ($databaseConfig['name'] ?? '')) !== ''
             && trim((string) ($databaseConfig['user'] ?? '')) !== ''
         );
+    if ($databaseConfigured) {
+        $modules = $moduleRuntime->listForClient($identity);
+    } else {
+        $modules = array_map(static function (array $module): array {
+            $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+            return [
+                'id' => (string) ($module['id'] ?? ''),
+                'name' => (string) ($module['name'] ?? ''),
+                'displayName' => (string) ($module['displayName'] ?? ($module['name'] ?? '')),
+                'version' => (string) ($module['version'] ?? ''),
+                'description' => (string) ($module['description'] ?? ''),
+                'type' => (string) ($module['type'] ?? 'module'),
+                'entry' => $module['entry'] ?? null,
+                'globalName' => $module['globalName'] ?? null,
+                'permissions' => is_array($module['permissions'] ?? null) ? $module['permissions'] : [],
+                'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
+                'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
+                'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+                'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
+                'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
+                'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
+                'modulePath' => $module['modulePath'] ?? null,
+                'discovered' => true,
+                'registered' => false,
+                'status' => 'discovered',
+                'lifecycleState' => 'DISCOVERED',
+                'active' => false,
+                'enabled' => false,
+                'available' => true,
+                'installed' => false,
+                'disabled' => false,
+                'updateAvailable' => false,
+                'state' => 'available',
+                'installedVersion' => null,
+                'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
+                'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
+                'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
+                'requiresLogin' => isset($module['requiresLogin']) ? (bool) ($module['requiresLogin']) : ((bool) ($manifest['requiresLogin'] ?? false)),
+            ];
+        }, $moduleRuntime->discover());
+    }
     JsonResponse::success([
-        'modules' => $databaseConfigured
-            ? $moduleRuntime->listForClient($identity)
-            : $moduleRuntime->discover(),
+        'modules' => array_values(array_map('append_module_runtime_urls', $modules)),
     ]);
+}
+
+if (preg_match('#^modules/([a-z0-9\-]+)$#', $route, $matches) === 1 && $method === 'GET') {
+    $module = client_module_by_id($moduleRuntime, $matches[1], $identity);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^modules/([a-z0-9\-]+)/download$#', $route, $matches) === 1 && $method === 'GET') {
+    $module = client_module_by_id($moduleRuntime, $matches[1], $identity);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    JsonResponse::success([
+        'module' => $module,
+        'package' => [
+            'moduleId' => (string) ($module['id'] ?? ''),
+            'version' => (string) ($module['version'] ?? ''),
+            'manifestUrl' => $module['manifestUrl'] ?? null,
+            'entryUrl' => $module['entryUrl'] ?? null,
+            'moduleUrl' => $module['moduleUrl'] ?? null,
+        ],
+    ]);
+}
+
+if (preg_match('#^modules/([a-z0-9\-]+)/updates$#', $route, $matches) === 1 && $method === 'GET') {
+    $module = client_module_by_id($moduleRuntime, $matches[1], $identity);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    JsonResponse::success([
+        'moduleId' => (string) ($module['id'] ?? ''),
+        'currentVersion' => (string) ($module['installedVersion'] ?? $module['version'] ?? ''),
+        'latestVersion' => (string) ($module['version'] ?? ''),
+        'updateAvailable' => (bool) ($module['updateAvailable'] ?? false),
+    ]);
+}
+
+if (preg_match('#^modules/([a-z0-9\-]+)/(install|activate|disable|uninstall)$#', $route, $matches) === 1 && $method === 'POST') {
+    $moduleId = $matches[1];
+    $action = $matches[2];
+    $adminModule = $moduleRuntime->getForAdmin($moduleId);
+    if ($adminModule === null && $action !== 'install') {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $moduleId]);
+    }
+
+    $permissionScopeModule = $adminModule ?? discovered_module_by_id($moduleRuntime, $moduleId);
+    if ($permissionScopeModule === null && $action === 'install') {
+        JsonResponse::error('Module not discovered.', 404, ['moduleId' => $moduleId]);
+    }
+
+    $requiredPermissions = array_values(array_unique(array_merge(
+        ['role.write'],
+        module_access_permissions($permissionScopeModule ?? [], 'managementPermissions'),
+        module_access_permissions($permissionScopeModule ?? [], 'adminPermissions')
+    )));
+    require_any_permission_or_fail($identity, $authManager, $requiredPermissions, true, $headers);
+
+    try {
+        if ($action === 'install') {
+            $updated = $moduleRuntime->install($moduleId, actor_user_id($identity));
+            $auditService->log('module.install', 'module', (string) ($updated['id'] ?? $moduleId), actor_user_id($identity), [
+                'status' => (string) ($updated['status'] ?? 'inactive'),
+                'lifecycleState' => (string) ($updated['lifecycleState'] ?? 'INACTIVE'),
+            ]);
+        } elseif ($action === 'activate') {
+            $updated = $moduleRuntime->activate($moduleId, actor_user_id($identity));
+            $auditService->log('module.activate', 'module', (string) ($updated['id'] ?? $moduleId), actor_user_id($identity), [
+                'status' => (string) ($updated['status'] ?? 'active'),
+                'lifecycleState' => (string) ($updated['lifecycleState'] ?? 'ACTIVE'),
+            ]);
+        } elseif ($action === 'disable') {
+            $updated = $moduleRuntime->deactivate($moduleId, actor_user_id($identity));
+            $auditService->log('module.deactivate', 'module', (string) ($updated['id'] ?? $moduleId), actor_user_id($identity), [
+                'status' => (string) ($updated['status'] ?? 'inactive'),
+                'lifecycleState' => (string) ($updated['lifecycleState'] ?? 'INACTIVE'),
+            ]);
+        } else {
+            $updated = $moduleRuntime->uninstall($moduleId, actor_user_id($identity));
+            $auditService->log('module.uninstall', 'module', (string) ($updated['id'] ?? $moduleId), actor_user_id($identity), [
+                'status' => (string) ($updated['status'] ?? 'uninstalled'),
+                'lifecycleState' => (string) ($updated['lifecycleState'] ?? 'UNINSTALLED'),
+            ]);
+        }
+    } catch (RuntimeException $exception) {
+        if ($exception->getMessage() === 'Module not discovered.') {
+            JsonResponse::error('Module not discovered.', 404, ['moduleId' => $moduleId]);
+        }
+        if ($exception->getMessage() === 'Module not registered.') {
+            JsonResponse::error('Module not registered.', 404, ['moduleId' => $moduleId]);
+        }
+        throw $exception;
+    }
+
+    $module = client_module_by_id($moduleRuntime, $moduleId, $identity);
+    if ($module === null) {
+        JsonResponse::success(['moduleId' => $moduleId, 'action' => $action, 'module' => null]);
+    }
+    JsonResponse::success(['moduleId' => $moduleId, 'action' => $action, 'module' => $module]);
 }
 
 if ($route === 'admin/sessions' && $method === 'GET') {

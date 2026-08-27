@@ -229,6 +229,34 @@ class ApiClient {
     return this.get('/api/modules');
   }
 
+  async getModule(moduleId) {
+    return this.get(`/api/modules/${moduleId}`);
+  }
+
+  async downloadModule(moduleId) {
+    return this.get(`/api/modules/${moduleId}/download`);
+  }
+
+  async getModuleUpdates(moduleId) {
+    return this.get(`/api/modules/${moduleId}/updates`);
+  }
+
+  async installPublicModule(moduleId) {
+    return this.post(`/api/modules/${moduleId}/install`, {});
+  }
+
+  async activatePublicModule(moduleId) {
+    return this.post(`/api/modules/${moduleId}/activate`, {});
+  }
+
+  async disablePublicModule(moduleId) {
+    return this.post(`/api/modules/${moduleId}/disable`, {});
+  }
+
+  async uninstallPublicModule(moduleId) {
+    return this.post(`/api/modules/${moduleId}/uninstall`, {});
+  }
+
   async getAdminModules() {
     return this.get('/api/admin/modules');
   }

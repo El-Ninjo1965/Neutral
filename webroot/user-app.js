@@ -8,10 +8,13 @@
   const mark = document.getElementById('userAppMark');
   const state = {
     activeView: 'home',
-    activeModuleId: null
+    activeModuleId: null,
+    moduleCatalog: [],
+    moduleCatalogLoaded: false
   };
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
+  const MODULE_INSTALL_STATE_KEY = 'neutral.module.installs.v1';
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
@@ -197,6 +200,158 @@
     return nextPreferences;
   };
 
+  const compareVersion = (left, right) => {
+    const leftParts = String(left || '').split('.').map((part) => Number.parseInt(part, 10));
+    const rightParts = String(right || '').split('.').map((part) => Number.parseInt(part, 10));
+    const length = Math.max(leftParts.length, rightParts.length);
+    for (let index = 0; index < length; index += 1) {
+      const l = Number.isFinite(leftParts[index]) ? leftParts[index] : 0;
+      const r = Number.isFinite(rightParts[index]) ? rightParts[index] : 0;
+      if (l < r) return -1;
+      if (l > r) return 1;
+    }
+    return 0;
+  };
+
+  const readInstalledModuleState = () => {
+    if (typeof localStorage === 'undefined') {
+      return {};
+    }
+    try {
+      const raw = localStorage.getItem(MODULE_INSTALL_STATE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
+        window.CoreErrorHandler.handle(error, {
+          component: 'UserApp',
+          operation: 'readInstalledModuleState'
+        });
+      }
+      return {};
+    }
+  };
+
+  const saveInstalledModuleState = (nextState) => {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+    try {
+      localStorage.setItem(MODULE_INSTALL_STATE_KEY, JSON.stringify(nextState));
+    } catch (error) {
+      if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
+        window.CoreErrorHandler.handle(error, {
+          component: 'UserApp',
+          operation: 'saveInstalledModuleState'
+        });
+      }
+    }
+  };
+
+  const upsertInstalledModuleState = (moduleId, nextModuleState) => {
+    if (!moduleId) {
+      return;
+    }
+    const installed = readInstalledModuleState();
+    if (!nextModuleState) {
+      delete installed[moduleId];
+      saveInstalledModuleState(installed);
+      return;
+    }
+    installed[moduleId] = {
+      ...(installed[moduleId] && typeof installed[moduleId] === 'object' ? installed[moduleId] : {}),
+      ...nextModuleState,
+      updatedAt: new Date().toISOString()
+    };
+    saveInstalledModuleState(installed);
+  };
+
+  const normalizeCatalogModule = (module) => {
+    const installedState = readInstalledModuleState();
+    const local = module && module.id && installedState[module.id] && typeof installedState[module.id] === 'object'
+      ? installedState[module.id]
+      : {};
+    const installed = !!(module && (module.installed === true || module.registered === true || module.status === 'installed' || module.status === 'inactive' || module.status === 'active')) || !!local.installed;
+    const active = !!(module && (module.active === true || module.status === 'active' || module.status === 'enabled' || module.lifecycleState === 'ACTIVE')) || (installed && local.active === true);
+    const disabled = installed && !active;
+    const available = module ? module.available !== false : false;
+    const latestVersion = String(module && module.version ? module.version : local.version || '1.0.0');
+    const installedVersion = String(module && module.installedVersion ? module.installedVersion : local.installedVersion || local.version || '');
+    const updateAvailable = !!(module && module.updateAvailable) || (!!installedVersion && compareVersion(installedVersion, latestVersion) < 0);
+    const stateName = !installed ? 'available' : (active ? 'active' : 'disabled');
+
+    return {
+      ...module,
+      id: String(module && module.id ? module.id : ''),
+      name: String(module && (module.displayName || module.name || module.id) ? (module.displayName || module.name || module.id) : 'Module'),
+      available,
+      installed,
+      active,
+      disabled,
+      updateAvailable,
+      state: module && typeof module.state === 'string' && module.state.trim() ? module.state : stateName,
+      latestVersion,
+      installedVersion: installedVersion || null
+    };
+  };
+
+  const getModuleCatalog = () => Array.isArray(state.moduleCatalog) ? state.moduleCatalog : [];
+
+  const syncInstalledStateFromCatalog = (catalog) => {
+    const installedState = readInstalledModuleState();
+    catalog.forEach((module) => {
+      if (!module || !module.id) {
+        return;
+      }
+      if (!module.installed) {
+        delete installedState[module.id];
+        return;
+      }
+      installedState[module.id] = {
+        ...(installedState[module.id] && typeof installedState[module.id] === 'object' ? installedState[module.id] : {}),
+        installed: true,
+        active: !!module.active,
+        version: module.latestVersion || module.version || '',
+        installedVersion: module.installedVersion || module.latestVersion || module.version || ''
+      };
+    });
+    saveInstalledModuleState(installedState);
+  };
+
+  const loadModuleCatalog = async () => {
+    const apiClient = createServerApiClient();
+    if (!apiClient) {
+      const offlineInstalled = readInstalledModuleState();
+      state.moduleCatalog = Object.keys(offlineInstalled).map((moduleId) => normalizeCatalogModule({
+        id: moduleId,
+        name: moduleId,
+        available: false,
+        installed: true,
+        active: !!offlineInstalled[moduleId].active,
+        status: offlineInstalled[moduleId].active ? 'active' : 'inactive',
+        version: offlineInstalled[moduleId].version || '1.0.0',
+        installedVersion: offlineInstalled[moduleId].installedVersion || offlineInstalled[moduleId].version || '1.0.0'
+      }));
+      state.moduleCatalogLoaded = true;
+      return state.moduleCatalog;
+    }
+
+    const moduleResult = await apiClient.discoverModules();
+    const moduleData = extractApiData(moduleResult);
+    const catalog = Array.isArray(moduleData && moduleData.modules) ? moduleData.modules : [];
+    state.moduleCatalog = catalog.map((module) => normalizeCatalogModule(module));
+    syncInstalledStateFromCatalog(state.moduleCatalog);
+    state.moduleCatalogLoaded = true;
+    return state.moduleCatalog;
+  };
+
+  const refreshModuleRuntime = async () => {
+    await loadModuleCatalog();
+    if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
+      await window.ModuleManager.discoverModules();
+    }
+  };
+
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -306,6 +461,60 @@
     return !!currentUser && Array.isArray(currentUser.roles) && (currentUser.roles.includes('developer') || currentUser.roles.includes('admin'));
   };
 
+  const canManageModuleLifecycle = () => canOpenAdmin();
+
+  const updateInstalledStateFromModule = (module) => {
+    if (!module || !module.id) {
+      return;
+    }
+    if (!module.installed) {
+      upsertInstalledModuleState(module.id, null);
+      return;
+    }
+    upsertInstalledModuleState(module.id, {
+      installed: true,
+      active: !!module.active,
+      version: module.latestVersion || module.version || '',
+      installedVersion: module.installedVersion || module.latestVersion || module.version || ''
+    });
+  };
+
+  const runModuleAction = async (action, moduleId) => {
+    const apiClient = createServerApiClient();
+    if (!apiClient) {
+      return { ok: false, message: 'Module lifecycle actions require a server connection.' };
+    }
+    if (!canManageModuleLifecycle()) {
+      return { ok: false, message: 'Insufficient privileges for module lifecycle actions.' };
+    }
+
+    let result = null;
+    if (action === 'install') {
+      result = await apiClient.installPublicModule(moduleId);
+    } else if (action === 'activate') {
+      result = await apiClient.activatePublicModule(moduleId);
+    } else if (action === 'disable') {
+      result = await apiClient.disablePublicModule(moduleId);
+    } else if (action === 'uninstall') {
+      result = await apiClient.uninstallPublicModule(moduleId);
+    } else if (action === 'update') {
+      result = await apiClient.installPublicModule(moduleId);
+    } else {
+      return { ok: false, message: `Unknown module action: ${action}` };
+    }
+
+    const payload = extractApiData(result);
+    const updatedModule = payload && payload.module ? normalizeCatalogModule(payload.module) : null;
+    if (updatedModule) {
+      updateInstalledStateFromModule(updatedModule);
+    }
+
+    await refreshModuleRuntime();
+    return result && result.ok
+      ? { ok: true, module: updatedModule }
+      : { ok: false, message: result && result.error ? result.error : 'Module lifecycle action failed.' };
+  };
+
   const applyBranding = () => {
     const appName = getAppName();
     document.title = appName;
@@ -352,9 +561,7 @@
         if (apiClient) {
           await apiClient.logout();
           clearServerIdentity();
-          if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
-            await window.ModuleManager.discoverModules();
-          }
+          await refreshModuleRuntime();
         }
         if (isLocalPreviewRuntime() && window.LocalAuth && typeof window.LocalAuth.logout === 'function') {
           await window.LocalAuth.logout();
@@ -458,9 +665,7 @@
           return;
         }
 
-        if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
-          await window.ModuleManager.discoverModules();
-        }
+        await refreshModuleRuntime();
         status.className = 'message success';
         status.textContent = 'Signed in successfully.';
         state.activeView = 'home';
@@ -647,7 +852,47 @@
   const renderLandingPage = () => {
     const appName = getAppName();
     const modules = getVisibleModules();
+    const catalog = getModuleCatalog();
+    const availableCount = catalog.filter((module) => module.available).length;
+    const installedCount = catalog.filter((module) => module.installed).length;
+    const activeCount = catalog.filter((module) => module.active).length;
+    const updateCount = catalog.filter((module) => module.updateAvailable).length;
     const currentUser = getCurrentUser();
+    const lifecycleControlsEnabled = !!currentUser && canManageModuleLifecycle();
+
+    const renderLifecycleActions = (module) => {
+      if (!lifecycleControlsEnabled) {
+        return '';
+      }
+      const actions = [];
+      if (!module.installed) {
+        actions.push('<button type="button" class="secondary" data-module-action="install" data-module-id="' + escapeHtml(module.id) + '">Install</button>');
+      } else {
+        if (module.active) {
+          actions.push('<button type="button" class="secondary" data-module-action="disable" data-module-id="' + escapeHtml(module.id) + '">Disable</button>');
+        } else {
+          actions.push('<button type="button" class="secondary" data-module-action="activate" data-module-id="' + escapeHtml(module.id) + '">Activate</button>');
+        }
+        actions.push('<button type="button" class="secondary" data-module-action="uninstall" data-module-id="' + escapeHtml(module.id) + '">Uninstall</button>');
+      }
+      if (module.updateAvailable) {
+        actions.push('<button type="button" class="secondary" data-module-action="update" data-module-id="' + escapeHtml(module.id) + '">Update</button>');
+      }
+      return actions.join('');
+    };
+
+    const catalogList = catalog.length
+      ? catalog.map((module) => `
+          <div class="user-settings-toggle" data-module-catalog-row="${escapeHtml(module.id)}">
+            <span>
+              <strong>${escapeHtml(module.name || module.id)}</strong>
+              <small>State: ${escapeHtml(module.state || 'available')} · Installed: ${module.installed ? 'yes' : 'no'} · Active: ${module.active ? 'yes' : 'no'}${module.updateAvailable ? ' · Update available' : ''}</small>
+            </span>
+            <span class="user-settings-actions-inline">${renderLifecycleActions(module)}</span>
+          </div>
+        `).join('')
+      : '<div class="user-app-empty">No modules are available from the server catalog.</div>';
+
     content.innerHTML = `
       <section class="user-app-panel">
         <div class="user-app-section-heading">
@@ -655,10 +900,16 @@
             <span class="user-app-eyebrow">Welcome</span>
             <h1>${escapeHtml(appName)}</h1>
           </div>
-          <span class="user-app-count">${modules.length}</span>
+          <span class="user-app-count">${activeCount}</span>
         </div>
         <p class="user-app-intro">The active modules of this application appear directly in the top menu and can also be opened from the workspace below.</p>
+        <div class="user-app-status">Catalog: ${availableCount} available · ${installedCount} installed · ${activeCount} active${updateCount ? ` · ${updateCount} updates` : ''}</div>
         ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can already use public modules without signing in. Sign in to unlock personalized administration and role-based features.</div>'}
+        <div class="user-settings-card" style="margin-top: 14px;">
+          <h2>Module catalog</h2>
+          <p>Server-managed modules stay available in this lightweight client. Install, activate, disable and uninstall run through the server API.</p>
+          <div class="user-settings-module-list">${catalogList}</div>
+        </div>
         <div class="user-module-list" style="margin-top: 22px;">
           ${modules.length ? modules.map((module) => `
             <button type="button" class="user-module-card" data-module-card="${escapeHtml(module.id)}">
@@ -671,11 +922,34 @@
             </button>
           `).join('') : '<div class="user-app-empty">No modules are active yet. Activate modules in the admin area to make them available here.</div>'}
         </div>
+        <p id="moduleCatalogStatus" class="user-settings-status">${lifecycleControlsEnabled ? 'Module lifecycle actions are available for your role.' : 'Sign in with an admin/developer role to manage module lifecycle actions.'}</p>
       </section>
     `;
     content.querySelectorAll('[data-module-card]').forEach((button) => {
       button.addEventListener('click', () => {
         renderModule(button.dataset.moduleCard);
+      });
+    });
+    content.querySelectorAll('[data-module-action]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const action = String(button.dataset.moduleAction || '').trim();
+        const moduleId = String(button.dataset.moduleId || '').trim();
+        const status = document.getElementById('moduleCatalogStatus');
+        if (!action || !moduleId) {
+          return;
+        }
+        if (status) {
+          status.textContent = `Running ${action} for ${moduleId}...`;
+          status.className = 'user-settings-status';
+        }
+        const result = await runModuleAction(action, moduleId);
+        if (status) {
+          status.textContent = result.ok
+            ? `Module ${moduleId} ${action} completed.`
+            : (result.message || `Module ${moduleId} ${action} failed.`);
+          status.className = result.ok ? 'user-settings-status success' : 'user-settings-status error';
+        }
+        renderApp();
       });
     });
   };
@@ -706,7 +980,7 @@
   const start = async () => {
     if (window.CoreStartup && typeof window.CoreStartup.start === 'function') await window.CoreStartup.start();
     await syncServerSession();
-    if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') await window.ModuleManager.discoverModules();
+    await refreshModuleRuntime();
     renderApp();
   };
 

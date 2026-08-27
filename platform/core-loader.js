@@ -422,9 +422,9 @@
                 }
 
                 const loaded = await this.loadModuleFromManifest(
-                    entry.modulePath || rootPath,
+                    entry.moduleUrl || entry.modulePath || rootPath,
                     manifest,
-                    entry.entry || manifest.entry || manifest.main || null
+                    entry.entryUrl || entry.entry || manifest.entry || manifest.main || null
                 );
 
                 if (loaded) {

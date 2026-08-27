@@ -381,8 +381,10 @@ For browser-facing module discovery and the user app:
 
 - `/api/modules` is the public module catalog endpoint.
 - The public catalog must remain lifecycle-aware enough for the browser to distinguish discovered vs. installed vs. active modules.
+- The public catalog must provide canonical runtime asset URLs (`moduleUrl`, `manifestUrl`, `entryUrl`) that are valid for the active host path prefix (for example `/index/app/neutral/...`), instead of relying on client-side root-relative guesses.
 - The browser runtime must not overwrite discovered lifecycle state by forcing modules into an installed/inactive status during discovery.
 - Public/user-facing module UIs may only behave as active when the lifecycle is actually active; discovery alone is not activation.
 - When a module declares visibility permissions, `/api/modules` must filter that module according to the server-resolved identity instead of exposing it to every client by default.
 - Module permission declarations belong to the module manifest, not hard-coded core allowlists.
 - If a module declares a standalone test entry, that entry is a developer validation surface only; it must not become a second production admin or alternate runtime authority.
+- The same API surface should expose module lifecycle actions for the Lite client (`GET /api/modules/{id}`, `/download`, `/updates`, `POST install|activate|disable|uninstall`) instead of introducing a second parallel module API architecture.
