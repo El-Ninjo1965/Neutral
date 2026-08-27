@@ -27,6 +27,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Remove localhost/default-local assumptions from the public web-app config and client bootstrap logic.
 - [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
 - [x] Split the server deployment and public web-app deployment into separate FTP contexts and keep the web-app credentials local-only in `.env.web-app.deploy`.
+- [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
 - [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
 - [ ] Resolve the live host-side HTTP mapping for `/index/web-app/` so the public URL serves the same web-app bundle as the FTP root instead of the stale placeholder or 404 assets.
 - [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping is corrected.

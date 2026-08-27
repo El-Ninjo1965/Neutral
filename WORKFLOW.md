@@ -26,7 +26,7 @@ The actual live app path is:
 - public web-client deployment target: /index/web-app/
 - FTP web-app root: / (chrooted to the dedicated web-app directory on the host)
 
-The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets. This is a host-side document-root or URL-mapping mismatch: the FTP content and the public HTTP content are not the same. The repository-side deploy logic and the FTP target are therefore verified; the remaining blocker is the live host mapping for `/index/web-app/`.
+The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The root cause was in the repository deploy script itself: `--web-app` mode was never honored and the script always staged the server allowlist, which caused the wrong files to be prepared for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets, which proves that the remaining blocker is the live host-side document-root or URL-mapping for `/index/web-app/`: the FTP content and public HTTP content are still not the same.
 
 The canonical public API path for the standalone web client is:
 
