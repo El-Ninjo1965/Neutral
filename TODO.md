@@ -40,6 +40,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Confirm that a disposable runtime probe file can be uploaded and then removed from the live public root without leaving a lingering production artifact.
 - [x] Evaluate the same-origin, API-subdomain, main-domain, public_html-root, and PHP-frontcontroller variants using the repo contract and the real live host observations.
 - [x] Confirm that the repository already supports a portable API base and that the remaining blocker is the host-level OpenResty challenge layer, not the Neutral app code.
+- [x] Confirm via live public testing that both static HTML and PHP files on `https://app.turbolikes.com/` are intercepted by the same OpenResty challenge before any application content can load.
 
 ## Current production blocker
 

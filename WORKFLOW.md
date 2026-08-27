@@ -65,6 +65,24 @@ This means the remaining live blocker is not in the Neutral app code or in the F
 
 The existing repository and the live tests support a small set of concrete deployment variants. They were evaluated against the actual capabilities of the current shared-host/cPanel environment and against the neutral app contract already encoded in the repo.
 
+### Production runtime evidence from the actual public app subdomain
+
+The actual public request path was tested with two disposable files uploaded to the live app root using the same FTPS deployment account and the same public document root as `app.turbolikes.com`:
+
+- a static HTML probe (`cpanel-runtime-check.html`)
+- a PHP probe (`cpanel-runtime-check.php`)
+
+Both files were uploaded through the active FTP/FTPS account and both were then called over HTTPS through the public URL. Both requests returned the same response:
+
+- `HTTP/2 200`
+- `server: openresty/1.31.1.1`
+- `content-type: text/html`
+- the challenge page `One moment, please...`
+
+This is decisive evidence that the host is intercepting all public file requests before PHP or static content can be served, regardless of the file type. The effect is not limited to PHP files or to the previous `/index/...` URLs. It affects the public subdomain root itself and therefore blocks the public deployment layer before the application origin can run.
+
+This also redefines the earlier `pdo_mysql` discussion: the code-space PHP runtime and the live public host runtime are not the same environment. The checked `pdo_mysql` absence in the local PHP environment is not proof about the cPanel PHP runtime; the live public host is currently not allowing any application-origin execution at all. The relevant blocker remains the host-side challenge layer, not the browser app or the repository code.
+
 #### Variant A — same-origin web app and API on the same public root
 
 Example:
