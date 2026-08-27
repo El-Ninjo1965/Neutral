@@ -22,7 +22,15 @@ The active production runtime is a shared-host PHP/LiteSpeed environment. The pu
 
 The actual live app path is:
 
-- /index/app/neutral/webroot/*
+- /index/app/neutral/webroot/* (server-side Neutral runtime/API)
+- public web-client deployment target: /index/web-app/
+- FTP web-app root: / (chrooted to the dedicated web-app directory on the host)
+
+The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets. This is a host-side document-root or URL-mapping mismatch: the FTP content and the public HTTP content are not the same. The repository-side deploy logic and the FTP target are therefore verified; the remaining blocker is the live host mapping for `/index/web-app/`.
+
+The canonical public API path for the standalone web client is:
+
+- https://www.turbolikes.com/index/app/neutral/webroot/api/...
 
 The canonical runtime entry points are:
 
@@ -31,6 +39,10 @@ The canonical runtime entry points are:
 - webroot/api/.htaccess (must continue to route the LiteSpeed PHP API path correctly)
 
 The repository must not assume that a root-domain Node API is the active production environment.
+
+## Web app client contract
+
+The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path.
 
 ## Module model
 
