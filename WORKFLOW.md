@@ -389,3 +389,4 @@ For browser-facing module discovery and the user app:
 - If a module declares a standalone test entry, that entry is a developer validation surface only; it must not become a second production admin or alternate runtime authority.
 - The same API surface should expose module lifecycle actions for the Lite client (`GET /api/modules/{id}`, `/download`, `/updates`, `POST install|activate|disable|uninstall`) instead of introducing a second parallel module API architecture.
 - The normal user landing page is an end-user surface (welcome + available module entry points) and must not expose raw catalog/lifecycle management controls; technical module management remains in the admin/module-management UI.
+- If a user holds a non-admin session and opens `admin.php`, the page must still allow re-authentication with admin credentials in-place (no dead-end 403 screen that blocks account switching).

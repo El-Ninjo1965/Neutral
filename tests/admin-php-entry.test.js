@@ -184,6 +184,8 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     });
     assert.equal(result.statusCode, 403);
     assert.match(result.body, /Access denied/i);
+    assert.match(result.body, /id="loginBtn"/);
+    assert.match(result.body, /api\/auth\/login/);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 

@@ -57,6 +57,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Repair GPS navigation by propagating server module lifecycle state into browser module discovery/registry (`active`/`installed`/`state` + `navigation` metadata).
 - [x] Ensure dynamic navigation behavior follows module status: admin disable/activate updates tester-visible GPS state (`active -> disabled -> active`) through live API checks.
 - [x] Deploy and live-verify the updated user-app/API artifacts on `https://www.turbolikes.com/index/app/neutral/webroot/`.
+- [x] Add user-session to admin re-auth path: non-admin sessions on `admin.php` now provide an inline admin login form so Tester -> Admin switching is not blocked by an existing user session.
+- [x] Harden user navigation rendering against runtime timing gaps by deriving header navigation from active server catalog state plus loaded module registry state.
 
 ## Verified production scope (2026-08-27)
 

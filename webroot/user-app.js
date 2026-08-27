@@ -410,6 +410,32 @@
     ? window.ModuleRegistry.getAll().filter((module) => module && module.id && (module.active || module.status === 'enabled' || module.status === 'active'))
     : [];
 
+  const getActiveCatalogModules = () => getModuleCatalog().filter((module) => {
+    if (!module || !module.id) {
+      return false;
+    }
+    const navigationEnabled = module.navigation?.enabled !== false;
+    return navigationEnabled
+      && module.available !== false
+      && module.installed === true
+      && module.active === true;
+  }).map((module) => ({
+    ...module,
+    id: String(module.id),
+    displayName: getModuleDisplayName(module)
+  }));
+
+  const getNavigationModules = () => {
+    const merged = new Map();
+    getActiveCatalogModules().forEach((module) => {
+      merged.set(module.id, module);
+    });
+    getVisibleModules().forEach((module) => {
+      merged.set(module.id, module);
+    });
+    return Array.from(merged.values());
+  };
+
   const getActiveAppId = () => {
     const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
       ? window.MasterFramework
@@ -586,7 +612,7 @@
 
   const renderModuleNav = () => {
     if (!nav) return;
-    const modules = getVisibleModules();
+    const modules = getNavigationModules();
     const items = [
       { id: 'home', label: getAppName() },
       ...modules.map((module) => ({ id: `module:${module.id}`, label: getModuleDisplayName(module) }))
@@ -808,12 +834,24 @@
     }
   };
 
-  const renderModule = (moduleId) => {
-    const module = getVisibleModules().find((entry) => entry.id === moduleId) || getModules().find((entry) => entry.id === moduleId);
+  const renderModule = async (moduleId) => {
+    let module = getVisibleModules().find((entry) => entry.id === moduleId) || getModules().find((entry) => entry.id === moduleId);
+    if (!module && getNavigationModules().some((entry) => entry.id === moduleId)) {
+      content.innerHTML = `
+        <section class="user-app-panel">
+          <span class="user-app-eyebrow">Module</span>
+          <h1>Loading module...</h1>
+          <p>Preparing ${escapeHtml(moduleId)} for your workspace.</p>
+        </section>
+      `;
+      await refreshModuleRuntime();
+      module = getVisibleModules().find((entry) => entry.id === moduleId) || getModules().find((entry) => entry.id === moduleId);
+    }
+
     if (!module) {
       state.activeView = 'home';
       state.activeModuleId = null;
-      renderLandingPage();
+      renderApp();
       return;
     }
 
@@ -852,7 +890,7 @@
 
   const renderLandingPage = () => {
     const appName = getAppName();
-    const modules = getVisibleModules();
+    const modules = getNavigationModules();
     const activeCount = modules.length;
     const currentUser = getCurrentUser();
 
@@ -883,7 +921,7 @@
     `;
     content.querySelectorAll('[data-module-card]').forEach((button) => {
       button.addEventListener('click', () => {
-        renderModule(button.dataset.moduleCard);
+        void renderModule(button.dataset.moduleCard);
       });
     });
   };
@@ -904,7 +942,7 @@
     }
 
     if (state.activeModuleId) {
-      renderModule(state.activeModuleId);
+      void renderModule(state.activeModuleId);
       return;
     }
 
