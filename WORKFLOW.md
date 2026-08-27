@@ -26,6 +26,8 @@ The actual live app path is:
 - public web-client deployment target: /index/web-app/
 - FTP web-app root: / (chrooted to the dedicated web-app directory on the host)
 
+The canonical production entry point is `webroot/index.php`; `webroot/index.html` remains a compatibility shell and must not be treated as the live app entry. The PHP entry point bootstraps the existing runtime before serving the user shell so the public URL continues to execute the server-backed app architecture instead of a static HTML shell. The public host must not expose the developer preview banner or any local-only bootstrap credentials in the non-localhost route.
+
 The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The root cause was in the repository deploy script itself: `--web-app` mode was never honored and the script always staged the server allowlist, which caused the wrong files to be prepared for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets, which proves that the remaining blocker is the live host-side document-root or URL-mapping for `/index/web-app/`: the FTP content and public HTTP content are still not the same.
 
 The canonical public API path for the standalone web client is:
@@ -63,6 +65,8 @@ This does **not** prove that the application is impossible on the shared host. I
 ## Web app client contract
 
 The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path. On non-localhost deployments, the server-side session/API is the only authoritative login source; the local developer bootstrap is explicitly disabled so that production users are not silently shadowed by a local-only identity source.
+
+The public application entry point is the PHP bootstrap at `webroot/index.php`. Static `index.html` may remain as a compatibility surface, but the live production route must resolve to `index.php` and must not render the developer preview banner or any local-only bootstrap messaging. Live validation against the public route confirmed that the real admin and Tester accounts authenticate successfully through the same server-side session/RBAC chain and that invalid or unauthenticated requests correctly return 401 responses.
 
 ## Module model
 

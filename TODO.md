@@ -11,6 +11,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - Canonical admin entry point: webroot/admin.php
 - Canonical setup entry point: webroot/setup.php
 - Current live runtime reality: shared-host PHP/LiteSpeed; the real production path is under /index/app/neutral/webroot/*.
+- Production entry point: the public app root uses the PHP bootstrap at `webroot/index.php`; `webroot/index.html` remains as a compatibility shell but is no longer the live app entry and no longer serves the developer preview banner.
+- Production route: no developer preview banner or local bootstrap login is served on the public non-localhost route; local bootstrap logic remains isolated to localhost preview contexts only.
 - Fresh independent probes show an OpenResty + Imunify360 anti-bot front layer in front of all tested public hostnames, including app.turbolikes.com and the current main-domain paths.
 - The admin workspace keeps the top header navigation as the only admin navigation surface; no left sidebar is part of the active admin UI.
 - Admin light/dark mode is expected to flow through the shared theme tokens for header, content, cards, tables, forms, alerts, modals, and dynamic admin views.
@@ -29,6 +31,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
 - [x] Enforce a server-side auth authority for production deployments so the browser-local bootstrap developer account never becomes the effective user source on non-localhost runtime hosts.
 - [x] Add a shared-host root rewrite so a same-origin app host can expose the existing `webroot/` runtime from the docroot root without flattening the repository structure.
+- [x] Route the public app root through the PHP entry point (`webroot/index.php`) instead of the static `index.html` shell.
 - [ ] Deploy the full same-origin Neutral runtime to `/home/web1819/public_html/app` via the dedicated FTP account once the secret is available in-session.
 - [ ] Verify that `https://app.turbolikes.com/`, `/api/status`, `/api/auth/me`, `/admin.php`, and `/setup.php` are served from the deployed app root and not from a stale placeholder.
 - [ ] Inspect cPanel -> Plugins -> Imunify360 (if available) for incidents/firewall entries affecting operator/test traffic; otherwise request a per-host bot-protection exemption from the provider.
@@ -41,6 +44,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] `/api/modules` responds with a valid JSON module catalog on the live route.
 - [x] Security hardening blocks direct access to internal PHP/runtime files while leaving the public API surface reachable.
 - [x] Repository tests covering API, auth, storage, module lifecycle, and admin flow all pass locally.
+- [x] Real DB-backed production login verification succeeded for the live admin and Tester accounts against the public PHP route; both sessions were validated using the server-side auth/session contract and the real RBAC roles returned by /api/auth/me.
+- [x] Public production routing is now served via the PHP entry point and does not render the stale developer preview banner; live unauthenticated and invalid-credential API responses return expected 401 behavior.
 
 ## Open tasks
 

@@ -12,7 +12,7 @@
         <h2>Access denied</h2>
         <p class="subtle">Administrative access requires an authorized role.</p>
         <div class="action-list">
-          <a class="nav-item" id="backToAppLink" href="index.html">Return to platform</a>
+          <a class="nav-item" id="backToAppLink" href="index.php">Return to platform</a>
         </div>
       </div>
     </div>

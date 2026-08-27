@@ -13,5 +13,5 @@ RewriteRule ^ - [L]
 
 # cPanel app.turbolikes.com docroot: keep the repository layout, but expose the
 # public application from webroot/ at the host root.
-RewriteRule ^$ webroot/index.html [L]
+RewriteRule ^$ webroot/index.php [L]
 RewriteRule ^(.*)$ webroot/$1 [L,QSA]

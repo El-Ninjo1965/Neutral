@@ -49,7 +49,7 @@
         <div class="setup-actions">
           <button id="saveDeveloperBtn" class="primary" type="button">Save local developer</button>
           <button id="resetDeveloperBtn" class="secondary danger" type="button">Reset local developer</button>
-          <a class="secondary nav-item" href="webroot/index.html">Open app</a>
+          <a class="secondary nav-item" href="webroot/index.php">Open app</a>
         </div>
 
         <div id="setupStatus" class="status-box info">Checking the current local developer configuration…</div>
@@ -133,7 +133,7 @@
           const result = await window.LocalAuth.setupDeveloper({ username: 'Developer', password });
           if (result && result.ok) {
             setStatus('Local developer account saved. Redirecting to the app login.', 'success');
-            setTimeout(() => { window.location.assign('webroot/index.html'); }, 900);
+            setTimeout(() => { window.location.assign('webroot/index.php'); }, 900);
           } else {
             setStatus(result && result.message ? result.message : 'Developer setup failed.', 'error');
           }

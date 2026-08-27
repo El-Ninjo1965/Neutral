@@ -58,7 +58,7 @@ function render_auth_required_page(): void
         <div id="authMessage" class="message info">Sign in with your configured administrator account.</div>
       </div>
       <div class="action-list">
-        <a class="nav-item" href="index.html">Return to platform</a>
+        <a class="nav-item" href="index.php">Return to platform</a>
       </div>
     </div>
   </div>
@@ -146,7 +146,7 @@ function render_access_denied_page(): void
       <h2>Access denied</h2>
       <p class="subtle">Administrative access requires an authorized role.</p>
       <div class="action-list">
-        <a class="nav-item" href="index.html">Return to platform</a>
+        <a class="nav-item" href="index.php">Return to platform</a>
       </div>
     </div>
   </div>

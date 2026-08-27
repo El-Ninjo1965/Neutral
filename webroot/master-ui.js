@@ -164,7 +164,7 @@
       return 'admin.php';
     }
 
-    return 'index.html';
+    return 'index.php';
   };
 
   const getVisibleModules = () => {
@@ -309,7 +309,7 @@
 
     appModuleNav.innerHTML = primaryItems.map((item) => `
       <button type="button" class="nav-item ${state.activeView === item.id ? 'active' : ''}" data-app-nav="${escapeHtml(item.id)}">${escapeHtml(item.label)}</button>
-    `).join('') + '<a class="nav-item" href="index.html">Open app</a>';
+    `).join('') + '<a class="nav-item" href="index.php">Open app</a>';
 
     appModuleNav.querySelectorAll('[data-app-nav]').forEach((button) => {
       button.addEventListener('click', () => {
