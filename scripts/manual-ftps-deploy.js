@@ -8,10 +8,19 @@ const { spawnSync } = require('node:child_process');
 const projectRoot = path.resolve(__dirname, '..');
 const envFiles = [
   path.join(projectRoot, '.env.ftp.deploy'),
-  path.join(projectRoot, '.env.deploy')
+  path.join(projectRoot, '.env.deploy'),
+  path.join(projectRoot, '.env.web-app.deploy')
 ];
 const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
+
+const webAppEntries = [
+  'webroot/index.html',
+  'webroot/style.css',
+  'webroot/user-app.js',
+  'webroot/api-client.js',
+  'platform'
+];
 
 const allowedEntries = [
   'package.json',
@@ -193,16 +202,48 @@ function buildRemoteDeleteTargets(deleteCandidates, ftpTargetDir) {
   });
 }
 
-function getConfig() {
+function getConfig(mode = 'server') {
+  const envChain = mode === 'web-app'
+    ? [
+        path.join(projectRoot, '.env.web-app.deploy'),
+        path.join(projectRoot, '.env.ftp.deploy'),
+        path.join(projectRoot, '.env.deploy')
+      ]
+    : [
+        path.join(projectRoot, '.env.ftp.deploy'),
+        path.join(projectRoot, '.env.deploy')
+      ];
+
   const parsed = {};
-  for (const envFile of envFiles) {
+  for (const envFile of envChain) {
     Object.assign(parsed, parseEnvFile(envFile));
   }
 
   const merged = { ...parsed, ...process.env };
   const normalized = {};
+
+  const serverConfig = {
+    FTP_SERVER: merged.FTP_SERVER || merged.FTP_HOST || merged.SERVER_FTP_HOST || '',
+    FTP_PORT: merged.FTP_PORT || merged.SERVER_FTP_PORT || '21',
+    FTP_USERNAME: merged.FTP_USERNAME || merged.FTP_USER || merged.SERVER_FTP_USER || '',
+    FTP_PASSWORD: merged.FTP_PASSWORD || merged.SERVER_FTP_PASSWORD || '',
+    FTP_TARGET_DIR: merged.FTP_TARGET_DIR || merged.SERVER_FTP_TARGET_DIR || '/',
+    FTP_PROTOCOL: (merged.FTP_PROTOCOL || merged.SERVER_FTP_PROTOCOL || 'ftps').toLowerCase()
+  };
+
+  const webAppProtocol = String(merged.WEB_APP_FTP_MODE || merged.WEB_APP_PROTOCOL || 'ftps').toLowerCase();
+  const webAppConfig = {
+    FTP_SERVER: merged.WEB_APP_FTP_HOST || merged.WEB_APP_FTP_SERVER || merged.FTP_HOST || '',
+    FTP_PORT: merged.WEB_APP_FTP_PORT || merged.FTP_PORT || '21',
+    FTP_USERNAME: merged.WEB_APP_FTP_USER || merged.WEB_APP_FTP_USERNAME || merged.FTP_USER || '',
+    FTP_PASSWORD: merged.WEB_APP_FTP_PASSWORD || merged.WEB_APP_FTP_PASS || merged.FTP_PASSWORD || '',
+    FTP_TARGET_DIR: merged.WEB_APP_FTP_PATH || merged.WEB_APP_FTP_ROOT || '/',
+    FTP_PROTOCOL: webAppProtocol === 'explicit' || webAppProtocol === 'ftps' ? 'ftps' : webAppProtocol === 'implicit' ? 'implicit' : 'ftps'
+  };
+
+  const activeConfig = mode === 'web-app' ? webAppConfig : serverConfig;
   for (const key of required) {
-    normalized[key] = String(merged[key] || '').trim();
+    normalized[key] = String(activeConfig[key] || '').trim();
   }
 
   normalized.FTP_TARGET_DIR = normalized.FTP_TARGET_DIR || '/';
@@ -225,21 +266,38 @@ function copyDirectory(srcDir, destDir) {
   }
 }
 
-function buildStagingTree() {
+function getAllowedEntries(mode = 'server') {
+  return mode === 'web-app' ? webAppEntries : allowedEntries;
+}
+
+function buildStagingTree(mode = 'server') {
   const stagingRoot = path.join(projectRoot, '.deploy-staging');
   fs.rmSync(stagingRoot, { recursive: true, force: true });
   fs.mkdirSync(stagingRoot, { recursive: true });
 
   const missing = [];
+  const entries = getAllowedEntries(mode);
 
-  for (const entry of allowedEntries) {
+  for (const entry of entries) {
     const sourcePath = path.join(projectRoot, entry);
     if (!fs.existsSync(sourcePath)) {
       missing.push(entry);
       continue;
     }
 
-    const targetPath = path.join(stagingRoot, entry);
+    let targetName = entry;
+    if (mode === 'web-app') {
+      const mappedName = {
+        'webroot/index.html': 'index.html',
+        'webroot/style.css': 'style.css',
+        'webroot/user-app.js': 'user-app.js',
+        'webroot/api-client.js': 'api-client.js',
+        'platform': 'platform'
+      }[entry] || path.basename(entry);
+      targetName = mappedName;
+    }
+
+    const targetPath = path.join(stagingRoot, targetName);
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
 
     const stat = fs.statSync(sourcePath);
@@ -302,7 +360,7 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/manual-ftps-deploy.js [--dry-run]\n\nCreates a staging directory containing only the allowlisted production files and uploads only changed/newer files to the remote server.\n`);
+  console.log(`Usage: node scripts/manual-ftps-deploy.js [--dry-run] [--server|--web-app]\n\nCreates a staging directory containing only the allowlisted production files and uploads only changed/newer files to the remote server.\n`);
 }
 
 function main() {
@@ -313,16 +371,17 @@ function main() {
     return;
   }
 
+  const mode = args.has('--web-app') ? 'web-app' : 'server';
   const dryRun = args.has('--dry-run') || args.has('--preview');
-  const config = getConfig();
+  const config = getConfig(mode);
   const missingConfig = required.filter((key) => !String(config[key] || '').trim());
 
   if (!dryRun && missingConfig.length > 0) {
-    console.error(JSON.stringify({ status: 'ERROR', missingConfig, message: 'Set values in .env.deploy or environment variables before deploying.' }, null, 2));
+    console.error(JSON.stringify({ status: 'ERROR', mode, missingConfig, message: `Set values in .env.deploy/.env.web-app.deploy or environment variables before deploying ${mode}.` }, null, 2));
     process.exit(1);
   }
 
-  const { stagingRoot, missing } = buildStagingTree();
+  const { stagingRoot, missing } = buildStagingTree(mode);
   const stagedFiles = [];
   const currentManifestFiles = collectManifestFiles(stagingRoot);
   const previousManifest = readDeploymentManifest();
@@ -343,6 +402,7 @@ function main() {
 
   const output = {
     status: dryRun ? 'DRY_RUN' : 'READY',
+    mode,
     stagingDir: stagingRoot,
     filesQueued: stagedFiles.length,
     files: stagedFiles.sort(),
@@ -379,6 +439,8 @@ if (require.main === module) {
 
 module.exports = {
   allowedEntries,
+  webAppEntries,
+  getAllowedEntries,
   buildStagingTree,
   buildRemoteDeleteTargets,
   collectManifestFiles,

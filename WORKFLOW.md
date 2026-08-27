@@ -153,6 +153,12 @@ No direct push to main is permitted.
 
 Production deployment follows the repository’s deployment rules and configuration, not a Node-port assumption.
 
+The repository now includes an explicit automation layer for the two separate deployment targets:
+
+- `scripts/auto-sync.js` provides a safe local sync wrapper for `git status -> optional commit/push -> optional deploy` operations and refuses to track `.env` files.
+- `.github/workflows/ftp-upload.yml` deploys the server bundle and the public web-app bundle independently on pushes to `main` and on manual dispatch.
+- `scripts/manual-ftps-deploy.js` accepts `--server` and `--web-app` to keep the server deployment and public client deployment separate instead of collapsing both into one deploy target.
+
 Relevant references:
 
 - server.md

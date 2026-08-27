@@ -131,6 +131,8 @@ Der aktuelle Live-Check hat den tatsächlichen Stand bestätigt: Der Web-App-FTP
 
 Der Client muss Login, Session, RBAC, Module, GPS und Logout auf Basis dieser öffentlichen API verarbeiten. Lokale Entwickler- oder Preview-Pfade sind nur als lokale Hilfsmechanik zu behandeln, nicht als Produktionsvoraussetzung.
 
+Parallel dazu wird der Projekt-Workflow bewusst in zwei getrennte Deploy-Pfade aufgeteilt: Der Neutral-Server und die öffentliche Web-App werden separat synchronisiert und deployed. Die Automatisierung bleibt minimal und nutzt die vorhandene GitHub-/FTPS-Infrastruktur, ohne zusätzliche Runtime-Pfade oder parallele Serverstrukturen einzuführen. Lokale Deploy-Secrets bleiben nicht versioniert und werden nur in nicht-committeten `.env.*`-Dateien gehalten.
+
 ⸻
 
 1.6 Offline First

@@ -9,10 +9,12 @@ Thumbs.db
 logs/
 
 # Environment / Secrets
-# Full repository sync is explicitly enabled for this project; local secrets are not being hidden from the working repository.
+.env
+.env.*
+!.env.example
+!.env.*.example
 
 # Dependencies
-# Full repository sync is explicitly enabled for this project; modules remain part of the checked-in workspace if present.
 
 # Package Manager
 .npm/

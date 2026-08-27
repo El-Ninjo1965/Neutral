@@ -2,11 +2,20 @@
 
 const assert = require('node:assert');
 const { test, describe } = require('node:test');
-const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
+const { allowedEntries, getAllowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
   test('gps standalone entry is allowlisted for deployment', () => {
     assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
+  });
+
+  test('web app mode stages the public client bundle only', () => {
+    const entries = getAllowedEntries('web-app');
+    assert.ok(entries.includes('webroot/index.html'));
+    assert.ok(entries.includes('webroot/style.css'));
+    assert.ok(entries.includes('webroot/user-app.js'));
+    assert.ok(entries.includes('webroot/api-client.js'));
+    assert.ok(entries.includes('platform'));
   });
 
   test('new file is uploaded', () => {

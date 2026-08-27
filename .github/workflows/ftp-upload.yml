@@ -1,4 +1,4 @@
-name: FTPS Deploy
+name: Neutral Sync & FTPS Deploy
 
 on:
   push:
@@ -7,136 +7,68 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-server:
+    name: Deploy Neutral server
     runs-on: ubuntu-latest
     env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_HOST: ${{ secrets.FTP_HOST }}
       FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_PORT: ${{ secrets.FTP_PORT || 21 }}
+      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR || '/' }}
+      FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
 
     steps:
-      - name: Repository auschecken
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Produktions-Staging aufbauen
+      - name: Install lftp
         shell: bash
         run: |
           set -euo pipefail
-
-          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
-          rm -rf "$STAGING_DIR"
-          mkdir -p "$STAGING_DIR"
-
-          copy_file() {
-            local source_path="$1"
-            local target_path="$STAGING_DIR/$1"
-            mkdir -p "$(dirname "$target_path")"
-            cp -p "$source_path" "$target_path"
-          }
-
-          copy_dir() {
-            local source_path="$1"
-            local target_path="$STAGING_DIR/$1"
-            mkdir -p "$target_path"
-            cp -a "$source_path"/. "$target_path"/
-          }
-
-          copy_file package.json
-          copy_file package-lock.json
-
-          copy_dir platform
-
-          mkdir -p "$STAGING_DIR/server/api"
-          mkdir -p "$STAGING_DIR/server/bootstrap"
-          mkdir -p "$STAGING_DIR/server/config"
-          mkdir -p "$STAGING_DIR/server/database"
-          mkdir -p "$STAGING_DIR/server/middleware"
-          copy_dir server/api
-          copy_dir server/services
-          copy_file server/server.js
-          copy_file server/bootstrap/server.js
-          copy_file server/config/index.js
-          copy_file server/database/connection.js
-          copy_file server/middleware/input-validation.js
-
-          mkdir -p "$STAGING_DIR/app/modules/gps"
-          copy_file app/index.js
-          copy_file app/modules/index.json
-          copy_file app/modules/gps/index.js
-          copy_file app/modules/gps/module.json
-
-          mkdir -p "$STAGING_DIR/webroot/admin"
-          copy_file webroot/index.html
-          copy_file webroot/setup.php
-          copy_file webroot/diagnose.php
-          copy_file webroot/admin.php
-          copy_file webroot/dev.html
-          copy_file webroot/style.css
-          copy_file webroot/master-ui.js
-          copy_file webroot/user-app.js
-          copy_file webroot/api-client.js
-          copy_file webroot/admin-init.js
-          copy_file webroot/admin/common.js
-          copy_file webroot/admin/index.js
-          copy_file webroot/admin/roles-view.js
-          copy_file webroot/admin/settings-view.js
-          copy_file webroot/admin/users-view.js
-
-          mkdir -p "$STAGING_DIR/apps/neutral-app"
-          copy_file apps/neutral-app/app-info.json
-          copy_file apps/neutral-app/index.html
-
-          echo "Staging tree:"
-          find "$STAGING_DIR" -type f | sort
-
-      - name: FTPS-Client bereitstellen
-        shell: bash
-        run: |
-          set -euo pipefail
-
           if ! command -v lftp >/dev/null 2>&1; then
             sudo apt-get update
             sudo apt-get install -y lftp
           fi
 
-      - name: Produktionsbestand per FTPS hochladen
+      - name: Deploy server bundle
         shell: bash
         run: |
           set -euo pipefail
+          node scripts/manual-ftps-deploy.js --server
 
-          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
+  deploy-web-app:
+    name: Deploy public web app
+    runs-on: ubuntu-latest
+    env:
+      WEB_APP_FTP_HOST: ${{ secrets.WEB_APP_FTP_HOST }}
+      WEB_APP_FTP_SERVER: ${{ secrets.WEB_APP_FTP_SERVER }}
+      WEB_APP_FTP_USER: ${{ secrets.WEB_APP_FTP_USER }}
+      WEB_APP_FTP_USERNAME: ${{ secrets.WEB_APP_FTP_USERNAME }}
+      WEB_APP_FTP_PASSWORD: ${{ secrets.WEB_APP_FTP_PASSWORD }}
+      WEB_APP_FTP_PORT: ${{ secrets.WEB_APP_FTP_PORT || 21 }}
+      WEB_APP_FTP_PATH: ${{ secrets.WEB_APP_FTP_PATH || '/' }}
+      WEB_APP_FTP_ROOT: ${{ secrets.WEB_APP_FTP_ROOT || '/' }}
+      WEB_APP_FTP_MODE: ${{ secrets.WEB_APP_FTP_MODE || 'explicit' }}
+      WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
 
-          lftp <<EOF
-          set cmd:fail-exit true
-          set ftp:ssl-force true
-          set ftp:ssl-protect-data true
-          set ssl:verify-certificate no
-          set net:timeout 30
-          set net:max-retries 1
-          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          mirror -R --only-newer --verbose \
-            --exclude-glob .env \
-            --exclude-glob app-node-test \
-            --exclude-glob app-node-test/** \
-            "$STAGING_DIR" /
-          bye
-          EOF
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Veraltete HTML-Entrypoints entfernen
+      - name: Install lftp
         shell: bash
         run: |
           set -euo pipefail
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y lftp
+          fi
 
-          lftp <<EOF
-          set cmd:fail-exit true
-          set ftp:ssl-force true
-          set ftp:ssl-protect-data true
-          set ssl:verify-certificate no
-          set net:timeout 30
-          set net:max-retries 1
-          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          rm -f "/webroot/admin.html"
-          rm -f "/webroot/setup.html"
-          bye
-          EOF
+      - name: Deploy web app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/manual-ftps-deploy.js --web-app

@@ -19,6 +19,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - Module-specific permissions can now be declared by the module manifest, assigned in Admin -> Modules, and synchronized into the shared RBAC catalog on install.
 - The public module catalog must expose lifecycle-aware module state and respect server-resolved module visibility permissions so active modules can appear in the user app without discovery implicitly activating them.
 - Modules may declare a lightweight standalone test entry for isolated developer validation when they do not require the full app runtime.
+- Automated synchronization is now implemented in the repository: `scripts/auto-sync.js` provides a safe local commit/push/deploy wrapper, and `.github/workflows/ftp-upload.yml` deploys the server bundle and the public web-app bundle as separate FTPS targets on main push or manual dispatch.
+- Local deployment secrets remain excluded from git and must be kept in local `.env.*` files only.
 
 ## Current web app integration work
 
@@ -29,6 +31,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Split the server deployment and public web-app deployment into separate FTP contexts and keep the web-app credentials local-only in `.env.web-app.deploy`.
 - [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
 - [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
+- [x] Implement the repository-side automation guardrails for the separate deployment flow: `scripts/auto-sync.js` plus a GitHub workflow that deploys the server and web-app bundles independently.
 - [ ] Resolve the live host-side HTTP mapping for `/index/web-app/` so the public URL serves the same web-app bundle as the FTP root instead of the stale placeholder or 404 assets.
 - [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping is corrected.
 
