@@ -33,8 +33,9 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Confirm that the public challenge page is not caused by the repo client itself; the public host is intercepting requests before the Neutral app/API is served.
 - [x] Confirm that the local origin PHP app serves real Neutral JSON, but the local runtime still fails because `pdo_mysql` is missing in the checked PHP runtime.
 - [ ] Fix the production host path mapping so `/index/web-app/` and `/index/app/neutral/webroot/...` reach the real PHP app instead of the OpenResty challenge page.
-- [ ] Enable the production PHP runtime to load `pdo_mysql` (or the matching MySQL PDO driver) so APi auth, DB reads, module visibility, and session-backed login can work.
+- [ ] Enable the production PHP runtime to load `pdo_mysql` (or the matching MySQL PDO driver) so API auth, DB reads, module visibility, and session-backed login can work.
 - [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping and PHP runtime are corrected.
+- [x] Document the practical connection options that preserve the existing Neutral architecture without creating a second auth or module system: correct host mapping, alternative public root/subdomain mapping, and FTP/SFTP publishing only.
 
 ## Current production blocker
 

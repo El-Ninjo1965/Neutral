@@ -39,6 +39,16 @@ The correct architectural path remains to keep the existing Neutral server API a
 2. enable the actual production PHP runtime to load `pdo_mysql` or the matching MySQL PDO driver,
 3. verify the DB connectivity and then re-run the auth/session/module tests against the real server API.
 
+### Practical connection options that preserve the existing architecture
+
+The repository work does not need a rewrite of the app core to reach the server. The following direct-connection options are valid and compatible with the existing Neutral architecture as long as they keep the public client on the server-backed API contract:
+
+1. Preferred host-side fix: keep the same web app and API paths, but correct the live host mapping so `/index/web-app/` serves the web-app bundle and `/index/app/neutral/webroot/` serves the PHP app and API. This is the cleanest solution because it keeps the current API base and client contract stable.
+2. Alternative public root mapping: if `/index/*` is blocked by an OpenResty/WAF layer or a challenge rule, point a clean public directory (for example a mapped root or a subdomain) to the same FTP-uploaded web-app bundle and keep the API base on the same PHP origin. The browser client still talks to the server API; only the public path changes.
+3. Alternative public subdomain or domain-root deployment: if the host blocks a nested `/index/...` path but allows a root-domain or subdomain directory, deploy the same app bundle to the mapped root and point the client API meta to the real public neutral API path for that root. This avoids a parallel auth system and keeps the API contract intact.
+4. FTP/SFTP-only delivery is acceptable as a deployment mechanism, but it must not become the runtime source of truth. The trusted runtime remains the public Neutral PHP API and server-side session/auth decisions. FTP or SFTP is only for publishing the static files to the correct public root.
+5. No local auth fallback is acceptable as a production replacement, even if a temporary host fix is delayed. The server must remain the authority for user identity, session, permissions, and modules.
+
 The canonical public API path for the standalone web client is:
 
 - https://www.turbolikes.com/index/app/neutral/webroot/api/...
