@@ -198,7 +198,10 @@
         }
       }
 
-      const permissions = Array.isArray(module.permissions) && module.permissions.length ? module.permissions : [];
+      const visibilityPermissions = Array.isArray(module.access?.visibilityPermissions) && module.access.visibilityPermissions.length
+        ? module.access.visibilityPermissions
+        : (Array.isArray(module.permissions) ? module.permissions : []);
+      const permissions = visibilityPermissions.length ? visibilityPermissions : [];
       if (!permissions.length) return true;
       return permissions.some((permission) => hasPermission(currentUser, permission));
     }).map((module) => ({

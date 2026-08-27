@@ -14,12 +14,17 @@ This is the current operational task ledger for the repository. It is intentiona
 - The root /api/* path is not the active public production API path on the live host.
 - The admin workspace keeps the top header navigation as the only admin navigation surface; no left sidebar is part of the active admin UI.
 - Admin light/dark mode is expected to flow through the shared theme tokens for header, content, cards, tables, forms, alerts, modals, and dynamic admin views.
-- The GPS module remains the existing reference module and follows DISCOVER -> REGISTER / INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE.
-- The public module catalog must expose lifecycle-aware module state so active modules can appear in the user app without discovery implicitly activating them.
+- The last real browser check of the deployed admin UI was completed successfully by the project operator.
+- The GPS module remains the existing reference module and now supports DISCOVER -> REGISTER / INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE -> UNINSTALL.
+- Module-specific permissions can now be declared by the module manifest, assigned in Admin -> Modules, and synchronized into the shared RBAC catalog on install.
+- The public module catalog must expose lifecycle-aware module state and respect server-resolved module visibility permissions so active modules can appear in the user app without discovery implicitly activating them.
+- Modules may declare a lightweight standalone test entry for isolated developer validation when they do not require the full app runtime.
 
 ## Open tasks
 
-- [ ] Perform a real browser/device verification of the deployed admin dark mode and the live GPS permission/position flow; API/session checks alone are not a visual or device-level confirmation.
+- [ ] Validate the new uninstall/permission/standalone contract with at least one additional module beyond GPS once another real module is ready for migration to the new manifest structure.
+- [ ] Extend the module update path so installed modules can evolve their declared permissions and owned resources without requiring uninstall/reinstall.
+- [ ] Add disposable-environment verification for PHP-side module permission assignment and uninstall/reinstall flows beyond the live GPS reference run.
 
 ## Known technical constraints
 
@@ -33,5 +38,5 @@ This is the current operational task ledger for the repository. It is intentiona
 
 ## Next sensible development state
 
-- When changing admin UI tokens, re-check the live header, content area, dynamic admin views, tables, forms, alerts, and modals in both light and dark mode from a real browser.
-- When changing GPS/module code, re-check public /api/modules state plus install/activate/deactivate behavior before validating the live device geolocation flow.
+- When adding module-owned storage, declare each owned table explicitly in the module manifest and only allow uninstall cleanup for entries that opt into safe destroy-on-uninstall handling.
+- When adding module permissions, keep module-owned settings under moduleSettings.<moduleId> and re-check public /api/modules visibility plus role assignments after install, deactivate, uninstall, and reinstall.

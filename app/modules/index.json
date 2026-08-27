@@ -8,9 +8,49 @@
     "description": "Neutral GPS tracking module. Provides geolocation access, position events and track storage.",
     "entry": "index.js",
     "globalName": "GpsModule",
-    "permissions": [],
+    "permissions": [
+      {
+        "key": "gps.view",
+        "description": "Allows a user to see the GPS module in the workspace.",
+        "defaultRoles": ["admin", "developer", "user"]
+      },
+      {
+        "key": "gps.use",
+        "description": "Allows a user to request positions and start GPS tracking.",
+        "defaultRoles": ["admin", "developer", "user"]
+      },
+      {
+        "key": "gps.manage",
+        "description": "Allows a user to manage GPS-related module settings.",
+        "defaultRoles": ["admin", "developer"]
+      },
+      {
+        "key": "gps.admin",
+        "description": "Allows a user to administer the GPS module lifecycle and role assignments.",
+        "defaultRoles": ["admin", "developer"]
+      }
+    ],
+    "access": {
+      "visibilityPermissions": ["gps.view"],
+      "usagePermissions": ["gps.use"],
+      "managementPermissions": ["gps.manage"],
+      "adminPermissions": ["gps.admin"]
+    },
     "capabilities": ["gps", "geolocation"],
     "dependencies": [],
+    "standalone": {
+      "entry": "index.html",
+      "label": "GPS standalone test",
+      "description": "Loads the GPS module with lightweight local shims for UI and browser geolocation checks without the full application shell.",
+      "requires": {
+        "server": false,
+        "database": false,
+        "auth": false
+      }
+    },
+    "database": {
+      "tables": []
+    },
     "appId": null
   }
 ]

@@ -20,6 +20,124 @@
         ERROR: 'error'
     });
 
+    const normalizeStringArray = (value) => Array.isArray(value)
+        ? value.filter(Boolean).map((entry) => String(entry).trim()).filter(Boolean)
+        : [];
+
+    const normalizePermissionDefinitions = (permissions) => {
+        if (!Array.isArray(permissions)) {
+            return [];
+        }
+
+        return permissions.map((entry, index) => {
+            if (typeof entry === 'string') {
+                const key = entry.trim();
+                return key
+                    ? {
+                        key,
+                        description: '',
+                        defaultRoles: []
+                    }
+                    : null;
+            }
+
+            if (!entry || typeof entry !== 'object') {
+                return null;
+            }
+
+            const fallbackKey = typeof entry.permission === 'string' && entry.permission.trim()
+                ? entry.permission.trim()
+                : `module.permission.${index + 1}`;
+            const key = typeof entry.key === 'string' && entry.key.trim()
+                ? entry.key.trim()
+                : fallbackKey;
+
+            if (!key) {
+                return null;
+            }
+
+            return {
+                key,
+                description: typeof entry.description === 'string' ? entry.description : '',
+                defaultRoles: normalizeStringArray(entry.defaultRoles)
+            };
+        }).filter(Boolean);
+    };
+
+    const normalizeAccessDefinition = (value, permissionDefinitions) => {
+        const permissionKeys = permissionDefinitions.map((entry) => entry.key);
+        const fallbackBySuffix = (suffix) => permissionKeys.filter((key) => key.endsWith(suffix));
+        const source = value && typeof value === 'object' ? value : {};
+
+        return {
+            visibilityPermissions: normalizeStringArray(source.visibilityPermissions).length
+                ? normalizeStringArray(source.visibilityPermissions)
+                : fallbackBySuffix('.view'),
+            usagePermissions: normalizeStringArray(source.usagePermissions).length
+                ? normalizeStringArray(source.usagePermissions)
+                : fallbackBySuffix('.use'),
+            managementPermissions: normalizeStringArray(source.managementPermissions).length
+                ? normalizeStringArray(source.managementPermissions)
+                : fallbackBySuffix('.manage'),
+            adminPermissions: normalizeStringArray(source.adminPermissions).length
+                ? normalizeStringArray(source.adminPermissions)
+                : fallbackBySuffix('.admin')
+        };
+    };
+
+    const normalizeStandaloneDefinition = (value) => {
+        if (!value || typeof value !== 'object') {
+            return null;
+        }
+
+        const entry = typeof value.entry === 'string' && value.entry.trim()
+            ? value.entry.trim()
+            : null;
+
+        if (!entry) {
+            return null;
+        }
+
+        const requires = value.requires && typeof value.requires === 'object' ? value.requires : {};
+
+        return {
+            entry,
+            label: typeof value.label === 'string' && value.label.trim() ? value.label.trim() : 'Standalone module test',
+            description: typeof value.description === 'string' ? value.description : '',
+            requires: {
+                server: requires.server === true,
+                database: requires.database === true,
+                auth: requires.auth === true
+            }
+        };
+    };
+
+    const normalizeDatabaseDefinition = (value) => {
+        const source = value && typeof value === 'object' ? value : {};
+        const tables = Array.isArray(source.tables)
+            ? source.tables.map((entry) => {
+                if (typeof entry === 'string') {
+                    const name = entry.trim();
+                    return name ? { name, destroyOnUninstall: false } : null;
+                }
+                if (!entry || typeof entry !== 'object') {
+                    return null;
+                }
+                const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : '';
+                if (!name) {
+                    return null;
+                }
+                return {
+                    name,
+                    destroyOnUninstall: entry.destroyOnUninstall === true,
+                    description: typeof entry.description === 'string' ? entry.description : ''
+                };
+            }).filter(Boolean)
+            : [];
+
+        return { tables };
+    };
+
     const ModuleInterface = {
         statuses: moduleStatuses,
 
@@ -35,6 +153,8 @@
             if (!id) {
                 return null;
             }
+
+            const permissionDefinitions = normalizePermissionDefinitions(manifest.permissions);
 
             return {
                 id,
@@ -62,9 +182,8 @@
                             return normalizedRequirement === '*' ? dependencyId : `${dependencyId}@${normalizedRequirement}`;
                         })
                         : [],
-                permissions: Array.isArray(manifest.permissions)
-                    ? manifest.permissions.filter(Boolean).map(String)
-                    : [],
+                permissions: permissionDefinitions.map((entry) => entry.key),
+                permissionDefinitions,
                 capabilities: Array.isArray(manifest.capabilities)
                     ? manifest.capabilities.filter(Boolean).map(String)
                     : [],
@@ -84,6 +203,9 @@
                 requirements: Array.isArray(manifest.requirements)
                     ? manifest.requirements.filter(Boolean).map(String)
                     : [],
+                access: normalizeAccessDefinition(manifest.access, permissionDefinitions),
+                standalone: normalizeStandaloneDefinition(manifest.standalone),
+                database: normalizeDatabaseDefinition(manifest.database),
                 admin: manifest.admin && typeof manifest.admin === 'object'
                     ? manifest.admin
                     : null
@@ -106,7 +228,11 @@
                 active: false,
                 dependencies: [...manifest.dependencies],
                 permissions: [...manifest.permissions],
+                permissionDefinitions: [...manifest.permissionDefinitions],
                 capabilities: [...manifest.capabilities],
+                access: manifest.access,
+                standalone: manifest.standalone,
+                database: manifest.database,
                 admin: manifest.admin,
                 manifest,
 

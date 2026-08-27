@@ -211,7 +211,7 @@ final class Phase4RoleService
         if ($this->get($roleKey)) {
             throw new \RuntimeException('Role already exists: ' . $roleKey);
         }
-        $permissions = $this->normalizePermissions($payload['permissions'] ?? []);
+        $permissions = $this->normalizePermissions($payload['permissions'] ?? [], $pdo);
         $statement = $pdo->prepare('
             INSERT INTO roles (role_key, name, description, is_system, created_at, updated_at)
             VALUES (:role_key, :name, :description, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -254,7 +254,7 @@ final class Phase4RoleService
             ':description' => $description,
         ]);
         if (array_key_exists('permissions', $payload)) {
-            $permissions = $this->normalizePermissions($payload['permissions']);
+            $permissions = $this->normalizePermissions($payload['permissions'], $pdo);
             $this->syncRolePermissions($pdo, $roleDbId, $permissions);
         }
         $updated = $this->get((string) ($current['role_key'] ?? $roleId));
@@ -279,10 +279,36 @@ final class Phase4RoleService
     }
 
     /**
+     * @param list<string> $permissionKeys
+     * @return array<string,mixed>
+     */
+    public function replacePermissions(string $roleId, array $permissionKeys, bool $allowSystem = false): array
+    {
+        $pdo = $this->requireDatabase()->connect();
+        $current = $this->loadRoleRow($pdo, $roleId);
+        if ($current === null) {
+            throw new \RuntimeException('Role not found: ' . $roleId);
+        }
+        if (!$allowSystem && (int) ($current['is_system'] ?? 0) === 1) {
+            throw new \RuntimeException('System roles cannot be modified.');
+        }
+
+        $normalized = $this->normalizePermissions($permissionKeys, $pdo);
+        $this->syncRolePermissions($pdo, (int) ($current['id'] ?? 0), $normalized);
+
+        $updated = $this->get((string) ($current['role_key'] ?? $roleId));
+        if (!$updated) {
+            throw new \RuntimeException('Role could not be loaded after permission update.');
+        }
+        return $updated;
+    }
+
+    /**
      * @param mixed $permissions
+     * @param \PDO|null $pdo
      * @return list<string>
      */
-    private function normalizePermissions($permissions): array
+    private function normalizePermissions($permissions, ?\PDO $pdo = null): array
     {
         if (!is_array($permissions)) {
             return [];
@@ -290,7 +316,10 @@ final class Phase4RoleService
         $normalized = [];
         foreach ($permissions as $permission) {
             $value = trim((string) $permission);
-            if ($value === '' || !Phase4AuthRbac::isValidPermission($value)) {
+            if ($value === '') {
+                continue;
+            }
+            if (!Phase4AuthRbac::isValidPermission($value) && !$this->permissionExists($value, $pdo)) {
                 continue;
             }
             $normalized[] = $value;
@@ -407,12 +436,135 @@ final class Phase4RoleService
         }
     }
 
+    private function permissionExists(string $permissionKey, ?\PDO $pdo = null): bool
+    {
+        $key = trim($permissionKey);
+        if ($key === '') {
+            return false;
+        }
+        if (Phase4AuthRbac::isValidPermission($key)) {
+            return true;
+        }
+
+        $connection = $pdo ?? $this->requireDatabase()->connect();
+        $statement = $connection->prepare('SELECT id FROM permissions WHERE permission_key = :permission_key LIMIT 1');
+        $statement->execute([':permission_key' => $key]);
+        return $statement->fetchColumn() !== false;
+    }
+
     private function requireDatabase(): Database
     {
         if (!$this->database instanceof Database) {
             throw new \RuntimeException('MySQL role storage is not configured.');
         }
         return $this->database;
+    }
+}
+
+final class Phase4PermissionService
+{
+    private Database $database;
+
+    public function __construct(Database $database)
+    {
+        $this->database = $database;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function allKeys(): array
+    {
+        return array_map(
+            static fn (array $permission): string => (string) ($permission['key'] ?? ''),
+            $this->all()
+        );
+    }
+
+    /**
+     * @return list<array{key:string,description:string,scope:string}>
+     */
+    public function all(): array
+    {
+        $catalog = [];
+        foreach (Phase4AuthRbac::PERMISSIONS as $permission) {
+            $catalog[(string) $permission] = [
+                'key' => (string) $permission,
+                'description' => '',
+                'scope' => 'core',
+            ];
+        }
+
+        try {
+            $pdo = $this->database->connect();
+        } catch (\Throwable $exception) {
+            return array_values($catalog);
+        }
+
+        $statement = $pdo->query('SELECT permission_key, description, scope FROM permissions ORDER BY scope ASC, permission_key ASC');
+        if ($statement === false) {
+            return array_values($catalog);
+        }
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $key = trim((string) ($row['permission_key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $catalog[$key] = [
+                'key' => $key,
+                'description' => (string) ($row['description'] ?? ''),
+                'scope' => trim((string) ($row['scope'] ?? '')) !== '' ? (string) $row['scope'] : (Phase4AuthRbac::isValidPermission($key) ? 'core' : 'custom'),
+            ];
+        }
+
+        return array_values($catalog);
+    }
+
+    /**
+     * @param list<array{key:string,description:string,scope:string,defaultRoles:list<string>}> $definitions
+     */
+    public function ensure(array $definitions): void
+    {
+        if ($definitions === []) {
+            return;
+        }
+
+        $pdo = $this->database->connect();
+        $statement = $pdo->prepare('
+            INSERT INTO permissions (permission_key, description, scope, created_at)
+            VALUES (:permission_key, :description, :scope, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                description = VALUES(description),
+                scope = VALUES(scope)
+        ');
+
+        foreach ($definitions as $definition) {
+            $key = trim((string) ($definition['key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $statement->execute([
+                ':permission_key' => $key,
+                ':description' => (string) ($definition['description'] ?? ''),
+                ':scope' => (string) ($definition['scope'] ?? 'custom'),
+            ]);
+        }
+    }
+
+    public function deleteByScope(string $scope): void
+    {
+        $normalized = trim($scope);
+        if ($normalized === '') {
+            return;
+        }
+
+        $pdo = $this->database->connect();
+        $statement = $pdo->prepare('DELETE FROM permissions WHERE scope = :scope');
+        $statement->execute([':scope' => $normalized]);
     }
 }
 
