@@ -28,6 +28,17 @@ The actual live app path is:
 
 The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The root cause was in the repository deploy script itself: `--web-app` mode was never honored and the script always staged the server allowlist, which caused the wrong files to be prepared for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets, which proves that the remaining blocker is the live host-side document-root or URL-mapping for `/index/web-app/`: the FTP content and public HTTP content are still not the same.
 
+The current live diagnosis distinguishes two independent blockers:
+
+- The public host is intercepting `/index/web-app/` and `/index/app/neutral/webroot/...` before the real Neutral app/API are served. The responses are the generic `One moment, please...` HTML challenge payload and `server: openresty/1.31.1.1`, confirming a host-side stop layer rather than a repo-side app error.
+- The checked local origin PHP runtime responds with real Neutral JSON but fails when the database-backed auth/module flow is used because `pdo_mysql` is missing from the active PHP runtime. This is a production PHP runtime issue rather than a browser code issue.
+
+The correct architectural path remains to keep the existing Neutral server API and web client and fix the environment around them instead of inventing a second auth system or duplicate module database. The minimum viable fix is:
+
+1. correct public host document root / alias / rewrite / OpenResty mapping so `/index/web-app/` and `/index/app/neutral/webroot/` reach the real PHP app,
+2. enable the actual production PHP runtime to load `pdo_mysql` or the matching MySQL PDO driver,
+3. verify the DB connectivity and then re-run the auth/session/module tests against the real server API.
+
 The canonical public API path for the standalone web client is:
 
 - https://www.turbolikes.com/index/app/neutral/webroot/api/...

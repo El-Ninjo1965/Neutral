@@ -29,8 +29,19 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Split the server deployment and public web-app deployment into separate FTP contexts and keep the web-app credentials local-only in `.env.web-app.deploy`.
 - [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
 - [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
-- [ ] Resolve the live host-side HTTP mapping for `/index/web-app/` so the public URL serves the same web-app bundle as the FTP root instead of the stale placeholder or 404 assets.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping is corrected.
+- [x] Confirm that the repo-side client is correct: the app targets the canonical public API path and does not require a parallel local auth implementation.
+- [x] Confirm that the public challenge page is not caused by the repo client itself; the public host is intercepting requests before the Neutral app/API is served.
+- [x] Confirm that the local origin PHP app serves real Neutral JSON, but the local runtime still fails because `pdo_mysql` is missing in the checked PHP runtime.
+- [ ] Fix the production host path mapping so `/index/web-app/` and `/index/app/neutral/webroot/...` reach the real PHP app instead of the OpenResty challenge page.
+- [ ] Enable the production PHP runtime to load `pdo_mysql` (or the matching MySQL PDO driver) so APi auth, DB reads, module visibility, and session-backed login can work.
+- [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping and PHP runtime are corrected.
+
+## Current production blocker
+
+- The minimal architectural path is to keep the existing Neutral web app and server API and fix the environment rather than re-architecting the app.
+- The repo is not the final blocker; the live host still serves a challenge page and the checked PHP runtime is missing the MySQL PDO extension required for DB-backed auth and module data.
+- The correct runtime path remains: public web client -> public HTTPS API base -> Neutral PHP runtime -> database -> auth/session/module responses.
+- Any alternate auth or module system would duplicate the existing server source of truth and is therefore not compatible with the project rules.
 
 ## Open tasks
 
