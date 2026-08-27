@@ -260,6 +260,56 @@ test('developer setup persists a hashed local password for login and admin acces
   assert.ok(reloadedContext.window.CoreAuth.getCurrentUser().roles.includes('developer'));
 });
 
+test('production deployments reject local bootstrap auth for non-localhost runtimes', async () => {
+  const windowStub = {
+    location: { protocol: 'https:', hostname: 'www.turbolikes.com' },
+    localStorage: {
+      getItem() { return null; },
+      setItem() {},
+      removeItem() {}
+    },
+    Core: { emit() {} },
+    CoreAudit: { record() {} },
+    CoreAccess: {
+      can() { return { ok: true }; },
+      hasPermission() { return true; }
+    },
+    DatabaseManager: {
+      async clear() {},
+      async save() {},
+      async getAll() { return []; }
+    },
+    ConfigManager: {
+      configs: new Map(),
+      set(key, value) { this.configs.set(key, value); },
+      get(key, fallback) { return this.configs.has(key) ? this.configs.get(key) : fallback; }
+    }
+  };
+  windowStub.window = windowStub;
+
+  const context = vm.createContext(windowStub);
+  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../platform/core-auth.js'));
+  loadScript(context, path.resolve(__dirname, '../platform/core-user.js'));
+  loadScript(context, path.resolve(__dirname, '../platform/local-auth.js'));
+
+  windowStub.ConfigManager.set('bootstrap', {
+    enabled: true,
+    developerUsername: 'Developer',
+    developerPasswordHash: 'hash',
+    passwordRequired: true,
+    passwordSource: 'local-offline'
+  });
+
+  const result = await context.window.CoreAuth.login({ username: 'Tester', password: 'real-user-password' });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'SERVER_AUTH_REQUIRED');
+
+  const localResult = await context.window.LocalAuth.login({ username: 'Tester', password: 'real-user-password' });
+  assert.equal(localResult.ok, false);
+  assert.equal(localResult.code, 'SERVER_AUTH_REQUIRED');
+});
+
 test('app config exposes a single neutral app name', () => {
   const windowStub = { window: null, ConfigManager: null };
   windowStub.window = windowStub;

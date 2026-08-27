@@ -81,6 +81,16 @@
 
     const SESSION_STORAGE_KEY = 'platform.auth.session';
 
+    const isLocalPreviewRuntime = () => {
+        const location = typeof window !== 'undefined' && window.location ? window.location : null;
+        const protocol = location && typeof location.protocol === 'string' ? location.protocol.toLowerCase() : '';
+        const hostname = location && typeof location.hostname === 'string' ? location.hostname.toLowerCase() : '';
+        if (!hostname && protocol === '') {
+            return true;
+        }
+        return protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
+    };
+
     const readStoredSession = () => {
         if (typeof localStorage === 'undefined') {
             return null;
@@ -310,6 +320,14 @@
         },
 
         async login(credentialsOrUserId) {
+            if (!isLocalPreviewRuntime()) {
+                return {
+                    ok: false,
+                    code: 'SERVER_AUTH_REQUIRED',
+                    message: 'Server-side authentication is required for this deployment.'
+                };
+            }
+
             const input = credentialsOrUserId && typeof credentialsOrUserId === 'object'
                 ? credentialsOrUserId
                 : { userId: credentialsOrUserId };

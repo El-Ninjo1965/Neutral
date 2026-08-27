@@ -21,6 +21,16 @@
         return `uuid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     };
 
+    const isLocalPreviewRuntime = () => {
+        const location = typeof window !== 'undefined' && window.location ? window.location : null;
+        const protocol = location && typeof location.protocol === 'string' ? location.protocol.toLowerCase() : '';
+        const hostname = location && typeof location.hostname === 'string' ? location.hostname.toLowerCase() : '';
+        if (!hostname && protocol === '') {
+            return true;
+        }
+        return protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
+    };
+
     const serializeUser = (user) => {
         if (!user || typeof user !== 'object') {
             return null;
@@ -200,13 +210,15 @@
 
         init() {
             if (this.initialized) {
-                if (this.users.size === 0) {
+                if (this.users.size === 0 && isLocalPreviewRuntime()) {
                     this.createDefaultUsers();
                 }
                 return this;
             }
 
-            this.ready();
+            if (isLocalPreviewRuntime()) {
+                this.ready();
+            }
             this.initialized = true;
 
             if (window.Core) {
@@ -220,6 +232,10 @@
         },
 
         ready() {
+            if (!isLocalPreviewRuntime()) {
+                return;
+            }
+
             Promise.resolve(hydrateUsers.call(this)).then((rows) => {
                 if (Array.isArray(rows) && rows.length > 0) {
                     if (window.Core) {
@@ -257,6 +273,16 @@
         },
 
         bootstrapDeveloperUser() {
+            if (!isLocalPreviewRuntime()) {
+                return {
+                    ok: false,
+                    code: 'SERVER_AUTH_REQUIRED',
+                    created: false,
+                    data: null,
+                    message: 'Local bootstrap is disabled for server-backed deployments.'
+                };
+            }
+
             const config = this.resolveBootstrapConfig();
             if (!config.enabled) {
                 return {

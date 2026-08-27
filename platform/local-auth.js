@@ -3,6 +3,16 @@
 
   const DEFAULT_DEVELOPER_USERNAME = 'Developer';
   const STORAGE_KEY = 'neutral.local.auth.v1';
+
+  const isLocalPreviewRuntime = () => {
+    const location = typeof window !== 'undefined' && window.location ? window.location : null;
+    const protocol = location && typeof location.protocol === 'string' ? location.protocol.toLowerCase() : '';
+    const hostname = location && typeof location.hostname === 'string' ? location.hostname.toLowerCase() : '';
+    if (!hostname && protocol === '') {
+      return true;
+    }
+    return protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
+  };
   const LEGACY_STORAGE_KEYS = [
     'platform.local.auth.developerPassword',
     'platform.local.auth.developerPasswordHash',
@@ -234,6 +244,10 @@
     },
 
     async ensureDeveloperUser() {
+      if (!isLocalPreviewRuntime()) {
+        return { ok: false, code: 'SERVER_AUTH_REQUIRED', message: 'Server-side authentication is required for this deployment.' };
+      }
+
       if (!window.UserModule || typeof window.UserModule.bootstrapDeveloperUser !== 'function') {
         return { ok: false, code: 'USER_MODULE_MISSING', message: 'User module is not available.' };
       }
@@ -253,6 +267,10 @@
     },
 
     async login(credentials = {}) {
+      if (!isLocalPreviewRuntime()) {
+        return { ok: false, code: 'SERVER_AUTH_REQUIRED', message: 'Server-side authentication is required for this deployment.' };
+      }
+
       const username = normalizeUsername(credentials.username || DEFAULT_DEVELOPER_USERNAME);
       const password = String(credentials.password || '').trim();
 
@@ -292,6 +310,10 @@
     },
 
     async setupDeveloper({ password, username = DEFAULT_DEVELOPER_USERNAME } = {}) {
+      if (!isLocalPreviewRuntime()) {
+        return { ok: false, code: 'SERVER_AUTH_REQUIRED', message: 'Server-side authentication is required for this deployment.' };
+      }
+
       const normalizedUser = normalizeUsername(username) || DEFAULT_DEVELOPER_USERNAME;
       const normalizedPassword = String(password || '').trim();
 

@@ -411,23 +411,23 @@
         <div class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
-            <input id="userLoginUsername" type="text" value="Developer" autocomplete="username" />
+            <input id="userLoginUsername" type="text" value="" placeholder="Enter your production username" autocomplete="username" />
           </div>
           <div class="form-field">
             <label for="userLoginPassword">Password</label>
-            <input id="userLoginPassword" type="password" autocomplete="current-password" />
+            <input id="userLoginPassword" type="password" placeholder="Enter your production password" autocomplete="current-password" />
           </div>
           <div class="user-login-actions">
             <button type="button" id="userLoginSubmit" class="primary">Login</button>
           </div>
-          <div id="userLoginStatus" class="message info">Server-side login is required for authenticated features.</div>
+          <div id="userLoginStatus" class="message info">Use your production account for this deployment. Local bootstrap credentials are not used here.</div>
         </div>
       </section>
     `;
 
     const submit = document.getElementById('userLoginSubmit');
     submit.addEventListener('click', async () => {
-      const username = document.getElementById('userLoginUsername').value.trim() || 'Developer';
+      const username = document.getElementById('userLoginUsername').value.trim();
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
       const apiClient = createServerApiClient();

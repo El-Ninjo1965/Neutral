@@ -62,7 +62,7 @@ This does **not** prove that the application is impossible on the shared host. I
 
 ## Web app client contract
 
-The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path.
+The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path. On non-localhost deployments, the server-side session/API is the only authoritative login source; the local developer bootstrap is explicitly disabled so that production users are not silently shadowed by a local-only identity source.
 
 ## Module model
 

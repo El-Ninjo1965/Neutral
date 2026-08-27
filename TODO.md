@@ -27,6 +27,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Verify the live API contract on the real host: `/api/status` returns HTTP 200 with JSON; `/api/auth/me` returns 401 without a session; `/api/modules` returns a valid module catalog payload.
 - [x] Remove localhost/default-local assumptions from the public web-app config and client bootstrap logic.
 - [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
+- [x] Enforce a server-side auth authority for production deployments so the browser-local bootstrap developer account never becomes the effective user source on non-localhost runtime hosts.
 - [x] Add a shared-host root rewrite so a same-origin app host can expose the existing `webroot/` runtime from the docroot root without flattening the repository structure.
 - [ ] Deploy the full same-origin Neutral runtime to `/home/web1819/public_html/app` via the dedicated FTP account once the secret is available in-session.
 - [ ] Verify that `https://app.turbolikes.com/`, `/api/status`, `/api/auth/me`, `/admin.php`, and `/setup.php` are served from the deployed app root and not from a stale placeholder.
