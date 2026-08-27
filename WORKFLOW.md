@@ -61,6 +61,102 @@ The public host was re-tested against the new subdomain `https://app.turbolikes.
 
 This means the remaining live blocker is not in the Neutral app code or in the FTP deploy itself. The blocker is the public host configuration, challenge/WAF layer, or vHost/document-root mapping that sits in front of the actual PHP origin. Until that layer is corrected, no browser-based production login or module validation can be considered valid in the public host environment.
 
+### Variant analysis for the current hosting model
+
+The existing repository and the live tests support a small set of concrete deployment variants. They were evaluated against the actual capabilities of the current shared-host/cPanel environment and against the neutral app contract already encoded in the repo.
+
+#### Variant A — same-origin web app and API on the same public root
+
+Example:
+
+- `https://app.turbolikes.com/` → web app
+- `https://app.turbolikes.com/api/` → Neutral PHP API
+
+This is the cleanest browser architecture because it avoids CORS and keeps session cookies on one domain. It is compatible with the repo because:
+
+- [webroot/index.html](/workspaces/Neutral/webroot/index.html) already sets a configurable `neutral-api-base` meta tag.
+- [webroot/user-app.js](/workspaces/Neutral/webroot/user-app.js) prefers `meta[name="neutral-api-base"]`, then `window.NEUTRAL_API_BASE`, then a configured public API base.
+- [core/php/src/AppConfig.php](/workspaces/Neutral/core/php/src/AppConfig.php) already resolves `API_BASE`, `NEUTRAL_API_BASE`, and `APP_API_BASE`.
+- [server/config/index.js](/workspaces/Neutral/server/config/index.js) already loads the same env values and is portable across install roots.
+
+This path is only workable if the cPanel Document Root for the chosen public domain or subdomain actually reaches PHP without the OpenResty challenge layer. The current live test proves that the existing app root does not currently achieve that. Therefore it is technically valid, but not currently reachable from the public host without a host-side change.
+
+#### Variant B — separate API subdomain
+
+Example:
+
+- `https://app.turbolikes.com/` → web app
+- `https://api.turbolikes.com/` → Neutral PHP API
+
+This is also compatible with the repo and is the most secure cross-domain pattern if the API must live on a separate domain. It requires:
+
+- `Access-Control-Allow-Origin` for `https://app.turbolikes.com`
+- `Access-Control-Allow-Credentials: true`
+- cookie domain aligned with the API domain or a parent domain
+- `SameSite=Lax` or `None` depending on cross-site needs
+- HTTPS-only session cookie settings
+
+This is the recommended cross-domain layout if the host eventually allows the public API subdomain to reach the PHP origin. It is not currently usable on the tested live host because the challenge layer intercepts the request before PHP runs.
+
+#### Variant C — main domain root
+
+Example:
+
+- `https://turbolikes.com/` → web app
+- `https://turbolikes.com/api/` → Neutral PHP API
+
+This is operationally valid if the host allows the root document folder to serve the app and the API routing. The repo is already compatible with a configurable `API_BASE` and with relative routes. The main issue is again not the repo logic; it is the host-level intercept that occurs before the PHP origin. There is no evidence that the main domain is exempt from the same OpenResty challenge trigger.
+
+#### Variant D — public_html root / alternative root mapping
+
+This is valid in principle when the cPanel root is mapped to a working application directory and PHP routing is enabled. The repo already supports the concept of alternative install roots and public root configuration via `PUBLIC_WEBROOT_PATH` and `PUBLIC_URL` in the diagnostics and config logic. However, the live challenge proves that the public host is still serving a challenge page before PHP, so these paths are not yet valid in the current deployment unless the host’s public root mapping is corrected.
+
+#### Variant E — direct PHP frontcontroller in a public directory
+
+The repo already includes the essential PHP frontcontroller pattern:
+
+- [webroot/api/.htaccess](/workspaces/Neutral/webroot/api/.htaccess) routes API requests to `index.php`
+- [webroot/api/index.php](/workspaces/Neutral/webroot/api/index.php) dispatches `status`, `auth/login`, `auth/me`, `modules`, and protected admin routes
+
+This architecture is sound and is exactly what a shared-host PHP setup should use. The problem is not the frontcontroller pattern itself; it is the host-level challenge layer that prevents PHP execution in the public URL space. This is a deployment security or routing problem, not an app-code problem.
+
+### Result of the practical host-layer test
+
+The central technical fact that changes the assessment is this:
+
+- The public host still responds with `server: openresty/1.31.1.1` and `One moment, please...` even for a directly uploaded PHP file on the live public document root.
+- That means the client request never reaches PHP.
+- Therefore, none of the above API or same-origin architectures can become functional in the current public path until the host-side challenge layer is removed or bypassed.
+
+This is not a repo bug, and it is not a duplicate-auth bug. It is a public hosting path issue. The repository is ready for a proper public API deployment once a reachable PHP public root is available.
+
+### What the repository already supports for the eventual fix
+
+The repo already contains the runtime and configuration primitives needed for the eventual live deployment:
+
+- `API_BASE`, `APP_API_BASE`, `NEUTRAL_API_BASE` are accepted
+- `PUBLIC_URL` / `PUBLIC_WEBROOT_PATH` are already recognized by diagnostics and config logic
+- the web app can resolve the API base dynamically from a meta tag or runtime config
+- `localStorage` / `IndexedDB` remain as offline-first state for anonymous/public users
+- server-backed auth, roles, permissions, and modules remain the authoritative path once the public origin is reachable
+
+### Best practical plan for this repository
+
+If the host’s public routing is corrected so that PHP runs on a selected public document root or subdomain, the best architecture is:
+
+1. Keep the Neutral server API as the single source of truth for auth, session, RBAC, and modules.
+2. Keep the web app offline-first for public modules using LocalStorage/IndexedDB.
+3. When a user logs in, call the server API on the selected public API base.
+4. Use same-origin routing if possible to keep cookies and sessions simple.
+5. Use an API subdomain only if same-origin is impossible or blocked by host policy.
+6. Leave the repo portable and config-driven instead of hard-coding a fixed URL.
+
+The canonical public API path for the standalone web client remains:
+
+- `https://www.turbolikes.com/index/app/neutral/webroot/api/...`
+
+and the recommended future public routing should be treated as a host-mapping decision rather than a code rewrite.
+
 The canonical public API path for the standalone web client is:
 
 - https://www.turbolikes.com/index/app/neutral/webroot/api/...
