@@ -32,6 +32,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Enforce a server-side auth authority for production deployments so the browser-local bootstrap developer account never becomes the effective user source on non-localhost runtime hosts.
 - [x] Add a shared-host root rewrite so a same-origin app host can expose the existing `webroot/` runtime from the docroot root without flattening the repository structure.
 - [x] Route the public app root through the PHP entry point (`webroot/index.php`) instead of the static `index.html` shell.
+- [x] Add `webroot/index.php` to deploy/preflight allowlists so FTPS deploys update the real production entry point instead of leaving stale live PHP shells active.
 - [ ] Deploy the full same-origin Neutral runtime to `/home/web1819/public_html/app` via the dedicated FTP account once the secret is available in-session.
 - [ ] Verify that `https://app.turbolikes.com/`, `/api/status`, `/api/auth/me`, `/admin.php`, and `/setup.php` are served from the deployed app root and not from a stale placeholder.
 - [ ] Inspect cPanel -> Plugins -> Imunify360 (if available) for incidents/firewall entries affecting operator/test traffic; otherwise request a per-host bot-protection exemption from the provider.

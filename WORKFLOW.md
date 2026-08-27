@@ -322,6 +322,7 @@ The empirically validated production architecture is:
 - added that file to the deploy allowlists in [scripts/manual-ftps-deploy.js](/workspaces/Neutral/scripts/manual-ftps-deploy.js) and [scripts/cpanel-preflight.js](/workspaces/Neutral/scripts/cpanel-preflight.js)
 - updated [webroot/user-app.js](/workspaces/Neutral/webroot/user-app.js) so production login/logout/session bootstrap use the server API instead of requiring local-only auth fallback
 - updated [platform/config-manager.js](/workspaces/Neutral/platform/config-manager.js) and [platform/core-loader.js](/workspaces/Neutral/platform/core-loader.js) so the browser resolves `/api` relative to the active deployment path instead of assuming the domain root
+- updated deploy/preflight allowlists in [scripts/manual-ftps-deploy.js](/workspaces/Neutral/scripts/manual-ftps-deploy.js) and [scripts/cpanel-preflight.js](/workspaces/Neutral/scripts/cpanel-preflight.js) so `webroot/index.php` is always shipped with production deploys
 
 ### What is verified vs. not yet verified
 

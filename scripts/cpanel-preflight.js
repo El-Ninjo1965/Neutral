@@ -31,6 +31,7 @@ const allowedEntries = [
   'core/php/bootstrap.php',
   'core/php/src',
   'core/php/views',
+  'webroot/index.php',
   'webroot/index.html',
   'webroot/setup.php',
   'webroot/admin.php',

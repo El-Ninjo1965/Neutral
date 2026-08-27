@@ -9,6 +9,10 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.ok(allowedEntries.includes('.htaccess'));
   });
 
+  test('php entry point is allowlisted for deployment', () => {
+    assert.ok(allowedEntries.includes('webroot/index.php'));
+  });
+
   test('gps standalone entry is allowlisted for deployment', () => {
     assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
   });
