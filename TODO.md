@@ -32,8 +32,9 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
 - [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
 - [x] Implement the repository-side automation guardrails for the separate deployment flow: `scripts/auto-sync.js`, `scripts/auto-watch.js`, and a GitHub workflow that deploys the server and web-app bundles independently.
-- [x] Confirm that `/index/web-app/` resolves to the dedicated web-app directory and that the public path is separate from the Neutral server deployment path.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the repository-side automation and live deployment path are verified.
+- [x] Keep the server deployment and public web-app deployment separated in both the repository logic and the deployment target model.
+- [ ] Resolve the external FTPS account configuration for the public web-app target: the configured web-app account currently rejects the upload with `421 Home directory not available`, so the live public web-app deployment cannot be completed until that host-side FTP target is corrected.
+- [ ] Request and complete the real browser/mobile live test with the project owner after the external web-app FTPS account is corrected.
 
 ## Open tasks
 
