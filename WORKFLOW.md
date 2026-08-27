@@ -71,7 +71,8 @@ The real session authority is the server. Local browser state may be used as a c
 The admin shell should remain minimal and consistent, with:
 
 - a compact header
-- a persistent left sidebar
+- a single top navigation menu as the only admin navigation
+- no left sidebar or duplicate admin navigation surfaces
 - a single main content area
 - consistent light/dark design tokens and shared component styling
 

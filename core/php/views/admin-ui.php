@@ -39,10 +39,6 @@
     </div>
 
     <div id="appShell" class="app-shell hidden">
-      <aside class="sidebar shared-shell-sidebar">
-        <div id="appModuleNav" class="nav-list shared-shell-nav"></div>
-        <div id="userMenu" class="nav-list"></div>
-      </aside>
       <main class="main-panel">
         <header class="topbar">
           <div id="topbarTitle" class="topbar-title">Neutral Platform Administration</div>

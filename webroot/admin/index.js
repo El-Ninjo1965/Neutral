@@ -748,62 +748,32 @@ class AdminRouter {
   renderLayout() {
     this.container.innerHTML = `
       <div class="admin-panel">
-        <aside class="admin-sidebar">
-          <div class="admin-logo">
-            <h1>Neutral Framework Administration</h1>
-          </div>
-
-          <nav class="admin-nav">
-            <div class="admin-nav-group">
-              <h3>Dashboard</h3>
-              <a href="#" class="nav-link" data-view="dashboard">Dashboard</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Users</h3>
-              <a href="#" class="nav-link" data-view="users">Users</a>
-              <a href="#" class="nav-link" data-view="roles">Roles</a>
-              <a href="#" class="nav-link" data-view="permissions">Permissions</a>
-              <a href="#" class="nav-link" data-view="sessions">Sessions</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Modules</h3>
-              <a href="#" class="nav-link" data-view="modules">Modules</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Settings</h3>
-              <a href="#" class="nav-link" data-view="settings">Settings</a>
-              <a href="#" class="nav-link" data-view="theme">Theme</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Infrastructure</h3>
-              <a href="#" class="nav-link" data-view="connections">Connections</a>
-              <a href="#" class="nav-link" data-view="server">Server</a>
-              <a href="#" class="nav-link" data-view="database">Database</a>
-              <a href="#" class="nav-link" data-view="diagnostics">Diagnostics</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Audit</h3>
-              <a href="#" class="nav-link" data-view="audit">Audit Log</a>
-            </div>
-            <div class="admin-nav-group">
-              <h3>Updates</h3>
-              <a href="#" class="nav-link" data-view="updates">Updates</a>
-              <a href="#" class="nav-link" data-view="infrastructure">Backup</a>
-            </div>
-          </nav>
-
-          <div class="admin-footer">
-            <button class="btn btn-sm btn-secondary" onclick="adminRouter.logout()">Logout</button>
-          </div>
-        </aside>
-
         <section class="admin-content">
           <header class="admin-header">
-            <div class="breadcrumb">
-              <span id="breadcrumb-text">Users</span>
+            <div class="admin-header-main">
+              <div class="breadcrumb">
+                <span id="breadcrumb-text">Dashboard</span>
+              </div>
+              <nav class="admin-top-nav" aria-label="Admin navigation">
+                <button type="button" class="nav-link active" data-view="dashboard">Dashboard</button>
+                <button type="button" class="nav-link" data-view="users">Users</button>
+                <button type="button" class="nav-link" data-view="roles">Roles</button>
+                <button type="button" class="nav-link" data-view="permissions">Permissions</button>
+                <button type="button" class="nav-link" data-view="sessions">Sessions</button>
+                <button type="button" class="nav-link" data-view="modules">Modules</button>
+                <button type="button" class="nav-link" data-view="settings">Settings</button>
+                <button type="button" class="nav-link" data-view="theme">Theme</button>
+                <button type="button" class="nav-link" data-view="connections">Connections</button>
+                <button type="button" class="nav-link" data-view="server">Server</button>
+                <button type="button" class="nav-link" data-view="database">Database</button>
+                <button type="button" class="nav-link" data-view="diagnostics">Diagnostics</button>
+                <button type="button" class="nav-link" data-view="audit">Audit Log</button>
+                <button type="button" class="nav-link" data-view="updates">Updates</button>
+              </nav>
             </div>
-            <div class="admin-user-info">
-              <span id="current-user">Admin</span>
+            <div class="admin-header-tools">
+              <span class="admin-user-info" id="current-user">Admin</span>
+              <button class="btn btn-sm btn-secondary" onclick="adminRouter.logout()">Logout</button>
             </div>
           </header>
 
@@ -876,19 +846,16 @@ class AdminRouter {
     const style = document.createElement('style');
     style.id = 'admin-styles';
     style.textContent = `
-      .admin-panel { display: grid; grid-template-columns: 290px 1fr; min-height: calc(100vh - 40px); background: #f6f8fc; }
-      .admin-sidebar { background: #1f2937; color: #f8fafc; display: flex; flex-direction: column; }
-      .admin-logo { padding: 22px 20px 16px; border-bottom: 1px solid rgba(148,163,184,.2); }
-      .admin-logo h1 { margin: 0; font-size: 1.2rem; }
-      .admin-logo p { margin: 8px 0 0; color: #cbd5e1; font-size: .82rem; }
-      .admin-nav { padding: 16px; display: grid; gap: 16px; }
-      .admin-nav-group h3 { margin: 0 0 8px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
-      .nav-link { display: block; padding: 10px 12px; border-radius: 10px; color: #e2e8f0; text-decoration: none; font-weight: 600; }
-      .nav-link:hover,.nav-link.active { background: rgba(59,130,246,.24); color: #fff; }
-      .admin-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(148,163,184,.2); }
-      .admin-content { display: flex; flex-direction: column; min-width: 0; }
-      .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+      .admin-panel { display: flex; min-height: calc(100vh - 40px); background: #f6f8fc; }
+      .admin-content { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+      .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+      .admin-header-main { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; }
       .breadcrumb { font-weight: 700; color: #0f172a; }
+      .admin-top-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+      .nav-link { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 999px; border: 1px solid transparent; background: #f1f5f9; color: #0f172a; text-decoration: none; font-weight: 600; cursor: pointer; }
+      .nav-link:hover, .nav-link.active { background: rgba(37, 99, 235, 0.12); border-color: rgba(37, 99, 235, 0.2); color: #1d4ed8; }
+      .admin-header-tools { display: flex; align-items: center; gap: 12px; }
+      .admin-user-info { color: #475569; font-weight: 600; }
       .admin-main { padding: 22px 24px; overflow: auto; }
       .admin-placeholder p { color: #475569; max-width: 760px; }
       .permission-list { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -922,9 +889,16 @@ class AdminRouter {
       .inline-empty { display: inline-flex; }
       .code-block { margin: 0; padding: 12px; border-radius: 8px; background: #0f172a; color: #e2e8f0; overflow: auto; font-size: .75rem; }
       @media (max-width: 980px) {
-        .admin-panel { grid-template-columns: 1fr; }
-        .admin-sidebar { position: sticky; top: 0; z-index: 3; }
+        .admin-header { flex-direction: column; align-items: flex-start; }
+        .admin-header-main { width: 100%; }
+        .admin-top-nav { width: 100%; }
         .inline-form { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 640px) {
+        .admin-main { padding: 18px 16px; }
+        .admin-header { padding: 14px 16px; }
+        .nav-link { width: 100%; }
+        .admin-top-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
       }
     `;
     document.head.appendChild(style);
