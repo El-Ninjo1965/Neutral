@@ -26,7 +26,7 @@ The actual live app path is:
 - public web-client deployment target: /index/web-app/
 - FTP web-app root: / (chrooted to the dedicated web-app directory on the host)
 
-The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The root cause was in the repository deploy script itself: `--web-app` mode was never honored and the script always staged the server allowlist, which caused the wrong files to be prepared for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets, which proves that the remaining blocker is the live host-side document-root or URL-mapping for `/index/web-app/`: the FTP content and public HTTP content are still not the same.
+The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The repository-side root cause was the deploy script itself: `--web-app` mode had not been honored, so the wrong allowlist was staged for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The verified live runtime path is `/index/web-app/` and it resolves to the dedicated web-app directory on the host; no VHost, alias, or cPanel document-root assumption is required to explain the public path once the correct web-app bundle is staged and deployed.
 
 The canonical public API path for the standalone web client is:
 
@@ -156,6 +156,7 @@ Production deployment follows the repository’s deployment rules and configurat
 The repository now includes an explicit automation layer for the two separate deployment targets:
 
 - `scripts/auto-sync.js` provides a safe local sync wrapper for `git status -> optional commit/push -> optional deploy` operations and refuses to track `.env` files.
+- `scripts/auto-watch.js` maintains a local live watcher in the Codespace so relevant project changes are detected immediately and pushed to the active PR branch before the separate deploy cycle runs.
 - `.github/workflows/ftp-upload.yml` deploys the server bundle and the public web-app bundle independently on pushes to `main` and on manual dispatch.
 - `scripts/manual-ftps-deploy.js` accepts `--server` and `--web-app` to keep the server deployment and public client deployment separate instead of collapsing both into one deploy target.
 

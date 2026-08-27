@@ -7,6 +7,8 @@
     "start": "node scripts/neutral-start.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
     "deploy:manual": "node scripts/manual-ftps-deploy.js",
+    "sync:once": "node scripts/auto-sync.js --commit --push --deploy",
+    "sync:watch": "node scripts/auto-watch.js",
     "setup:preflight": "node scripts/cpanel-preflight.js"
   },
   "keywords": [
