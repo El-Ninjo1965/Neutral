@@ -95,7 +95,7 @@ const AdminCommon = {
     container.innerHTML = `
       <div class="table-header">
         <h3>${escapeHtmlCommon(title)}</h3>
-        <button class="btn btn-sm btn-primary" onclick="document.getElementById('${id}-modal').style.display='block'">+ Add New</button>
+        <button class="btn btn-sm btn-primary" onclick="document.getElementById('${id}-modal').classList.add('is-open')">+ Add New</button>
       </div>
       <table id="${id}" class="admin-table">
         <thead>
@@ -134,13 +134,18 @@ const AdminCommon = {
       <div class="modal-content">
         <div class="modal-header">
           <h2>${escapeHtmlCommon(title)}</h2>
-          <button class="close" onclick="document.getElementById('${id}').style.display='none'">&times;</button>
+          <button class="close" onclick="document.getElementById('${id}').classList.remove('is-open')">&times;</button>
         </div>
         <div class="modal-body">
           ${content}
         </div>
       </div>
     `;
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        modal.classList.remove('is-open');
+      }
+    });
     return modal;
   },
 

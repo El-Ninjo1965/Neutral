@@ -300,6 +300,70 @@ test('exposes the discovered GPS module through the admin module API', async () 
   }
 });
 
+test('preserves discovered module lifecycle state instead of forcing inactive install state', async () => {
+  const context = {
+    window: null,
+    document: { readyState: 'complete', addEventListener() {} },
+    Core: { emit() {}, state: {} },
+    CoreErrorHandler: { handle() {} },
+    ModuleRegistry: {
+      register(module) { this.modules.set(module.id, module); return module; },
+      unregister(moduleId) { return this.modules.delete(moduleId); },
+      get(moduleId) { return this.modules.get(moduleId) || null; },
+      getAll() { return Array.from(this.modules.values()); },
+      getByApp() { return []; },
+      has(moduleId) { return this.modules.has(moduleId); },
+      modules: new Map(),
+      async discover() {
+        return [{
+          id: 'gps',
+          name: 'GPS',
+          displayName: 'GPS',
+          version: '1.0.0',
+          status: 'active',
+          lifecycleState: 'ACTIVE',
+          registered: true,
+          active: true,
+          enabled: true,
+          manifest: { id: 'gps', name: 'GPS', type: 'module' }
+        }];
+      }
+    },
+    console
+  };
+  context.window = context;
+  vm.createContext(context);
+
+  loadScriptIntoContext(context, path.resolve(__dirname, '../platform/module-manager.js'));
+
+  const discovered = await context.ModuleManager.discoverModules();
+  assert.equal(discovered.length, 1);
+  const gps = context.ModuleManager.get('gps');
+  assert.ok(gps);
+  assert.equal(gps.status, 'enabled');
+  assert.equal(gps.lifecycleState, 'ACTIVE');
+  assert.equal(gps.registered, true);
+  assert.equal(gps.active, true);
+});
+
+test('installing a module through the admin facade keeps it inactive until activation', () => {
+  cleanupRuntimeState();
+
+  const { sandbox } = createGpsModuleContext();
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/core-admin.js'));
+
+  sandbox.ModuleManager.register(sandbox.GpsModule);
+  sandbox.AdminModule.init();
+
+  const result = sandbox.AdminModule.installModule('gps');
+  assert.equal(result.ok, true);
+
+  const gps = sandbox.ModuleManager.get('gps');
+  assert.ok(gps);
+  assert.equal(gps.status, 'installed');
+  assert.equal(gps.active, false);
+});
+
 test('keeps app runtime state isolated for each app instance', () => {
   cleanupRuntimeState();
   const runtime = Framework;
@@ -900,11 +964,19 @@ test('loads and cycles the gps module lifecycle without duplicate watchers', asy
   assert.ok(discovered.some((module) => module.id === 'gps'));
   const gps = sandbox.ModuleManager.get('gps');
   assert.ok(gps);
-  assert.equal(gps.status, 'installed');
+  assert.equal(gps.status, 'available');
   assert.equal(gps.active, false);
   assert.equal(gps.isTracking(), false);
   assert.equal(geolocationState.watchCalls, 0);
   assert.equal(geolocationState.activeWatches.size, 0);
+
+  const inactiveStart = gps.startTracking();
+  assert.equal(inactiveStart.ok, false);
+  assert.equal(inactiveStart.code, 'MODULE_NOT_ENABLED');
+
+  sandbox.ModuleManager.install('gps');
+  assert.equal(gps.status, 'installed');
+  sandbox.ModuleManager.enable('gps');
 
   const result = gps.startTracking();
   assert.equal(result.ok, true);

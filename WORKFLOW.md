@@ -76,6 +76,12 @@ The admin shell should remain minimal and consistent, with:
 - a single main content area
 - consistent light/dark design tokens and shared component styling
 
+The active admin theme implementation is the shared theme-token system:
+
+- `ThemeEngine` remains the single theme activator for admin light/dark switching.
+- `body[data-theme]` and shared CSS custom properties are the canonical styling inputs.
+- Dynamic admin views, injected admin router styles, cards, tables, forms, alerts, modals, and embedded module previews must consume those same tokens instead of hard-coded parallel palettes.
+
 ## Security requirements
 
 The following rules are mandatory:
@@ -106,6 +112,7 @@ Examples:
 - targeted auth/session checks for changed login or session logic
 - targeted admin/file-check validation for changed admin or setup flow
 - relevant existing unit tests for the changed behavior
+- module lifecycle checks covering discovery, install, activate, deactivate, and public module-catalog state when module visibility depends on activation
 
 Avoid broad, repeated test runs when the relevant target has already been validated.
 
@@ -134,6 +141,14 @@ Relevant references:
 - scripts/manual-ftps-deploy.js
 - deployment allowlists and server configuration files used by the project
 
+The current manual FTPS deploy script reads deployment credentials in this order:
+
+- `.env.ftp.deploy`
+- `.env.deploy`
+- process environment overrides
+
+Only the allowlisted production tree may be staged and uploaded; deploy credentials and host-local `.env` files are never committed.
+
 The deployment path must include the actual production PHP files and API files required by the host; a setup-only deploy is not a valid production deployment.
 
 ## Authoritative references
@@ -161,6 +176,7 @@ Agents must not do the following without explicit evidence and a valid reason:
 - commit secrets, real credentials, or host config values
 - keep historical bug descriptions as if they were current state
 - add features or modules without a concrete requirement
+- auto-activate discovered modules or make install implicitly mean active
 
 ## .env and host data handling
 
@@ -168,3 +184,12 @@ Agents must not do the following without explicit evidence and a valid reason:
 - Credentials, DB values, session data, and live admin identity are operational secrets.
 - Host-specific values must be treated as runtime state, not as repository content.
 - Any actual production login verification must be performed only with the valid host credentials and only after confirming that the host-side user is real and authorized.
+
+## Module runtime expectations
+
+For browser-facing module discovery and the user app:
+
+- `/api/modules` is the public module catalog endpoint.
+- The public catalog must remain lifecycle-aware enough for the browser to distinguish discovered vs. installed vs. active modules.
+- The browser runtime must not overwrite discovered lifecycle state by forcing modules into an installed/inactive status during discovery.
+- Public/user-facing module UIs may only behave as active when the lifecycle is actually active; discovery alone is not activation.
