@@ -395,7 +395,14 @@
   };
 
   const getModuleDisplayName = (module) => {
-    const explicit = module && (module.displayName || module.manifest?.displayName || module.name || module.id || 'Module');
+    const explicit = module && (
+      module.navigation?.label
+      || module.displayName
+      || module.manifest?.displayName
+      || module.name
+      || module.id
+      || 'Module'
+    );
     return String(explicit || module.id || 'Module').trim() || 'Module';
   };
 
@@ -433,6 +440,7 @@
       const visibilityPermissions = Array.isArray(module.access?.visibilityPermissions) && module.access.visibilityPermissions.length
         ? module.access.visibilityPermissions
         : (Array.isArray(module.permissions) ? module.permissions : []);
+      const navigationEnabled = module.navigation?.enabled !== false;
 
       if (!currentUser) {
         const isPublic = module.public === true || module.isPublic === true || module.loginRequired === false || module.requiresLogin === false || module.public !== false;
@@ -445,14 +453,7 @@
         return false;
       }
 
-      if (currentUser && visibilityPermissions.length) {
-        const allowed = visibilityPermissions.some((permission) => Array.isArray(currentUser.permissions) && currentUser.permissions.includes(permission));
-        if (!allowed) {
-          return false;
-        }
-      }
-
-      return true;
+      return navigationEnabled && (currentUser || visibilityPermissions.length === 0 || module.public !== false);
     });
   };
 
@@ -852,46 +853,8 @@
   const renderLandingPage = () => {
     const appName = getAppName();
     const modules = getVisibleModules();
-    const catalog = getModuleCatalog();
-    const availableCount = catalog.filter((module) => module.available).length;
-    const installedCount = catalog.filter((module) => module.installed).length;
-    const activeCount = catalog.filter((module) => module.active).length;
-    const updateCount = catalog.filter((module) => module.updateAvailable).length;
+    const activeCount = modules.length;
     const currentUser = getCurrentUser();
-    const lifecycleControlsEnabled = !!currentUser && canManageModuleLifecycle();
-
-    const renderLifecycleActions = (module) => {
-      if (!lifecycleControlsEnabled) {
-        return '';
-      }
-      const actions = [];
-      if (!module.installed) {
-        actions.push('<button type="button" class="secondary" data-module-action="install" data-module-id="' + escapeHtml(module.id) + '">Install</button>');
-      } else {
-        if (module.active) {
-          actions.push('<button type="button" class="secondary" data-module-action="disable" data-module-id="' + escapeHtml(module.id) + '">Disable</button>');
-        } else {
-          actions.push('<button type="button" class="secondary" data-module-action="activate" data-module-id="' + escapeHtml(module.id) + '">Activate</button>');
-        }
-        actions.push('<button type="button" class="secondary" data-module-action="uninstall" data-module-id="' + escapeHtml(module.id) + '">Uninstall</button>');
-      }
-      if (module.updateAvailable) {
-        actions.push('<button type="button" class="secondary" data-module-action="update" data-module-id="' + escapeHtml(module.id) + '">Update</button>');
-      }
-      return actions.join('');
-    };
-
-    const catalogList = catalog.length
-      ? catalog.map((module) => `
-          <div class="user-settings-toggle" data-module-catalog-row="${escapeHtml(module.id)}">
-            <span>
-              <strong>${escapeHtml(module.name || module.id)}</strong>
-              <small>State: ${escapeHtml(module.state || 'available')} · Installed: ${module.installed ? 'yes' : 'no'} · Active: ${module.active ? 'yes' : 'no'}${module.updateAvailable ? ' · Update available' : ''}</small>
-            </span>
-            <span class="user-settings-actions-inline">${renderLifecycleActions(module)}</span>
-          </div>
-        `).join('')
-      : '<div class="user-app-empty">No modules are available from the server catalog.</div>';
 
     content.innerHTML = `
       <section class="user-app-panel">
@@ -902,14 +865,8 @@
           </div>
           <span class="user-app-count">${activeCount}</span>
         </div>
-        <p class="user-app-intro">The active modules of this application appear directly in the top menu and can also be opened from the workspace below.</p>
-        <div class="user-app-status">Catalog: ${availableCount} available · ${installedCount} installed · ${activeCount} active${updateCount ? ` · ${updateCount} updates` : ''}</div>
-        ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can already use public modules without signing in. Sign in to unlock personalized administration and role-based features.</div>'}
-        <div class="user-settings-card" style="margin-top: 14px;">
-          <h2>Module catalog</h2>
-          <p>Server-managed modules stay available in this lightweight client. Install, activate, disable and uninstall run through the server API.</p>
-          <div class="user-settings-module-list">${catalogList}</div>
-        </div>
+        <p class="user-app-intro">Welcome. Open your available modules from the top menu or from the workspace cards below.</p>
+        ${currentUser ? `<div class="user-app-status">Welcome, ${escapeHtml(currentUser.displayName || currentUser.username || 'User')}.</div>` : '<div class="user-app-status">Sign in to access your personalized modules.</div>'}
         <div class="user-module-list" style="margin-top: 22px;">
           ${modules.length ? modules.map((module) => `
             <button type="button" class="user-module-card" data-module-card="${escapeHtml(module.id)}">
@@ -920,36 +877,13 @@
               </span>
               <span class="user-module-arrow" aria-hidden="true">›</span>
             </button>
-          `).join('') : '<div class="user-app-empty">No modules are active yet. Activate modules in the admin area to make them available here.</div>'}
+          `).join('') : '<div class="user-app-empty">No modules are available for your account at the moment.</div>'}
         </div>
-        <p id="moduleCatalogStatus" class="user-settings-status">${lifecycleControlsEnabled ? 'Module lifecycle actions are available for your role.' : 'Sign in with an admin/developer role to manage module lifecycle actions.'}</p>
       </section>
     `;
     content.querySelectorAll('[data-module-card]').forEach((button) => {
       button.addEventListener('click', () => {
         renderModule(button.dataset.moduleCard);
-      });
-    });
-    content.querySelectorAll('[data-module-action]').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const action = String(button.dataset.moduleAction || '').trim();
-        const moduleId = String(button.dataset.moduleId || '').trim();
-        const status = document.getElementById('moduleCatalogStatus');
-        if (!action || !moduleId) {
-          return;
-        }
-        if (status) {
-          status.textContent = `Running ${action} for ${moduleId}...`;
-          status.className = 'user-settings-status';
-        }
-        const result = await runModuleAction(action, moduleId);
-        if (status) {
-          status.textContent = result.ok
-            ? `Module ${moduleId} ${action} completed.`
-            : (result.message || `Module ${moduleId} ${action} failed.`);
-          status.className = result.ok ? 'user-settings-status success' : 'user-settings-status error';
-        }
-        renderApp();
       });
     });
   };

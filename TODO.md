@@ -49,6 +49,15 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Add regression test coverage that verifies loader behavior for server-provided module URLs in the `.../webroot/...` production path.
 - [ ] Deploy these module-runtime/API changes to production and re-run end-to-end browser validation for Admin + Tester including GPS install/activate/disable/uninstall.
 
+## User UI / module navigation cleanup (2026-08-27)
+
+- [x] Separate end-user landing UI from technical module-management surfaces: remove lifecycle/catalog diagnostics from the normal user welcome view.
+- [x] Keep module catalog and lifecycle operations server-side/admin-side; user app now consumes only effective module availability.
+- [x] Implement generic module navigation based on active server-driven module state instead of hardcoded module entries.
+- [x] Repair GPS navigation by propagating server module lifecycle state into browser module discovery/registry (`active`/`installed`/`state` + `navigation` metadata).
+- [x] Ensure dynamic navigation behavior follows module status: admin disable/activate updates tester-visible GPS state (`active -> disabled -> active`) through live API checks.
+- [x] Deploy and live-verify the updated user-app/API artifacts on `https://www.turbolikes.com/index/app/neutral/webroot/`.
+
 ## Verified production scope (2026-08-27)
 
 - [x] `/api/status` returns HTTP 200 with valid JSON on the real production route and confirms PHP/LiteSpeed and MySQL health.

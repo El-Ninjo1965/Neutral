@@ -206,6 +206,7 @@
             const combinedCatalog = [...catalog, ...discoveredExternal.map((module) => ({
                 id: module.id,
                 name: module.name,
+                displayName: module.displayName || module.name,
                 version: module.version,
                 description: module.description || '',
                 dependencies: Array.isArray(module.dependencies) ? module.dependencies : [],
@@ -217,7 +218,22 @@
                 globalName: module.globalName || module.manifest?.globalName || module.name || module.id,
                 access: module.access || module.manifest?.access || null,
                 standalone: module.standalone || module.manifest?.standalone || null,
-                database: module.database || module.manifest?.database || null
+                database: module.database || module.manifest?.database || null,
+                status: module.status,
+                lifecycleState: module.lifecycleState,
+                active: module.active,
+                enabled: module.enabled,
+                registered: module.registered,
+                installed: module.installed,
+                available: module.available,
+                disabled: module.disabled,
+                updateAvailable: module.updateAvailable,
+                state: module.state,
+                installedVersion: module.installedVersion,
+                moduleUrl: module.moduleUrl || null,
+                entryUrl: module.entryUrl || null,
+                manifestUrl: module.manifestUrl || null,
+                navigation: module.navigation || null
             }))];
 
             combinedCatalog.forEach((entry) => {
@@ -267,9 +283,26 @@
                     access: implementation.access || manifest.access || null,
                     standalone: implementation.standalone || manifest.standalone || null,
                     database: implementation.database || manifest.database || null,
-                    status: implementation.status || manifest.status || 'inactive',
-                    active: !!implementation.active,
-                    enabled: !!implementation.enabled
+                    status: implementation.status || entry.status || manifest.status || 'inactive',
+                    lifecycleState: implementation.lifecycleState || entry.lifecycleState || null,
+                    active: typeof implementation.active === 'boolean' ? implementation.active : entry.active === true,
+                    enabled: typeof implementation.enabled === 'boolean' ? implementation.enabled : (entry.enabled === true || entry.active === true),
+                    registered: entry.registered === true || entry.installed === true,
+                    installed: entry.installed === true || entry.registered === true,
+                    available: entry.available !== false,
+                    disabled: entry.disabled === true || ((entry.installed === true || entry.registered === true) && entry.active !== true),
+                    updateAvailable: entry.updateAvailable === true,
+                    state: typeof entry.state === 'string' ? entry.state : null,
+                    installedVersion: typeof entry.installedVersion === 'string' ? entry.installedVersion : null,
+                    moduleUrl: typeof entry.moduleUrl === 'string' ? entry.moduleUrl : null,
+                    entryUrl: typeof entry.entryUrl === 'string' ? entry.entryUrl : null,
+                    manifestUrl: typeof entry.manifestUrl === 'string' ? entry.manifestUrl : null,
+                    navigation: entry.navigation && typeof entry.navigation === 'object'
+                        ? entry.navigation
+                        : {
+                            enabled: true,
+                            label: implementation.displayName || manifest.displayName || implementation.name || manifest.name || manifest.id
+                        }
                 };
 
                 registry.set(module.id, module);

@@ -40,23 +40,34 @@ test('core loader uses moduleUrl and entryUrl from server catalog', async () => 
           ok: true,
           async json() {
             return {
-              modules: [
-                {
-                  id: 'gps',
-                  name: 'GPS',
-                  displayName: 'GPS',
-                  version: '1.0.0',
-                  type: 'module',
-                  entry: 'index.js',
-                  globalName: 'GpsModule',
-                  modulePath: 'app/modules/gps',
-                  moduleUrl: '/index/app/neutral/app/modules/gps',
-                  entryUrl: '/index/app/neutral/app/modules/gps/index.js',
-                  permissions: [],
-                  dependencies: [],
-                  capabilities: []
-                }
-              ]
+              ok: true,
+              data: {
+                modules: [
+                  {
+                    id: 'gps',
+                    name: 'GPS',
+                    displayName: 'GPS',
+                    version: '1.0.0',
+                    type: 'module',
+                    entry: 'index.js',
+                    globalName: 'GpsModule',
+                    modulePath: 'app/modules/gps',
+                    moduleUrl: '/index/app/neutral/app/modules/gps',
+                    entryUrl: '/index/app/neutral/app/modules/gps/index.js',
+                    permissions: [],
+                    dependencies: [],
+                    capabilities: [],
+                    active: true,
+                    installed: true,
+                    status: 'active',
+                    lifecycleState: 'ACTIVE',
+                    navigation: {
+                      enabled: true,
+                      label: 'GPS'
+                    }
+                  }
+                ]
+              }
             };
           }
         };
@@ -71,8 +82,8 @@ test('core loader uses moduleUrl and entryUrl from server catalog', async () => 
                 id: 'gps',
                 name: 'GPS',
                 version: '1.0.0',
-                active: true,
-                status: 'active'
+                active: false,
+                status: 'available'
               };
             `;
           }
@@ -98,6 +109,9 @@ test('core loader uses moduleUrl and entryUrl from server catalog', async () => 
   const discovered = await sandbox.CoreLoader.discoverExternalModules('app/modules');
   assert.equal(discovered.length, 1);
   assert.equal(discovered[0].id, 'gps');
+  assert.equal(discovered[0].active, true);
+  assert.equal(discovered[0].status, 'active');
+  assert.equal(discovered[0].navigation.label, 'GPS');
   assert.ok(fetched.includes('/index/app/neutral/app/modules/gps/index.js'));
   assert.ok(!fetched.includes('/index/app/neutral/webroot/app/modules/gps/index.js'));
 });

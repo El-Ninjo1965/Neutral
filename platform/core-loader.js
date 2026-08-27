@@ -179,10 +179,15 @@
             }
 
             const payload = await response.json();
+            const wrappedData = payload && typeof payload === 'object' && payload.data && typeof payload.data === 'object'
+                ? payload.data
+                : null;
             const modules = Array.isArray(payload)
                 ? payload
                 : Array.isArray(payload.modules)
                     ? payload.modules
+                    : Array.isArray(wrappedData && wrappedData.modules)
+                        ? wrappedData.modules
                     : [];
 
             return modules.filter((entry) => entry && typeof entry === 'object');
@@ -428,7 +433,45 @@
                 );
 
                 if (loaded) {
-                    discovered.push(loaded);
+                    const isInstalled = entry.installed === true || entry.registered === true;
+                    const isActive = entry.active === true || entry.enabled === true || String(entry.status || '').toLowerCase() === 'active' || String(entry.status || '').toLowerCase() === 'enabled';
+                    const normalizedStatus = typeof entry.status === 'string' && entry.status.trim()
+                        ? entry.status.trim().toLowerCase()
+                        : (isActive ? 'active' : (isInstalled ? 'installed' : 'available'));
+                    const lifecycleState = typeof entry.lifecycleState === 'string' && entry.lifecycleState.trim()
+                        ? entry.lifecycleState.trim().toUpperCase()
+                        : (isActive ? 'ACTIVE' : (isInstalled ? 'INACTIVE' : 'DISCOVERED'));
+                    const navigation = entry.navigation && typeof entry.navigation === 'object'
+                        ? entry.navigation
+                        : {};
+
+                    discovered.push({
+                        ...loaded,
+                        status: normalizedStatus,
+                        lifecycleState,
+                        active: isActive,
+                        enabled: isActive,
+                        registered: isInstalled,
+                        installed: isInstalled,
+                        available: entry.available !== false,
+                        disabled: entry.disabled === true || (isInstalled && !isActive),
+                        updateAvailable: entry.updateAvailable === true,
+                        state: typeof entry.state === 'string' && entry.state.trim()
+                            ? entry.state.trim().toLowerCase()
+                            : (isActive ? 'active' : (isInstalled ? 'disabled' : 'available')),
+                        installedVersion: typeof entry.installedVersion === 'string' && entry.installedVersion.trim()
+                            ? entry.installedVersion.trim()
+                            : null,
+                        moduleUrl: entry.moduleUrl || loaded.moduleUrl || null,
+                        entryUrl: entry.entryUrl || loaded.entryUrl || null,
+                        manifestUrl: entry.manifestUrl || loaded.manifestUrl || null,
+                        navigation: {
+                            enabled: typeof navigation.enabled === 'boolean' ? navigation.enabled : true,
+                            label: typeof navigation.label === 'string' && navigation.label.trim()
+                                ? navigation.label.trim()
+                                : (entry.displayName || entry.name || loaded.displayName || loaded.name || loaded.id)
+                        }
+                    });
                 }
             }
 

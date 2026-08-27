@@ -111,6 +111,19 @@ final class Phase7ModuleRuntime
                 'updateAvailable' => $this->isUpdateAvailable($module),
                 'state' => $state,
                 'installedVersion' => isset($module['installedVersion']) ? (string) $module['installedVersion'] : null,
+                'navigation' => [
+                    'enabled' => isset($module['navigation']['enabled'])
+                        ? (bool) $module['navigation']['enabled']
+                        : (isset($manifest['navigation']['enabled']) ? (bool) $manifest['navigation']['enabled'] : true),
+                    'label' => trim((string) (
+                        $module['navigation']['label']
+                        ?? $manifest['navigation']['label']
+                        ?? $module['displayName']
+                        ?? $module['name']
+                        ?? $module['id']
+                        ?? ''
+                    )),
+                ],
                 'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
                 'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),

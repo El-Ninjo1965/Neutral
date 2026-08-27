@@ -388,3 +388,4 @@ For browser-facing module discovery and the user app:
 - Module permission declarations belong to the module manifest, not hard-coded core allowlists.
 - If a module declares a standalone test entry, that entry is a developer validation surface only; it must not become a second production admin or alternate runtime authority.
 - The same API surface should expose module lifecycle actions for the Lite client (`GET /api/modules/{id}`, `/download`, `/updates`, `POST install|activate|disable|uninstall`) instead of introducing a second parallel module API architecture.
+- The normal user landing page is an end-user surface (welcome + available module entry points) and must not expose raw catalog/lifecycle management controls; technical module management remains in the admin/module-management UI.
