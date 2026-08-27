@@ -14,6 +14,7 @@ const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
 const allowedEntries = [
+  '.htaccess',
   'package.json',
   'package-lock.json',
   'platform',

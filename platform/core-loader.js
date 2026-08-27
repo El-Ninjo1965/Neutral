@@ -191,6 +191,37 @@
         }
     };
 
+    const resolveRuntimeApiBase = () => {
+        const configured = typeof window !== 'undefined' && window.ConfigManager && typeof window.ConfigManager.get === 'function'
+            ? window.ConfigManager.get('api', {})
+            : {};
+        const configuredBase = configured && typeof configured.baseUrl === 'string'
+            ? configured.baseUrl.trim()
+            : '';
+        if (configuredBase) {
+            return configuredBase.replace(/\/+$/, '');
+        }
+
+        if (typeof window === 'undefined' || !window.location) {
+            return '/api';
+        }
+
+        const runtimeOrigin = window.location.origin && window.location.origin !== 'null'
+            ? window.location.origin.replace(/\/+$/, '')
+            : '';
+        const pathname = typeof window.location.pathname === 'string'
+            ? window.location.pathname
+            : '/';
+        const basePath = pathname.endsWith('/')
+            ? pathname.replace(/\/+$/, '')
+            : pathname.replace(/\/[^/]*$/, '');
+        const normalizedBasePath = (!basePath || basePath === '/')
+            ? ''
+            : basePath.replace(/\/+$/, '');
+
+        return `${runtimeOrigin}${normalizedBasePath}/api`;
+    };
+
     const normalizeModuleKey = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
     const resolveModuleImplementation = (manifest) => {
@@ -367,7 +398,7 @@
                 return discovered;
             }
 
-            const apiCatalog = await readModuleCatalog('/api/modules');
+            const apiCatalog = await readModuleCatalog(`${resolveRuntimeApiBase()}/modules`);
             const externalCatalog = Array.isArray(window.ExternalModuleCatalog)
                 ? window.ExternalModuleCatalog
                 : [];

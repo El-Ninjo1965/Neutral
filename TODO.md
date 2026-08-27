@@ -11,7 +11,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - Canonical admin entry point: webroot/admin.php
 - Canonical setup entry point: webroot/setup.php
 - Current live runtime reality: shared-host PHP/LiteSpeed; the real production path is under /index/app/neutral/webroot/*.
-- The root /api/* path is not the active public production API path on the live host.
+- Fresh independent probes show an OpenResty + Imunify360 anti-bot front layer in front of all tested public hostnames, including app.turbolikes.com and the current main-domain paths.
 - The admin workspace keeps the top header navigation as the only admin navigation surface; no left sidebar is part of the active admin UI.
 - Admin light/dark mode is expected to flow through the shared theme tokens for header, content, cards, tables, forms, alerts, modals, and dynamic admin views.
 - The last real browser check of the deployed admin UI was completed successfully by the project operator.
@@ -26,11 +26,11 @@ This is the current operational task ledger for the repository. It is intentiona
 - [x] Confirm the active live public API contract and the correct transport path for the standalone web client.
 - [x] Remove localhost/default-local assumptions from the public web-app config and client bootstrap logic.
 - [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
-- [x] Split the server deployment and public web-app deployment into separate FTP contexts and keep the web-app credentials local-only in `.env.web-app.deploy`.
-- [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
-- [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
-- [ ] Resolve the live host-side HTTP mapping for `/index/web-app/` so the public URL serves the same web-app bundle as the FTP root instead of the stale placeholder or 404 assets.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping is corrected.
+- [x] Add a shared-host root rewrite so a same-origin app host can expose the existing `webroot/` runtime from the docroot root without flattening the repository structure.
+- [ ] Deploy the full same-origin Neutral runtime to `/home/web1819/public_html/app` via the dedicated FTP account once the secret is available in-session.
+- [ ] Verify that `https://app.turbolikes.com/`, `/api/status`, `/api/auth/me`, `/admin.php`, and `/setup.php` are served from the deployed app root and not from a stale placeholder.
+- [ ] Inspect cPanel -> Plugins -> Imunify360 (if available) for incidents/firewall entries affecting operator/test traffic; otherwise request a per-host bot-protection exemption from the provider.
+- [ ] Request and complete the real browser/mobile live test after deploy plus Imunify360 handling.
 
 ## Open tasks
 
@@ -44,6 +44,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - Production credentials, session state, and live admin state are operational host data and must not be committed, logged, or documented in code.
 - Browser-side auth state is not authoritative; server-side session + role checks decide admin access.
 - Do not assume Node port 3000 is enabled or reachable on the shared host.
+- Browserless automation currently hits Imunify360 bot-protection on the public hostnames; this must not be mistaken for missing PHP/MySQL capability.
 - The deploy path remains the repository’s production deployment configuration and FTPS flow, not a public Node runtime assumption.
 - Use the existing canonical PHP entry points; do not create duplicate admin surfaces or alternate admin bootstraps.
 - Browserless or GPS-less automation environments may verify HTTP/session/module state, but they cannot honestly claim a visual browser pass or a real device geolocation pass.

@@ -8,6 +8,7 @@ Die aktuelle Produktionsprüfung zeigt:
 
 - Live-Host: LiteSpeed / cPanel Shared Webspace
 - PHP: 8.5.9
+- Public front layer observed from the outside: `openresty/1.31.1.1` with Imunify360 bot-protection in front of the origin host
 - PHP-Setup-Endpunkt: erreichbar (`/index/app/neutral/webroot/setup.php`)
 - Diagnose-Endpunkt: erreichbar (`/index/app/neutral/webroot/diagnose.php`)
 - Node/Passenger: auf dem öffentlichen Host nicht nachweisbar als nutzbarer Produktionsruntime
@@ -60,6 +61,7 @@ Damit ist über den produktiven PHP-Prozess verifiziert:
 
 | Repository-Pfad | Zielpfad auf dem Server | Begründung |
 | --- | --- | --- |
+| .htaccess | /.htaccess | cPanel/LiteSpeed root rewrite from the docroot root into `/webroot/*` plus blocking of internal source/runtime paths. |
 | package.json | /package.json | Node-Startpunkt und Runtime-Abhängigkeiten. |
 | package-lock.json | /package-lock.json | Reproduzierbare, sichere Paketinstallation im Produktivbetrieb. |
 | platform/ | /platform/ | Kern-Framework-Module, App-/Module-Registry, Sicherheits- und Runtime-Logik. |

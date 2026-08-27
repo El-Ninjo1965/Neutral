@@ -40,6 +40,26 @@ The canonical runtime entry points are:
 
 The repository must not assume that a root-domain Node API is the active production environment.
 
+### 2026-08 independent hosting revalidation
+
+Fresh DNS/HTTP probes from a new codespace showed that the current public front door is not reaching the Neutral app directly. The following hostnames all resolved to `185.225.132.24` and all tested browser/API paths were intercepted first by `openresty/1.31.1.1`:
+
+- `app.turbolikes.com`
+- `www.app.turbolikes.com`
+- `turbolikes.com`
+- `www.turbolikes.com`
+- `server.cpprotect5.de`
+- direct IP `185.225.132.24`
+
+Observed behavior:
+
+- normal HTML requests return HTTP 200 with the Imunify360 anti-bot page (`One moment, please...`)
+- API-shaped requests with `Accept: application/json` return HTTP 403 with `{"message":"Access denied by Imunify360 bot-protection. IPs used for automation should be whitelisted"}`
+- the behavior is hostname-independent across the tested first-party names and also appears on direct-IP/server-host probes
+- therefore the earlier theory "wrong app subdomain mapping only" was incomplete; the actual first blocker is the host-side Imunify360/OpenResty front layer
+
+This does **not** prove that the application is impossible on the shared host. It does prove that browserless automation and native API clients cannot be treated as working until this bot-protection behavior is intentionally handled by configuration.
+
 ## Web app client contract
 
 The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path.
@@ -170,6 +190,99 @@ The current shared-host FTPS deploy flow uses a host-safe mirror mode without re
 Only the allowlisted production tree may be staged and uploaded; deploy credentials and host-local `.env` files are never committed.
 
 The deployment path must include the actual production PHP files and API files required by the host; a setup-only deploy is not a valid production deployment.
+
+### Recommended shared-host deployment shape
+
+The preferred cPanel-compatible production shape is now:
+
+- one same-origin app host: `https://app.turbolikes.com/`
+- docroot on disk: `/home/web1819/public_html/app`
+- uploaded repository runtime kept in its current structure (`webroot/`, `platform/`, `app/`, `core/`)
+- root rewrite via [`.htaccess`](/workspaces/Neutral/.htaccess) so `/`, `/api/*`, `/admin.php`, `/setup.php`, `/user-app.js`, `/style.css`, and `/admin/*` are internally served from [webroot/](/workspaces/Neutral/webroot)
+- direct web access to [core/](/workspaces/Neutral/core), [server/](/workspaces/Neutral/server), root package files, and dotfiles blocked at the docroot layer
+
+Why this shape is preferred:
+
+- same-origin browser cookies and PHP sessions work without CORS complexity
+- the existing PHP API keeps the server as the auth/session/RBAC authority
+- the existing module loader can fetch `/api/modules` and load module entry scripts from `/app/modules/*`
+- offline-capable public state can remain in LocalStorage/IndexedDB without becoming the authority for login or permissions
+
+### Required cPanel configuration
+
+1. **Domains / Subdomains**
+   - location: cPanel -> Domains or Subdomains
+   - required value: keep or create `app.turbolikes.com` with document root `/home/web1819/public_html/app`
+   - effect: gives a dedicated same-origin host for the app, API, admin, and setup entry points
+   - test after change: request `/`, `/api/status`, and `/admin.php`
+
+2. **PHP Version / Extensions**
+   - location: cPanel -> Select PHP Version
+   - required value: PHP 8.3+ preferred, with at least `pdo`, `pdo_mysql`, `session`, `json`, `mbstring`, `openssl`
+   - effect: enables the PHP auth/session/MySQL runtime already implemented in [core/php/](/workspaces/Neutral/core/php)
+   - test after change: request `/setup.php` and `/api/status`; confirm no `pdo_mysql` runtime error
+
+3. **MySQL database wiring**
+   - location: cPanel -> Manage My Databases / Database Wizard
+   - required value: one app database plus one app DB user with privileges on that database; credentials stored only in the host-local `.env`
+   - effect: activates server-side users, sessions, roles, permissions, modules, and admin state
+   - test after change: `/api/status`, `/api/auth/login`, `/api/auth/me`, `/api/modules`
+
+4. **Imunify360 review (if the plugin is exposed to the account)**
+   - location: cPanel -> Plugins -> Imunify360 -> Incidents / Firewall
+   - required action: inspect whether the operator/test IP is blocked or greylisted; whitelist only for operator automation if appropriate
+   - effect: may unblock administrative testing traffic
+   - test after change: repeat `curl -H 'Accept: application/json' https://app.turbolikes.com/api/status`
+   - limitation: IP whitelisting helps operator/test automation only; it does not make a public/native client API generally safe
+
+5. **If Imunify360 plugin is absent or no per-host exemption is available**
+   - action: ask the hosting provider to exempt the application/API host from the anti-bot challenge or to disable bot-protection for that application surface
+   - why: the current challenge blocks non-browser API clients and would also block future native app traffic
+   - test after change: repeat `/api/status`, `/api/auth/login`, and a real browser login flow
+
+## Architecture decision matrix
+
+| Option | Machbar | Aufwand | Risiko | Empfehlung |
+| --- | --- | --- | --- | --- |
+| Same-Origin on `app.turbolikes.com` | Ja | Mittel | Mittel (Imunify360 front layer) | **Beste Option** |
+| Separate API subdomain | Bedingt | Mittel-Hoch | Hoch (CORS + cookies + same bot-protection risk) | Nein |
+| Main-domain path deployment | Bedingt | Mittel | Mittel-Hoch (shared site coupling + same bot-protection risk) | Reserve |
+| `public_html` root deployment | Ja | Mittel | Hoch (couples app to main site root) | Nein |
+| PHP-only shared-host runtime | Ja | Niedrig-Mittel | Niedrig | **Ja** |
+| Existing Neutral Node runtime as production host | Nein auf diesem Hosting | Hoch | Hoch | Nein |
+| Targeted Neutral core refactor toward PHP authority | Ja | Mittel | Niedrig-Mittel | **Ja, bereits eingeleitet** |
+| Other cPanel-based rewrite/proxy solution | Ja | Mittel | Mittel | Only if same-origin root route needs refinement |
+
+Decision:
+
+- production authority should be the existing PHP runtime, not the Node runtime
+- deploy the app as a same-origin PHP/MySQL application on `app.turbolikes.com`
+- keep offline storage for public/non-authoritative client state only
+- treat Imunify360 bot-protection as the remaining host-level go-live blocker for public/native API traffic
+
+### Code changes made for this decision
+
+- added root [`.htaccess`](/workspaces/Neutral/.htaccess) for cPanel/LiteSpeed same-origin routing into [webroot/](/workspaces/Neutral/webroot)
+- added that file to the deploy allowlists in [scripts/manual-ftps-deploy.js](/workspaces/Neutral/scripts/manual-ftps-deploy.js) and [scripts/cpanel-preflight.js](/workspaces/Neutral/scripts/cpanel-preflight.js)
+- updated [webroot/user-app.js](/workspaces/Neutral/webroot/user-app.js) so production login/logout/session bootstrap use the server API instead of requiring local-only auth fallback
+- updated [platform/config-manager.js](/workspaces/Neutral/platform/config-manager.js) and [platform/core-loader.js](/workspaces/Neutral/platform/core-loader.js) so the browser resolves `/api` relative to the active deployment path instead of assuming the domain root
+
+### What is verified vs. not yet verified
+
+Verified in this session:
+
+- DNS resolution for the tested hostnames
+- OpenResty/Imunify360 interception behavior
+- repository PHP API/auth/session/module architecture
+- local PHP runtime presence
+- local PHP extensions include `PDO`, `pdo_sqlite`, `session`, `sqlite3`; local `pdo_mysql` is **not** present
+
+Not yet verified in this session:
+
+- live FTP upload through the new `webapp@app.turbolikes.com` account (password not provided in-session)
+- live browser pass through Imunify360 on a human-operated browser
+- live MySQL-backed login/session/role/module flow on the cPanel host
+- live `/api/auth/login`, `/api/auth/me`, and `/api/modules` on `app.turbolikes.com` after deploy and host-side bot-protection adjustment
 
 ## Authoritative references
 

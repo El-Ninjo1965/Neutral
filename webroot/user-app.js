@@ -22,6 +22,123 @@
       allowUsageAnalytics: false
     }
   });
+  let serverAuthenticatedUser = null;
+
+  const extractApiData = (result) => {
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+      return null;
+    }
+    const envelope = result.data;
+    if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
+      return null;
+    }
+    return envelope.data;
+  };
+
+  const resolveRuntimeApiClientBase = () => {
+    const origin = (window.location && window.location.origin && window.location.origin !== 'null')
+      ? window.location.origin.replace(/\/+$/, '')
+      : (window.location && window.location.protocol && window.location.hostname)
+        ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`.replace(/\/+$/, '')
+        : 'http://localhost';
+    const pathname = window.location && typeof window.location.pathname === 'string'
+      ? window.location.pathname
+      : '/';
+    const basePath = pathname.endsWith('/')
+      ? pathname.replace(/\/+$/, '')
+      : pathname.replace(/\/[^/]*$/, '');
+    const normalizedBasePath = (!basePath || basePath === '/') ? '' : basePath.replace(/\/+$/, '');
+    return `${origin}${normalizedBasePath}`;
+  };
+
+  const createServerApiClient = () => typeof window.ApiClient === 'function'
+    ? new window.ApiClient(resolveRuntimeApiClientBase())
+    : null;
+
+  const isLocalPreviewRuntime = () => {
+    const protocol = window.location && typeof window.location.protocol === 'string'
+      ? window.location.protocol
+      : '';
+    const hostname = window.location && typeof window.location.hostname === 'string'
+      ? window.location.hostname.toLowerCase()
+      : '';
+    return protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1';
+  };
+
+  const applyServerIdentity = (identityData) => {
+    const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
+      ? identityData.user
+      : null;
+    if (!userRecord) {
+      return null;
+    }
+
+    const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
+      ? identityData.roles
+      : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
+    const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
+      ? identityData.permissions
+      : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
+
+    const normalizedUser = {
+      ...userRecord,
+      roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
+      permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
+      status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
+    };
+
+    const normalizedSession = {
+      sessionId: 'server-session',
+      status: 'active',
+      authContext: {
+        source: 'server-session'
+      }
+    };
+
+    serverAuthenticatedUser = normalizedUser;
+    if (window.CoreAuth && typeof window.CoreAuth === 'object') {
+      window.CoreAuth.currentUser = normalizedUser;
+      window.CoreAuth.currentSession = normalizedSession;
+    }
+    if (window.UserModule && typeof window.UserModule === 'object') {
+      window.UserModule.currentUser = normalizedUser;
+      window.UserModule.currentSession = normalizedSession;
+    }
+
+    return normalizedUser;
+  };
+
+  const clearServerIdentity = () => {
+    serverAuthenticatedUser = null;
+    if (window.CoreAuth && typeof window.CoreAuth === 'object') {
+      window.CoreAuth.currentUser = null;
+      window.CoreAuth.currentSession = null;
+    }
+    if (window.UserModule && typeof window.UserModule === 'object') {
+      window.UserModule.currentUser = null;
+      window.UserModule.currentSession = null;
+    }
+  };
+
+  const syncServerSession = async () => {
+    clearServerIdentity();
+    const apiClient = createServerApiClient();
+    if (!apiClient) {
+      return null;
+    }
+
+    const sessionResult = await apiClient.me();
+    const sessionData = extractApiData(sessionResult);
+    if (!sessionResult.ok || !sessionData || !sessionData.user) {
+      return null;
+    }
+
+    return applyServerIdentity({
+      user: sessionData.user,
+      roles: Array.isArray(sessionData.roles) ? sessionData.roles : [],
+      permissions: Array.isArray(sessionData.permissions) ? sessionData.permissions : []
+    });
+  };
 
   const readUserPreferences = () => {
     try {
@@ -85,6 +202,9 @@
     .replace(/'/g, '&#039;');
 
   const getCurrentUser = () => {
+    if (serverAuthenticatedUser) {
+      return serverAuthenticatedUser;
+    }
     if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
       return window.UserModule.getCurrentUser();
     }
@@ -225,7 +345,15 @@
     const logoutButton = document.getElementById('userLogoutButton');
     if (logoutButton) {
       logoutButton.addEventListener('click', async () => {
-        if (window.LocalAuth && typeof window.LocalAuth.logout === 'function') {
+        const apiClient = createServerApiClient();
+        if (apiClient) {
+          await apiClient.logout();
+          clearServerIdentity();
+          if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
+            await window.ModuleManager.discoverModules();
+          }
+        }
+        if (isLocalPreviewRuntime() && window.LocalAuth && typeof window.LocalAuth.logout === 'function') {
           await window.LocalAuth.logout();
         } else if (window.UserModule && typeof window.UserModule.logout === 'function') {
           await window.UserModule.logout();
@@ -276,7 +404,7 @@
       <section class="user-app-panel">
         <span class="user-app-eyebrow">Account access</span>
         <h1>Sign in</h1>
-        <p>Use your local workspace account to unlock available features.</p>
+        <p>Sign in with your server account to unlock personalized modules, roles, and administration.</p>
         <div class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
@@ -289,7 +417,7 @@
           <div class="user-login-actions">
             <button type="button" id="userLoginSubmit" class="primary">Login</button>
           </div>
-          <div id="userLoginStatus" class="message info">Developer setup is available once locally in this preview.</div>
+          <div id="userLoginStatus" class="message info">Server-side login is required for authenticated features.</div>
         </div>
       </section>
     `;
@@ -299,10 +427,47 @@
       const username = document.getElementById('userLoginUsername').value.trim() || 'Developer';
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
+      const apiClient = createServerApiClient();
 
-      if (!window.LocalAuth || typeof window.LocalAuth.login !== 'function') {
+      if (apiClient) {
+        status.className = 'message info';
+        status.textContent = 'Signing in...';
+        const loginResult = await apiClient.login(username, password);
+        const loginData = extractApiData(loginResult);
+        if (!loginResult.ok || !loginData) {
+          status.className = 'message error';
+          status.textContent = loginResult && loginResult.data && loginResult.data.error && loginResult.data.error.message
+            ? loginResult.data.error.message
+            : (loginResult && loginResult.error ? loginResult.error : 'Server authentication failed.');
+          return;
+        }
+
+        const meResult = await apiClient.me();
+        const meData = extractApiData(meResult);
+        const user = applyServerIdentity({
+          user: (meData && meData.user) || loginData.user || null,
+          roles: meData && Array.isArray(meData.roles) ? meData.roles : loginData.roles,
+          permissions: meData && Array.isArray(meData.permissions) ? meData.permissions : loginData.permissions
+        });
+        if (!meResult.ok || !user) {
+          status.className = 'message error';
+          status.textContent = meResult && meResult.error ? meResult.error : 'Server session could not be established.';
+          return;
+        }
+
+        if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
+          await window.ModuleManager.discoverModules();
+        }
+        status.className = 'message success';
+        status.textContent = 'Signed in successfully.';
+        state.activeView = 'home';
+        renderApp();
+        return;
+      }
+
+      if (!isLocalPreviewRuntime() || !window.LocalAuth || typeof window.LocalAuth.login !== 'function') {
         status.className = 'message error';
-        status.textContent = 'Local authentication is not available.';
+        status.textContent = 'Server authentication is not available for this deployment.';
         return;
       }
 
@@ -537,6 +702,7 @@
 
   const start = async () => {
     if (window.CoreStartup && typeof window.CoreStartup.start === 'function') await window.CoreStartup.start();
+    await syncServerSession();
     if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') await window.ModuleManager.discoverModules();
     renderApp();
   };

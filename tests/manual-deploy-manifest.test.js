@@ -5,6 +5,10 @@ const { test, describe } = require('node:test');
 const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
+  test('root shared-host htaccess is allowlisted for deployment', () => {
+    assert.ok(allowedEntries.includes('.htaccess'));
+  });
+
   test('gps standalone entry is allowlisted for deployment', () => {
     assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
   });

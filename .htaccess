@@ -1,0 +1,17 @@
+Options -Indexes
+RewriteEngine On
+
+# Block direct web access to sensitive files and internal runtime/source paths.
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+RewriteRule ^(?:core|server|config|scripts|tests|node_modules)(?:/|$) - [F,L]
+RewriteRule ^(?:package(?:-lock)?\.json|server\.md|VISION\.md|WORKFLOW\.md|TODO\.md)$ - [F,L]
+
+# Serve real files/directories directly (e.g. /platform/* and /app/modules/*).
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# cPanel app.turbolikes.com docroot: keep the repository layout, but expose the
+# public application from webroot/ at the host root.
+RewriteRule ^$ webroot/index.html [L]
+RewriteRule ^(.*)$ webroot/$1 [L,QSA]

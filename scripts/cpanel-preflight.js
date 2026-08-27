@@ -10,6 +10,7 @@ const requiredDbKeys = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
 const requiredFtpKeys = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
 const allowedEntries = [
+  '.htaccess',
   'package.json',
   'package-lock.json',
   'platform',

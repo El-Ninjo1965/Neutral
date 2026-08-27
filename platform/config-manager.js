@@ -63,7 +63,16 @@
             const runtimeOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
                 ? window.location.origin
                 : 'http://localhost';
-            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}/api`;
+            const runtimePathname = (typeof window !== 'undefined' && window.location && typeof window.location.pathname === 'string')
+                ? window.location.pathname
+                : '/';
+            const runtimeBasePath = runtimePathname.endsWith('/')
+                ? runtimePathname.replace(/\/+$/, '')
+                : runtimePathname.replace(/\/[^/]*$/, '');
+            const normalizedRuntimeBasePath = (!runtimeBasePath || runtimeBasePath === '/')
+                ? ''
+                : runtimeBasePath.replace(/\/+$/, '');
+            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}${normalizedRuntimeBasePath}/api`;
 
             // Application Config
             this.set('app', {
