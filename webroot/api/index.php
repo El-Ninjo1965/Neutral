@@ -253,8 +253,17 @@ if ($route === 'auth/me' && $method === 'GET') {
 }
 
 if ($route === 'modules' && $method === 'GET') {
+    $databaseConfig = $config->database();
+    $databaseConfigured = trim((string) ($databaseConfig['url'] ?? '')) !== ''
+        || (
+            trim((string) ($databaseConfig['host'] ?? '')) !== ''
+            && trim((string) ($databaseConfig['name'] ?? '')) !== ''
+            && trim((string) ($databaseConfig['user'] ?? '')) !== ''
+        );
     JsonResponse::success([
-        'modules' => $moduleRuntime->discover(),
+        'modules' => $databaseConfigured
+            ? $moduleRuntime->listForClient()
+            : $moduleRuntime->discover(),
     ]);
 }
 

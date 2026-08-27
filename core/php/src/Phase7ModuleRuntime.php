@@ -81,6 +81,41 @@ final class Phase7ModuleRuntime
     }
 
     /**
+     * @return list<array<string,mixed>>
+     */
+    public function listForClient(): array
+    {
+        return array_map(function (array $module): array {
+            $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+
+            return [
+                'id' => (string) ($module['id'] ?? ''),
+                'name' => (string) ($module['name'] ?? ''),
+                'displayName' => (string) ($module['displayName'] ?? ($module['name'] ?? '')),
+                'version' => (string) ($module['version'] ?? ''),
+                'description' => (string) ($module['description'] ?? ''),
+                'type' => (string) ($module['type'] ?? 'module'),
+                'entry' => $module['entry'] ?? null,
+                'globalName' => $module['globalName'] ?? null,
+                'permissions' => is_array($module['permissions'] ?? null) ? $module['permissions'] : [],
+                'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
+                'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+                'modulePath' => $module['modulePath'] ?? null,
+                'discovered' => (bool) ($module['discovered'] ?? false),
+                'registered' => (bool) ($module['registered'] ?? false),
+                'status' => (string) ($module['status'] ?? 'discovered'),
+                'lifecycleState' => (string) ($module['lifecycleState'] ?? 'DISCOVERED'),
+                'active' => (bool) ($module['active'] ?? false),
+                'enabled' => (bool) ($module['enabled'] ?? false),
+                'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
+                'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
+                'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
+                'requiresLogin' => isset($module['requiresLogin']) ? (bool) $module['requiresLogin'] : ((bool) ($manifest['requiresLogin'] ?? false)),
+            ];
+        }, $this->listForAdmin());
+    }
+
+    /**
      * @return array<string,mixed>|null
      */
     public function getForAdmin(string $moduleId): ?array

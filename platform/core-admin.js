@@ -1007,9 +1007,6 @@
 
             try {
                 const installed = window.ModuleManager.install(moduleId);
-                if (window.ModuleManager.enable) {
-                    window.ModuleManager.enable(moduleId);
-                }
                 return {
                     ok: true,
                     data: installed || module,

@@ -110,14 +110,44 @@
 
                 try {
                     const existing = this.get(registered.id);
+                    const sourceState = existing || registered;
+                    const rawStatus = typeof sourceState?.status === 'string'
+                        ? sourceState.status.trim().toLowerCase()
+                        : '';
+                    const lifecycleState = typeof sourceState?.lifecycleState === 'string'
+                        ? sourceState.lifecycleState.trim().toUpperCase()
+                        : '';
+                    const isActive = !!(
+                        sourceState &&
+                        (
+                            sourceState.active ||
+                            sourceState.enabled ||
+                            rawStatus === 'active' ||
+                            rawStatus === 'enabled' ||
+                            lifecycleState === 'ACTIVE'
+                        )
+                    );
+                    const isRegistered = typeof sourceState?.registered === 'boolean'
+                        ? sourceState.registered
+                        : ['installed', 'inactive', 'disabled', 'active', 'enabled'].includes(rawStatus)
+                            || ['INSTALLED', 'INACTIVE', 'ACTIVE'].includes(lifecycleState);
+                    const normalizedStatus = isActive
+                        ? 'enabled'
+                        : (rawStatus === 'inactive' || rawStatus === 'disabled')
+                            ? 'disabled'
+                            : rawStatus === 'installed'
+                                ? 'installed'
+                                : (rawStatus === 'available' || rawStatus === 'discovered')
+                                    ? 'available'
+                                    : (isRegistered ? 'installed' : 'available');
                     const nextDefinition = {
                         ...registered,
                         type: registered.type || (registered.manifest && registered.manifest.type) || 'module',
-                        status: existing && (existing.active || existing.enabled)
-                            ? 'enabled'
-                            : 'installed',
-                        active: !!(existing && (existing.active || existing.enabled)),
-                        enabled: !!(existing && (existing.active || existing.enabled))
+                        status: normalizedStatus,
+                        lifecycleState: lifecycleState || (isActive ? 'ACTIVE' : (isRegistered ? 'INACTIVE' : 'DISCOVERED')),
+                        registered: isRegistered,
+                        active: isActive,
+                        enabled: isActive
                     };
 
                     if (existing) {
@@ -127,9 +157,6 @@
                     this.register({
                         ...existing,
                         ...nextDefinition,
-                        status: 'installed',
-                        active: false,
-                        enabled: false
                     });
                 } catch (error) {
                     if (window.CoreErrorHandler) {
