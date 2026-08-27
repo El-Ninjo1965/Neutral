@@ -49,6 +49,18 @@ The repository work does not need a rewrite of the app core to reach the server.
 4. FTP/SFTP-only delivery is acceptable as a deployment mechanism, but it must not become the runtime source of truth. The trusted runtime remains the public Neutral PHP API and server-side session/auth decisions. FTP or SFTP is only for publishing the static files to the correct public root.
 5. No local auth fallback is acceptable as a production replacement, even if a temporary host fix is delayed. The server must remain the authority for user identity, session, permissions, and modules.
 
+### Direct production origin test: new app subdomain
+
+The public host was re-tested against the new subdomain `https://app.turbolikes.com/` using the dedicated FTPS deployment account and a disposable origin probe. The proven result is:
+
+- FTP access to the host is working via explicit FTPS on port 21 with the dedicated `webapp@app.turbolikes.com` account.
+- The FTP user resolves to the live document root for the site and is able to create and remove files in the root directory that corresponds to the cPanel document root for this subdomain.
+- The real public HTTPS URL still does not reach the PHP origin. It responds with the same OpenResty challenge page (`One moment, please...`) and `server: openresty/1.31.1.1`, even for a directly uploaded `origin-test.php` file.
+- This proves that the challenge layer is active before the application origin and is not resolved by the new subdomain alone.
+- The temporary test file was removed and re-checking the URL still returned the same challenge page, confirming the file was removed and the host is still intercepting the request before PHP runs.
+
+This means the remaining live blocker is not in the Neutral app code or in the FTP deploy itself. The blocker is the public host configuration, challenge/WAF layer, or vHost/document-root mapping that sits in front of the actual PHP origin. Until that layer is corrected, no browser-based production login or module validation can be considered valid in the public host environment.
+
 The canonical public API path for the standalone web client is:
 
 - https://www.turbolikes.com/index/app/neutral/webroot/api/...

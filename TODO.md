@@ -36,6 +36,8 @@ This is the current operational task ledger for the repository. It is intentiona
 - [ ] Enable the production PHP runtime to load `pdo_mysql` (or the matching MySQL PDO driver) so API auth, DB reads, module visibility, and session-backed login can work.
 - [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping and PHP runtime are corrected.
 - [x] Document the practical connection options that preserve the existing Neutral architecture without creating a second auth or module system: correct host mapping, alternative public root/subdomain mapping, and FTP/SFTP publishing only.
+- [x] Verify the new public subdomain `https://app.turbolikes.com/` with FTPS deployment and confirm that the host still serves the OpenResty challenge page before the PHP origin is reached.
+- [x] Confirm that a disposable runtime probe file can be uploaded and then removed from the live public root without leaving a lingering production artifact.
 
 ## Current production blocker
 
