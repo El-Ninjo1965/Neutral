@@ -7,6 +7,7 @@ use Neutral\Core\AppConfig;
 use Neutral\Core\JsonResponse;
 use Neutral\Core\Phase4AuthManager;
 use Neutral\Core\Phase4JsonStore;
+use Neutral\Core\Phase4PermissionService;
 use Neutral\Core\Phase4RoleService;
 use Neutral\Core\Phase4SessionRegistry;
 use Neutral\Core\Phase4SettingsService;
@@ -22,6 +23,7 @@ $database = $runtime->database();
 
 $store = new Phase4JsonStore($runtime->projectRoot() . '/config');
 $roleService = new Phase4RoleService($store, $database);
+$permissionService = new Phase4PermissionService($database);
 $userService = new Phase4UserService($store, $roleService, $config, $database);
 $settingsService = new Phase6SettingsService($database, new Phase4SettingsService($store));
 $auditService = new Phase6AuditService($database, $store);
@@ -97,6 +99,30 @@ function require_permission_or_fail(?array $identity, Phase4AuthManager $authMan
 }
 
 /**
+ * @param list<string> $permissions
+ */
+function require_any_permission_or_fail(?array $identity, Phase4AuthManager $authManager, array $permissions, bool $needsCsrf, array $headers): void
+{
+    if (!$identity) {
+        JsonResponse::error('Not authenticated.', 401);
+    }
+    foreach ($permissions as $permission) {
+        if ($authManager->hasPermission($identity, $permission)) {
+            if ($needsCsrf && (($identity['via'] ?? '') === 'session')) {
+                $provided = $headers['x-csrf-token'] ?? '';
+                try {
+                    Security::assertValidCsrfToken(is_string($provided) ? $provided : null);
+                } catch (Throwable $exception) {
+                    JsonResponse::error('Invalid CSRF token.', 403, ['code' => 'CSRF_INVALID']);
+                }
+            }
+            return;
+        }
+    }
+    JsonResponse::error('Insufficient privileges.', 403, ['permissions' => $permissions]);
+}
+
+/**
  * @param array<string,mixed> $user
  * @return array<string,mixed>
  */
@@ -127,6 +153,75 @@ function actor_user_id(?array $identity): ?int
     }
     $value = (int) $raw;
     return $value > 0 ? $value : null;
+}
+
+/**
+ * @return list<string>
+ */
+function module_access_permissions(array $module, string $key): array
+{
+    $access = is_array($module['access'] ?? null) ? $module['access'] : [];
+    $permissions = is_array($access[$key] ?? null) ? $access[$key] : [];
+    $normalized = [];
+    foreach ($permissions as $permission) {
+        $value = trim((string) $permission);
+        if ($value !== '') {
+            $normalized[] = $value;
+        }
+    }
+    return array_values(array_unique($normalized));
+}
+
+/**
+ * @return list<string>
+ */
+function module_permission_keys(array $module): array
+{
+    $keys = [];
+    $definitions = is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [];
+    foreach ($definitions as $definition) {
+        if (!is_array($definition)) {
+            continue;
+        }
+        $value = trim((string) ($definition['key'] ?? ''));
+        if ($value !== '') {
+            $keys[] = $value;
+        }
+    }
+    if ($keys === [] && is_array($module['permissions'] ?? null)) {
+        foreach ($module['permissions'] as $permission) {
+            $value = trim((string) $permission);
+            if ($value !== '') {
+                $keys[] = $value;
+            }
+        }
+    }
+    return array_values(array_unique($keys));
+}
+
+/**
+ * @return array<string,mixed>
+ */
+function module_permissions_payload(array $module, array $roles): array
+{
+    $modulePermissionKeys = module_permission_keys($module);
+    $permissionDefinitions = is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [];
+
+    return [
+        'moduleId' => (string) ($module['id'] ?? ''),
+        'permissions' => array_values(array_filter($permissionDefinitions, static fn ($definition): bool => is_array($definition) && trim((string) ($definition['key'] ?? '')) !== '')),
+        'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
+        'roles' => array_map(static function (array $role) use ($modulePermissionKeys): array {
+            $rolePermissions = is_array($role['permissions'] ?? null) ? $role['permissions'] : [];
+            return [
+                'id' => (string) ($role['id'] ?? ''),
+                'name' => (string) ($role['name'] ?? ($role['id'] ?? '')),
+                'description' => (string) ($role['description'] ?? ''),
+                'isSystem' => (bool) ($role['isSystem'] ?? false),
+                'modulePermissions' => array_values(array_intersect($rolePermissions, $modulePermissionKeys)),
+            ];
+        }, $roles),
+    ];
 }
 
 if ($method === 'OPTIONS') {
@@ -262,7 +357,7 @@ if ($route === 'modules' && $method === 'GET') {
         );
     JsonResponse::success([
         'modules' => $databaseConfigured
-            ? $moduleRuntime->listForClient()
+            ? $moduleRuntime->listForClient($identity)
             : $moduleRuntime->discover(),
     ]);
 }
@@ -274,7 +369,11 @@ if ($route === 'admin/sessions' && $method === 'GET') {
 
 if ($route === 'admin/permissions' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
-    JsonResponse::success(['permissions' => Neutral\Core\Phase4AuthRbac::PERMISSIONS]);
+    $permissions = $permissionService->all();
+    JsonResponse::success([
+        'permissions' => array_map(static fn (array $permission): string => (string) ($permission['key'] ?? ''), $permissions),
+        'permissionDetails' => $permissions,
+    ]);
 }
 
 if ($route === 'admin/users' && $method === 'GET') {
@@ -411,6 +510,66 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)$#', $route, $matches) === 1 && $me
     JsonResponse::success(['module' => $module]);
 }
 
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/permissions$#', $route, $matches) === 1) {
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    $readPermissions = array_values(array_unique(array_merge(
+        ['role.read'],
+        module_access_permissions($module, 'managementPermissions'),
+        module_access_permissions($module, 'adminPermissions')
+    )));
+    if ($method === 'GET') {
+        require_any_permission_or_fail($identity, $authManager, $readPermissions, false, $headers);
+        JsonResponse::success([
+            'modulePermissions' => module_permissions_payload($module, $roleService->all()),
+        ]);
+    }
+    if ($method === 'PUT') {
+        require_any_permission_or_fail($identity, $authManager, array_values(array_unique(array_merge(['role.write'], module_access_permissions($module, 'adminPermissions')))), true, $headers);
+        if (!(bool) ($module['registered'] ?? false)) {
+            JsonResponse::error('Module must be installed before permissions can be assigned.', 409, ['moduleId' => $matches[1]]);
+        }
+        $payload = parse_json_body();
+        $assignments = is_array($payload['roleAssignments'] ?? null) ? $payload['roleAssignments'] : [];
+        $modulePermissionKeys = module_permission_keys($module);
+        $roles = $roleService->all();
+        foreach ($roles as $role) {
+            $roleId = (string) ($role['id'] ?? '');
+            if ($roleId === '') {
+                continue;
+            }
+            $requested = is_array($assignments[$roleId] ?? null) ? $assignments[$roleId] : [];
+            $requestedKeys = [];
+            foreach ($requested as $permission) {
+                $value = trim((string) $permission);
+                if ($value !== '' && in_array($value, $modulePermissionKeys, true)) {
+                    $requestedKeys[] = $value;
+                }
+            }
+            $requestedKeys = array_values(array_unique($requestedKeys));
+            $currentPermissions = is_array($role['permissions'] ?? null) ? $role['permissions'] : [];
+            $preserved = array_values(array_filter(
+                $currentPermissions,
+                static fn (string $permission): bool => !in_array($permission, $modulePermissionKeys, true)
+            ));
+            $roleService->replacePermissions($roleId, array_values(array_unique(array_merge($preserved, $requestedKeys))), true);
+        }
+        $updatedModule = $moduleRuntime->getForAdmin($matches[1]);
+        if ($updatedModule === null) {
+            JsonResponse::error('Module not found after permission update.', 404, ['moduleId' => $matches[1]]);
+        }
+        $updatedRoles = $roleService->all();
+        $auditService->log('module.permissions.update', 'module', (string) ($updatedModule['id'] ?? $matches[1]), actor_user_id($identity), [
+            'permissions' => $modulePermissionKeys,
+        ]);
+        JsonResponse::success([
+            'modulePermissions' => module_permissions_payload($updatedModule, $updatedRoles),
+        ]);
+    }
+}
+
 if (preg_match('#^admin/modules/([a-z0-9\-]+)/install$#', $route, $matches) === 1 && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
     try {
@@ -429,7 +588,11 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/install$#', $route, $matches) === 
 }
 
 if (preg_match('#^admin/modules/([a-z0-9\-]+)/activate$#', $route, $matches) === 1 && $method === 'POST') {
-    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    require_any_permission_or_fail($identity, $authManager, array_values(array_unique(array_merge(['role.write'], module_access_permissions($module, 'adminPermissions')))), true, $headers);
     try {
         $module = $moduleRuntime->activate($matches[1], actor_user_id($identity));
     } catch (RuntimeException $exception) {
@@ -446,7 +609,11 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/activate$#', $route, $matches) ===
 }
 
 if (preg_match('#^admin/modules/([a-z0-9\-]+)/deactivate$#', $route, $matches) === 1 && $method === 'POST') {
-    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    require_any_permission_or_fail($identity, $authManager, array_values(array_unique(array_merge(['role.write'], module_access_permissions($module, 'adminPermissions')))), true, $headers);
     try {
         $module = $moduleRuntime->deactivate($matches[1], actor_user_id($identity));
     } catch (RuntimeException $exception) {
@@ -458,6 +625,27 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/deactivate$#', $route, $matches) =
     $auditService->log('module.deactivate', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
         'status' => (string) ($module['status'] ?? 'inactive'),
         'lifecycleState' => (string) ($module['lifecycleState'] ?? 'INACTIVE'),
+    ]);
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/uninstall$#', $route, $matches) === 1 && $method === 'POST') {
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    require_any_permission_or_fail($identity, $authManager, array_values(array_unique(array_merge(['role.write'], module_access_permissions($module, 'adminPermissions')))), true, $headers);
+    try {
+        $module = $moduleRuntime->uninstall($matches[1], actor_user_id($identity));
+    } catch (RuntimeException $exception) {
+        if ($exception->getMessage() === 'Module not registered.') {
+            JsonResponse::error('Module not registered.', 404, ['moduleId' => $matches[1]]);
+        }
+        throw $exception;
+    }
+    $auditService->log('module.uninstall', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
+        'status' => (string) ($module['status'] ?? 'uninstalled'),
+        'lifecycleState' => (string) ($module['lifecycleState'] ?? 'UNINSTALLED'),
     ]);
     JsonResponse::success(['module' => $module]);
 }

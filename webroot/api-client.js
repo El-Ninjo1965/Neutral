@@ -249,6 +249,18 @@ class ApiClient {
     return this.post(`/api/admin/modules/${moduleId}/deactivate`, {});
   }
 
+  async uninstallModule(moduleId) {
+    return this.post(`/api/admin/modules/${moduleId}/uninstall`, {});
+  }
+
+  async getAdminModulePermissions(moduleId) {
+    return this.get(`/api/admin/modules/${moduleId}/permissions`);
+  }
+
+  async updateAdminModulePermissions(moduleId, roleAssignments) {
+    return this.put(`/api/admin/modules/${moduleId}/permissions`, { roleAssignments });
+  }
+
   // Setup endpoints
   async getSetupStatus() {
     return this.get('/api/setup/status');

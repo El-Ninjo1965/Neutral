@@ -30,7 +30,7 @@ final class Phase7ModuleRuntime
             if ($moduleId === 'neutral') {
                 continue;
             }
-            $discovered[$moduleId] = $this->normalizeDiscoveredModule($manifest);
+            $discovered[$moduleId] = $this->normalizeModuleManifest($manifest, true);
         }
 
         return array_values($discovered);
@@ -54,23 +54,8 @@ final class Phase7ModuleRuntime
             unset($registered[$moduleId]);
         }
 
-        foreach ($registered as $moduleId => $record) {
-            $modules[] = $this->mergeModuleState([
-                'id' => $moduleId,
-                'name' => $record['name'],
-                'displayName' => $record['name'],
-                'version' => $record['version'],
-                'description' => '',
-                'type' => 'module',
-                'entry' => null,
-                'globalName' => null,
-                'permissions' => [],
-                'capabilities' => [],
-                'dependencies' => [],
-                'modulePath' => $record['filesystemPath'],
-                'manifest' => $record['manifest'],
-                'discovered' => false,
-            ], $record);
+        foreach ($registered as $record) {
+            $modules[] = $this->mergeModuleState($this->normalizeStoredModule($record), $record);
         }
 
         usort($modules, static function (array $a, array $b): int {
@@ -81,10 +66,16 @@ final class Phase7ModuleRuntime
     }
 
     /**
+     * @param array<string,mixed>|null $identity
      * @return list<array<string,mixed>>
      */
-    public function listForClient(): array
+    public function listForClient(?array $identity = null): array
     {
+        $modules = array_values(array_filter(
+            $this->listForAdmin(),
+            fn (array $module): bool => $this->shouldExposeToClient($module, $identity)
+        ));
+
         return array_map(function (array $module): array {
             $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
 
@@ -98,8 +89,12 @@ final class Phase7ModuleRuntime
                 'entry' => $module['entry'] ?? null,
                 'globalName' => $module['globalName'] ?? null,
                 'permissions' => is_array($module['permissions'] ?? null) ? $module['permissions'] : [],
+                'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
                 'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
                 'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+                'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
+                'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
+                'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
                 'modulePath' => $module['modulePath'] ?? null,
                 'discovered' => (bool) ($module['discovered'] ?? false),
                 'registered' => (bool) ($module['registered'] ?? false),
@@ -110,9 +105,9 @@ final class Phase7ModuleRuntime
                 'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
                 'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
-                'requiresLogin' => isset($module['requiresLogin']) ? (bool) $module['requiresLogin'] : ((bool) ($manifest['requiresLogin'] ?? false)),
+                'requiresLogin' => isset($module['requiresLogin']) ? (bool) ($module['requiresLogin']) : ((bool) ($manifest['requiresLogin'] ?? false)),
             ];
-        }, $this->listForAdmin());
+        }, $modules);
     }
 
     /**
@@ -152,6 +147,8 @@ final class Phase7ModuleRuntime
                 $this->ensureModuleStateExists($pdo, $moduleDbId, (string) $discovered['version'], $actorUserId);
             }
 
+            $this->syncModulePermissions($pdo, $discovered, $existingRecord === null);
+
             $pdo->commit();
         } catch (\Throwable $exception) {
             if ($pdo->inTransaction()) {
@@ -181,6 +178,82 @@ final class Phase7ModuleRuntime
     public function deactivate(string $moduleId, ?int $actorUserId = null): array
     {
         return $this->changeState($moduleId, 'inactive', 0, $actorUserId);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function uninstall(string $moduleId, ?int $actorUserId = null): array
+    {
+        $normalizedId = $this->normalizeModuleId($moduleId);
+        $pdo = $this->database->connect();
+        $pdo->beginTransaction();
+
+        try {
+            $registered = $this->fetchRegisteredModules($pdo);
+            $record = $registered[$normalizedId] ?? null;
+            if ($record === null) {
+                throw new \RuntimeException('Module not registered.');
+            }
+
+            $manifest = is_array($record['manifest'] ?? null) ? $record['manifest'] : [];
+            $module = $this->normalizeModuleManifest(array_replace($manifest, [
+                'id' => $normalizedId,
+                'name' => $record['name'] ?? $normalizedId,
+                'version' => $record['version'] ?? '1.0.0',
+                'modulePath' => $record['filesystemPath'] ?? null,
+            ]), false);
+
+            $this->dropOwnedTables($pdo, $module);
+            $this->removeModuleSettings($pdo, $normalizedId, $actorUserId);
+            $this->deleteModulePermissions($pdo, $normalizedId);
+
+            $statement = $pdo->prepare('DELETE FROM modules WHERE id = :id');
+            $statement->execute([':id' => (int) ($record['dbId'] ?? 0)]);
+
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+
+        $discovered = $this->findDiscoveredModule($normalizedId);
+        if ($discovered !== null) {
+            return $this->mergeModuleState($discovered, null);
+        }
+
+        return [
+            'id' => $normalizedId,
+            'name' => $normalizedId,
+            'displayName' => $normalizedId,
+            'version' => '',
+            'description' => '',
+            'type' => 'module',
+            'entry' => null,
+            'globalName' => null,
+            'permissions' => [],
+            'permissionDefinitions' => [],
+            'capabilities' => [],
+            'dependencies' => [],
+            'access' => [
+                'visibilityPermissions' => [],
+                'usagePermissions' => [],
+                'managementPermissions' => [],
+                'adminPermissions' => [],
+            ],
+            'standalone' => null,
+            'database' => ['tables' => []],
+            'modulePath' => null,
+            'manifest' => [],
+            'discovered' => false,
+            'registered' => false,
+            'status' => 'uninstalled',
+            'lifecycleState' => 'UNINSTALLED',
+            'active' => false,
+            'enabled' => false,
+        ];
     }
 
     /**
@@ -264,13 +337,15 @@ final class Phase7ModuleRuntime
      * @param array<string,mixed> $manifest
      * @return array<string,mixed>
      */
-    private function normalizeDiscoveredModule(array $manifest): array
+    private function normalizeModuleManifest(array $manifest, bool $discovered): array
     {
         $moduleId = $this->normalizeModuleId((string) ($manifest['id'] ?? ''));
         $displayName = trim((string) ($manifest['displayName'] ?? ''));
         if ($displayName === '') {
             $displayName = trim((string) ($manifest['name'] ?? $moduleId));
         }
+
+        $permissionDefinitions = $this->normalizePermissionDefinitions($manifest['permissions'] ?? [], $moduleId);
 
         return [
             'id' => $moduleId,
@@ -281,13 +356,202 @@ final class Phase7ModuleRuntime
             'type' => trim((string) ($manifest['type'] ?? 'module')),
             'entry' => isset($manifest['entry']) ? (string) $manifest['entry'] : null,
             'globalName' => isset($manifest['globalName']) ? (string) $manifest['globalName'] : null,
-            'permissions' => is_array($manifest['permissions'] ?? null) ? array_values($manifest['permissions']) : [],
-            'capabilities' => is_array($manifest['capabilities'] ?? null) ? array_values($manifest['capabilities']) : [],
-            'dependencies' => is_array($manifest['dependencies'] ?? null) ? array_values($manifest['dependencies']) : [],
+            'permissions' => array_map(static fn (array $definition): string => (string) $definition['key'], $permissionDefinitions),
+            'permissionDefinitions' => $permissionDefinitions,
+            'capabilities' => is_array($manifest['capabilities'] ?? null) ? array_values(array_filter(array_map('strval', $manifest['capabilities']))) : [],
+            'dependencies' => is_array($manifest['dependencies'] ?? null) ? array_values(array_filter(array_map('strval', $manifest['dependencies']))) : [],
+            'access' => $this->normalizeAccess($manifest['access'] ?? null, $permissionDefinitions),
+            'standalone' => $this->normalizeStandalone($manifest['standalone'] ?? null),
+            'database' => $this->normalizeDatabase($manifest['database'] ?? null),
             'modulePath' => isset($manifest['modulePath']) ? (string) $manifest['modulePath'] : null,
             'manifest' => $manifest,
-            'discovered' => true,
+            'public' => isset($manifest['public']) ? (bool) $manifest['public'] : null,
+            'isPublic' => isset($manifest['isPublic']) ? (bool) $manifest['isPublic'] : null,
+            'loginRequired' => isset($manifest['loginRequired']) ? (bool) $manifest['loginRequired'] : null,
+            'requiresLogin' => isset($manifest['requiresLogin']) ? (bool) $manifest['requiresLogin'] : null,
+            'discovered' => $discovered,
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $record
+     * @return array<string,mixed>
+     */
+    private function normalizeStoredModule(array $record): array
+    {
+        $manifest = is_array($record['manifest'] ?? null) ? $record['manifest'] : [];
+        return $this->normalizeModuleManifest(array_replace($manifest, [
+            'id' => (string) ($record['id'] ?? ''),
+            'name' => (string) ($record['name'] ?? ($record['id'] ?? '')),
+            'version' => (string) ($record['version'] ?? '1.0.0'),
+            'modulePath' => (string) ($record['filesystemPath'] ?? ''),
+        ]), false);
+    }
+
+    /**
+     * @param mixed $permissions
+     * @return list<array{key:string,description:string,scope:string,defaultRoles:list<string>}>
+     */
+    private function normalizePermissionDefinitions($permissions, string $moduleId): array
+    {
+        if (!is_array($permissions)) {
+            return [];
+        }
+
+        $definitions = [];
+        foreach ($permissions as $index => $permission) {
+            if (is_string($permission)) {
+                $key = trim($permission);
+                if ($key === '') {
+                    continue;
+                }
+                $definitions[$key] = [
+                    'key' => $key,
+                    'description' => '',
+                    'scope' => $this->modulePermissionScope($moduleId),
+                    'defaultRoles' => [],
+                ];
+                continue;
+            }
+
+            if (!is_array($permission)) {
+                continue;
+            }
+
+            $key = trim((string) ($permission['key'] ?? $permission['permission'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+
+            $defaultRoles = [];
+            if (is_array($permission['defaultRoles'] ?? null)) {
+                foreach ($permission['defaultRoles'] as $role) {
+                    $value = strtolower(trim((string) $role));
+                    if ($value !== '') {
+                        $defaultRoles[] = $value;
+                    }
+                }
+            }
+
+            $definitions[$key] = [
+                'key' => $key,
+                'description' => (string) ($permission['description'] ?? ''),
+                'scope' => $this->modulePermissionScope($moduleId),
+                'defaultRoles' => array_values(array_unique($defaultRoles)),
+            ];
+        }
+
+        return array_values($definitions);
+    }
+
+    /**
+     * @param mixed $access
+     * @param list<array{key:string,description:string,scope:string,defaultRoles:list<string>}> $permissionDefinitions
+     * @return array<string,list<string>>
+     */
+    private function normalizeAccess($access, array $permissionDefinitions): array
+    {
+        $keys = array_map(static fn (array $definition): string => (string) $definition['key'], $permissionDefinitions);
+        $source = is_array($access) ? $access : [];
+
+        $fallback = static function (string $suffix) use ($keys): array {
+            return array_values(array_filter($keys, static fn (string $key): bool => str_ends_with($key, $suffix)));
+        };
+
+        $normalizeList = static function ($value): array {
+            if (!is_array($value)) {
+                return [];
+            }
+            $normalized = [];
+            foreach ($value as $entry) {
+                $item = trim((string) $entry);
+                if ($item !== '') {
+                    $normalized[] = $item;
+                }
+            }
+            return array_values(array_unique($normalized));
+        };
+
+        $visibility = $normalizeList($source['visibilityPermissions'] ?? null);
+        $usage = $normalizeList($source['usagePermissions'] ?? null);
+        $management = $normalizeList($source['managementPermissions'] ?? null);
+        $admin = $normalizeList($source['adminPermissions'] ?? null);
+
+        return [
+            'visibilityPermissions' => $visibility !== [] ? $visibility : $fallback('.view'),
+            'usagePermissions' => $usage !== [] ? $usage : $fallback('.use'),
+            'managementPermissions' => $management !== [] ? $management : $fallback('.manage'),
+            'adminPermissions' => $admin !== [] ? $admin : $fallback('.admin'),
+        ];
+    }
+
+    /**
+     * @param mixed $standalone
+     * @return array<string,mixed>|null
+     */
+    private function normalizeStandalone($standalone): ?array
+    {
+        if (!is_array($standalone)) {
+            return null;
+        }
+
+        $entry = trim((string) ($standalone['entry'] ?? ''));
+        if ($entry === '') {
+            return null;
+        }
+
+        $requires = is_array($standalone['requires'] ?? null) ? $standalone['requires'] : [];
+
+        return [
+            'entry' => $entry,
+            'label' => trim((string) ($standalone['label'] ?? '')) !== '' ? trim((string) $standalone['label']) : 'Standalone module test',
+            'description' => (string) ($standalone['description'] ?? ''),
+            'requires' => [
+                'server' => (($requires['server'] ?? false) === true),
+                'database' => (($requires['database'] ?? false) === true),
+                'auth' => (($requires['auth'] ?? false) === true),
+            ],
+        ];
+    }
+
+    /**
+     * @param mixed $database
+     * @return array{tables:list<array{name:string,destroyOnUninstall:bool,description:string}>}
+     */
+    private function normalizeDatabase($database): array
+    {
+        $source = is_array($database) ? $database : [];
+        $tables = [];
+        foreach (($source['tables'] ?? []) as $table) {
+            if (is_string($table)) {
+                $name = trim($table);
+                if ($name !== '') {
+                    $tables[] = [
+                        'name' => $name,
+                        'destroyOnUninstall' => false,
+                        'description' => '',
+                    ];
+                }
+                continue;
+            }
+
+            if (!is_array($table)) {
+                continue;
+            }
+
+            $name = trim((string) ($table['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $tables[] = [
+                'name' => $name,
+                'destroyOnUninstall' => (($table['destroyOnUninstall'] ?? false) === true),
+                'description' => (string) ($table['description'] ?? ''),
+            ];
+        }
+
+        return ['tables' => $tables];
     }
 
     /**
@@ -379,10 +643,18 @@ final class Phase7ModuleRuntime
             'entry' => $module['entry'] ?? null,
             'globalName' => $module['globalName'] ?? null,
             'permissions' => is_array($module['permissions'] ?? null) ? $module['permissions'] : [],
+            'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
             'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
             'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+            'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
+            'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
+            'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
             'modulePath' => $module['modulePath'] ?? ($record['filesystemPath'] ?? null),
             'manifest' => is_array($module['manifest'] ?? null) ? $module['manifest'] : ($record['manifest'] ?? []),
+            'public' => $module['public'] ?? null,
+            'isPublic' => $module['isPublic'] ?? null,
+            'loginRequired' => $module['loginRequired'] ?? null,
+            'requiresLogin' => $module['requiresLogin'] ?? null,
             'discovered' => (bool) ($module['discovered'] ?? false),
             'registered' => $record !== null,
             'status' => $status,
@@ -513,6 +785,261 @@ final class Phase7ModuleRuntime
         return $module;
     }
 
+    /**
+     * @param array<string,mixed> $module
+     */
+    private function syncModulePermissions(PDO $pdo, array $module, bool $applyDefaultRoles): void
+    {
+        $definitions = is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [];
+        if ($definitions === []) {
+            return;
+        }
+
+        $insertPermission = $pdo->prepare('
+            INSERT INTO permissions (permission_key, description, scope, created_at)
+            VALUES (:permission_key, :description, :scope, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                description = VALUES(description),
+                scope = VALUES(scope)
+        ');
+
+        foreach ($definitions as $definition) {
+            if (!is_array($definition)) {
+                continue;
+            }
+            $key = trim((string) ($definition['key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $insertPermission->execute([
+                ':permission_key' => $key,
+                ':description' => (string) ($definition['description'] ?? ''),
+                ':scope' => (string) ($definition['scope'] ?? $this->modulePermissionScope((string) ($module['id'] ?? ''))),
+            ]);
+        }
+
+        if (!$applyDefaultRoles) {
+            return;
+        }
+
+        $roleKeys = [];
+        foreach ($definitions as $definition) {
+            if (!is_array($definition)) {
+                continue;
+            }
+            foreach (($definition['defaultRoles'] ?? []) as $role) {
+                $roleKey = strtolower(trim((string) $role));
+                if ($roleKey !== '') {
+                    $roleKeys[] = $roleKey;
+                }
+            }
+        }
+        $roleKeys = array_values(array_unique($roleKeys));
+        if ($roleKeys === []) {
+            return;
+        }
+
+        $rolePlaceholders = implode(',', array_fill(0, count($roleKeys), '?'));
+        $roleStatement = $pdo->prepare("SELECT id, role_key FROM roles WHERE role_key IN ($rolePlaceholders)");
+        $roleStatement->execute($roleKeys);
+        $roleRows = $roleStatement->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($roleRows) || $roleRows === []) {
+            return;
+        }
+
+        $rolesByKey = [];
+        foreach ($roleRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $roleKey = strtolower(trim((string) ($row['role_key'] ?? '')));
+            if ($roleKey === '') {
+                continue;
+            }
+            $rolesByKey[$roleKey] = (int) ($row['id'] ?? 0);
+        }
+
+        $permissionKeys = array_map(static fn (array $definition): string => (string) $definition['key'], $definitions);
+        $permissionPlaceholders = implode(',', array_fill(0, count($permissionKeys), '?'));
+        $permissionStatement = $pdo->prepare("SELECT id, permission_key FROM permissions WHERE permission_key IN ($permissionPlaceholders)");
+        $permissionStatement->execute($permissionKeys);
+        $permissionRows = $permissionStatement->fetchAll(PDO::FETCH_ASSOC);
+        $permissionIds = [];
+        foreach ($permissionRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $key = trim((string) ($row['permission_key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $permissionIds[$key] = (int) ($row['id'] ?? 0);
+        }
+
+        $grantStatement = $pdo->prepare('
+            INSERT INTO role_permissions (role_id, permission_id, granted_at)
+            VALUES (:role_id, :permission_id, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE granted_at = VALUES(granted_at)
+        ');
+
+        foreach ($definitions as $definition) {
+            if (!is_array($definition)) {
+                continue;
+            }
+            $permissionKey = (string) ($definition['key'] ?? '');
+            $permissionId = $permissionIds[$permissionKey] ?? 0;
+            if ($permissionId <= 0) {
+                continue;
+            }
+            foreach (($definition['defaultRoles'] ?? []) as $role) {
+                $roleKey = strtolower(trim((string) $role));
+                $roleId = $rolesByKey[$roleKey] ?? 0;
+                if ($roleId <= 0) {
+                    continue;
+                }
+                $grantStatement->execute([
+                    ':role_id' => $roleId,
+                    ':permission_id' => $permissionId,
+                ]);
+            }
+        }
+    }
+
+    private function deleteModulePermissions(PDO $pdo, string $moduleId): void
+    {
+        $statement = $pdo->prepare('DELETE FROM permissions WHERE scope = :scope');
+        $statement->execute([':scope' => $this->modulePermissionScope($moduleId)]);
+    }
+
+    /**
+     * @param array<string,mixed> $module
+     */
+    private function dropOwnedTables(PDO $pdo, array $module): void
+    {
+        $tables = is_array($module['database']['tables'] ?? null) ? $module['database']['tables'] : [];
+        foreach ($tables as $table) {
+            if (!is_array($table)) {
+                continue;
+            }
+            if (($table['destroyOnUninstall'] ?? false) !== true) {
+                continue;
+            }
+            $name = trim((string) ($table['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            if (!preg_match('/^[A-Za-z0-9_]+$/', $name)) {
+                throw new \RuntimeException('Unsafe module table name in uninstall manifest: ' . $name);
+            }
+            $pdo->exec('DROP TABLE IF EXISTS `' . $name . '`');
+        }
+    }
+
+    private function removeModuleSettings(PDO $pdo, string $moduleId, ?int $actorUserId): void
+    {
+        $statement = $pdo->prepare('SELECT setting_value_json FROM settings WHERE setting_key = :setting_key LIMIT 1');
+        $statement->execute([':setting_key' => 'core.ui.settings']);
+        $raw = $statement->fetchColumn();
+        if (!is_string($raw) || trim($raw) === '') {
+            return;
+        }
+
+        $settings = json_decode($raw, true);
+        if (!is_array($settings)) {
+            return;
+        }
+
+        $changed = $this->removeNestedPath($settings, ['moduleSettings', $moduleId]);
+        if (!$changed) {
+            return;
+        }
+
+        $json = json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            throw new \RuntimeException('Could not encode module settings payload.');
+        }
+
+        $upsert = $pdo->prepare('
+            INSERT INTO settings (setting_key, setting_value_json, updated_by, updated_at)
+            VALUES (:setting_key, :setting_value_json, :updated_by, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                setting_value_json = VALUES(setting_value_json),
+                updated_by = VALUES(updated_by),
+                updated_at = CURRENT_TIMESTAMP
+        ');
+        $upsert->execute([
+            ':setting_key' => 'core.ui.settings',
+            ':setting_value_json' => $json,
+            ':updated_by' => $actorUserId,
+        ]);
+    }
+
+    /**
+     * @param array<string,mixed> $settings
+     * @param list<string> $segments
+     */
+    private function removeNestedPath(array &$settings, array $segments): bool
+    {
+        $segment = array_shift($segments);
+        if ($segment === null || $segment === '') {
+            return false;
+        }
+        if ($segments === []) {
+            if (!array_key_exists($segment, $settings)) {
+                return false;
+            }
+            unset($settings[$segment]);
+            return true;
+        }
+        if (!isset($settings[$segment]) || !is_array($settings[$segment])) {
+            return false;
+        }
+        $changed = $this->removeNestedPath($settings[$segment], $segments);
+        if ($changed && $settings[$segment] === []) {
+            unset($settings[$segment]);
+        }
+        return $changed;
+    }
+
+    /**
+     * @param array<string,mixed> $module
+     * @param array<string,mixed>|null $identity
+     */
+    private function shouldExposeToClient(array $module, ?array $identity): bool
+    {
+        $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+        $access = is_array($module['access'] ?? null) ? $module['access'] : [];
+        $visibilityPermissions = is_array($access['visibilityPermissions'] ?? null) && $access['visibilityPermissions'] !== []
+            ? array_values(array_unique(array_map('strval', $access['visibilityPermissions'])))
+            : (is_array($module['permissions'] ?? null) ? array_values(array_unique(array_map('strval', $module['permissions']))) : []);
+        $isPublic = (($module['public'] ?? $manifest['public'] ?? false) === true)
+            || (($module['isPublic'] ?? $manifest['isPublic'] ?? false) === true)
+            || (($module['loginRequired'] ?? $manifest['loginRequired'] ?? true) === false)
+            || (($module['requiresLogin'] ?? $manifest['requiresLogin'] ?? true) === false);
+
+        if ($identity === null) {
+            return $visibilityPermissions === [] ? $isPublic : false;
+        }
+
+        if ($visibilityPermissions === []) {
+            return true;
+        }
+
+        $permissions = is_array($identity['permissions'] ?? null) ? $identity['permissions'] : [];
+        foreach ($visibilityPermissions as $permission) {
+            if (in_array($permission, $permissions, true) || in_array('admin.write', $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function modulePermissionScope(string $moduleId): string
+    {
+        return 'module:' . $this->normalizeModuleId($moduleId);
+    }
+
     private function normalizeStateStatus(string $status): string
     {
         $normalized = strtolower(trim($status));
@@ -521,6 +1048,9 @@ final class Phase7ModuleRuntime
         }
         if (in_array($normalized, ['inactive', 'disabled', 'installed'], true)) {
             return 'inactive';
+        }
+        if (in_array($normalized, ['uninstalled'], true)) {
+            return 'uninstalled';
         }
         if ($normalized === '' || $normalized === 'discovered' || $normalized === 'available') {
             return 'discovered';

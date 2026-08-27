@@ -44,6 +44,7 @@ The effective lifecycle is:
 - ACTIVATE
 - ACTIVE
 - DEACTIVATE
+- UNINSTALL
 
 Rules:
 
@@ -51,6 +52,10 @@ Rules:
 - Module metadata must be treated as module metadata, not as app entries.
 - Module paths should resolve relative to the active installation context; hard-coded root paths are not the preferred pattern.
 - App and module management remain separate responsibilities.
+- Module manifests may declare module-owned permissions, access metadata, optional standalone test entries, and explicitly owned database tables.
+- Installing a module must not auto-activate it, but it may synchronize module-declared permissions into the shared RBAC catalog.
+- Uninstall must remove module registration/state, module-scoped permissions, and the moduleSettings.<moduleId> namespace; database tables may only be dropped when the manifest explicitly declares them and marks them safe for destroy-on-uninstall cleanup.
+- Built-in roles remain protected from general editing, but module-specific permission assignment may still grant or revoke a module's own permissions on those roles through the module-management flow.
 
 ## Admin, authentication, and sessions
 
@@ -92,6 +97,7 @@ The following rules are mandatory:
 - Admin write operations remain session + role + CSRF protected.
 - Unauthenticated requests must fail with the correct HTTP protection behavior; invalid CSRF must fail as a 403.
 - Browser-local state must not be treated as a substitute for the server-side session.
+- Module visibility in the user app must not be decided by browser state alone; the server-facing module catalog is responsible for filtering visibility when module permissions are declared.
 
 ## Change rules
 
@@ -112,7 +118,7 @@ Examples:
 - targeted auth/session checks for changed login or session logic
 - targeted admin/file-check validation for changed admin or setup flow
 - relevant existing unit tests for the changed behavior
-- module lifecycle checks covering discovery, install, activate, deactivate, and public module-catalog state when module visibility depends on activation
+- module lifecycle checks covering discovery, install, activate, deactivate, uninstall, and public module-catalog state when module visibility depends on activation or permissions
 
 Avoid broad, repeated test runs when the relevant target has already been validated.
 
@@ -193,3 +199,6 @@ For browser-facing module discovery and the user app:
 - The public catalog must remain lifecycle-aware enough for the browser to distinguish discovered vs. installed vs. active modules.
 - The browser runtime must not overwrite discovered lifecycle state by forcing modules into an installed/inactive status during discovery.
 - Public/user-facing module UIs may only behave as active when the lifecycle is actually active; discovery alone is not activation.
+- When a module declares visibility permissions, `/api/modules` must filter that module according to the server-resolved identity instead of exposing it to every client by default.
+- Module permission declarations belong to the module manifest, not hard-coded core allowlists.
+- If a module declares a standalone test entry, that entry is a developer validation surface only; it must not become a second production admin or alternate runtime authority.

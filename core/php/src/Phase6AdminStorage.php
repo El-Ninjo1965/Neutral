@@ -63,6 +63,37 @@ final class Phase6SettingsService
         }
     }
 
+    public function removeModuleSettings(string $moduleId, ?int $updatedBy = null): array
+    {
+        $normalized = strtolower(trim($moduleId));
+        if ($normalized === '') {
+            throw new \RuntimeException('Module id is required.');
+        }
+
+        return $this->removeSettingsPath('moduleSettings.' . $normalized, $updatedBy);
+    }
+
+    public function removeSettingsPath(string $path, ?int $updatedBy = null): array
+    {
+        $current = $this->getAll();
+        $settings = is_array($current['settings'] ?? null) ? $current['settings'] : [];
+        $segments = array_values(array_filter(array_map('trim', explode('.', trim($path))), static fn (string $segment): bool => $segment !== ''));
+        if ($segments === []) {
+            throw new \RuntimeException('Settings path is required.');
+        }
+
+        $changed = $this->removeNestedPath($settings, $segments);
+        if (!$changed) {
+            return $current;
+        }
+
+        return $this->update([
+            'appName' => $current['appName'] ?? 'Neutral Platform',
+            'appId' => $current['appId'] ?? 'neutral-app',
+            'settings' => $settings,
+        ], $updatedBy);
+    }
+
     /**
      * @param list<string> $keys
      * @return array<string,string>
@@ -137,6 +168,37 @@ final class Phase6SettingsService
             ':setting_value_json' => $json,
             ':updated_by' => $updatedBy,
         ]);
+    }
+
+    /**
+     * @param array<string,mixed> $subject
+     * @param list<string> $segments
+     */
+    private function removeNestedPath(array &$subject, array $segments): bool
+    {
+        $segment = array_shift($segments);
+        if ($segment === null || $segment === '') {
+            return false;
+        }
+
+        if ($segments === []) {
+            if (!array_key_exists($segment, $subject)) {
+                return false;
+            }
+            unset($subject[$segment]);
+            return true;
+        }
+
+        if (!isset($subject[$segment]) || !is_array($subject[$segment])) {
+            return false;
+        }
+
+        $changed = $this->removeNestedPath($subject[$segment], $segments);
+        if ($changed && $subject[$segment] === []) {
+            unset($subject[$segment]);
+        }
+
+        return $changed;
     }
 }
 

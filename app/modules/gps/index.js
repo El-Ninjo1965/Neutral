@@ -7,8 +7,8 @@
  * CoreStorage / DatabaseManager persistence, CoreAudit recording
  * and a full ModuleInterface lifecycle.
  *
- * This module is roleless – no permissions are required to use it.
- * It is a functional test module and does not contain domain logic.
+ * This module is the reference module for lifecycle, permission and
+ * standalone validation inside the Neutral framework.
  */
 
 (() => {
@@ -28,6 +28,44 @@
         maximumAgeMs: 0,
         persistLocationHistory: true
     });
+    const permissionDefinitions = Object.freeze([
+        {
+            key: 'gps.view',
+            description: 'Allows a user to see the GPS module in the workspace.',
+            defaultRoles: ['admin', 'developer', 'user']
+        },
+        {
+            key: 'gps.use',
+            description: 'Allows a user to request positions and start GPS tracking.',
+            defaultRoles: ['admin', 'developer', 'user']
+        },
+        {
+            key: 'gps.manage',
+            description: 'Allows a user to manage GPS-related module settings.',
+            defaultRoles: ['admin', 'developer']
+        },
+        {
+            key: 'gps.admin',
+            description: 'Allows a user to administer the GPS module lifecycle and role assignments.',
+            defaultRoles: ['admin', 'developer']
+        }
+    ]);
+    const access = Object.freeze({
+        visibilityPermissions: ['gps.view'],
+        usagePermissions: ['gps.use'],
+        managementPermissions: ['gps.manage'],
+        adminPermissions: ['gps.admin']
+    });
+    const standalone = Object.freeze({
+        entry: 'index.html',
+        label: 'GPS standalone test',
+        description: 'Loads the GPS module with lightweight local shims for UI and browser geolocation checks without the full application shell.',
+        requires: {
+            server: false,
+            database: false,
+            auth: false
+        }
+    });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -46,6 +84,52 @@
     const hasGeolocation = () => typeof navigator !== 'undefined' && !!navigator.geolocation;
 
     const getGeolocation = () => (hasGeolocation() ? navigator.geolocation : null);
+
+    const getCurrentUser = () => {
+        if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
+            const user = window.UserModule.getCurrentUser();
+            if (user) {
+                return user;
+            }
+        }
+
+        if (window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function') {
+            return window.CoreAuth.getCurrentUser();
+        }
+
+        return null;
+    };
+
+    const hasAuthContext = () => (
+        (window.UserModule && typeof window.UserModule.getCurrentUser === 'function')
+        || (window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function')
+    );
+
+    const hasPermission = (permission) => {
+        const user = getCurrentUser();
+        if (!hasAuthContext()) {
+            return true;
+        }
+        if (!user || !permission) {
+            return false;
+        }
+
+        if (window.CoreAccess && typeof window.CoreAccess.hasPermission === 'function') {
+            return !!window.CoreAccess.hasPermission(user, permission);
+        }
+
+        return Array.isArray(user.permissions) && user.permissions.includes(permission);
+    };
+
+    const hasAnyPermission = (permissions) => {
+        if (!Array.isArray(permissions) || permissions.length === 0) {
+            return true;
+        }
+
+        return permissions.some((permission) => hasPermission(permission));
+    };
+
+    const canUseModule = () => hasAnyPermission(access.usagePermissions);
 
     const readSettings = () => {
         const configured = window.ConfigManager && typeof window.ConfigManager.getPath === 'function'
@@ -157,7 +241,11 @@
         displayName: 'GPS',
         version: '1.0.0',
         description: 'Neutral GPS tracking module.',
-        permissions: [],
+        permissions: permissionDefinitions.map((entry) => entry.key),
+        permissionDefinitions,
+        access,
+        standalone,
+        database: { tables: [] },
         capabilities: ['gps', 'geolocation'],
         admin: {
             title: 'GPS settings',
@@ -289,6 +377,10 @@
                 return { ok: false, code: 'ALREADY_TRACKING' };
             }
 
+            if (!canUseModule()) {
+                return { ok: false, code: 'INSUFFICIENT_PERMISSIONS' };
+            }
+
             if (status !== 'enabled' || !this.active) {
                 return { ok: false, code: 'MODULE_NOT_ENABLED', status };
             }
@@ -352,6 +444,11 @@
 
         getCurrentPosition() {
             return new Promise(async (resolve, reject) => {
+                if (!canUseModule()) {
+                    reject(Object.assign(new Error('GPS usage is not permitted for the current user.'), { code: 'INSUFFICIENT_PERMISSIONS' }));
+                    return;
+                }
+
                 if (status !== 'enabled' || !this.active) {
                     reject(Object.assign(new Error('GPS module is not active.'), { code: 'MODULE_NOT_ENABLED' }));
                     return;
@@ -418,11 +515,20 @@
             const position = state.lastPosition || GpsModule.getLastPosition();
             const trackingNow = GpsModule.isTracking();
             const active = state.status === 'enabled' && state.active;
-            const label = trackingNow ? 'Tracking active' : state.permissionState === 'denied' ? 'Permission denied' : active ? 'Ready' : 'Not active';
+            const allowedToUse = canUseModule();
+            const label = !allowedToUse
+                ? 'Access restricted'
+                : trackingNow
+                    ? 'Tracking active'
+                    : state.permissionState === 'denied'
+                        ? 'Permission denied'
+                        : active
+                            ? 'Ready'
+                            : 'Not active';
             const positionHtml = position ? `<div><dt>Latitude</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Longitude</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Accuracy</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Timestamp</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>Not available</dd></div>';
-            container.innerHTML = `<div class="gps-user-module"><div class="gps-heading"><div><span class="user-app-eyebrow">Location</span><h1>GPS</h1></div><span id="gpsUserStatus" class="gps-status ${isError ? 'error' : ''}">${label}</span></div><div class="gps-location-card"><span class="gps-location-label">Current position</span><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><div class="gps-state-line">Permission: ${state.permissionState}</div></div><div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${active ? '' : 'disabled'}>Get Current Position</button><button type="button" data-gps-action="start" ${(active && !trackingNow) ? '' : 'disabled'}>Start Tracking</button><button type="button" data-gps-action="stop" ${trackingNow ? '' : 'disabled'}>Stop Tracking</button></div><p id="gpsUserMessage" class="gps-message">${message || (active ? '' : 'Activate this module before requesting device location.')}</p></div>`;
-            container.querySelector('[data-gps-action="current"]').addEventListener('click', async () => { render('Requesting location...'); try { await GpsModule.getCurrentPosition(); render('Location updated.'); } catch (error) { render(error && error.code === 'PERMISSION_DENIED' ? 'Location permission was denied.' : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position could not be determined.' : error && error.code === 'TIMEOUT' ? 'Location request timed out.' : error && error.code === 'MODULE_NOT_ENABLED' ? 'Activate this module before requesting device location.' : 'Location could not be retrieved.', true); } });
-            container.querySelector('[data-gps-action="start"]').addEventListener('click', () => { const result = GpsModule.startTracking(); render(result.ok ? 'Tracking started.' : result.code === 'PERMISSION_DENIED' ? 'Location permission was denied.' : result.code === 'MODULE_NOT_ENABLED' ? 'Activate this module before starting tracking.' : 'Location tracking is unavailable.', !result.ok); });
+            container.innerHTML = `<div class="gps-user-module"><div class="gps-heading"><div><span class="user-app-eyebrow">Location</span><h1>GPS</h1></div><span id="gpsUserStatus" class="gps-status ${isError ? 'error' : ''}">${label}</span></div><div class="gps-location-card"><span class="gps-location-label">Current position</span><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><div class="gps-state-line">Permission: ${state.permissionState}</div></div><div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Get Current Position</button><button type="button" data-gps-action="start" ${(allowedToUse && active && !trackingNow) ? '' : 'disabled'}>Start Tracking</button><button type="button" data-gps-action="stop" ${trackingNow ? '' : 'disabled'}>Stop Tracking</button></div><p id="gpsUserMessage" class="gps-message">${message || (!allowedToUse ? 'Your current role is not allowed to use device geolocation.' : active ? '' : 'Activate this module before requesting device location.')}</p></div>`;
+            container.querySelector('[data-gps-action="current"]').addEventListener('click', async () => { render('Requesting location...'); try { await GpsModule.getCurrentPosition(); render('Location updated.'); } catch (error) { render(error && error.code === 'INSUFFICIENT_PERMISSIONS' ? 'Your current role is not allowed to use device geolocation.' : error && error.code === 'PERMISSION_DENIED' ? 'Location permission was denied.' : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position could not be determined.' : error && error.code === 'TIMEOUT' ? 'Location request timed out.' : error && error.code === 'MODULE_NOT_ENABLED' ? 'Activate this module before requesting device location.' : 'Location could not be retrieved.', true); } });
+            container.querySelector('[data-gps-action="start"]').addEventListener('click', () => { const result = GpsModule.startTracking(); render(result.ok ? 'Tracking started.' : result.code === 'INSUFFICIENT_PERMISSIONS' ? 'Your current role is not allowed to use device geolocation.' : result.code === 'PERMISSION_DENIED' ? 'Location permission was denied.' : result.code === 'MODULE_NOT_ENABLED' ? 'Activate this module before starting tracking.' : 'Location tracking is unavailable.', !result.ok); });
             container.querySelector('[data-gps-action="stop"]').addEventListener('click', () => { GpsModule.stopTracking(); render('Tracking stopped.'); });
         };
         render();

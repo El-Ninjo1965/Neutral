@@ -38,7 +38,7 @@ const loadScriptIntoContext = (context, filePath) => {
   vm.runInContext(source, context, { filename: filePath });
 };
 
-const createGpsModuleContext = ({ permissionState = 'granted' } = {}) => {
+const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {}) => {
   const geolocationState = {
     permissionState,
     watchCalls: 0,
@@ -143,8 +143,16 @@ const createGpsModuleContext = ({ permissionState = 'granted' } = {}) => {
     CoreContext: {},
     CoreState: {},
     CoreLifecycle: {},
-    CoreAuth: {},
-    CoreAccess: {},
+    CoreAuth: currentUser ? {
+      getCurrentUser() {
+        return currentUser;
+      }
+    } : {},
+    CoreAccess: currentUser ? {
+      hasPermission(user, permission) {
+        return !!user && Array.isArray(user.permissions) && user.permissions.includes(permission);
+      }
+    } : {},
     CoreEventRing: {},
     require,
     process,
@@ -362,6 +370,21 @@ test('installing a module through the admin facade keeps it inactive until activ
   assert.ok(gps);
   assert.equal(gps.status, 'installed');
   assert.equal(gps.active, false);
+});
+
+test('discovers module-declared permissions and standalone metadata from the gps manifest', async () => {
+  cleanupRuntimeState();
+
+  const { sandbox } = createGpsModuleContext();
+  const discovered = await sandbox.ModuleManager.discoverModules();
+  const gps = discovered.find((module) => module.id === 'gps');
+
+  assert.ok(gps);
+  assert.deepEqual(Array.from(gps.permissions), ['gps.view', 'gps.use', 'gps.manage', 'gps.admin']);
+  assert.equal(Array.isArray(gps.permissionDefinitions), true);
+  assert.equal(gps.permissionDefinitions.length, 4);
+  assert.deepEqual(Array.from(gps.access.visibilityPermissions), ['gps.view']);
+  assert.equal(gps.standalone.entry, 'index.html');
 });
 
 test('keeps app runtime state isolated for each app instance', () => {
@@ -1007,6 +1030,16 @@ test('loads and cycles the gps module lifecycle without duplicate watchers', asy
   await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'TIMEOUT');
 
   sandbox.ModuleManager.disable('gps');
+  const uninstallResult = sandbox.ModuleManager.uninstall('gps');
+  assert.equal(uninstallResult, true);
+  assert.equal(sandbox.ModuleManager.get('gps'), null);
+
+  const rediscovered = await sandbox.ModuleManager.discoverModules();
+  assert.ok(rediscovered.some((module) => module.id === 'gps'));
+  const rediscoveredGps = sandbox.ModuleManager.get('gps');
+  assert.ok(rediscoveredGps);
+  assert.equal(rediscoveredGps.status, 'available');
+  assert.equal(rediscoveredGps.active, false);
 });
 
 test('marks gps permission denied without starting a watcher', async () => {
@@ -1023,6 +1056,31 @@ test('marks gps permission denied without starting a watcher', async () => {
   assert.equal(gps.getPermissionState(), 'unknown');
   assert.equal(gps.isTracking(), false);
   assert.equal(geolocationState.watchCalls, 0);
+});
+
+test('blocks gps usage when the current user lacks the module usage permission', async () => {
+  cleanupRuntimeState();
+
+  const { sandbox } = createGpsModuleContext({
+    currentUser: {
+      id: 'viewer-1',
+      username: 'viewer',
+      roles: ['viewer'],
+      permissions: ['gps.view']
+    }
+  });
+  await sandbox.ModuleManager.discoverModules();
+
+  const gps = sandbox.ModuleManager.get('gps');
+  assert.ok(gps);
+
+  sandbox.ModuleManager.install('gps');
+  sandbox.ModuleManager.enable('gps');
+
+  const startResult = gps.startTracking();
+  assert.equal(startResult.ok, false);
+  assert.equal(startResult.code, 'INSUFFICIENT_PERMISSIONS');
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
 });
 
 test('registers module-provided admin settings and applies them to gps runtime options', async () => {

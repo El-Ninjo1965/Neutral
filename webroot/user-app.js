@@ -152,6 +152,10 @@
         return false;
       }
 
+      const visibilityPermissions = Array.isArray(module.access?.visibilityPermissions) && module.access.visibilityPermissions.length
+        ? module.access.visibilityPermissions
+        : (Array.isArray(module.permissions) ? module.permissions : []);
+
       if (!currentUser) {
         const isPublic = module.public === true || module.isPublic === true || module.loginRequired === false || module.requiresLogin === false || module.public !== false;
         if (!isPublic) {
@@ -161,6 +165,13 @@
 
       if (visibleSet && !visibleSet.has(module.id)) {
         return false;
+      }
+
+      if (currentUser && visibilityPermissions.length) {
+        const allowed = visibilityPermissions.some((permission) => Array.isArray(currentUser.permissions) && currentUser.permissions.includes(permission));
+        if (!allowed) {
+          return false;
+        }
       }
 
       return true;

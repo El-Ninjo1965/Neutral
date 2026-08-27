@@ -84,8 +84,35 @@
                 module.permissions = [];
             }
 
+            if (!Array.isArray(module.permissionDefinitions)) {
+                module.permissionDefinitions = [];
+            }
+
             if (!Array.isArray(module.capabilities)) {
                 module.capabilities = [];
+            }
+
+            if (!module.access || typeof module.access !== 'object') {
+                module.access = module.manifest && module.manifest.access && typeof module.manifest.access === 'object'
+                    ? module.manifest.access
+                    : {
+                        visibilityPermissions: [],
+                        usagePermissions: [],
+                        managementPermissions: [],
+                        adminPermissions: []
+                    };
+            }
+
+            if (!module.standalone || typeof module.standalone !== 'object') {
+                module.standalone = module.manifest && module.manifest.standalone && typeof module.manifest.standalone === 'object'
+                    ? module.manifest.standalone
+                    : null;
+            }
+
+            if (!module.database || typeof module.database !== 'object') {
+                module.database = module.manifest && module.manifest.database && typeof module.manifest.database === 'object'
+                    ? module.manifest.database
+                    : { tables: [] };
             }
 
             if (!module.appId && typeof module.manifest?.appId === 'string') {
@@ -107,7 +134,11 @@
                     description: module.description || '',
                     dependencies: [...module.dependencies],
                     permissions: [...module.permissions],
+                    permissionDefinitions: [...module.permissionDefinitions],
                     capabilities: [...module.capabilities],
+                    access: module.access,
+                    standalone: module.standalone,
+                    database: module.database,
                     admin: module.admin
                 };
             }
@@ -179,10 +210,14 @@
                 description: module.description || '',
                 dependencies: Array.isArray(module.dependencies) ? module.dependencies : [],
                 permissions: Array.isArray(module.permissions) ? module.permissions : [],
+                permissionDefinitions: Array.isArray(module.permissionDefinitions) ? module.permissionDefinitions : [],
                 capabilities: Array.isArray(module.capabilities) ? module.capabilities : [],
                 source: module.source || module.modulePath,
                 entry: module.source || module.modulePath,
-                globalName: module.globalName || module.manifest?.globalName || module.name || module.id
+                globalName: module.globalName || module.manifest?.globalName || module.name || module.id,
+                access: module.access || module.manifest?.access || null,
+                standalone: module.standalone || module.manifest?.standalone || null,
+                database: module.database || module.manifest?.database || null
             }))];
 
             combinedCatalog.forEach((entry) => {
@@ -223,9 +258,15 @@
                     permissions: Array.isArray(implementation.permissions)
                         ? [...implementation.permissions]
                         : [...manifest.permissions],
+                    permissionDefinitions: Array.isArray(implementation.permissionDefinitions)
+                        ? [...implementation.permissionDefinitions]
+                        : [...manifest.permissionDefinitions],
                     capabilities: Array.isArray(implementation.capabilities)
                         ? [...implementation.capabilities]
                         : [...manifest.capabilities],
+                    access: implementation.access || manifest.access || null,
+                    standalone: implementation.standalone || manifest.standalone || null,
+                    database: implementation.database || manifest.database || null,
                     status: implementation.status || manifest.status || 'inactive',
                     active: !!implementation.active,
                     enabled: !!implementation.enabled

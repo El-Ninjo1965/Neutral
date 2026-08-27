@@ -966,6 +966,25 @@ code {
   gap: 16px;
 }
 
+.module-detail-stack,
+.module-permission-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.module-permission-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.module-role-card {
+  display: grid;
+  gap: 12px;
+}
+
+.module-role-card p {
+  margin: 0;
+}
+
 .admin-form {
   padding: 18px;
   background: var(--panel);
