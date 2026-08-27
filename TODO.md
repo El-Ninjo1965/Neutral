@@ -53,3 +53,23 @@ This is the current operational task ledger for the repository. It is intentiona
 
 - When adding module-owned storage, declare each owned table explicitly in the module manifest and only allow uninstall cleanup for entries that opt into safe destroy-on-uninstall handling.
 - When adding module permissions, keep module-owned settings under moduleSettings.<moduleId> and re-check public /api/modules visibility plus role assignments after install, deactivate, uninstall, and reinstall.
+
+## Live hosting validation results (2026-08-27)
+
+- [x] Confirm the real FTP layout and valid account mapping on the live host.
+- [x] Confirm the real PHP/LiteSpeed runtime and document root using live HTTP responses.
+- [x] Verify `PDO MySQL`, `mysqli`, and MySQL connectivity on the production host.
+- [x] Verify `GET`, `POST`, `JSON`, session, and cookie handling using live PHP probes.
+- [x] Verify the actual public API paths and the unauthenticated auth/RBAC enforcement state.
+- [x] Confirm the active host path is `https://www.turbolikes.com/index/app/neutral/webroot/...`; `app.turbolikes.com` is not presently serving the active app.
+- [x] Confirm that PHP-only hosting is the correct architecture for this environment and that Node is not required for the current production path.
+- [ ] Remove all temporary live-host diagnostics once the final validation evidence is captured and the report is signed off.
+
+## Final production recommendation
+
+- Preferred runtime: PHP on LiteSpeed shared hosting.
+- Preferred public route: `https://www.turbolikes.com/index/app/neutral/webroot/...`.
+- Preferred document root: `/home/web1819/public_html`.
+- Preferred app root: `/home/web1819/public_html/index/app/neutral/webroot`.
+- Preferred same-origin flow: browser fetches to the same host path, with session/cookie auth enforced by PHP and not by client-side state.
+- Avoid assuming a Node service or a dedicated `app.turbolikes.com` deployment until the host-level routing is explicitly configured and verified.

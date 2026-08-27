@@ -258,6 +258,58 @@ Decision:
 - production authority should be the existing PHP runtime, not the Node runtime
 - deploy the app as a same-origin PHP/MySQL application on `app.turbolikes.com`
 - keep offline storage for public/non-authoritative client state only
+
+## Empirical live-hosting validation (2026-08-27)
+
+The following findings were validated against the actual live host using FTP access and real HTTP responses. This section supersedes stale assumptions that were not tested in production.
+
+### Verified hosting facts
+
+- FTP login succeeded for the project account `neutral@turbolikes.com`, the OS-level root account `root@turbolikes.com`, and the webapp account `webapp@app.turbolikes.com`.
+- `web-app@turbolikes.com` failed authentication and is not a valid live deployment target in this environment.
+- The live document root reported by PHP is `/home/web1819/public_html`.
+- The functional production app path is `/home/web1819/public_html/index/app/neutral/webroot`.
+- Real PHP output confirms `SERVER_SOFTWARE: LiteSpeed`, `PHP version: 8.5.9`, and `PHP_SAPI: litespeed`.
+- `PDO MySQL` and `mysqli` are both available; MySQL is reachable on `localhost:3306` and the app database `web1819_neutral_app` is active.
+- `https://www.turbolikes.com/index/app/neutral/webroot/api/status` responds with JSON and `200 OK`.
+- `https://www.turbolikes.com/index/app/neutral/webroot/api/auth/me` responds with `401` when unauthenticated, which is expected.
+- `https://www.turbolikes.com/index/app/neutral/webroot/admin.php` responds with `401` without session auth.
+- `https://app.turbolikes.com/` and `https://app.turbolikes.com/index/app/neutral/webroot/diagnose.php` both return `404` at the time of testing; `app.turbolikes.com` is not the active live app route in the current host configuration.
+- The active working public route is `https://www.turbolikes.com/index/app/neutral/webroot/...`.
+
+### Verified API and auth behavior
+
+- `/index/app/neutral/webroot/api/status` returns JSON and confirms `service=neutral-core`, `environment=production`, and a live MySQL backend.
+- `/index/app/neutral/webroot/api/modules` returns `{"ok":true,"data":{"modules":[]}}` and therefore the server-side module catalog is active.
+- `/index/app/neutral/webroot/api/auth/me` returns `{"ok":false,"error":{"message":"Not authenticated."}}` without a valid session, proving server-side auth enforcement.
+- A targeted PHP probe succeeded in storing a session and cookie across two sequential requests using the same browser cookie jar, with the session counter incrementing from 1 to 2 and `Set-Cookie` observed.
+- A targeted PHP probe accepted both `application/x-www-form-urlencoded` and `application/json` POST bodies and echoed the parsed request data on the live host.
+
+### Verified architecture recommendation
+
+The empirically validated production architecture is:
+
+- PHP runtime on LiteSpeed shared hosting
+- document root `/home/web1819/public_html`
+- actual app root `/home/web1819/public_html/index/app/neutral/webroot`
+- public API under `https://www.turbolikes.com/index/app/neutral/webroot/api/*`
+- public admin/setup under `https://www.turbolikes.com/index/app/neutral/webroot/admin.php` and `setup.php`
+- same-origin browser traffic remains on the main domain path and does not require a separate Node service or CORS workarounds
+
+### What did not work on this host
+
+- `app.turbolikes.com` was not mapped to the active app runtime during the empirical test. It returned `404`.
+- There is no evidence of a public Node runtime or a working Node API service on this host.
+- Browserless automation must not assume direct subdomain access without confirmation; in this environment, the valid path is the current `www.turbolikes.com/index/...` route.
+
+### Deployment rules derived from actual tests
+
+- Keep the production app under the verified host path and do not force the legacy `app.turbolikes.com` assumption.
+- Prefer same-origin PHP requests over cross-origin API workarounds.
+- Treat the server-side session and RBAC as the authority; browser state is not enough.
+- Keep live credentials host-local and never commit or log them.
+- Use separate test tables or probe scripts for database validation and remove any temporary diagnostics after the verification step is complete.
+
 - treat Imunify360 bot-protection as the remaining host-level go-live blocker for public/native API traffic
 
 ### Code changes made for this decision
