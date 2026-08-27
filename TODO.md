@@ -24,6 +24,7 @@ This is the current operational task ledger for the repository. It is intentiona
 
 - [x] Consolidate the last three web-app prompts into a single live integration task without discarding the original assignment.
 - [x] Confirm the active live public API contract and the correct transport path for the standalone web client.
+- [x] Verify the live API contract on the real host: `/api/status` returns HTTP 200 with JSON; `/api/auth/me` returns 401 without a session; `/api/modules` returns a valid module catalog payload.
 - [x] Remove localhost/default-local assumptions from the public web-app config and client bootstrap logic.
 - [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
 - [x] Add a shared-host root rewrite so a same-origin app host can expose the existing `webroot/` runtime from the docroot root without flattening the repository structure.
@@ -31,6 +32,14 @@ This is the current operational task ledger for the repository. It is intentiona
 - [ ] Verify that `https://app.turbolikes.com/`, `/api/status`, `/api/auth/me`, `/admin.php`, and `/setup.php` are served from the deployed app root and not from a stale placeholder.
 - [ ] Inspect cPanel -> Plugins -> Imunify360 (if available) for incidents/firewall entries affecting operator/test traffic; otherwise request a per-host bot-protection exemption from the provider.
 - [ ] Request and complete the real browser/mobile live test after deploy plus Imunify360 handling.
+
+## Verified production scope (2026-08-27)
+
+- [x] `/api/status` returns HTTP 200 with valid JSON on the real production route and confirms PHP/LiteSpeed and MySQL health.
+- [x] `/api/auth/me` returns 401 when unauthenticated and rejects invalid credentials with 401 instead of leaking state.
+- [x] `/api/modules` responds with a valid JSON module catalog on the live route.
+- [x] Security hardening blocks direct access to internal PHP/runtime files while leaving the public API surface reachable.
+- [x] Repository tests covering API, auth, storage, module lifecycle, and admin flow all pass locally.
 
 ## Open tasks
 

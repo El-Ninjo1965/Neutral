@@ -323,7 +323,9 @@
 
   const resolveRuntimeOrigin = () => (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
     ? window.location.origin
-    : 'http://localhost';
+    : ((typeof window !== 'undefined' && window.location && window.location.protocol && window.location.hostname)
+      ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`
+      : '');
 
   const resolveRuntimeServerUrl = () => {
     const configured = typeof window !== 'undefined' && window.ConfigManager && typeof window.ConfigManager.get === 'function'

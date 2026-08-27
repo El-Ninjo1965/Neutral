@@ -9,6 +9,10 @@
 (() => {
     'use strict';
 
+    const root = typeof globalThis !== 'undefined'
+        ? globalThis
+        : (typeof window !== 'undefined' ? window : {});
+
     const ConfigManager = {
         initialized: false,
         configs: new Map(),
@@ -49,8 +53,8 @@
 
             this.initialized = true;
 
-            if (window.Core) {
-                window.Core.emit('config-manager:initialized', {
+            if (root.Core) {
+                root.Core.emit('config-manager:initialized', {
                     timestamp: new Date().toISOString()
                 });
             }
@@ -62,7 +66,9 @@
         loadDefaultConfigs() {
             const runtimeOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
                 ? window.location.origin
-                : 'http://localhost';
+                : (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.hostname)
+                    ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`
+                    : '';
             const runtimePathname = (typeof window !== 'undefined' && window.location && typeof window.location.pathname === 'string')
                 ? window.location.pathname
                 : '/';
@@ -72,7 +78,9 @@
             const normalizedRuntimeBasePath = (!runtimeBasePath || runtimeBasePath === '/')
                 ? ''
                 : runtimeBasePath.replace(/\/+$/, '');
-            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}${normalizedRuntimeBasePath}/api`;
+            const runtimeApiBaseUrl = runtimeOrigin
+                ? `${runtimeOrigin.replace(/\/+$/, '')}${normalizedRuntimeBasePath}/api`
+                : `${normalizedRuntimeBasePath ? `${normalizedRuntimeBasePath}/api` : '/api'}`;
 
             // Application Config
             this.set('app', {
@@ -155,12 +163,25 @@
             });
 
             // Security Config
+            const currentSecurityHosts = [];
+            if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+                const currentHost = window.location.hostname.toLowerCase();
+                if (currentHost && !currentSecurityHosts.includes(currentHost)) {
+                    currentSecurityHosts.push(currentHost);
+                }
+                if (window.location.origin && window.location.origin !== 'null') {
+                    const currentOrigin = window.location.origin.replace(/^https?:\/\//i, '').replace(/\/$/, '').toLowerCase();
+                    if (currentOrigin && !currentSecurityHosts.includes(currentOrigin)) {
+                        currentSecurityHosts.push(currentOrigin);
+                    }
+                }
+            }
             this.set('security', {
                 enableEncryption: false,
                 sessionTimeout: 3600000, // 1 Stunde
                 csrfProtection: true,
                 allowCors: false,
-                trustedDomains: ['localhost', '127.0.0.1']
+                trustedDomains: currentSecurityHosts
             });
 
             // Performance Config
@@ -210,8 +231,8 @@
 
             this.notifyWatchers(key, value, oldValue);
 
-            if (window.Core) {
-                window.Core.emit('config:changed', {
+            if (root.Core) {
+                root.Core.emit('config:changed', {
                     key: key,
                     newValue: value,
                     oldValue: oldValue
@@ -409,7 +430,7 @@
         }
     };
 
-    if (!window.ConfigManager) {
-        window.ConfigManager = ConfigManager;
+    if (!root.ConfigManager) {
+        root.ConfigManager = ConfigManager;
     }
 })();

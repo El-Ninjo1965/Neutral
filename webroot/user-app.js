@@ -40,7 +40,7 @@
       ? window.location.origin.replace(/\/+$/, '')
       : (window.location && window.location.protocol && window.location.hostname)
         ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`.replace(/\/+$/, '')
-        : 'http://localhost';
+        : '';
     const pathname = window.location && typeof window.location.pathname === 'string'
       ? window.location.pathname
       : '/';
@@ -48,6 +48,9 @@
       ? pathname.replace(/\/+$/, '')
       : pathname.replace(/\/[^/]*$/, '');
     const normalizedBasePath = (!basePath || basePath === '/') ? '' : basePath.replace(/\/+$/, '');
+    if (!origin) {
+      return normalizedBasePath ? normalizedBasePath : '/';
+    }
     return `${origin}${normalizedBasePath}`;
   };
 

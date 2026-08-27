@@ -1073,7 +1073,7 @@
 
       const connectionId = normalizeString(connectionDefinition.connectionId || connectionDefinition.id, 'default-connection');
       const appId = normalizeString(connectionDefinition.appId || connectionDefinition.app, 'default-app');
-      const serverUrl = normalizeString(connectionDefinition.serverUrl || connectionDefinition.url || connectionDefinition.serverAddress, ((typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'http://localhost'));
+      const serverUrl = normalizeString(connectionDefinition.serverUrl || connectionDefinition.url || connectionDefinition.serverAddress, ((typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : ''));
       const apiBase = normalizeString(connectionDefinition.apiBase || connectionDefinition.basePath || '/api', '/api');
       const storageType = this.normalizeStorageType(connectionDefinition.storageType || connectionDefinition.type || connectionDefinition.databaseType || connectionDefinition.connectionType || 'file', 'file');
       const databaseType = this.normalizeStorageType(connectionDefinition.databaseType || connectionDefinition.sqlType || ((storageType === 'sql' || storageType === 'sqlite' || storageType === 'mysql' || storageType === 'postgresql') ? storageType : ''), '');
@@ -2057,7 +2057,7 @@
       const currentWindowOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
         ? window.location.origin
         : '';
-      const effectiveHost = normalizeString((currentWindowOrigin ? new URL(currentWindowOrigin).hostname : '') || env.HOST || config.host || '127.0.0.1', '127.0.0.1');
+      const effectiveHost = normalizeString((currentWindowOrigin ? new URL(currentWindowOrigin).hostname : '') || env.HOST || config.host || '', '');
       const isLocalHostname = (hostname) => {
         const normalized = String(hostname || '').trim().toLowerCase().replace(/^\[|\]$/g, '');
         return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(normalized);

@@ -100,6 +100,22 @@ test('Node runtime resolves project root and API base from the active installati
   }
 });
 
+test('Public runtime config does not hardcode localhost as the production origin', () => {
+  const runtimeFiles = [
+    path.resolve(__dirname, '../platform/config-manager.js'),
+    path.resolve(__dirname, '../platform/security.js'),
+    path.resolve(__dirname, '../platform/master-framework.js'),
+    path.resolve(__dirname, '../webroot/admin-init.js'),
+    path.resolve(__dirname, '../webroot/user-app.js'),
+    path.resolve(__dirname, '../webroot/admin/index.js'),
+    path.resolve(__dirname, '../webroot/master-ui.js')
+  ];
+
+  const mergedSource = runtimeFiles.map((filePath) => fs.readFileSync(filePath, 'utf8')).join('\n');
+  assert.ok(!mergedSource.includes('http://localhost'));
+  assert.ok(!mergedSource.includes('https://localhost'));
+});
+
 test('PHP runtime prefers the active install root over shared-host fallback candidates', () => {
   const { tempRoot, appRoot } = createAlternativeInstall();
   try {

@@ -19,7 +19,7 @@
                 return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
             }
         }
-        return 'http://localhost';
+        return '';
     };
 
     const cloneValue = (value) => {

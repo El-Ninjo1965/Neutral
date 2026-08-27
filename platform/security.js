@@ -13,7 +13,33 @@
         ? globalThis
         : (typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : {}));
 
-    const DEFAULT_ALLOWED_ORIGINS = ['localhost', '127.0.0.1', '::1'];
+    const DEFAULT_ALLOWED_ORIGINS = [];
+
+    const getRuntimeAllowedOrigins = () => {
+        const origins = [...DEFAULT_ALLOWED_ORIGINS];
+
+        if (typeof window !== 'undefined' && window.location) {
+            const candidates = [];
+            if (window.location.origin && window.location.origin !== 'null') {
+                candidates.push(window.location.origin);
+            }
+            if (window.location.hostname) {
+                candidates.push(window.location.hostname);
+            }
+            if (window.location.host) {
+                candidates.push(window.location.host);
+            }
+
+            for (const candidate of candidates) {
+                const normalized = normalizeOrigin(candidate);
+                if (normalized && !origins.includes(normalized)) {
+                    origins.push(normalized);
+                }
+            }
+        }
+
+        return [...new Set(origins.filter(Boolean))];
+    };
 
     const normalizeOrigin = (origin) => {
         if (typeof origin !== 'string') {
@@ -37,7 +63,7 @@
     };
 
     const CoreSecurity = {
-        allowedOrigins: [...DEFAULT_ALLOWED_ORIGINS],
+        allowedOrigins: getRuntimeAllowedOrigins(),
 
         registerAllowedOrigin(origin) {
             const normalized = normalizeOrigin(origin);

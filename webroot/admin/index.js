@@ -426,7 +426,7 @@ class AdminInfrastructureView {
   renderServer() {
     const server = this.snapshot.server || {};
     const setup = this.snapshot.setup || {};
-    const currentUrl = setup.serverState?.url || server.serverUrl || window.location.origin || 'http://localhost';
+    const currentUrl = setup.serverState?.url || server.serverUrl || window.location.origin || '';
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header">
