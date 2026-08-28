@@ -41,6 +41,7 @@ Die User-App darf Serverinformationen nicht über zahlreiche Dateien verteilt en
 
 ### 4. User/Admin-Trennung
 
+- [x] Admin-Session über separates Cookie (`neutral_admin_session`) vom User-Session-Namespace trennen
 - [ ] prüfen, warum Admin-Login aktuell die User-App beeinflusst
 - [ ] User- und Admin-Session technisch trennen
 - [ ] prüfen, ob separate Admin-Tabelle erforderlich ist

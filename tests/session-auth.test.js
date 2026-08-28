@@ -187,6 +187,16 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.equal(me.statusCode, 401);
   });
 
+  test('4b. Admin session cookie is ignored by user API auth', async () => {
+    await createTestUser({ username: 'admin-cookie-user', email: 'admin-cookie-user@example.com' });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'admin-cookie-user', password: 'correct-horse-battery-staple' } });
+
+    const me = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_admin_session: login.cookies.neutral_session }
+    });
+    assert.equal(me.statusCode, 401);
+  });
+
   test('5. Logout invalidates the session', async () => {
     await createTestUser({ username: 'logout-user', email: 'logout-user@example.com' });
     const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'logout-user', password: 'correct-horse-battery-staple' } });

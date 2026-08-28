@@ -280,6 +280,7 @@ test('user shell keeps shared navigation while admin shell stays single-column a
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);
+  assert.doesNotMatch(userHtml, /href="admin\.php"/);
   assert.doesNotMatch(adminPhp, /shared-shell-sidebar|appModuleNav|userMenu/);
   assert.match(adminPhp, /id="topbarTitle"/);
   assert.match(adminPhp, /id="mainContent"/);

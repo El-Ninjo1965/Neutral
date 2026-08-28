@@ -1246,8 +1246,8 @@ final class Phase4AuthManager
 
     public function startSession(): void
     {
-        $cookieName = trim((string) ($this->config->env()['AUTH_SESSION_COOKIE_NAME'] ?? 'neutral_session'));
-        Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_session');
+        $cookieName = trim((string) ($this->config->env()['AUTH_ADMIN_SESSION_COOKIE_NAME'] ?? 'neutral_admin_session'));
+        Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_admin_session');
     }
 
     /**

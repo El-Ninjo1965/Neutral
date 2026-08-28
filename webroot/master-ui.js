@@ -160,11 +160,11 @@
       return null;
     }
 
-    if (hasRole(user, 'developer') || hasRole(user, 'admin') || hasPermission(user, 'system:view')) {
+    if (pageType === 'admin' && (hasRole(user, 'developer') || hasRole(user, 'admin') || hasPermission(user, 'system:view'))) {
       return 'admin.php';
     }
 
-    return 'index.html';
+    return pageType === 'developer' ? 'dev.html' : 'index.html';
   };
 
   const getVisibleModules = () => {
@@ -3022,7 +3022,7 @@
       });
     });
 
-    if (pageType !== 'admin' && canViewAdmin(currentUser)) {
+    if (pageType === 'admin' && canViewAdmin(currentUser)) {
       if (adminSection) adminSection.classList.remove('hidden');
       if (adminMenu) {
         adminMenu.innerHTML = '<button type="button" class="nav-item" data-view="admin:dashboard" data-href="admin.php">Administration</button>';
@@ -3378,7 +3378,7 @@
         window.location.replace(targetPage);
         return;
       }
-      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath && targetPage !== 'admin.php') {
+      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath) {
         window.location.replace(targetPage);
         return;
       }

@@ -96,6 +96,8 @@ Die User-App darf keine administrativen Funktionen enthalten.
 
 Admin-Session und User-Session sind unabhängig.
 
+Admin-Oberflächen verwenden ein separates Session-Cookie (`neutral_admin_session`) und dürfen den User-Session-Namespace nicht überschreiben.
+
 Ein Admin-Login darf keinen User-Login ersetzen.
 
 Ein User-Login darf keinen Admin-Login ersetzen.

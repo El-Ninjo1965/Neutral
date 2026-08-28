@@ -54,9 +54,9 @@ function request(pathname, { port, cookies = {} }) {
   });
 }
 
-function createSessionIdentity(sessionSavePath, sessionId, identity) {
+function createSessionIdentity(sessionSavePath, sessionId, identity, cookieName = 'neutral_admin_session') {
   const script = `
-session_name('neutral_session');
+session_name(getenv('NEUTRAL_TEST_SESSION_COOKIE_NAME'));
 session_id(getenv('NEUTRAL_TEST_SESSION_ID'));
 session_start();
 $_SESSION['auth_identity'] = json_decode((string) getenv('NEUTRAL_TEST_IDENTITY_JSON'), true);
@@ -69,7 +69,8 @@ session_write_close();
     env: {
       ...process.env,
       NEUTRAL_TEST_SESSION_ID: sessionId,
-      NEUTRAL_TEST_IDENTITY_JSON: JSON.stringify(identity)
+      NEUTRAL_TEST_IDENTITY_JSON: JSON.stringify(identity),
+      NEUTRAL_TEST_SESSION_COOKIE_NAME: cookieName
     },
     encoding: 'utf8'
   });
@@ -180,7 +181,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     });
     const result = await request('/admin.php', {
       port: serverPort,
-      cookies: { neutral_session: 'viewer-session' }
+      cookies: { neutral_admin_session: 'viewer-session' }
     });
     assert.equal(result.statusCode, 403);
     assert.match(result.body, /Access denied/i);
@@ -200,7 +201,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     });
     const result = await request('/admin.php', {
       port: serverPort,
-      cookies: { neutral_session: 'admin-session' }
+      cookies: { neutral_admin_session: 'admin-session' }
     });
     assert.equal(result.statusCode, 200);
     assert.match(result.body, /id="appShell"/);
@@ -208,13 +209,33 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.match(result.body, /src="admin-init\.js"/);
   });
 
-  test('Fall D: Runtime remains bootstrappable without setup.php', async () => {
+  test('Fall D: User session cookie does not unlock admin.php', async () => {
+    createSessionIdentity(sessionSavePath, 'mixed-session', {
+      userId: '101',
+      username: 'admin-user',
+      roles: ['admin'],
+      permissions: ['admin.read', 'admin.write'],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    }, 'neutral_admin_session');
+
+    const result = await request('/admin.php', {
+      port: serverPort,
+      cookies: { neutral_session: 'mixed-session' }
+    });
+    assert.equal(result.statusCode, 401);
+    assert.match(result.body, /Authentication required/i);
+  });
+
+  test('Fall E: Runtime remains bootstrappable without setup.php', async () => {
     const result = await request('/admin.php', { port: setuplessServerPort });
     assert.equal(result.statusCode, 401);
     assert.match(result.body, /Authentication required/i);
   });
 
-  test('Fall E: Existing PHP API endpoints remain functional', async () => {
+  test('Fall F: Existing PHP API endpoints remain functional', async () => {
     const status = await request('/api/status', { port: serverPort });
     assert.equal(status.statusCode, 200);
     assert.match(status.body, /"ok"\s*:\s*true/);

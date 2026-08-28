@@ -156,8 +156,8 @@ function render_access_denied_page(): void
 }
 
 $runtime = neutral_bootstrap();
-$cookieName = trim((string) ($runtime->config()->env()['AUTH_SESSION_COOKIE_NAME'] ?? 'neutral_session'));
-Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_session');
+$cookieName = trim((string) ($runtime->config()->env()['AUTH_ADMIN_SESSION_COOKIE_NAME'] ?? 'neutral_admin_session'));
+Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_admin_session');
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
