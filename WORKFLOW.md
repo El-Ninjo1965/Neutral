@@ -120,6 +120,8 @@ Ziel:
 
 Bei einem Serverwechsel möglichst nur eine ENV-/Konfigurationsdatei anpassen.
 
+Die öffentliche Browser-App wird als eigenes Bundle unter `/web-app/` ausgeliefert; sie verwendet `../platform/` als gemeinsamen Framework-Sibling und enthält ihre lokalen Frontend-Dateien sowie `app/` für die Moduldiscovery.
+
 ---
 
 ## 8. Server

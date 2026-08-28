@@ -85,6 +85,11 @@ Damit ist über den produktiven PHP-Prozess verifiziert:
 | webroot/master-ui.js | /webroot/master-ui.js | Master-Frontend-Logik. |
 | webroot/user-app.js | /webroot/user-app.js | Benutzer-Frontend-Logik. |
 | webroot/api-client.js | /webroot/api-client.js | API-Client für Browser- und UI-Anfragen. |
+| web-app/index.html | /web-app/index.html | Öffentlicher Browser-Bestand für die User-App. |
+| web-app/style.css | /web-app/style.css | CSS für den öffentlichen User-App-Bestand. |
+| web-app/user-app.js | /web-app/user-app.js | Browser-Logik der öffentlichen User-App. |
+| web-app/api-client.js | /web-app/api-client.js | API-Client für die öffentliche User-App. |
+| web-app/app/ | /web-app/app/ | Lokale Modulquellen für den öffentlichen Browser-Bestand. |
 | webroot/admin-init.js | /webroot/admin-init.js | Admin-Initialisierung. |
 | webroot/admin/common.js | /webroot/admin/common.js | Gemeinsame Admin-Funktionen. |
 | webroot/admin/index.js | /webroot/admin/index.js | Admin-Startseite / Router. |

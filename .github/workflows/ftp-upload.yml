@@ -83,6 +83,13 @@ jobs:
           copy_file webroot/admin/settings-view.js
           copy_file webroot/admin/users-view.js
 
+          mkdir -p "$STAGING_DIR/web-app/app"
+          cp -p webroot/index.html "$STAGING_DIR/web-app/index.html"
+          cp -p webroot/style.css "$STAGING_DIR/web-app/style.css"
+          cp -p webroot/user-app.js "$STAGING_DIR/web-app/user-app.js"
+          cp -p webroot/api-client.js "$STAGING_DIR/web-app/api-client.js"
+          cp -a app/. "$STAGING_DIR/web-app/app"/
+
           mkdir -p "$STAGING_DIR/apps/neutral-app"
           copy_file apps/neutral-app/app-info.json
           copy_file apps/neutral-app/index.html

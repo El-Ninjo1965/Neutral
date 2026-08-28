@@ -217,6 +217,7 @@ GPS Plus ist NICHT Teil dieser Aufgabe.
 - [ ] Serverinstallation aus ZIP ermöglichen
 - [ ] zentrale ENV-Konfiguration definieren
 - [ ] Konfiguration außerhalb des Public Webroot ermöglichen
+- [x] öffentlichen Browser-Bestand als eigenes `/web-app/`-Bundle ausliefern
 - [ ] neue Serverinstallation testen
 - [ ] Datenbankinstallation testen
 - [ ] API-Verbindung nach Neuinstallation testen

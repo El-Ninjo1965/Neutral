@@ -55,6 +55,17 @@ const allowedEntries = [
   'webroot/api'
 ];
 
+const publicWebAppFileCopies = [
+  { source: 'webroot/index.html', target: 'web-app/index.html' },
+  { source: 'webroot/style.css', target: 'web-app/style.css' },
+  { source: 'webroot/user-app.js', target: 'web-app/user-app.js' },
+  { source: 'webroot/api-client.js', target: 'web-app/api-client.js' }
+];
+
+const publicWebAppDirectoryCopies = [
+  { source: 'app', target: 'web-app/app' }
+];
+
 const explicitCleanupTargets = [
   '/webroot/admin.html',
   '/webroot/setup.html'
@@ -225,6 +236,23 @@ function copyDirectory(srcDir, destDir) {
   }
 }
 
+function copyFileToStaging(stagingRoot, sourceRelativePath, targetRelativePath) {
+  const sourcePath = path.join(projectRoot, sourceRelativePath);
+  const targetPath = path.join(stagingRoot, targetRelativePath);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.copyFileSync(sourcePath, targetPath);
+}
+
+function copyPublicWebAppBundle(stagingRoot) {
+  for (const fileCopy of publicWebAppFileCopies) {
+    copyFileToStaging(stagingRoot, fileCopy.source, fileCopy.target);
+  }
+
+  for (const directoryCopy of publicWebAppDirectoryCopies) {
+    copyDirectory(path.join(projectRoot, directoryCopy.source), path.join(stagingRoot, directoryCopy.target));
+  }
+}
+
 function buildStagingTree() {
   const stagingRoot = path.join(projectRoot, '.deploy-staging');
   fs.rmSync(stagingRoot, { recursive: true, force: true });
@@ -250,6 +278,8 @@ function buildStagingTree() {
 
     fs.copyFileSync(sourcePath, targetPath);
   }
+
+  copyPublicWebAppBundle(stagingRoot);
 
   return { stagingRoot, missing };
 }
@@ -383,6 +413,9 @@ module.exports = {
   buildRemoteDeleteTargets,
   collectManifestFiles,
   compareDeploymentFiles,
+  copyPublicWebAppBundle,
+  publicWebAppDirectoryCopies,
+  publicWebAppFileCopies,
   readDeploymentManifest,
   writeDeploymentManifest,
   normalizeManifestPath,
