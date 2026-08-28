@@ -273,6 +273,31 @@ test('app config exposes a single neutral app name', () => {
   assert.equal(typeof context.window.ConfigManager.get('bootstrap').developerPasswordHash, 'string');
 });
 
+test('browser config resolves production API base independently of the web-app path', () => {
+  const windowStub = {
+    window: null,
+    location: {
+      origin: 'https://www.turbolikes.com',
+      hostname: 'www.turbolikes.com',
+      pathname: '/index/web-app/index.html'
+    },
+    localStorage: {
+      getItem() { return null; },
+      setItem() {},
+      removeItem() {}
+    },
+    Core: { emit() {} },
+    ConfigManager: null
+  };
+  windowStub.window = windowStub;
+  const context = vm.createContext(windowStub);
+  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
+  context.window.ConfigManager.init();
+
+  assert.equal(context.window.ConfigManager.get('api').baseUrl, 'https://www.turbolikes.com/index/app/neutral/webroot/api');
+  assert.equal(context.window.ConfigManager.get('app').serverUrl, 'https://www.turbolikes.com/index/app/neutral/webroot');
+});
+
 test('user shell keeps shared navigation while admin shell stays single-column and sidebar-free', () => {
   const userHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/index.html'), 'utf8');
   const adminPhp = fs.readFileSync(path.resolve(__dirname, '../core/php/views/admin-ui.php'), 'utf8');

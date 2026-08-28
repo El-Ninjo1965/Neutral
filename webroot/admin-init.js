@@ -59,18 +59,20 @@
       const roleElement = document.getElementById('summaryRoleBadge');
       const userRole = roleElement ? roleElement.textContent.toLowerCase() : 'admin';
 
-      // Initialize API client using the current deployment base path so /api resolves correctly on nested installs.
+      const configuredBase = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+        ? (window.ConfigManager.get('api') && window.ConfigManager.get('api').baseUrl) || (window.ConfigManager.get('app') && window.ConfigManager.get('app').serverUrl) || ''
+        : '';
       const currentOrigin = (window.location && window.location.origin && window.location.origin !== 'null')
         ? window.location.origin.replace(/\/+$/, '')
         : (window.location && window.location.protocol && window.location.hostname)
           ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`.replace(/\/+$/, '')
           : 'http://localhost';
-      const pathname = window.location && typeof window.location.pathname === 'string'
-        ? window.location.pathname
-        : '/';
-      const basePath = pathname.replace(/\/[^/]*$/, '');
-      const normalizedBasePath = basePath === '/' ? '' : basePath.replace(/\/+$/, '');
-      const apiClient = new ApiClient(`${currentOrigin}${normalizedBasePath}`);
+      const apiBase = configuredBase && typeof configuredBase === 'string' && configuredBase.trim()
+        ? (/^(https?:)?\/\//i.test(configuredBase.trim())
+          ? configuredBase.trim().replace(/\/+$/, '')
+          : `${currentOrigin}${configuredBase.trim().startsWith('/') ? configuredBase.trim() : `/${configuredBase.trim()}`}`)
+        : `${currentOrigin}/index/app/neutral/webroot/api`;
+      const apiClient = new ApiClient(apiBase);
       apiClient.setAuthRole(userRole);
 
       const statusResult = await apiClient.getStatus();

@@ -326,24 +326,30 @@
     : 'http://localhost';
 
   const resolveRuntimeServerUrl = () => {
-    const configured = typeof window !== 'undefined' && window.ConfigManager && typeof window.ConfigManager.get === 'function'
-      ? (window.ConfigManager.get('app') && window.ConfigManager.get('app').serverUrl) || (window.ConfigManager.get('api') && window.ConfigManager.get('api').baseUrl)
-      : null;
-    if (configured && typeof configured === 'string' && configured.trim()) {
-      return configured.trim().replace(/\/+$/, '');
-    }
-    const origin = resolveRuntimeOrigin();
-    return origin.replace(/\/+$/, '');
+    const baseUrl = resolveRuntimeApiClientBase();
+    return baseUrl.replace(/\/api$/, '').replace(/\/+$/, '');
   };
 
   const resolveRuntimeApiClientBase = () => {
+    const configuredApiBase = typeof window !== 'undefined' && window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? (window.ConfigManager.get('api') && window.ConfigManager.get('api').baseUrl) || (window.ConfigManager.get('app') && window.ConfigManager.get('app').serverUrl) || ''
+      : '';
+    if (configuredApiBase && typeof configuredApiBase === 'string' && configuredApiBase.trim()) {
+      const raw = configuredApiBase.trim().replace(/\/+$/, '');
+      if (/^(https?:)?\/\//i.test(raw)) {
+        return raw;
+      }
+      if (raw.startsWith('/')) {
+        return `${resolveRuntimeOrigin().replace(/\/+$/, '')}${raw}`;
+      }
+      return `${resolveRuntimeOrigin().replace(/\/+$/, '')}/${raw}`;
+    }
     const origin = resolveRuntimeOrigin().replace(/\/+$/, '');
-    const pathname = typeof window !== 'undefined' && window.location && typeof window.location.pathname === 'string'
-      ? window.location.pathname
-      : '/';
-    const basePath = pathname.replace(/\/[^/]*$/, '');
-    const normalizedBasePath = basePath === '/' ? '' : basePath.replace(/\/+$/, '');
-    return `${origin}${normalizedBasePath}`;
+    const hostname = typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string'
+      ? window.location.hostname.trim().toLowerCase().replace(/^\[|\]$/g, '')
+      : '';
+    const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(hostname);
+    return isLocalHost ? `${origin}/api` : `${origin}/index/app/neutral/webroot/api`;
   };
 
   const fetchJson = async (url, fallback = { ok: false }, options = {}) => {

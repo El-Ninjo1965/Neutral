@@ -61,9 +61,32 @@
          */
         loadDefaultConfigs() {
             const runtimeOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
-                ? window.location.origin
+                    ? window.location.origin.replace(/\/+$/, '')
                 : 'http://localhost';
-            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}/api`;
+                const runtimeHostname = (typeof window !== 'undefined' && window.location && typeof window.location.hostname === 'string')
+                    ? window.location.hostname.trim().toLowerCase().replace(/^\[|\]$/g, '')
+                    : '';
+                const runtimeConfig = (typeof window !== 'undefined' && window.NeutralRuntimeConfig && typeof window.NeutralRuntimeConfig === 'object')
+                    ? window.NeutralRuntimeConfig
+                    : null;
+                const normalizeAbsoluteUrl = (value) => {
+                    const raw = String(value || '').trim();
+                    if (!raw) {
+                        return '';
+                    }
+                    if (/^(https?:)?\/\//i.test(raw)) {
+                        return raw.replace(/\/+$/, '');
+                    }
+                    if (raw.startsWith('/')) {
+                        return `${runtimeOrigin}${raw}`.replace(/\/+$/, '');
+                    }
+                    return `${runtimeOrigin}/${raw}`.replace(/\/+$/, '');
+                };
+                const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(runtimeHostname);
+                const configuredServerUrl = normalizeAbsoluteUrl(runtimeConfig && runtimeConfig.serverUrl ? runtimeConfig.serverUrl : '');
+                const configuredApiBase = normalizeAbsoluteUrl(runtimeConfig && runtimeConfig.apiBase ? runtimeConfig.apiBase : '');
+                const runtimeApiBaseUrl = configuredApiBase || (isLocalHost ? `${runtimeOrigin}/api` : `${runtimeOrigin}/index/app/neutral/webroot/api`);
+                const runtimeServerUrl = configuredServerUrl || runtimeApiBaseUrl.replace(/\/api$/, '');
 
             // Application Config
             this.set('app', {
@@ -71,6 +94,7 @@
                 version: '1.0.0',
                 environment: 'development',
                 debug: true,
+                serverUrl: runtimeServerUrl,
                 logging: {
                     level: 'debug',
                     maxLogs: 1000
