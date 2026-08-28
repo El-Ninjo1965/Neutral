@@ -1058,6 +1058,26 @@ test('marks gps permission denied without starting a watcher', async () => {
   assert.equal(geolocationState.watchCalls, 0);
 });
 
+test('rejects gps tracking immediately when permission is denied', async () => {
+  cleanupRuntimeState();
+
+  const { sandbox, geolocationState } = createGpsModuleContext({ permissionState: 'denied' });
+  await sandbox.ModuleManager.discoverModules();
+  sandbox.ModuleManager.install('gps');
+  sandbox.ModuleManager.enable('gps');
+
+  const gps = sandbox.ModuleManager.get('gps');
+  assert.ok(gps);
+
+  const result = gps.startTracking();
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'PERMISSION_DENIED');
+  assert.equal(gps.getPermissionState(), 'denied');
+  assert.equal(gps.isTracking(), false);
+  assert.equal(geolocationState.watchCalls, 0);
+  assert.equal(geolocationState.activeWatches.size, 0);
+});
+
 test('blocks gps usage when the current user lacks the module usage permission', async () => {
   cleanupRuntimeState();
 

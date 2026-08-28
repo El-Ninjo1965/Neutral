@@ -16,6 +16,7 @@ This is the current operational task ledger for the repository. It is intentiona
 - Admin light/dark mode is expected to flow through the shared theme tokens for header, content, cards, tables, forms, alerts, modals, and dynamic admin views.
 - The last real browser check of the deployed admin UI was completed successfully by the project operator.
 - The GPS module remains the existing reference module and now supports DISCOVER -> REGISTER / INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE -> UNINSTALL.
+- GPS permission changes now refresh the runtime status and the standalone UI, so denied geolocation state does not stay stale during tracking startup.
 - Module-specific permissions can now be declared by the module manifest, assigned in Admin -> Modules, and synchronized into the shared RBAC catalog on install.
 - The public module catalog must expose lifecycle-aware module state and respect server-resolved module visibility permissions so active modules can appear in the user app without discovery implicitly activating them.
 - Modules may declare a lightweight standalone test entry for isolated developer validation when they do not require the full app runtime.

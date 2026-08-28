@@ -68,6 +68,7 @@ Rules:
 - Installing a module must not auto-activate it, but it may synchronize module-declared permissions into the shared RBAC catalog.
 - Uninstall must remove module registration/state, module-scoped permissions, and the moduleSettings.<moduleId> namespace; database tables may only be dropped when the manifest explicitly declares them and marks them safe for destroy-on-uninstall cleanup.
 - Built-in roles remain protected from general editing, but module-specific permission assignment may still grant or revoke a module's own permissions on those roles through the module-management flow.
+- GPS tracking start must respect an already-denied browser permission immediately and the module UI should listen for permission-change events so the status label stays accurate.
 
 ## Admin, authentication, and sessions
 
