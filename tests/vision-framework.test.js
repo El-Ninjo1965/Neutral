@@ -45,7 +45,7 @@ test('theme engine supports neutral and app-specific themes', () => {
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/theme-engine.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/theme-engine.js'));
 
   const neutralTheme = context.window.ThemeEngine.getCurrentTheme();
   assert.equal(neutralTheme.id, 'neutral-theme');
@@ -117,7 +117,7 @@ test('media manager optimizes supported image uploads', async () => {
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/media-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/media-manager.js'));
 
   const result = await context.window.MediaManager.optimizeImage({
     name: 'sample.jpg',
@@ -182,10 +182,10 @@ test('developer setup persists a hashed local password for login and admin acces
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/core-auth.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/core-user.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/local-auth.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/core-auth.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/core-user.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/local-auth.js'));
 
   windowStub.ConfigManager.init();
 
@@ -244,10 +244,10 @@ test('developer setup persists a hashed local password for login and admin acces
   reloadedWindow.window = reloadedWindow;
 
   const reloadedContext = vm.createContext(reloadedWindow);
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/core-auth.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/core-user.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/local-auth.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../webapp/platform/config-manager.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../webapp/platform/core-auth.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../webapp/platform/core-user.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../webapp/platform/local-auth.js'));
   reloadedWindow.ConfigManager.init();
 
   const loginResult = await reloadedContext.window.LocalAuth.login({
@@ -264,7 +264,7 @@ test('app config exposes a single neutral app name', () => {
   const windowStub = { window: null, ConfigManager: null };
   windowStub.window = windowStub;
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/config-manager.js'));
   context.window.ConfigManager.init();
 
   const appName = context.window.ConfigManager.get('app').name;
@@ -291,17 +291,17 @@ test('browser config resolves production API base independently of the web-app p
   };
   windowStub.window = windowStub;
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../webapp/platform/config-manager.js'));
   context.window.ConfigManager.init();
 
-  assert.equal(context.window.ConfigManager.get('api').baseUrl, 'https://www.turbolikes.com/index/app/neutral/webroot/api');
-  assert.equal(context.window.ConfigManager.get('app').serverUrl, 'https://www.turbolikes.com/index/app/neutral/webroot');
+  assert.equal(context.window.ConfigManager.get('api').baseUrl, 'https://www.turbolikes.com/api');
+  assert.equal(context.window.ConfigManager.get('app').serverUrl, 'https://www.turbolikes.com');
 });
 
 test('user shell keeps shared navigation while admin shell stays single-column and sidebar-free', () => {
-  const userHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/index.html'), 'utf8');
-  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../core/php/views/admin-ui.php'), 'utf8');
-  const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../webroot/admin.php'), 'utf8');
+  const userHtml = fs.readFileSync(path.resolve(__dirname, '../webapp/index.html'), 'utf8');
+  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../server/php/views/admin-ui.php'), 'utf8');
+  const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../server/public/admin.php'), 'utf8');
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);

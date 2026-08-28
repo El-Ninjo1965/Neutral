@@ -17,6 +17,12 @@ Der Administrationsbereich dient ausschließlich der Verwaltung der Anwendung, B
 
 Administrative Funktionen gehören NICHT in die User-App.
 
+Die physische Struktur folgt dieser Trennung:
+
+- [webapp/](/workspaces/Neutral/webapp) enthält die komplette Browser-/User-App inklusive Plattform, Modulen und statischen Assets.
+- [server/](/workspaces/Neutral/server) enthält Backend, Admin-Server, PHP-Entrypoints und serverseitige Dienste.
+- Das Root bleibt auf Projektdateien wie Docs, Package-Metadaten und Deployment-Konfiguration beschränkt.
+
 ---
 
 ## 2. Grundprinzip

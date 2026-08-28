@@ -166,9 +166,10 @@ module.exports = {
   projectRoot: rootDir,
   rootDir,
   installRoot: rootDir,
-  platformPath: path.join(rootDir, 'platform'),
-  appPath: path.join(rootDir, 'app'),
-  webRootDir: path.join(rootDir, 'webroot'),
+  platformPath: path.join(rootDir, 'webapp', 'platform'),
+  appPath: path.join(rootDir, 'webapp', 'app'),
+  webAppDir: path.join(rootDir, 'webapp'),
+  webRootDir: path.join(rootDir, 'server', 'public'),
   testsPath: path.join(rootDir, 'tests'),
   apiBase,
   runtime: {
@@ -179,7 +180,7 @@ module.exports = {
       npm: process.env.NPM_BIN || process.env.npm_config_prefix || 'npm',
       npx: process.env.NPX_BIN || 'npx'
     },
-    appRoot: rootDir,
+    appRoot: path.join(rootDir, 'webapp'),
     projectRoot: rootDir,
     installationPath: rootDir
   },

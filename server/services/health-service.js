@@ -5,7 +5,7 @@ const releaseService = require('./release-service');
 
 let frameworkRuntime = null;
 try {
-  frameworkRuntime = require('../../platform/master-framework');
+  frameworkRuntime = require('../../webapp/platform/master-framework');
 } catch (error) {
   frameworkRuntime = null;
 }

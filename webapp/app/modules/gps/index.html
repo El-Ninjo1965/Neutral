@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neutral GPS standalone test</title>
+    <link rel="stylesheet" href="../../../style.css" />
+  </head>
+  <body data-theme="light">
+    <main class="user-app-content" style="max-width: 960px; margin: 0 auto;">
+      <section class="card">
+        <div class="card-header">
+          <h1 class="card-title">GPS standalone test</h1>
+        </div>
+        <p class="small-muted">
+          This developer preview loads only the GPS module with lightweight local shims.
+          It is intended for isolated UI and browser geolocation checks, not as a second production runtime.
+        </p>
+        <div id="gpsStandaloneHost"></div>
+      </section>
+    </main>
+    <script>
+      (() => {
+        const store = new Map();
+        const config = {
+          moduleSettings: {
+            gps: {
+              enableHighAccuracy: true,
+              timeoutMs: 10000,
+              maximumAgeMs: 0,
+              persistLocationHistory: false
+            }
+          }
+        };
+
+        const readPath = (path, fallback = null) => {
+          if (typeof path !== 'string' || !path.trim()) {
+            return fallback;
+          }
+          let cursor = config;
+          for (const segment of path.split('.')) {
+            if (!cursor || typeof cursor !== 'object' || !(segment in cursor)) {
+              return fallback;
+            }
+            cursor = cursor[segment];
+          }
+          return cursor;
+        };
+
+        window.CoreEventBus = { emit() {} };
+        window.CoreAudit = { record() {} };
+        window.CoreStorage = {
+          get(key) {
+            return store.has(key) ? store.get(key) : null;
+          },
+          set(key, value) {
+            store.set(key, value);
+            return value;
+          }
+        };
+        window.DatabaseManager = {
+          async save() {
+            return true;
+          }
+        };
+        window.ConfigManager = {
+          getPath(path, fallback) {
+            const value = readPath(path, fallback);
+            return value === undefined ? fallback : value;
+          }
+        };
+        window.CoreAuth = {
+          getCurrentUser() {
+            return {
+              id: 'standalone-preview',
+              username: 'standalone-preview',
+              displayName: 'Standalone Preview',
+              roles: ['developer'],
+              permissions: ['gps.view', 'gps.use', 'gps.manage', 'gps.admin']
+            };
+          }
+        };
+        window.CoreAccess = {
+          hasPermission(user, permission) {
+            return !!user && Array.isArray(user.permissions) && user.permissions.includes(permission);
+          }
+        };
+      })();
+    </script>
+    <script src="index.js"></script>
+    <script>
+      (() => {
+        const host = document.getElementById('gpsStandaloneHost');
+        if (!window.GpsModule || !host) {
+          return;
+        }
+        window.GpsModule.install();
+        window.GpsModule.initialize();
+        window.GpsModule.enable();
+        window.GpsModule.renderUserInterface(host);
+      })();
+    </script>
+  </body>
+</html>

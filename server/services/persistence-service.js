@@ -7,7 +7,7 @@ const path = require('node:path');
 let MasterFramework = null;
 const getMasterFramework = () => {
   if (!MasterFramework) {
-    MasterFramework = require('../../platform/master-framework');
+    MasterFramework = require('../../webapp/platform/master-framework');
   }
   return MasterFramework;
 };
@@ -93,4 +93,3 @@ module.exports = {
   getConfigPath,
   ensureConfigDir
 };
-

@@ -120,7 +120,7 @@ Ziel:
 
 Bei einem Serverwechsel möglichst nur eine ENV-/Konfigurationsdatei anpassen.
 
-Die öffentliche Browser-App wird als eigenes Bundle unter `/web-app/` ausgeliefert; sie verwendet `../platform/` als gemeinsamen Framework-Sibling und enthält ihre lokalen Frontend-Dateien sowie `app/` für die Moduldiscovery.
+Die öffentliche Browser-App lebt im Repository unter [webapp/](/workspaces/Neutral/webapp) und wird serverseitig auf die öffentliche App-URL gemappt. Sie enthält die Browser-Assets, die Plattform, die Module und die App-Metadaten. Der Serverbereich lebt separat unter [server/](/workspaces/Neutral/server), inklusive öffentlicher PHP-Entrypoints und Admin-Oberfläche.
 
 ---
 

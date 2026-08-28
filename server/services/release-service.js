@@ -73,7 +73,7 @@ const writeState = (nextState) => {
 
 const getFrameworkRuntime = () => {
   try {
-    return require('../../platform/master-framework');
+    return require('../../webapp/platform/master-framework');
   } catch (error) {
     return null;
   }

@@ -16,7 +16,7 @@ const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP
 const allowedEntries = [
   'package.json',
   'package-lock.json',
-  'platform',
+  'webapp',
   'server/server.js',
   'server/bootstrap/server.js',
   'server/config/index.js',
@@ -24,46 +24,8 @@ const allowedEntries = [
   'server/middleware/input-validation.js',
   'server/api',
   'server/services',
-  'app/index.js',
-  'app/modules/index.json',
-  'app/modules/gps/index.html',
-  'app/modules/gps/index.js',
-  'app/modules/gps/module.json',
-  'apps/neutral-app/app-info.json',
-  'apps/neutral-app/index.html',
-  'core/php/bootstrap.php',
-  'core/php/src',
-  'core/php/views',
-  'webroot/index.html',
-  'webroot/setup.php',
-  'webroot/diagnose.php',
-  'webroot/admin.php',
-  'webroot/dev.html',
-  'webroot/style.css',
-  'webroot/master-ui.js',
-  'webroot/user-app.js',
-  'webroot/api-client.js',
-  'webroot/admin-init.js',
-  'webroot/admin/common.js',
-  'webroot/admin/index.js',
-  'webroot/admin/audit-view.js',
-  'webroot/admin/modules-view.js',
-  'webroot/admin/roles-view.js',
-  'webroot/admin/settings-view.js',
-  'webroot/admin/users-view.js',
-  'webroot/api/.htaccess',
-  'webroot/api'
-];
-
-const publicWebAppFileCopies = [
-  { source: 'webroot/index.html', target: 'web-app/index.html' },
-  { source: 'webroot/style.css', target: 'web-app/style.css' },
-  { source: 'webroot/user-app.js', target: 'web-app/user-app.js' },
-  { source: 'webroot/api-client.js', target: 'web-app/api-client.js' }
-];
-
-const publicWebAppDirectoryCopies = [
-  { source: 'app', target: 'web-app/app' }
+  'server/php',
+  'server/public',
 ];
 
 const explicitCleanupTargets = [
@@ -236,23 +198,6 @@ function copyDirectory(srcDir, destDir) {
   }
 }
 
-function copyFileToStaging(stagingRoot, sourceRelativePath, targetRelativePath) {
-  const sourcePath = path.join(projectRoot, sourceRelativePath);
-  const targetPath = path.join(stagingRoot, targetRelativePath);
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  fs.copyFileSync(sourcePath, targetPath);
-}
-
-function copyPublicWebAppBundle(stagingRoot) {
-  for (const fileCopy of publicWebAppFileCopies) {
-    copyFileToStaging(stagingRoot, fileCopy.source, fileCopy.target);
-  }
-
-  for (const directoryCopy of publicWebAppDirectoryCopies) {
-    copyDirectory(path.join(projectRoot, directoryCopy.source), path.join(stagingRoot, directoryCopy.target));
-  }
-}
-
 function buildStagingTree() {
   const stagingRoot = path.join(projectRoot, '.deploy-staging');
   fs.rmSync(stagingRoot, { recursive: true, force: true });
@@ -278,8 +223,6 @@ function buildStagingTree() {
 
     fs.copyFileSync(sourcePath, targetPath);
   }
-
-  copyPublicWebAppBundle(stagingRoot);
 
   return { stagingRoot, missing };
 }
@@ -413,9 +356,6 @@ module.exports = {
   buildRemoteDeleteTargets,
   collectManifestFiles,
   compareDeploymentFiles,
-  copyPublicWebAppBundle,
-  publicWebAppDirectoryCopies,
-  publicWebAppFileCopies,
   readDeploymentManifest,
   writeDeploymentManifest,
   normalizeManifestPath,

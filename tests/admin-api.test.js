@@ -5,7 +5,7 @@ const path = require('node:path');
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const MasterFramework = require('../platform/master-framework');
+const MasterFramework = require('../webapp/platform/master-framework');
 const ServerBootstrap = require('../server/bootstrap/server.js');
 
 /**

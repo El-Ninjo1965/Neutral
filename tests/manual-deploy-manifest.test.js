@@ -4,45 +4,21 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, describe } = require('node:test');
-const {
-  allowedEntries,
-  compareDeploymentFiles,
-  copyPublicWebAppBundle,
-  publicWebAppDirectoryCopies,
-  publicWebAppFileCopies
-} = require('../scripts/manual-ftps-deploy.js');
+const { allowedEntries, buildStagingTree, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
-  test('gps standalone entry is allowlisted for deployment', () => {
-    assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
+  test('webapp and server public roots are allowlisted for deployment', () => {
+    assert.ok(allowedEntries.includes('webapp'));
+    assert.ok(allowedEntries.includes('server/public'));
   });
 
-  test('public web-app bundle is staged from the user shell sources', () => {
-    assert.deepStrictEqual(
-      publicWebAppFileCopies.map((entry) => entry.target),
-      [
-        'web-app/index.html',
-        'web-app/style.css',
-        'web-app/user-app.js',
-        'web-app/api-client.js'
-      ]
-    );
-    assert.deepStrictEqual(
-      publicWebAppDirectoryCopies.map((entry) => entry.target),
-      ['web-app/app']
-    );
-  });
-
-  test('public web-app bundle copies the expected files into staging', () => {
-    const stagingRoot = fs.mkdtempSync(path.join(fs.realpathSync(require('node:os').tmpdir()), 'neutral-web-app-'));
+  test('staging tree includes the new webapp and server public structure', () => {
+    const { stagingRoot } = buildStagingTree();
     try {
-      copyPublicWebAppBundle(stagingRoot);
-      for (const entry of publicWebAppFileCopies) {
-        assert.ok(fs.existsSync(path.join(stagingRoot, entry.target)));
-      }
-      for (const entry of publicWebAppDirectoryCopies) {
-        assert.ok(fs.existsSync(path.join(stagingRoot, entry.target, 'modules', 'gps', 'index.js')));
-      }
+      assert.ok(fs.existsSync(path.join(stagingRoot, 'webapp', 'index.html')));
+      assert.ok(fs.existsSync(path.join(stagingRoot, 'webapp', 'app', 'modules', 'gps', 'index.js')));
+      assert.ok(fs.existsSync(path.join(stagingRoot, 'server', 'public', 'admin.php')));
+      assert.ok(fs.existsSync(path.join(stagingRoot, 'server', 'php', 'bootstrap.php')));
     } finally {
       fs.rmSync(stagingRoot, { recursive: true, force: true });
     }

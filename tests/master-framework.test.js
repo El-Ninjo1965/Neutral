@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const Framework = require('../platform/master-framework');
+const Framework = require('../webapp/platform/master-framework');
 const ServerBootstrap = require('../server/bootstrap/server');
 
 const cleanupRuntimeState = () => {
@@ -164,11 +164,11 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
 
   const base = path.resolve(__dirname, '..');
   for (const scriptPath of [
-    'platform/module-interface.js',
-    'platform/module-registry.js',
-    'platform/module-manager.js',
-    'platform/core-loader.js',
-    'app/modules/gps/index.js'
+    'webapp/platform/module-interface.js',
+    'webapp/platform/module-registry.js',
+    'webapp/platform/module-manager.js',
+    'webapp/platform/core-loader.js',
+    'webapp/app/modules/gps/index.js'
   ]) {
     loadScriptIntoContext(sandbox, path.join(base, scriptPath));
   }
@@ -229,7 +229,7 @@ test('prefers the active app in the app listing and keeps the neutral app as the
 
 test('loads the current app from the /apps/<app-id>/app-info.json manifest', () => {
   const runtime = Framework;
-  const appRoot = path.resolve(__dirname, '../apps/neutral-app');
+  const appRoot = path.resolve(__dirname, '../webapp/apps/neutral-app');
   const manifestPath = path.join(appRoot, 'app-info.json');
   assert.equal(fs.existsSync(manifestPath), true);
 
@@ -251,7 +251,7 @@ test('loads the current app from the /apps/<app-id>/app-info.json manifest', () 
 });
 
 test('exposes the discovered GPS module through the admin module API', async () => {
-  const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../app/modules') });
+  const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../webapp/app/modules') });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 
   const port = server.address().port;
@@ -342,7 +342,7 @@ test('preserves discovered module lifecycle state instead of forcing inactive in
   context.window = context;
   vm.createContext(context);
 
-  loadScriptIntoContext(context, path.resolve(__dirname, '../platform/module-manager.js'));
+  loadScriptIntoContext(context, path.resolve(__dirname, '../webapp/platform/module-manager.js'));
 
   const discovered = await context.ModuleManager.discoverModules();
   assert.equal(discovered.length, 1);
@@ -358,7 +358,7 @@ test('installing a module through the admin facade keeps it inactive until activ
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext();
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../webapp/platform/core-admin.js'));
 
   sandbox.ModuleManager.register(sandbox.GpsModule);
   sandbox.AdminModule.init();
@@ -627,7 +627,7 @@ test('allows developer roles to pass resource-scoped user write checks', () => {
   };
   context.window = context;
   vm.createContext(context);
-  loadScriptIntoContext(context, path.resolve(__dirname, '../platform/core-access.js'));
+  loadScriptIntoContext(context, path.resolve(__dirname, '../webapp/platform/core-access.js'));
 
   const result = context.window.CoreAccess.can({ id: 'dev-1', roles: ['developer'] }, 'user:write', 'user');
   assert.equal(result.ok, true);
@@ -1107,8 +1107,8 @@ test('registers module-provided admin settings and applies them to gps runtime o
   cleanupRuntimeState();
 
   const { sandbox, geolocationState } = createGpsModuleContext();
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../webapp/platform/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../webapp/platform/core-admin.js'));
 
   sandbox.ConfigManager.init();
   sandbox.ModuleManager.register(sandbox.GpsModule);
@@ -1174,10 +1174,10 @@ test('updates an existing user role and status through the user and admin facade
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-access.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-access.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-admin.js'));
 
   sandbox.ConfigManager.init();
   const created = await sandbox.UserModule.createUser({
@@ -1368,9 +1368,9 @@ test('activates installation and bootstraps the developer user when the runtime 
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/master-framework.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/master-framework.js'));
 
   const runtime = sandbox.MasterFramework;
   runtime.setupState = {
@@ -1427,9 +1427,9 @@ test('bootstraps the developer user even when other users already exist', async 
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-access.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-access.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'webapp/platform/core-user.js'));
 
   sandbox.ConfigManager.init();
   sandbox.ConfigManager.set('bootstrap', {

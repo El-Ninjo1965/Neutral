@@ -2,6 +2,12 @@
 
 Dieser Leitfaden beschreibt den minimalen, produktiven Betriebbestand der Neutral-Serveranwendung. Der Deploy darf ausschließlich diesen Bestand enthalten; das komplette Repository darf nicht an den Server übertragen werden.
 
+## Aktuelle Repository-Struktur
+
+- [webapp/](/workspaces/Neutral/webapp) enthält die komplette Browser-/User-App.
+- [server/](/workspaces/Neutral/server) enthält Backend, öffentliche PHP-Entrypoints und Admin-Server.
+- Das Root enthält nur Projekt- und Deploy-Metadaten.
+
 ## Verifizierte Produktionsfakten
 
 Die aktuelle Produktionsprüfung zeigt:
@@ -62,40 +68,16 @@ Damit ist über den produktiven PHP-Prozess verifiziert:
 | --- | --- | --- |
 | package.json | /package.json | Node-Startpunkt und Runtime-Abhängigkeiten. |
 | package-lock.json | /package-lock.json | Reproduzierbare, sichere Paketinstallation im Produktivbetrieb. |
-| platform/ | /platform/ | Kern-Framework-Module, App-/Module-Registry, Sicherheits- und Runtime-Logik. |
-| server/server.js | /server/server.js | Server-Entry-Point für den kompletten HTTP-Service. |
-| server/bootstrap/server.js | /server/bootstrap/server.js | Bootstrap, Routing, Auth, API-Handhabung und statische Bereitstellung. |
+| webapp/ | /webapp/ | Komplette Browser-/User-App inklusive Plattform, Module und App-Metadaten. |
+| server/server.js | /server/server.js | Node-Server-Entry-Point für den HTTP-Service. |
+| server/bootstrap/server.js | /server/bootstrap/server.js | Bootstrap, Routing, Auth, API und statische Bereitstellung. |
 | server/config/index.js | /server/config/index.js | Laufzeit-Konfiguration für Host, Port, DB, Auth und Server-Modus. |
 | server/database/connection.js | /server/database/connection.js | Datenbank-Connector / DB-Layer-Initialisierung. |
 | server/middleware/input-validation.js | /server/middleware/input-validation.js | Request-Validierung für API- und Admin-Endpunkte. |
-| server/api/health.js | /server/api/health.js | Health- und Status-Routen im produktiven Server. |
-| server/api/logs.js | /server/api/logs.js | Log-Endpoint für Monitoring/Diagnostik. |
-| server/services/*.js | /server/services/*.js | Auth, Session, Persistenz, User, Rollen, Settings, Backup, Health, Release und Audit-Services. |
-| app/index.js | /app/index.js | App-Shell-Startpunkt. |
-| app/modules/index.json | /app/modules/index.json | Modul-Registry. |
-| app/modules/gps/index.js | /app/modules/gps/index.js | GPS-Modul-Funktionalität für die Standard-App. |
-| app/modules/gps/module.json | /app/modules/gps/module.json | GPS-Modul-Metadaten. |
-| apps/neutral-app/app-info.json | /apps/neutral-app/app-info.json | Produzierter App-Context und App-Identität. |
-| apps/neutral-app/index.html | /apps/neutral-app/index.html | Serviceseitige App-Startseite. |
-| webroot/index.html | /webroot/index.html | Haupt-UI und Landing-Page. |
-| webroot/setup.php | /webroot/setup.php | Kanonischer Setup-Einstieg für Installations-/Reset-Vorgänge. |
-| webroot/admin.php | /webroot/admin.php | Serverseitig geschützter Admin-Einstieg (PHP Session/RBAC vor UI-Ausgabe). |
-| webroot/dev.html | /webroot/dev.html | Dev-/Diagnose-UI, die vom Server als statische Route bereitgestellt wird. |
-| webroot/style.css | /webroot/style.css | Standard-Styling für Frontend-Ausgabe. |
-| webroot/master-ui.js | /webroot/master-ui.js | Master-Frontend-Logik. |
-| webroot/user-app.js | /webroot/user-app.js | Benutzer-Frontend-Logik. |
-| webroot/api-client.js | /webroot/api-client.js | API-Client für Browser- und UI-Anfragen. |
-| web-app/index.html | /web-app/index.html | Öffentlicher Browser-Bestand für die User-App. |
-| web-app/style.css | /web-app/style.css | CSS für den öffentlichen User-App-Bestand. |
-| web-app/user-app.js | /web-app/user-app.js | Browser-Logik der öffentlichen User-App. |
-| web-app/api-client.js | /web-app/api-client.js | API-Client für die öffentliche User-App. |
-| web-app/app/ | /web-app/app/ | Lokale Modulquellen für den öffentlichen Browser-Bestand. |
-| webroot/admin-init.js | /webroot/admin-init.js | Admin-Initialisierung. |
-| webroot/admin/common.js | /webroot/admin/common.js | Gemeinsame Admin-Funktionen. |
-| webroot/admin/index.js | /webroot/admin/index.js | Admin-Startseite / Router. |
-| webroot/admin/roles-view.js | /webroot/admin/roles-view.js | Rollen-Ansicht. |
-| webroot/admin/settings-view.js | /webroot/admin/settings-view.js | Einstellungsansicht. |
-| webroot/admin/users-view.js | /webroot/admin/users-view.js | Benutzerverwaltungsansicht. |
+| server/api/ | /server/api/ | Node-API-Routen. |
+| server/services/ | /server/services/ | Auth, Session, Persistenz, Rollen, Settings, Backup, Health, Release und Audit-Services. |
+| server/php/ | /server/php/ | PHP-Backend, Bootstrap, Runtime und Admin-Views. |
+| server/public/ | /server/public/ | Öffentliche PHP-Entrypoints, Admin-Oberfläche und Diagnose-/Setup-Seiten. |
 
 ## NICHT auf den Server
 

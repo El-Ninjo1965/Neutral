@@ -2,7 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { port, host, rootDir, webRootDir, apiBase } = require('../config');
-const MasterFramework = require('../../platform/master-framework');
+const MasterFramework = require('../../webapp/platform/master-framework');
 const persistenceService = require('../services/persistence-service');
 const inputValidation = require('../middleware/input-validation');
 const userService = require('../services/user-service');
@@ -23,7 +23,7 @@ const bootstrapDefaultApps = () => {
   };
 
   const readAppManifests = () => {
-    const appsRoot = path.join(rootDir, 'apps');
+    const appsRoot = path.join(rootDir, 'webapp', 'apps');
     if (!fs.existsSync(appsRoot)) {
       return [];
     }
@@ -124,7 +124,7 @@ if (typeof MasterFramework.markFrameworkInitialized === 'function') {
   });
 }
 
-const appModulesDir = path.join(rootDir, 'app', 'modules');
+const appModulesDir = path.join(rootDir, 'webapp', 'app', 'modules');
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -807,7 +807,7 @@ const readAppModuleManifests = (modulesDir = appModulesDir) => {
         if (manifest && manifest.id) {
           manifests.push({
             ...manifest,
-            modulePath: `app/modules/${entry.name}`
+            modulePath: `webapp/app/modules/${entry.name}`
           });
         }
       } catch {
@@ -1761,7 +1761,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       lifecycleState: String(entry.lifecycleState || entry.status || 'DISCOVERED'),
       active: !!entry.active,
       registered: !!entry.registered,
-      modulePath: String(entry.modulePath || `app/modules/${entry.id || entry.name || moduleId}`),
+      modulePath: String(entry.modulePath || `webapp/app/modules/${entry.id || entry.name || moduleId}`),
       installed: true
     });
 
@@ -1815,7 +1815,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
       lifecycleState: String(module.lifecycleState || 'DISCOVERED'),
       active: !!module.active,
       registered: !!module.registered,
-      modulePath: String(module.modulePath || `app/modules/${module.id || module.name || 'unknown-module'}`),
+      modulePath: String(module.modulePath || `webapp/app/modules/${module.id || module.name || 'unknown-module'}`),
       installed: true
     }));
 
@@ -2176,8 +2176,24 @@ const handleStaticRequest = (url, req, res, modulesDir) => {
     return;
   }
 
-  if (requestPath === '/') {
-    requestPath = '/index.html';
+  if (requestPath === '/index/web-app' || requestPath === '/web-app') {
+    requestPath = '/webapp/index.html';
+  }
+
+  if (requestPath === '/index/app/neutral/webroot' || requestPath === '/webroot') {
+    requestPath = '/webapp/index.html';
+  }
+
+  if (requestPath.startsWith('/index/web-app/')) {
+    requestPath = requestPath.replace(/^\/index\/web-app\//, '/webapp/');
+  }
+
+  if (requestPath.startsWith('/index/app/neutral/webroot/')) {
+    requestPath = requestPath.replace(/^\/index\/app\/neutral\/webroot\//, '/webapp/');
+  }
+
+  if (requestPath === '/' || requestPath === '/index.html') {
+    requestPath = '/webapp/index.html';
   }
 
   if (requestPath === '/setup' || requestPath === '/setup.php') {
@@ -2185,12 +2201,21 @@ const handleStaticRequest = (url, req, res, modulesDir) => {
     return;
   }
 
+  if (requestPath.startsWith('/web-app/')) {
+    requestPath = requestPath.replace(/^\/web-app\//, '/webapp/');
+  }
+
   if (requestPath.startsWith('/webroot/')) {
-    requestPath = requestPath.replace(/^\/webroot\//, '/');
+    requestPath = requestPath.replace(/^\/webroot\//, '/webapp/');
+  }
+
+  if (requestPath.startsWith('/webapp/')) {
+    serveStaticFile(res, safeResolve(path.join(rootDir, 'webapp'), requestPath.replace(/^\/webapp\//, '/')));
+    return;
   }
 
   if (requestPath.startsWith('/platform/')) {
-    serveStaticFile(res, safeResolve(rootDir, requestPath));
+    serveStaticFile(res, safeResolve(path.join(rootDir, 'webapp'), requestPath));
     return;
   }
 

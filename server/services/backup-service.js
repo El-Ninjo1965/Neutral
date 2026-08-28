@@ -115,7 +115,7 @@ module.exports = {
   readIndex,
   writeIndex,
   createBackup: (payload = {}) => {
-    const framework = require('../../platform/master-framework');
+    const framework = require('../../webapp/platform/master-framework');
     const snapshot = snapshotRuntimeState(framework);
     const backupId = normalizeString(payload.backupId || payload.id || `backup-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`, `backup-${Date.now()}`);
     const label = normalizeString(payload.label || payload.name || `Backup ${backupId}`, `Backup ${backupId}`);
@@ -173,7 +173,7 @@ module.exports = {
     return raw && isPlainObject(raw) ? raw : null;
   },
   restoreBackup: (backupId) => {
-    const framework = require('../../platform/master-framework');
+    const framework = require('../../webapp/platform/master-framework');
     const backup = module.exports.getBackup(backupId);
     if (!backup || !isPlainObject(backup.snapshot)) {
       return { ok: false, code: 'BACKUP_NOT_FOUND', message: 'Backup not found.' };

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platform Diagnostics</title>
+    <link rel="stylesheet" href="../webapp/style.css" />
+  </head>
+  <body data-page="developer">
+    <div id="accessDenied" class="auth-shell hidden">
+      <div class="auth-card">
+        <h2>Access denied</h2>
+        <p class="subtle">Developer diagnostics require an authorized role.</p>
+        <div class="action-list">
+          <a class="nav-item" id="backToAppLink" href="../webapp/index.html">Return to platform</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="authPanel" class="auth-shell">
+      <div class="auth-card">
+        <h2>Developer Console</h2>
+        <p class="subtle">Technical diagnostics and system status for the runtime.</p>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="loginUsername">Username</label>
+            <input id="loginUsername" type="text" value="developer" />
+          </div>
+          <div class="form-field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" value="" />
+          </div>
+          <div class="form-field">
+            <label for="developerPassword">Bootstrap password</label>
+            <input id="developerPassword" type="password" placeholder="Optional test password" />
+          </div>
+          <div class="action-list">
+            <button id="setPasswordBtn" class="secondary" type="button">Set password</button>
+            <button id="loginBtn" class="primary" type="button">Sign in</button>
+          </div>
+          <div id="authMessage" class="message info">Developer access is limited to authenticated and authorized users.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="brand-box">
+          <div class="brand-mark">D</div>
+          <div>
+            <div class="brand-name">Platform</div>
+            <div class="brand-subtitle">Diagnostics</div>
+          </div>
+        </div>
+        <div class="user-card">
+          <div id="currentUserInitial" class="avatar">D</div>
+          <div class="user-meta">
+            <div id="currentUserName" class="user-name">Developer</div>
+            <div class="user-id" data-user-display-id>USR-000001</div>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Developer</div>
+          <div id="userMenu" class="nav-list">
+            <button type="button" class="nav-item active" data-view="developer:core">Core Status</button>
+            <button type="button" class="nav-item" data-view="developer:auth">Auth Status</button>
+            <button type="button" class="nav-item" data-view="developer:access">Access Status</button>
+            <button type="button" class="nav-item" data-view="developer:database">Database / Storage</button>
+            <button type="button" class="nav-item" data-view="developer:modules">Module Status</button>
+            <button type="button" class="nav-item" data-view="developer:diagnostics">Diagnostics</button>
+            <button type="button" class="nav-item" data-view="developer:console">Console</button>
+            <button type="button" class="nav-item" data-view="developer:audit">Audit</button>
+            <button type="button" class="nav-item" data-view="developer:tests">Technical Tests</button>
+            <button type="button" class="nav-item" data-view="dashboard" data-href="../webapp/index.html">Back to platform</button>
+          </div>
+        </div>
+      </aside>
+      <main class="main-panel">
+        <div class="topbar">
+          <div class="topbar-title">Platform Diagnostics</div>
+          <div class="header-actions">
+            <span id="summaryRoleBadge" class="role-badge developer">developer</span>
+            <button id="logoutBtn" class="secondary" type="button">Logout</button>
+          </div>
+        </div>
+        <div class="summary-row">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Developer identity</h2>
+            </div>
+            <div class="user-summary">
+              <div>
+                <div id="summaryUsername" class="summary-username">Developer</div>
+                <div class="small-muted" data-user-display-id>USR-000001</div>
+              </div>
+              <span id="summaryStatus" class="status-badge ok">active</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Runtime state</h2>
+            </div>
+            <div id="activeModules" class="chip-list"><span class="chip">Developer mode active</span></div>
+          </div>
+        </div>
+        <div id="mainContent" class="content-wrap"></div>
+      </main>
+    </div>
+
+    <script src="../webapp/platform/core.js"></script>
+    <script src="../webapp/platform/core-event-bus.js"></script>
+    <script src="../webapp/platform/core-error-handler.js"></script>
+    <script src="../webapp/platform/error-log.js"></script>
+    <script src="../webapp/platform/core-config.js"></script>
+    <script src="../webapp/platform/core-context.js"></script>
+    <script src="../webapp/platform/core-lifecycle.js"></script>
+    <script src="../webapp/platform/core-state.js"></script>
+    <script src="../webapp/platform/core-storage.js"></script>
+    <script src="../webapp/platform/module-interface.js"></script>
+    <script src="../webapp/platform/module-registry.js"></script>
+    <script src="../webapp/platform/module-manager.js"></script>
+    <script src="../webapp/platform/core-loader.js"></script>
+    <script src="../webapp/platform/config-manager.js"></script>
+    <script src="../webapp/platform/database-manager.js"></script>
+    <script src="../webapp/platform/security.js"></script>
+    <script src="../webapp/platform/core-auth.js"></script>
+    <script src="../webapp/platform/core-access.js"></script>
+    <script src="../webapp/platform/core-audit.js"></script>
+    <script src="../webapp/platform/core-event-ring.js"></script>
+    <script src="../webapp/platform/core-user.js"></script>
+    <script src="../webapp/platform/core-admin.js"></script>
+    <script src="../webapp/platform/service-manager.js"></script>
+    <script src="../webapp/platform/core-startup.js"></script>
+    <script src="../webapp/platform/core-runtime.js"></script>
+    <script src="../webapp/platform/core-entry.js"></script>
+    <script src="../webapp/platform/theme-engine.js"></script>
+    <script src="../webapp/platform/media-manager.js"></script>
+    <script src="../webapp/platform/local-auth.js"></script>
+    <script src="../webapp/platform/app.js"></script>
+    <script src="../webapp/master-ui.js"></script>
+  </body>
+</html>

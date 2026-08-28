@@ -5,7 +5,7 @@
  * Validates JSON payloads against schema definitions
  */
 
-const { CoreSecurity } = require('../../platform/security');
+const { CoreSecurity } = require('../../webapp/platform/security');
 
 const normalizeString = (value, { maxLength = 255, allowEmpty = false } = {}) => {
   if (value === null || typeof value === 'undefined') {
