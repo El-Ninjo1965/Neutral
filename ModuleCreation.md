@@ -144,7 +144,7 @@ Regeln:
 
 ## 13. Services
 
-Eigene Services dürfen kollisionsfrei im `ServiceManager` registriert werden, sofern Lifecycle und Cleanup definiert sind. Fremde Services nur über deren öffentliche Methoden verwenden. Serviceabhängigkeiten gehören ins Manifest bzw. müssen vor Aktivierung geprüft werden. Ein formales Service-Manifest ist **FEHLT**.
+Eigene Services werden mit einem Namen wie `module.<id>.<service>` als öffentlich oder intern registriert. Doppelte Namen werden abgelehnt; Deaktivierung/Deinstallation ruft `unregister` auf, das optional `dispose()` ausführt. Fremde Services nur über deren öffentliche Methoden verwenden. Serviceabhängigkeiten gehören ins Manifest bzw. müssen vor Aktivierung geprüft werden. Ein formales Service-Manifest ist **FEHLT**.
 
 ## 14. Storage und lokale Datenbank
 

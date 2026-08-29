@@ -47,7 +47,7 @@
          * @param {string} name - Servicename
          * @param {object} service - Service-Objekt
          */
-        register(name, service) {
+        register(name, service, options = {}) {
             if (typeof name !== 'string' || !name.trim()) {
                 throw new Error('Service name is required');
             }
@@ -56,11 +56,21 @@
                 throw new Error('Service must be an object');
             }
 
-            this.services.set(name, service);
+            const normalizedName = name.trim();
+            if (!/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/.test(normalizedName)) {
+                throw new Error('Service name must use lowercase dot/dash notation');
+            }
+            if (this.services.has(normalizedName)) {
+                throw new Error(`Service "${normalizedName}" is already registered`);
+            }
+
+            const visibility = options.visibility === 'internal' ? 'internal' : 'public';
+            this.services.set(normalizedName, { service, visibility });
 
             if (window.Core) {
                 window.Core.emit('service:registered', {
-                    name: name,
+                    name: normalizedName,
+                    visibility,
                     timestamp: new Date().toISOString()
                 });
             }
@@ -71,7 +81,7 @@
          * @param {string} name - Servicename
          * @returns {object} Service-Objekt
          */
-        get(name) {
+        get(name, options = {}) {
             if (!this.initialized) {
                 this.init();
             }
@@ -80,7 +90,11 @@
                 throw new Error(`Service "${name}" not found`);
             }
 
-            return this.services.get(name);
+            const entry = this.services.get(name);
+            if (!entry || (entry.visibility === 'internal' && options.includeInternal !== true)) {
+                throw new Error(`Service "${name}" not found`);
+            }
+            return entry.service;
         },
 
         /**
@@ -88,20 +102,39 @@
          * @param {string} name - Servicename
          * @returns {boolean}
          */
-        has(name) {
+        has(name, options = {}) {
             if (!this.initialized) {
                 this.init();
             }
 
-            return this.services.has(name);
+            const entry = this.services.get(name);
+            return !!entry && (entry.visibility === 'public' || options.includeInternal === true);
         },
 
         /**
          * Gibt alle Services zurück
          * @returns {array}
          */
-        getAll() {
-            return Array.from(this.services.keys());
+        getAll(options = {}) {
+            return Array.from(this.services.entries())
+                .filter(([, entry]) => entry.visibility === 'public' || options.includeInternal === true)
+                .map(([name]) => name);
+        },
+
+        unregister(name) {
+            const entry = this.services.get(name);
+            if (!entry) return false;
+            if (entry.service && typeof entry.service.dispose === 'function') entry.service.dispose();
+            this.services.delete(name);
+            if (window.Core) window.Core.emit('service:unregistered', { name });
+            return true;
+        },
+
+        clear(options = {}) {
+            this.getAll({ includeInternal: options.includeInternal === true })
+                .forEach((name) => this.unregister(name));
+            if (options.reset === true) this.initialized = false;
+            return true;
         }
     };
 

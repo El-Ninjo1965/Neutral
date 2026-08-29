@@ -26,3 +26,46 @@ test('public core contract is versioned, immutable and separates internal global
   assert.equal(browser.Core.isPublicFacade('CoreEventBus'), false);
   assert.equal(browser.CoreContracts.internalGlobals.includes('MasterFramework'), true);
 });
+
+test('event bus isolates failing handlers, records delivery and supports cleanup', () => {
+  const handled = [];
+  const ring = [];
+  const browser = {
+    window: null,
+    CoreErrorHandler: { handle(error, context) { handled.push({ error, context }); } },
+    CoreEventRing: { push(name, payload) { ring.push({ name, payload }); } }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'core-event-bus.js');
+  const unsubscribe = browser.CoreEventBus.subscribe('module:test:changed', () => { throw new Error('failure'); });
+  browser.CoreEventBus.subscribe('module:test:changed', () => {});
+  assert.equal(browser.CoreEventBus.publish('module:test:changed', { ok: true }), 1);
+  assert.equal(handled.length, 1);
+  assert.equal(ring.length, 1);
+  unsubscribe();
+  browser.CoreEventBus.clear();
+  assert.equal(browser.CoreEventBus.publish('module:test:changed'), 0);
+});
+
+test('service manager enforces names, visibility, duplicate protection and disposal', () => {
+  let disposed = false;
+  const browser = {
+    window: null,
+    Core: { emit() {} },
+    UserService: {}, AuthService: {}, ModuleService: {}, LoggingService: {}, CacheService: {}
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'service-manager.js');
+  browser.ServiceManager.initialized = true;
+  browser.ServiceManager.register('module.example', { dispose() { disposed = true; } });
+  browser.ServiceManager.register('core.secret', {}, { visibility: 'internal' });
+  assert.equal(browser.ServiceManager.has('module.example'), true);
+  assert.equal(browser.ServiceManager.has('core.secret'), false);
+  assert.equal(browser.ServiceManager.has('core.secret', { includeInternal: true }), true);
+  assert.throws(() => browser.ServiceManager.get('core.secret'), /not found/);
+  assert.throws(() => browser.ServiceManager.register('module.example', {}), /already registered/);
+  assert.equal(browser.ServiceManager.unregister('module.example'), true);
+  assert.equal(disposed, true);
+});

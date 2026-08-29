@@ -23,7 +23,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.2 – Event- und Serviceverträge
 
-- [ ] **Aufgabe:** Eventnamen/Payload-Grundregeln sowie Service-Namensraum, Sichtbarkeit und Lifecycle im Core erzwingen und dokumentieren. **Zweck:** vorhersehbare Modulkommunikation und klare öffentliche/private Services. **Bereiche:** `core-event-bus.js`, `core-event-ring.js`, `service-manager.js`. **Abhängigkeiten:** P2.1-Katalog; bestehende Event-/Servicenamen dürfen nicht brechen. **Status:** OFFEN. **Tests:** Subscribe/Unsubscribe, Handlerisolation, Eventhistorie, Service-Duplikate, Sichtbarkeit und Cleanup.
+- [x] **Aufgabe:** Eventnamen/Payload-Grundregeln sowie Service-Namensraum, Sichtbarkeit und Lifecycle im Core erzwingen und dokumentieren. **Zweck:** vorhersehbare Modulkommunikation und klare öffentliche/private Services. **Bereiche:** `core-event-bus.js`, `core-event-ring.js`, `service-manager.js`. **Abhängigkeiten:** P2.1-Katalog; bestehende Event-/Servicenamen dürfen nicht brechen. **Status:** OFFEN. **Tests:** Subscribe/Unsubscribe, Handlerisolation, Eventhistorie, Service-Duplikate, Sichtbarkeit und Cleanup.
 
 ### P2.3 – Online-/Offline-Grundlage
 

@@ -48,15 +48,21 @@
         },
 
         publish(eventName, data = null) {
+            if (typeof eventName !== 'string' || !eventName.trim()) {
+                throw new Error('Event name is required.');
+            }
+
             const listeners = channels.get(eventName);
 
             if (!listeners) {
-                return;
+                return 0;
             }
 
-            listeners.forEach((callback) => {
+            let delivered = 0;
+            [...listeners].forEach((callback) => {
                 try {
                     callback(data);
+                    delivered += 1;
                 } catch (error) {
                     if (window.CoreErrorHandler) {
                         window.CoreErrorHandler.handle(
@@ -69,6 +75,12 @@
                     }
                 }
             });
+
+            if (window.CoreEventRing && typeof window.CoreEventRing.push === 'function') {
+                window.CoreEventRing.push(eventName, data);
+            }
+
+            return delivered;
         },
 
         clear(eventName) {

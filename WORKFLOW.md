@@ -151,3 +151,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.1 abgeschlossen, bestehende Globals bleiben als kompatible Ladezeit-API erhalten.
 - **Offene Punkte:** P2.2 bis P2.6.
 - **Commit-ID:** wird nach dem Commit verifiziert.
+
+### 2026-08-29 – P2.2 Event- und Serviceverträge stabilisieren
+
+- **Aufgabe:** Generische Eventzustellung und Service-Registry mit explizitem Fehler-, Sichtbarkeits- und Cleanup-Vertrag versehen.
+- **Betroffene Dateien:** `core-event-bus.js`, `service-manager.js`, `tests/core-contracts.test.js`, `TODO.md`, `WORKFLOW.md`, `Functions.md`, `ModuleCreation.md`.
+- **Änderung:** Event-Publish validiert Namen, isoliert Handler, zählt erfolgreiche Zustellungen und schreibt einmal in den Ring. Services erzwingen Namen, verhindern Überschreiben, unterscheiden public/internal und unterstützen `unregister`/`clear` samt `dispose`.
+- **Zweck:** Module verwenden kontrollierte Kommunikation und können Ressourcen beim Lifecycle-Ende freigeben.
+- **Tests/Validierung:** Handlerfehler, Ringübergabe, Unsubscribe/Clear, Service-Sichtbarkeit, Duplikate und Disposal sowie Gesamtsuite geprüft.
+- **Ergebnis:** P2.2 abgeschlossen; bestehende Standardservices bleiben öffentlich.
+- **Offene Punkte:** P2.3 bis P2.6.
+- **Commit-ID:** wird nach dem Commit verifiziert.

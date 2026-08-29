@@ -61,3 +61,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 ## Versionierter öffentlicher Vertrag
 
 `CoreContracts` (`Web-App/core/core-contracts.js`) ist **VORHANDEN**. `Core.contractVersion`, `Core.getContract()`, `Core.events` und `Core.isPublicFacade(name)` liefern den unveränderlichen Vertrag `1.0.0`. Facaden in `publicFacades` sind öffentlich; Einträge in `internalGlobals` sind Implementierungsdetails und dürfen von Modulen nicht als stabil angenommen werden.
+
+### Event- und Servicegarantien
+
+`CoreEventBus.publish()` validiert den Eventnamen, isoliert fehlerhafte Listener, liefert die Anzahl erfolgreicher Zustellungen und übergibt veröffentlichte Events an den begrenzten `CoreEventRing`. `ServiceManager.register(name, service, {visibility})` akzeptiert kollisionsfreie Kleinbuchstaben-Namen, überschreibt keine Registrierung und unterstützt `unregister`/`clear`; interne Services sind nur mit `{includeInternal:true}` erreichbar.
