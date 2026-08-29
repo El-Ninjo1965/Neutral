@@ -1,65 +1,73 @@
-# Neutral – Project TODO
+# NEUTRAL – TODO
 
-This is the current operational task ledger for the repository. It is intentionally short and reflects only the active state of the project.
+Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreihenfolge ab. Erledigt wird nur markiert, was durch aktuellen Code, Dokumentation oder Tests nachgewiesen ist.
 
-## Current project status
+## P1 – Dokumentation und Architektur
 
-- Repository: El-Ninjo1965/Neutral
-- Current branch: main
-- GitHub sync: main is synchronized with origin/main.
-- Neutral remains a modular framework with a core layer and module-based extensions.
-- Canonical admin entry point: webroot/admin.php
-- Canonical setup entry point: webroot/setup.php
-- Current live runtime reality: shared-host PHP/LiteSpeed; the real production path is under /index/app/neutral/webroot/*.
-- The root /api/* path is not the active public production API path on the live host.
-- The admin workspace keeps the top header navigation as the only admin navigation surface; no left sidebar is part of the active admin UI.
-- Admin light/dark mode is expected to flow through the shared theme tokens for header, content, cards, tables, forms, alerts, modals, and dynamic admin views.
-- The last real browser check of the deployed admin UI was completed successfully by the project operator.
-- The GPS module remains the existing reference module and now supports DISCOVER -> REGISTER / INSTALL -> INACTIVE -> ACTIVATE -> ACTIVE -> DEACTIVATE -> UNINSTALL.
-- Module-specific permissions can now be declared by the module manifest, assigned in Admin -> Modules, and synchronized into the shared RBAC catalog on install.
-- The public module catalog must expose lifecycle-aware module state and respect server-resolved module visibility permissions so active modules can appear in the user app without discovery implicitly activating them.
-- Modules may declare a lightweight standalone test entry for isolated developer validation when they do not require the full app runtime.
+- [x] `VISION.md` als widerspruchsfreie langfristige Zielarchitektur für NEUTRAL neu aufbauen.
+- [x] Ist- und Zielarchitektur in `Architecture.md` trennen und mit IST/GEPLANT/FEHLT kennzeichnen.
+- [x] tatsächliche Core-Funktionen, APIs, Datenhaltung und Sicherheit dokumentieren.
+- [x] getrennte Installationsanleitungen für Web-App und PHP-Server erstellen.
+- [x] verbindlichen aktuellen Modulerstellungsvertrag dokumentieren.
+- [x] Workflow auf Arbeitsregeln und vollständiges Arbeitsprotokoll bereinigen.
+- [ ] Dokumentation bei jeder Vertragsänderung zusammen mit Code und Tests fortschreiben.
 
-## Repository synchronization status (2026-08-29)
+## P2 – Core
 
-- [x] Fetch `origin` and compare local `main` with `origin/main` without resetting or overwriting local work.
-- [x] Audit local branches, commits, tracked changes, untracked files, and the requested documentation set.
-- [x] Confirm that no local commit or project-source change was waiting to be transferred to `main` before this synchronization commit.
-- [x] Stop tracking generated `node_modules/` dependencies while preserving the local installation.
-- [x] Stop tracking host-local `.env` files while preserving the local runtime files.
-- [x] Add durable ignore rules for generated dependencies and host-local environment files.
-- [x] Record the controlled synchronization in `WORKFLOW.md` and prepare the resulting repository state for `origin/main`.
-- [x] Verify the requested documentation inventory without inventing missing documents: `VISION.md`, `WORKFLOW.md`, and `TODO.md` exist; the other requested standalone documents do not exist in the current local project tree.
+- [ ] öffentliche Core-, Event- und Serviceverträge versionieren und globale/private APIs eindeutig trennen.
+- [ ] universellen Online-/Offline-Service definieren; keine fachliche Logik in den Core aufnehmen.
+- [ ] Fehler-, Logging-, Konfigurations- und Storageverträge vereinheitlichen und mit Migrationstests absichern.
+- [ ] Abhängigkeiten zwischen `Core`, `MasterFramework` und globalen Browserobjekten reduzieren, ohne funktionierende APIs unkontrolliert zu brechen.
 
-## Current web app integration work
+## P3 – Startperformance
 
-- [x] Consolidate the last three web-app prompts into a single live integration task without discarding the original assignment.
-- [x] Confirm the active live public API contract and the correct transport path for the standalone web client.
-- [x] Remove localhost/default-local assumptions from the public web-app config and client bootstrap logic.
-- [x] Route the web app login/session flow through the public HTTPS API instead of required local dev auth fallback behavior.
-- [x] Split the server deployment and public web-app deployment into separate FTP contexts and keep the web-app credentials local-only in `.env.web-app.deploy`.
-- [x] Fix the repository deploy script so `--web-app` correctly stages the actual web-app bundle and does not fall back to the server allowlist.
-- [x] Verify the dedicated web-app FTP root `/` and confirm that it contains the actual web-app bundle files for the public client.
-- [ ] Resolve the live host-side HTTP mapping for `/index/web-app/` so the public URL serves the same web-app bundle as the FTP root instead of the stale placeholder or 404 assets.
-- [ ] Request and complete the real browser/mobile live test with the project owner after the host mapping is corrected.
+- [ ] First Paint und Interaktionsbereitschaft auf realistischen Mobilgeräten messen und Budgets festlegen.
+- [ ] sichtbare Shell vor Netzwerk, Authprüfung, IndexedDB, Sync und Modul-Discovery rendern.
+- [ ] langsame Initialisierung in beobachtbare Hintergrundphasen verschieben und Fehler-/Offlinezustände anzeigen.
 
-## Open tasks
+## P4 – Web-App / Server / API
 
-- [ ] Validate the new uninstall/permission/standalone contract with at least one additional module beyond GPS once another real module is ready for migration to the new manifest structure.
-- [ ] Extend the module update path so installed modules can evolve their declared permissions and owned resources without requiring uninstall/reinstall.
-- [ ] Add disposable-environment verification for PHP-side module permission assignment and uninstall/reinstall flows beyond the live GPS reference run.
+- [ ] PHP-Produktionsvertrag und Node-Testvertrag endpointweise abgleichen; Abweichungen bewusst dokumentieren oder schließen.
+- [ ] API-Versionierungsstrategie definieren.
+- [ ] zentralen API-Timeout und sichere Retryregeln (nur idempotent bzw. mit Idempotenzschlüssel) implementieren.
+- [ ] konfigurierbare API-Basis und portable Deploymentpfade automatisiert testen.
 
-## Known technical constraints
+## P5 – Authentifizierung
 
-- No repository secrets, live credentials, or .env values are stored in this repo.
-- Production credentials, session state, and live admin state are operational host data and must not be committed, logged, or documented in code.
-- Browser-side auth state is not authoritative; server-side session + role checks decide admin access.
-- Do not assume Node port 3000 is enabled or reachable on the shared host.
-- The deploy path remains the repository’s production deployment configuration and FTPS flow, not a public Node runtime assumption.
-- Use the existing canonical PHP entry points; do not create duplicate admin surfaces or alternate admin bootstraps.
-- Browserless or GPS-less automation environments may verify HTTP/session/module state, but they cannot honestly claim a visual browser pass or a real device geolocation pass.
+- [ ] PHP-Login-Drosselung/Missbrauchsschutz implementieren und testen.
+- [ ] produktive Cookieflags (`Secure`, `HttpOnly`, `SameSite`) unter HTTPS automatisiert verifizieren.
+- [ ] entscheiden, ob Remember/Refresh benötigt wird; nur dann Rotations-/Widerrufsvertrag entwerfen.
+- [ ] lokale Auth-Hilfen klar vom produktiven Serververtrauen isolieren.
 
-## Next sensible development state
+## P6 – Offline-First / Synchronisation
 
-- When adding module-owned storage, declare each owned table explicitly in the module manifest and only allow uninstall cleanup for entries that opt into safe destroy-on-uninstall handling.
-- When adding module permissions, keep module-owned settings under moduleSettings.<moduleId> and re-check public /api/modules visibility plus role assignments after install, deactivate, uninstall, and reinstall.
+- [ ] persistente Sync-Queue mit Änderungsstatus, Idempotenz, Retry/Backoff und Wiederanlauf implementieren.
+- [ ] Daten-/Schema-Versionierung sowie Tombstones/Löschung definieren.
+- [ ] Konflikterkennung, Konfliktstrategien und Benutzerauflösung dokumentieren und testen.
+- [ ] Clientmigrationen, Cacheinvalidierung und Datenschutz für lokale Daten umsetzen.
+
+## P7 – GPS
+
+- [ ] GPS ausschließlich als technische Referenzerweiterung gegen Berechtigungen, Lifecycle, Storage und Offlinezustände validieren.
+- [ ] Geräteberechtigungswechsel und Geolocationfehler auf realen Mobilgeräten testen.
+- [ ] erst nach allgemeinem Syncvertrag GPS-Synchronisation/API/DB anbinden; keine GPS-Fachlogik in den Core verschieben.
+
+## P8 – Mobile-Kompatibilität
+
+- [ ] unterstützte Android-/iOS-/iPadOS-/Tablet-Browsermatrix festlegen.
+- [ ] Touch, responsive Layouts, Storagegrenzen, Offlinewechsel und Hintergrundverhalten auf älteren sinnvoll verbreiteten Geräten testen.
+- [ ] Accessibility- und Performancekriterien in die Abnahme aufnehmen.
+
+## P9 – Serverwechsel / Skalierung
+
+- [ ] Konfiguration und Adapter für API, Datenbank, Storage und Provider auf Hostkopplung prüfen.
+- [ ] dokumentierten Backup-/Restore-, Umzugs- und Rollbacktest in einer disponiblen Umgebung durchführen.
+- [ ] Skalierung erst anhand gemessener Anforderungen planen; Shared Hosting bleibt erste Produktionsbasis ohne Node-Dauerprozess.
+
+## P10 – Erweiterungs-/Modularchitektur
+
+- [ ] Manifest-, Capability-, Event- und Serviceverträge formal versionieren.
+- [ ] allgemeinen sicheren Modulupdate-/Migrationspfad mit Rollback umsetzen.
+- [ ] Modul-API-/Hook-Erweiterungspunkte entwerfen, ohne direkten Eingriff in den zentralen Router.
+- [ ] Lifecycle, Permissions, Settings und Uninstall mit einer weiteren realen Erweiterung validieren, sobald eine fachlich erforderliche Erweiterung vorliegt.
+- [ ] Modul-Isolation und Fehlerbegrenzung schrittweise verbessern.

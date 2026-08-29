@@ -1,0 +1,130 @@
+# NEUTRAL – Architektur
+
+## Statuslegende
+
+- **IST**: im aktuellen Repository nachweisbar implementiert.
+- **GEPLANT**: verbindliche Zielrichtung aus `VISION.md`, noch nicht vollständig implementiert.
+- **FEHLT**: erforderliche Fähigkeit ohne belastbare Implementierung.
+
+## 1. Systemgrenze
+
+### Zielbild – GEPLANT
+
+```text
+Mobile-first Web-App mit Client-Core
+        ↓ HTTPS/JSON-API
+PHP-Server als Vertrauensgrenze
+        ↓ PDO
+MariaDB/MySQL
+```
+
+Web-App, Server und Datenbank sind durch dokumentierte Verträge getrennt. Infrastrukturdetails sind konfigurierbar.
+
+### Aktueller Gesamtzustand – IST/TEILWEISE
+
+- Browser-Client unter `webroot/` mit `index.html`, `user-app.js`, `api-client.js`, Adminoberfläche und Skripten aus `platform/`.
+- JavaScript-Client-Core unter `platform/` mit Lifecycle, Events, Konfiguration, Storage, IndexedDB, Services, Auth-/Benutzerfacade, Loader und Modulverwaltung.
+- PHP-Produktionsruntime unter `core/php/` und `webroot/api/`.
+- Node-Referenz-/Entwicklungsserver unter `server/`; er ist keine Voraussetzung der Shared-Hosting-Produktion.
+- GPS als einzige konkrete Referenzerweiterung unter `app/modules/gps/`.
+
+## 2. Web-App
+
+**IST:** `webroot/index.html` lädt die Benutzeroberfläche; `webroot/user-app.js` verarbeitet Session und Modulkatalog; `webroot/master-ui.js` und `platform/` stellen Shell und Core-Funktionen bereit. `webroot/api-client.js` kapselt JSON-Fetch mit Same-Origin-Cookies und CSRF-Header.
+
+**GEPLANT:** sofort sichtbare mobile Grundoberfläche vor langsamer Initialisierung; klare Schichten für Shell, Core und Erweiterungs-UI; messbare Browserkompatibilität.
+
+**FEHLT/TEILWEISE:** belastbare Startperformance-Budgets und eine dokumentierte Geräte-/Browser-Testmatrix.
+
+## 3. Core
+
+**IST:** Browser-Core in `platform/`:
+
+- `core-lifecycle.js`: Zustände created, initializing, ready, running, stopped.
+- `core-event-bus.js` und `core-event-ring.js`: synchrone Events und begrenzte Ereignishistorie.
+- `config-manager.js`/`core-config.js`: Konfigurationszugriff.
+- `core-storage.js` und `storage-manager.js`: lokale Schlüssel-/Adapter-Speicherung.
+- `database-manager.js`: IndexedDB und CRUD.
+- `service-manager.js`: Service-Registry.
+- `core-error-handler.js`/`error-log.js`: Fehler- und Logpfad.
+- `core-loader.js`, `module-interface.js`, `module-registry.js`, `module-manager.js`: Discovery, Manifestnormalisierung und Lifecycle.
+- `core-auth.js`, `core-user.js`, `core-access.js`, `core-context.js`: Clientfacaden für Identität und Berechtigungsabfragen.
+
+**GEPLANT:** stabile öffentliche Verträge, adapterbasierte Geräte-/Netzwerkfunktionen, Offline-Queue, Konfliktbehandlung und nicht blockierender Start.
+
+**FEHLT:** vollständiger produktiver Sync-Orchestrator und verbindliche Konfliktstrategie.
+
+## 4. Server und PHP
+
+**IST:** `core/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `webroot/api/index.php` ist der zentrale PHP-API-Router. `webroot/admin.php` schützt die Adminoberfläche serverseitig. `webroot/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
+
+**IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `webroot/api/.htaccess` an `index.php`.
+
+**GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.
+
+## 5. Node-Laufzeit
+
+**IST:** `server/bootstrap/server.js` implementiert eine umfangreiche Node-API für lokale Entwicklung und Tests; `server/server.js` exportiert sie.
+
+**Regel:** Node.js ist keine Voraussetzung der ersten Produktion. Verhalten der Node- und PHP-APIs darf nicht ungeprüft als identisch angenommen werden. `API.md` kennzeichnet beide Oberflächen getrennt.
+
+## 6. API und Datenfluss
+
+**IST:** Der Browser verwendet `ApiClient` und relative `/api/...`-Pfade. Same-Origin-Cookies tragen die Session; bei Schreibmethoden wird `neutral_csrf` als `x-csrf-token` gesendet. Der PHP-Router validiert Identität, Berechtigungen und CSRF, ruft Services auf und antwortet über `JsonResponse`.
+
+```text
+UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → MariaDB/MySQL
+```
+
+**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, explizite Versionierungsstrategie, Timeouts, Retry nur für sichere/idempotente Fälle und Offline-Queue.
+
+**FEHLT:** API-Version im URL-/Headervertrag, zentraler Fetch-Timeout und allgemeiner Retry.
+
+## 7. Datenbank und lokale Speicherung
+
+### Client
+
+**IST:** `database-manager.js` öffnet IndexedDB `CoreDB` (konfigurierbar) und legt Stores `users`, `modules`, `logs`, `sessions`, `settings`, `cache`, `sync` an. CRUD und Indexsuche sind vorhanden. Mehrere Komponenten nutzen zusätzlich `localStorage`.
+
+**TEILWEISE:** Ein `sync`-Store existiert, aber keine vollständige persistente Queue-/Retry-/Konfliktengine. Schema-Upgrades erstellen fehlende Stores, besitzen aber noch keinen umfassenden Migrationskatalog.
+
+### Server
+
+**IST:** PDO mit MySQL/MariaDB; `SchemaMigrator.php` verwaltet `schema_migrations` sowie Rollen, Rechte, Benutzer, Sessions, Settings, Module, Modulstatus/-migrationen, Setupstatus, Audit, Backups und Releasezustand.
+
+**GEPLANT:** migrationsbasierte Weiterentwicklung mit minimalen DB-Rechten, Transaktionen und adapterfähiger Konfiguration.
+
+## 8. Authentifizierung und Autorisierung
+
+**IST:** PHP-Login, Logout und `auth/me`; serverseitige Sessionregistrierung; Rollen/Permissions in MariaDB; Session-Cookie und CSRF-Token; Adminzugriff wird in PHP geprüft. Ein expliziter Bootstrap-Tokenpfad existiert für Setup/Automation und darf normale Benutzeranmeldung nicht ersetzen.
+
+**TEILWEISE:** Der Browser besitzt lokale Auth-Hilfen für Entwicklung. Diese sind keine Serverautorität.
+
+**FEHLT/GEPLANT:** dokumentierte Remember-/Refresh-Strategie und Offline-Reauthentifizierungsregeln.
+
+## 9. Konfiguration
+
+**IST:** Clientkonfiguration über ConfigManager und Runtimeobjekte. Serverkonfiguration über `.env`, `EnvLoader` und `AppConfig`; `.env` bleibt hostlokal. API- und Installationspfade werden aus dem aktiven Kontext abgeleitet.
+
+**GEPLANT:** validiertes, versioniertes Konfigurationsschema und Adapterauswahl für Hostingwechsel.
+
+## 10. Events und Services
+
+**IST:** `Core.emit/on/off/once` delegiert an den Event-Bus. Lifecycle, Datenbank und Modulmanager emittieren Core-Events. `ServiceManager` registriert und liefert benannte Services. `MasterFramework` bietet weitere App-, Entity-, Provider-, Storage-, Rollen- und Modulfunktionen.
+
+**TEILWEISE:** Nicht alle Events besitzen versionierte Payloadverträge; globale `window.*`-Abhängigkeiten begrenzen Isolation.
+
+## 11. Abhängigkeiten
+
+- Browser: Web APIs, globale Lade-Reihenfolge der Skripte, optional Fetch/IndexedDB/Geolocation.
+- PHP: PHP 8.x, PDO und `pdo_mysql`, Sessions, JSON, Dateisystemzugriff für Logs/Setupzustand.
+- Entwicklung/Test: Node.js und npm; `argon2` für die Node-Referenzruntime.
+- Produktion: Node ist nicht erforderlich.
+
+## 12. Erweiterungspunkte
+
+**IST:** Modulmanifest, globaler Entry Point, Loader/Registry/Manager, Modul-Lifecycle, Manifest-Permissions, Capabilities, Adminsettings, lokaler Storagezugriff über Core, Events und Services. PHP entdeckt Manifestdateien und persistiert Modulzustände.
+
+**TEILWEISE:** Modul-Datenbanktabellen können deklariert und bei sicher deklarierter Deinstallation entfernt werden; eine allgemeine Modul-Migrationsausführung ist noch nicht vollständig als öffentlicher Vertrag umgesetzt.
+
+**FEHLT:** produktive Modul-API-Registrierung, standardisierte Hooks, Modul-Sandboxing sowie vollständige Offline-/Sync-Verträge. Details stehen in `ModuleCreation.md`.

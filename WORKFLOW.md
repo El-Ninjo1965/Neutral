@@ -1,226 +1,105 @@
-# Neutral – Workflow
+# NEUTRAL – Workflow
 
-## Purpose
+## 1. Zweck
 
-Neutral is a modular framework intended to support a reusable core, a neutral application shell, and installable modules. It is not a single hard-coded app and it should not be treated as such.
-
-This file is the current operational workflow and architecture reference for future work. It is not a project history, issue log, or changelog.
-
-## Current architecture
-
-Neutral currently follows this model:
-
-- Core framework services and shared infrastructure
-- App-level shell and management surfaces
-- Module-based extensions that are discovered and registered without being merged into the core by default
-
-The codebase should remain structured around that separation. App-specific logic belongs in app and module layers; the core remains general-purpose infrastructure.
-
-## Current runtime reality
-
-The active production runtime is a shared-host PHP/LiteSpeed environment. The public host is not a public Node runtime and does not expose a working root /api/* proxy or a public Node port 3000 service.
-
-The actual live app path is:
-
-- /index/app/neutral/webroot/* (server-side Neutral runtime/API)
-- public web-client deployment target: /index/web-app/
-- FTP web-app root: / (chrooted to the dedicated web-app directory on the host)
-
-The current verified state is: the dedicated web-app FTP account correctly contains the app bundle at the chrooted root `/`, including `index.html`, `style.css`, `user-app.js`, `api-client.js`, and `platform/`. The root cause was in the repository deploy script itself: `--web-app` mode was never honored and the script always staged the server allowlist, which caused the wrong files to be prepared for upload. That script bug has been corrected in `scripts/manual-ftps-deploy.js` so the public web-app bundle is now staged and uploaded to the dedicated FTP root and not the server path. The public URL `/index/web-app/` still serves the stale placeholder page and 404s for CSS/JS assets, which proves that the remaining blocker is the live host-side document-root or URL-mapping for `/index/web-app/`: the FTP content and public HTTP content are still not the same.
-
-The canonical public API path for the standalone web client is:
-
-- https://www.turbolikes.com/index/app/neutral/webroot/api/...
-
-The canonical runtime entry points are:
-
-- webroot/admin.php
-- webroot/setup.php
-- webroot/api/.htaccess (must continue to route the LiteSpeed PHP API path correctly)
-
-The repository must not assume that a root-domain Node API is the active production environment.
-
-## Web app client contract
-
-The web app is treated as a standalone public client and must not depend on localhost, 127.0.0.1, local dev ports, or private hostnames. All browser login, session, module loading and permission checks must operate through the public HTTPS API path above. The local auth/bootstrap flow remains a development convenience only and must not be the required production path.
-
-## Module model
-
-Modules remain discoverable, registrable, and installable without automatic activation.
-
-The effective lifecycle is:
-
-- DISCOVER
-- REGISTER / INSTALL
-- INACTIVE
-- ACTIVATE
-- ACTIVE
-- DEACTIVATE
-- UNINSTALL
-
-Rules:
-
-- Module discovery does not auto-enable modules.
-- Module metadata must be treated as module metadata, not as app entries.
-- Module paths should resolve relative to the active installation context; hard-coded root paths are not the preferred pattern.
-- App and module management remain separate responsibilities.
-- Module manifests may declare module-owned permissions, access metadata, optional standalone test entries, and explicitly owned database tables.
-- Installing a module must not auto-activate it, but it may synchronize module-declared permissions into the shared RBAC catalog.
-- Uninstall must remove module registration/state, module-scoped permissions, and the moduleSettings.<moduleId> namespace; database tables may only be dropped when the manifest explicitly declares them and marks them safe for destroy-on-uninstall cleanup.
-- Built-in roles remain protected from general editing, but module-specific permission assignment may still grant or revoke a module's own permissions on those roles through the module-management flow.
-
-## Admin, authentication, and sessions
-
-The canonical admin entry point is:
-
-- webroot/admin.php
-
-Admin access must remain protected by server-side session checks and role validation; the browser should not be treated as the authority.
-
-The authoritative server-side auth flow is:
-
-- POST /api/auth/login
-- GET /api/auth/me
-- protected admin pages behind server-side session checks
-
-The real session authority is the server. Local browser state may be used as a client artifact, but it cannot override the server’s auth decision.
-
-The admin shell should remain minimal and consistent, with:
-
-- a compact header
-- a single top navigation menu as the only admin navigation
-- no left sidebar or duplicate admin navigation surfaces
-- a single main content area
-- consistent light/dark design tokens and shared component styling
-
-The active admin theme implementation is the shared theme-token system:
-
-- `ThemeEngine` remains the single theme activator for admin light/dark switching.
-- `body[data-theme]` and shared CSS custom properties are the canonical styling inputs.
-- Dynamic admin views, injected admin router styles, cards, tables, forms, alerts, modals, and embedded module previews must consume those same tokens instead of hard-coded parallel palettes.
-
-## Security requirements
-
-The following rules are mandatory:
-
-- No secrets, credentials, session tokens, or live admin identity data may be committed to the repository.
-- .env values must remain host-local and must never be checked into git.
-- Do not expose production credentials in logs, commits, screenshots, PRs, or documentation.
-- Admin write operations remain session + role + CSRF protected.
-- Unauthenticated requests must fail with the correct HTTP protection behavior; invalid CSRF must fail as a 403.
-- Browser-local state must not be treated as a substitute for the server-side session.
-- Module visibility in the user app must not be decided by browser state alone; the server-facing module catalog is responsible for filtering visibility when module permissions are declared.
-
-## Change rules
-
-Work must be minimal and evidence-driven.
-
-- Do not make architectural changes without evidence that the current implementation is wrong.
-- Do not invent modules, alternate admin systems, or duplicate runtime paths.
-- Do not change production behavior to satisfy a stale assumption.
-- Do not treat historical issues as current facts if they have been disproven by current code and runtime checks.
-- If a change affects auth, session handling, deployment, or host runtime assumptions, confirm the actual runtime behavior before proceeding.
-
-## Testing and validation
-
-Before a change is considered complete, the smallest relevant validation must be performed.
-
-Examples:
-
-- targeted auth/session checks for changed login or session logic
-- targeted admin/file-check validation for changed admin or setup flow
-- relevant existing unit tests for the changed behavior
-- module lifecycle checks covering discovery, install, activate, deactivate, uninstall, and public module-catalog state when module visibility depends on activation or permissions
-
-Avoid broad, repeated test runs when the relevant target has already been validated.
-
-## GitHub workflow
-
-All work is expected to follow the repository’s standard branch and PR workflow:
-
-- work on a feature branch
-- commit the change
-- push the branch to origin
-- create or update a pull request against main
-- wait for required checks to complete
-- merge only after checks are green and the branch is ready
-- sync local main with origin/main after merge
-- verify a clean working tree
-
-No direct push to main is permitted.
-
-## Repository synchronization record (2026-08-29)
-
-The full local repository state was audited against `El-Ninjo1965/Neutral` on `origin/main` before synchronization. Local `main` and `origin/main` started at the same commit, the secondary local `work` branch contained no commit absent from `origin/main`, and there were no uncommitted project-source or documentation changes to recover. No reset, forced update, or replacement from an older remote file was used.
-
-The audit found generated dependencies and three host-local environment files tracked by Git. They were removed from the Git index without deleting the local files. `.gitignore` now excludes `node_modules/`, `.env`, and `.env.*`, while allowing a future sanitized `.env.example`. This is required repository hygiene: generated dependencies and operational credentials must remain local and must not be transferred in synchronization commits.
-
-The requested documentation inventory was also checked directly in the local tree and on `origin/main`. `VISION.md`, `WORKFLOW.md`, and `TODO.md` are present. `Architecture.md`, `Functions.md`, `API.md`, `Database.md`, `Security.md`, `Install-README-Web-App.md`, `Install-README-Server.md`, and `ModuleCreation.md` are absent and were not fabricated during synchronization.
-
-## Deployment
-
-Production deployment follows the repository’s deployment rules and configuration, not a Node-port assumption.
-
-Relevant references:
-
-- server.md
-- scripts/manual-ftps-deploy.js
-- deployment allowlists and server configuration files used by the project
-
-The current manual FTPS deploy script reads deployment credentials in this order:
-
-- `.env.ftp.deploy`
-- `.env.deploy`
-- process environment overrides
-
-The current shared-host FTPS deploy flow uses a host-safe mirror mode without remote permission synchronization and without parallel upload races; deployment reliability is more important than upload concurrency on this host.
-
-Only the allowlisted production tree may be staged and uploaded; deploy credentials and host-local `.env` files are never committed.
-
-The deployment path must include the actual production PHP files and API files required by the host; a setup-only deploy is not a valid production deployment.
-
-## Authoritative references
-
-The effective references for future work are:
-
-- VISION.md
-- TODO.md
-- WORKFLOW.md
-- server.md
-- webroot/admin.php
-- webroot/setup.php
-- webroot/api/.htaccess
-- scripts/manual-ftps-deploy.js
-- package.json for local test commands
-
-## Prohibited actions
-
-Agents must not do the following without explicit evidence and a valid reason:
-
-- invent new admin systems or duplicate entry points
-- rewrite architecture based on stale bug history
-- assume root /api/* is the public production route
-- assume Node port 3000 is active in shared hosting
-- commit secrets, real credentials, or host config values
-- keep historical bug descriptions as if they were current state
-- add features or modules without a concrete requirement
-- auto-activate discovered modules or make install implicitly mean active
-
-## .env and host data handling
-
-- .env files are host-local runtime configuration and must not be committed.
-- Credentials, DB values, session data, and live admin identity are operational secrets.
-- Host-specific values must be treated as runtime state, not as repository content.
-- Any actual production login verification must be performed only with the valid host credentials and only after confirming that the host-side user is real and authorized.
-
-## Module runtime expectations
-
-For browser-facing module discovery and the user app:
-
-- `/api/modules` is the public module catalog endpoint.
-- The public catalog must remain lifecycle-aware enough for the browser to distinguish discovered vs. installed vs. active modules.
-- The browser runtime must not overwrite discovered lifecycle state by forcing modules into an installed/inactive status during discovery.
-- Public/user-facing module UIs may only behave as active when the lifecycle is actually active; discovery alone is not activation.
-- When a module declares visibility permissions, `/api/modules` must filter that module according to the server-resolved identity instead of exposing it to every client by default.
-- Module permission declarations belong to the module manifest, not hard-coded core allowlists.
-- If a module declares a standalone test entry, that entry is a developer validation surface only; it must not become a second production admin or alternate runtime authority.
+Dieses Dokument enthält verbindliche Arbeitsregeln und ein fortlaufendes Arbeitsprotokoll. Zielarchitektur steht in `VISION.md`; tatsächliche technische Verträge stehen in den jeweiligen Fachdokumenten. Historische Bugs und abgeschlossene Live-Diagnosen gehören nicht in die Arbeitsregeln.
+
+## 2. Projektgrenzen
+
+- Projektname und Produktidentität sind ausschließlich **NEUTRAL**.
+- NEUTRAL ist ein neutrales Entwicklungsframework, keine konkrete Fachanwendung.
+- Web-App und Server bleiben getrennte Hauptkomponenten; Kommunikation erfolgt über dokumentierte HTTPS/API-Verträge.
+- Core nicht für einzelne Features umbauen. Universelle Erweiterungspunkte werden nur evidenzbasiert und dokumentiert ergänzt.
+- Shared Hosting mit PHP 8.x und MariaDB/MySQL ist die erste Produktionsbasis. Node.js darf Entwicklung und Tests unterstützen, ist aber keine Produktionsvoraussetzung.
+- GPS ist technische Referenzerweiterung, keine Core- oder Produktidentität.
+
+## 3. Verbindliche Vorbereitung vor jeder Änderung
+
+In dieser Reihenfolge vollständig lesen bzw. prüfen:
+
+1. `VISION.md`
+2. `WORKFLOW.md`
+3. `TODO.md`
+4. relevante technische Dokumentation (`Architecture.md`, `Functions.md`, `API.md`, `Database.md`, `Security.md`, Installations- oder Moduldokumentation)
+5. tatsächlichen aktuellen Code, Tests, Git-Status und betroffene Konfiguration
+
+Keine alte Annahme, Dokumentationsaussage oder frühere Diagnose ungeprüft übernehmen. Ist Dokumentation und Code widersprüchlich, wird der Ist-Zustand im Code ermittelt und die Abweichung dokumentiert; Zielentscheidungen folgen `VISION.md`.
+
+## 4. Änderungsregeln
+
+- Änderung minimal, überprüfbar und auf den Auftrag begrenzen.
+- Keine neuen Features, Module oder Refactorings ohne konkreten Auftrag.
+- Keine Secrets, `.env`-Werte, Tokens, Sessions, Live-Identitäten, Logs mit Geheimnissen oder `node_modules` committen.
+- Keine produktiven Hostnamen, Ports oder Dateipfade als universelle Coreannahme fest verdrahten.
+- Keine Browserrolle als Ersatz für serverseitige Session-/Permissionprüfung verwenden.
+- Keine Modul-Discovery mit Installation oder Aktivierung gleichsetzen.
+- Keine fremden Modul- oder privaten Coredateien aus einem Fachmodul verändern.
+- Status ehrlich als IST/VORHANDEN, TEILWEISE, GEPLANT oder FEHLT kennzeichnen.
+
+## 5. Abschluss jeder Änderung
+
+In dieser Reihenfolge:
+
+1. kleinste relevante Tests und erforderliche Gesamttests ausführen
+2. Ergebnisse und Seiteneffekte prüfen
+3. `TODO.md` auf den nachgewiesenen Stand bringen
+4. dieses Arbeitsprotokoll vollständig ergänzen
+5. betroffene technische Dokumentation aktualisieren und auf Widersprüche prüfen
+6. Git-Diff und Secret-/Artefaktgrenzen prüfen
+7. alle vorgesehenen Änderungen committen
+8. nach GitHub `main` pushen, sofern der Auftrag dies ausdrücklich vorsieht
+9. GitHub `main` direkt verifizieren
+10. `git fetch origin`, lokalen `main` mit `origin/main` vergleichen und sauberen Arbeitsbaum prüfen
+
+Eine Aufgabe gilt erst als abgeschlossen, wenn der vorgesehene Commit auf GitHub vorhanden ist und die Abschlussprüfung bestanden wurde.
+
+## 6. Tests und Validierung
+
+- Dokumentationsänderungen: Dateiinventar, Links/Pfade, Statusaussagen, verbotene Altbegriffe und Widersprüche prüfen; bestehende automatisierte Tests ausführen, wenn technische Verträge beschrieben werden.
+- Auth/API/DB: positive und negative Fälle, Auth, Rechte, CSRF, Validierung, Fehlercodes und Persistenz prüfen.
+- Module: Discovery, Install/inaktiv, Activate, Deactivate, Uninstall, Dependencies, Permissions, Settings und Cleanup prüfen.
+- UI/Performance: realen Browser bzw. geeignetes Gerät nutzen; browserlose Tests niemals als visuellen oder realen GPS-Test ausgeben.
+- Deployment: Staging-/Allowlist prüfen; Web-App und Server getrennt behandeln; Secrets nicht ausgeben.
+
+Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen werden nur dann zurückgesetzt, wenn sie nachweislich erst durch den Test entstanden sind.
+
+## 7. Git- und GitHub-Regeln
+
+- Vor Arbeit `git fetch origin` und Branch/Status/Divergenz prüfen.
+- Lokale Arbeit nie durch Hard Reset, Force Push oder ungeprüftes Überschreiben verlieren.
+- Normalerweise Featurebranch und Pull Request verwenden. Ein direkter Push nach `main` erfolgt nur bei ausdrücklichem Auftrag und nach bestandenen Prüfungen.
+- Commitnachrichten beschreiben den tatsächlichen Inhalt.
+- Nach Push GitHub per API/Remoteinhalt prüfen; ein lokaler Commit allein schließt die Aufgabe nicht ab.
+
+## 8. Sicherheits- und Betriebsregeln
+
+- Hostlokale `.env`- und Deploymentdateien bleiben ignoriert und außerhalb der Dokumentation.
+- Produktions-Web-App enthält keine DB-/FTP-/Adminsecrets.
+- PHP-Server ist Vertrauensgrenze für Auth, Rechte, CSRF und Datenbank.
+- HTTPS ist Pflicht. Schreibrechte werden minimal vergeben; kein pauschales `777`.
+- Node-Port 3000, Passenger, SSH oder ein Node-Dauerprozess dürfen nicht als Shared-Hosting-Voraussetzung angenommen werden.
+
+## 9. Dokumentationspflege
+
+- `VISION.md`: nur langfristige Zielarchitektur, keine Chronik oder Livefehler.
+- `Architecture.md`: IST und Ziel getrennt.
+- `Functions.md`: nur nachweisbare Funktionen, fehlende Ziele ausdrücklich markieren.
+- `API.md`: nur implementierte Endpunkte; Auth, Request, Response, Fehler und DB-Bezug.
+- `Database.md`: keine erfundenen Stores/Tabellen.
+- `Security.md`: Schutzstatus ehrlich kennzeichnen.
+- Installationsanleitungen: reproduzierbare Schritte ohne echte Secrets.
+- `ModuleCreation.md`: verbindlicher aktueller Erweiterungsvertrag.
+- `TODO.md`: nur tatsächliche Reihenfolge und nicht nachweislich erledigte Arbeit offen lassen.
+
+## 10. Fortlaufendes Arbeitsprotokoll
+
+### 2026-08-29 – Dokumentationsgrundlage vollständig neu aufbauen
+
+- **Aufgabe:** Ausstehenden Dokumentationsauftrag nachholen, die Vision vollständig bereinigen und alle geforderten technischen Dokumente aus dem aktuellen Code ableiten.
+- **Betroffene Dateien:** `VISION.md`, `WORKFLOW.md`, `TODO.md`, `Architecture.md`, `Functions.md`, `API.md`, `Database.md`, `Security.md`, `Install-README-Web-App.md`, `Install-README-Server.md`, `ModuleCreation.md`.
+- **Änderung:** `VISION.md` vollständig durch eine fachfreie Zwei-Komponenten-Zielarchitektur ersetzt; Offline-First, Mobile-First, Startperformance, Shared-Hosting-Portabilität und GPS als reine Referenzerweiterung festgelegt. Workflow und TODO bereinigt. Acht fehlende Fachdokumente anhand von Browser-Core, PHP-Core, Node-Testserver, API-Router, Schema und GPS-Manifest erstellt.
+- **Zweck:** widerspruchsfreie, überprüfbare Grundlage für weitere Coding-Agenten schaffen, ohne fehlende Features oder Datenstrukturen zu erfinden.
+- **Tests/Validierung:** vollständiger Dokumentationsbestand; Quellcode-/Routen-/Schema-/Manifestanalyse; Suche nach unerwünschten Fachproduktbegriffen, historischen Hostpfaden und falschen Node-Produktionsannahmen; `npm test`; Git-Diff-/Status- und GitHub-Dateiprüfung.
+- **Ergebnis:** alle elf geforderten Dokumentationsdateien erstellt bzw. aktualisiert; Ist-, Ziel- und Fehlstatus getrennt; keine Feature- oder Modulimplementierung verändert.
+- **Offene Punkte:** die priorisierten Implementierungslücken stehen in `TODO.md`, insbesondere Sync/Offline, Startperformance, API-Verträge, PHP-Login-Schutz und formale Modulverträge.
+- **Commit:** der Commit, der diesen Protokolleintrag enthält; die endgültige ID wird durch Git erzeugt und in der Abschlussmeldung/GitHub-Historie verifiziert.

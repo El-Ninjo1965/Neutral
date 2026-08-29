@@ -1,0 +1,80 @@
+# NEUTRAL – Sicherheit
+
+## Statuslegende
+
+- **VORHANDEN**: im Code implementiert.
+- **TEILWEISE**: vorhanden, aber nicht vollständig produktionsreif oder nicht überall einheitlich.
+- **FEHLT**: keine belastbare Implementierung.
+- **GEPLANT**: verbindliches Ziel.
+
+## 1. Login
+
+**VORHANDEN:** `POST /api/auth/login` authentifiziert serverseitig gegen gespeicherte Passwort-Hashes. PHP verwendet `password_hash`/`password_verify`; die Node-Referenzruntime verwendet den Password-Hash-Service mit Argon2 bzw. unterstütztem Fallback. Fehlversuche liefern keine Passwortdaten.
+
+**TEILWEISE:** Node besitzt Rate-Limiting; für die PHP-Produktion ist im aktuellen Router keine gleichwertige persistente Login-Drosselung nachgewiesen. Diese ist TODO.
+
+## 2. Logout
+
+**VORHANDEN:** `POST /api/auth/logout` invalidiert die Serversession. Zustandsänderung verlangt Session/CSRF gemäß API-Schutz.
+
+## 3. Sessions und Cookies
+
+**VORHANDEN:** Servergenerierte Session-ID, serverseitige Sessionregistrierung, Ablaufzeit, Status und CSRF-Token. PHP setzt Cookieparameter anhand der Laufzeit; Adminseiten prüfen die serverseitige Identität und Rolle.
+
+**TEILWEISE:** sichere Produktionswirkung hängt von HTTPS und korrekter Cookiekonfiguration (`Secure`, `HttpOnly`, `SameSite`) im aktiven Hostkontext ab. Browser-lokale Authzustände sind ausschließlich Clientartefakte und keine Autorität.
+
+## 4. Tokens
+
+**VORHANDEN/BEGRENZT:** Ein Admin-/Bootstrap-Zugriffstoken kann für autorisierte Setup- oder Automationpfade aufgelöst werden. Er darf keine normale interaktive Session ersetzen und muss hostlokal bleiben.
+
+**FEHLT:** allgemeines Access-/Refresh-Token-System für Benutzer.
+
+## 5. Remember / Refresh
+
+**FEHLT:** kein dokumentierter produktiver Remember-me- oder Refresh-Token-Lifecycle. Eine spätere Umsetzung benötigt Rotation, Widerruf, Gerätebindung/Übersicht und sichere Speicherung.
+
+## 6. Rollen und Rechte
+
+**VORHANDEN:** Tabellen und PHP-Services für Rollen, Permissions, Benutzerrollen und Rollenpermissions. API-Endpunkte prüfen konkrete Permissionkeys. Systemrollen sind gegen allgemeines Löschen/Ändern geschützt; Modulppermissions besitzen Scope und deklarierte Standardrollen.
+
+**TEILWEISE:** Rechtebezeichnungen und Endpointmatrix müssen bei jeder API-Änderung synchron dokumentiert und getestet werden.
+
+## 7. CSRF
+
+**VORHANDEN:** Serversession enthält CSRF-Token. `ApiClient` sendet für POST/PUT/PATCH/DELETE `x-csrf-token`, und geschützte PHP-/Node-Schreibwege validieren ihn. Ungültiger CSRF-Kontext führt zu 403.
+
+## 8. HTTPS
+
+**GEPLANT/BETRIEBSPFLICHT:** Produktion wird ausschließlich über HTTPS betrieben. Der Code kann TLS nicht erzwingen, wenn der vorgeschaltete Host falsch konfiguriert ist. HSTS, Zertifikatserneuerung und Proxyheader sind Deploymentaufgaben.
+
+## 9. Secrets
+
+**VORHANDEN ALS REPOSITORY-REGEL:** `.env` und `.env.*` sind ignoriert; `.env.example` darf nur bereinigte Platzhalter enthalten. Keine Zugangsdaten in Clientcode, Dokumentation, Logs, Commits oder Screenshots. Bereits offengelegte Tokens müssen rotiert werden.
+
+## 10. Datenbankzugriff
+
+**VORHANDEN:** ausschließlich serverseitig über PDO/Services; Passwörter bleiben in Environmentkonfiguration; relevante Services nutzen vorbereitete Statements. Schema nutzt Foreign Keys und eindeutige Indizes.
+
+**TEILWEISE:** Least-Privilege-DB-Rollen, Backupverschlüsselung, Rotation und produktive DB-Audits sind Betreiberaufgaben und noch nicht vollständig automatisiert.
+
+## 11. Lokale Speicherung
+
+**TEILWEISE:** IndexedDB und localStorage speichern Clientzustand. Sie sind nicht automatisch verschlüsselt. Sessiongeheimnisse, Passwörter und serverseitige Autorität dürfen dort nicht dauerhaft abgelegt werden. Für personenbezogene Offline-Daten fehlen noch allgemeine Verschlüsselungs-, Lösch- und Exportverträge.
+
+## 12. Datenschutz
+
+**GEPLANT:** Datenminimierung, Zweckbindung, Transparenz, Löschung, Export, Aufbewahrungsfristen und Schutz lokaler Gerätedaten. GPS-Daten sind besonders sensibel; Berechtigung, sichtbarer Status und begrenzte Speicherung sind Pflicht.
+
+**FEHLT:** vollständiges projektweites Dateninventar und formales Lösch-/Exportkonzept.
+
+## 13. Eingabe, Fehler und Logging
+
+**VORHANDEN/TEILWEISE:** JSON-Parsing, grundlegende Payloadvalidierung, zentrale Fehlerantworten und Audit-/Logservices existieren. Produktionsantworten dürfen keine Stacktraces oder Secrets enthalten. Dateiuploads und neue Endpunkte benötigen eigene Größen-, Typ- und Inhaltsvalidierung.
+
+## 14. Offene Prioritäten
+
+1. PHP-Login-Drosselung und Missbrauchsschutz nachweisen/ergänzen.
+2. Cookieflags im realen HTTPS-Betrieb automatisiert prüfen.
+3. lokales Datenschutz-/Verschlüsselungsmodell für Offline-Daten definieren.
+4. Refresh/Remember nur bei tatsächlichem Bedarf mit Rotation entwerfen.
+5. Securitytests für jede neue API, Modulpermission und Migration verpflichtend halten.
