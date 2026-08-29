@@ -163,3 +163,15 @@ Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. E
 `CoreStartup.start()` ist die minimale READY-Phase und wartet nicht auf IndexedDB oder Module. `startBackground()` ist die deduplizierte Hintergrundkette für Storage, Clientfacaden und Discovery; ihre Phasen emittieren Status und bleiben bei Einzelproblemen diagnostizierbar. Nur storageabhängige Funktionen warten auf `startup:storage-ready` bzw. die Hintergrund-Promise.
 
 Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell. `neutral:auth-ready` startet den Router genau einmal; es existiert kein DOM-Polling und kein pauschaler Startdelay. CoreStartup ist alleinige Discovery-Autorität. Adminviews dürfen nach bestätigter Identität laden, aber First Paint und Loginstatus nicht blockieren.
+
+### P3-Abnahmekriterien – IST
+
+1. Statische Shell ist ohne Serverantwort sichtbar.
+2. Minimal-Core enthält keine IndexedDB-, Authserver- oder Discovery-Wartekette.
+3. UI wird vor `startBackground()` interaktiv markiert.
+4. Storage, Authstatus, Discovery und Hintergrundabschluss besitzen getrennte Marken.
+5. CoreStartup besitzt genau eine Discovery-Aufrufstelle.
+6. API-Timeout lässt Auth-Shell sichtbar und erteilt keine Rechte.
+7. Adminrouter startet eventgetrieben erst nach bestätigter Identität.
+
+Zeitbudgets auf realer Mobilhardware bleiben zwei ausdrücklich offene P8-Gerätetests.

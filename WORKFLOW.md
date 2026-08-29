@@ -227,7 +227,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** 36 synchrone User- und 46 Admin-Startscripte, leeres statisches Main, serielles IndexedDB/Discovery, doppelte Admin-Discovery, fehlender Fetch-Timeout, Auth-Serienkette, Polling und 500-ms-Fallback im Code nachgewiesen.
 - **Ergebnis:** konkrete P3-TODO 0/4 erstellt; keine Laufzeitänderung.
 - **Offene Punkte:** P3.1–P3.4; reale iOS-/Androidmessungen bleiben zwei P8-Gerätetests.
-- **Commit-ID:** wird nach Commit verifiziert.
+- **Commit-ID:** `8955fcf1a24d04857d2cc8826e202774bae6bdbe`.
 
 ### 2026-08-29 – P3.1 Shell, Defer-Ladepfad und Messpunkte
 
@@ -238,7 +238,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** statische Shell, Defer-Reihenfolge, Freeze/Idempotenz/Marknamen und Gesamtsuite geprüft.
 - **Ergebnis:** P3.1 abgeschlossen; echte Millisekundenbudgets werden nicht ohne Mobilhardware erfunden.
 - **Offene Punkte:** P3.2–P3.4; zwei reale Gerätetests in P8.
-- **Commit-ID:** wird nach Commit verifiziert.
+- **Commit-ID:** `87f323de102544e59ccfd9c4690bc29f1f859c2f`.
 
 ### 2026-08-29 – P3.2 Minimal-Core von Hintergrundstart trennen
 
@@ -249,7 +249,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Minimalphase vor Storage/Discovery, Promise-Deduplizierung, genau ein Storage-/Discovery-Aufruf, Fehlergrenzen und Gesamtsuite geprüft.
 - **Ergebnis:** P3.2 abgeschlossen; Sync bleibt außerhalb P3.
 - **Offene Punkte:** P3.3–P3.4.
-- **Commit-ID:** wird nach Commit verifiziert.
+- **Commit-ID:** `834705d8c4e366225c3711abe3fe067d5d0cdb70`.
 
 ### 2026-08-29 – P3.3 Auth- und API-Warteketten begrenzen
 
@@ -260,7 +260,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** hängender Fetch → 408/API_TIMEOUT, kein `me`-Doppelrequest im Loginhandler, serverseitige Auth-/CSRF-Gesamttests und Gesamtsuite geprüft.
 - **Ergebnis:** P3.3 abgeschlossen; keine Browseridentität ersetzt Serverrechte.
 - **Offene Punkte:** P3.4.
-- **Commit-ID:** wird nach Commit verifiziert.
+- **Commit-ID:** `b3aa478ec4af3850812161d60599fd757d5aba4c`.
 
 ### 2026-08-29 – P3.4 Adminstart und Discovery deduplizieren
 
@@ -271,4 +271,15 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Quellvertrag ohne Polling/Delay/zweite Discovery, Authevent, Scriptreihenfolge, vollständige Admin/API/Auth-/Modulsuite geprüft.
 - **Ergebnis:** P3.4 abgeschlossen; alle vier P3-Pakete sind code-seitig erledigt.
 - **Offene Punkte:** zwei reale P8-Geräteprofile; keine P3-Architekturentscheidung offen.
-- **Commit-ID:** wird nach Commit verifiziert.
+- **Commit-ID:** `92a0a6ba5979faa163dd6febc08e9a46fc1f04d7`.
+
+### 2026-08-29 – P3-Abschlussprüfung
+
+- **Aufgabe:** Vollständigen User-/Adminstart erneut gegen alle P3-Kriterien, P2-Verträge und Shared-Hosting-Grenzen prüfen.
+- **Betroffene Dateien:** User-/Admin-Entrypoints, CoreStartup/Performance/Network, ApiClient/Authübergang, Modulruntime, Tests und sämtliche betroffene technische Dokumentation.
+- **Änderung:** letzte Authstatusmarke im User-Hintergrund ergänzt; Paketstatus und Commit-IDs konsolidiert. Kein Fachmodul, Syncfeature, Buildzwang oder Serverruntimevertrag verändert.
+- **Zweck:** code-seitig nachweisen: sichtbare Shell zuerst, Minimal-Core, interaktive UI, Storage/Auth/Discovery/Hintergrund danach.
+- **Tests/Validierung:** vollständige Suite mit 121 Tests; statische Prüfung aller externen Startscripts auf `defer`; genau eine Discovery-Aufrufstelle; keine Adminintervalle/Startdelays; alle neun Messphasen; Timeout-/Offlinepfad; Secret-/Diff-/Dokumentationsprüfung. Fehlende lokale Node-Abhängigkeiten wurden vor der maßgeblichen Gesamtsuite über `npm install` aus dem Lockfile wiederhergestellt und blieben ignoriert.
+- **Ergebnis:** P3.1–P3.4 vollständig; Testabdeckung von 116 auf 121 erhöht. Reale Millisekunden wurden mangels iOS-/Android-Hardware nicht erfunden.
+- **Offene Punkte:** genau zwei reale Gerätetests (Safari/WebKit und Android Chromium/WebView) sind in P8 vorgemerkt; keine offene P3-Architekturentscheidung.
+- **Commit-ID:** wird im Abschlusscommit verifiziert.

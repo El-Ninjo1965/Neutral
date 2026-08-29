@@ -548,6 +548,7 @@
           window.CoreErrorHandler.handle(error, { type: 'background-startup' });
         }
       } finally {
+        if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');
         renderApp();
       }
     }, 0);
