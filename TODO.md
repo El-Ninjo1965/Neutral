@@ -57,7 +57,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P3.4 – Einmalige Discovery und Admin-Initialisierung
 
-- [ ] **Aufgabe:** doppelte Admin-Discovery, 500-ms-Fallbackdelay und Auth-Polling beseitigen; unabhängige Adminansichten erst nach sichtbarer Shell laden. **Technische Ursache:** `CoreStartup` entdeckt Module und `master-ui.ensureRuntime()` entdeckt erneut; `admin-init.js` pollt Globals und verzögert bei bereits fertigem DOM pauschal. **Bereiche:** `master-ui.js`, `admin-init.js`, Admin-Ladevertrag, Tests. **Abhängigkeiten:** P3.2-Hintergrundpromise und Modul-Lifecycle. **Abnahme:** pro Start genau ein Discovery-Aufruf; kein Intervall/pauschaler 500-ms-Startdelay; geschützte Shell/Status sofort, Routerdaten parallel nach bestätigter Session. **Status:** OFFEN.
+- [x] **Aufgabe:** doppelte Admin-Discovery, 500-ms-Fallbackdelay und Auth-Polling beseitigen; unabhängige Adminansichten erst nach sichtbarer Shell laden. **Technische Ursache:** `CoreStartup` entdeckt Module und `master-ui.ensureRuntime()` entdeckt erneut; `admin-init.js` pollt Globals und verzögert bei bereits fertigem DOM pauschal. **Bereiche:** `master-ui.js`, `admin-init.js`, Admin-Ladevertrag, Tests. **Abhängigkeiten:** P3.2-Hintergrundpromise und Modul-Lifecycle. **Abnahme:** pro Start genau ein Discovery-Aufruf; kein Intervall/pauschaler 500-ms-Startdelay; geschützte Shell/Status sofort, Routerdaten parallel nach bestätigter Session. **Status:** ERLEDIGT.
 
 ### Reale Geräteabnahme (P8)
 

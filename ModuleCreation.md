@@ -200,3 +200,7 @@ Mindestens prüfen:
 8. Offline-/Fehlerzustände verlieren keine lokalen Daten.
 9. Standalone-Test ist nur Entwicklungsoberfläche und keine zweite Produktionsautorität.
 10. `TODO.md`, `WORKFLOW.md`, `Functions.md`, `API.md`, `Database.md` und `Security.md` werden bei Vertragsänderung aktualisiert.
+
+### Startperformance für Module
+
+Discovery erfolgt ausschließlich einmal in `CoreStartup.startBackground()`. Ein Modul startet bei Discovery keine Geräteabfrage, Netzwerkoperation oder Aktivierung. Installation bleibt inaktiv; teure Ressourcen beginnen erst bei expliziter Aktivierung und werden bei Deaktivierung freigegeben. Module dürfen keinen zweiten Katalogscan aus UI-Code anstoßen.

@@ -105,3 +105,5 @@ Clientdateien sind öffentlich. Niemals DB-Passwörter, API-Admin-Tokens, FTP-Zu
 ## 10. Startdiagnostik
 
 `CorePerformance.snapshot()` liefert ausschließlich lokale monotone Phasenzeiten, keine Nutzer- oder Payloaddaten. Die statische Shell muss auch bei gedrosseltem/offline Netzwerk vor Hintergrundinitialisierung sichtbar bleiben. Externe Scripts werden ohne Buildzwang geordnet mit `defer` geladen.
+
+Im Admin-Deployment muss `api-client.js` vor `master-ui.js` stehen; alle externen klassischen Scripts behalten mit `defer` ihre deklarierte Reihenfolge. `admin-init.js` wartet auf das bestätigte `neutral:auth-ready`-Event und verwendet kein Polling.

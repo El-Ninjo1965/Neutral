@@ -86,8 +86,8 @@
     <script defer src="/Web-App/core/local-auth.js"></script>
     <script defer src="/Web-App/core/app.js"></script>
 
-    <script defer src="/Web-App/public/master-ui.js"></script>
     <script defer src="/Web-App/public/api-client.js"></script>
+    <script defer src="/Web-App/public/master-ui.js"></script>
     <script defer src="/Web-App/public/admin/common.js"></script>
     <script defer src="/Web-App/public/admin/users-view.js"></script>
     <script defer src="/Web-App/public/admin/roles-view.js"></script>

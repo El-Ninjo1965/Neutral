@@ -30,3 +30,16 @@ test('admin login uses the authoritative login response without a duplicate me r
   assert.doesNotMatch(loginHandler, /serverApiClient\.me/);
   assert.match(loginHandler, /Session established\. Opening workspace/);
 });
+
+test('admin startup is event-driven and delegates discovery to CoreStartup once', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const adminInit = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin-init.js'), 'utf8');
+  const masterUi = fs.readFileSync(path.join(__dirname, '../Web-App/public/master-ui.js'), 'utf8');
+  const startup = fs.readFileSync(path.join(__dirname, '../Web-App/core/core-startup.js'), 'utf8');
+  assert.doesNotMatch(adminInit, /setInterval|30000|setTimeout/);
+  assert.match(adminInit, /neutral:auth-ready/);
+  assert.doesNotMatch(masterUi, /ModuleManager\.discoverModules/);
+  assert.match(masterUi, /CoreStartup\.startBackground/);
+  assert.equal((startup.match(/\.discoverModules\(\)/g) || []).length, 1);
+});

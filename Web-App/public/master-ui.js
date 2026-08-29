@@ -3077,6 +3077,7 @@
         }
 
         syncShellVisibility();
+        window.dispatchEvent(new CustomEvent('neutral:auth-ready'));
         renderSummary();
         renderUserMenu();
         renderPageContent();
@@ -3127,8 +3128,8 @@
     if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
       await window.CoreStartup.start();
     }
-    if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
-      await window.ModuleManager.discoverModules();
+    if (window.CoreStartup && typeof window.CoreStartup.startBackground === 'function') {
+      void window.CoreStartup.startBackground();
     }
   };
 
@@ -3178,6 +3179,8 @@
     renderAppModuleNav();
     renderUserMenu();
     syncShellVisibility();
+    if (currentUser) window.dispatchEvent(new CustomEvent('neutral:auth-ready'));
+    if (window.CorePerformance) window.CorePerformance.mark('ui-interactive');
     await renderPageContent();
     bindAuth();
   };

@@ -261,3 +261,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P3.3 abgeschlossen; keine Browseridentität ersetzt Serverrechte.
 - **Offene Punkte:** P3.4.
 - **Commit-ID:** wird nach Commit verifiziert.
+
+### 2026-08-29 – P3.4 Adminstart und Discovery deduplizieren
+
+- **Aufgabe:** Polling, Pauschaldelay, redundante Auth-/Statusrequests und zweite Discovery aus dem Adminstart entfernen.
+- **Betroffene Dateien:** `admin-init.js`, `master-ui.js`, Admin-Scriptreihenfolge, Performance-/Starttests, `TODO.md`, `WORKFLOW.md`, `Architecture.md`, `ModuleCreation.md`, Installationsdoku.
+- **Änderung:** Master-UI startet nur Minimal-Core und stößt Hintergrundstart ohne Await an. Bestätigte Serveridentität signalisiert einmal `neutral:auth-ready`; AdminRouter startet daraufhin eventgetrieben, ohne 100-ms-Polling/30-s-Wartefenster, Status-/me-Doppelrequests oder 500-ms-Fallback. ApiClient lädt vor Master-UI. Discovery existiert nur in CoreStartup.
+- **Zweck:** geschützte Shell reagiert sofort auf Authstatus; Ansichten laden erst danach und blockieren weder Paint noch Loginübergang.
+- **Tests/Validierung:** Quellvertrag ohne Polling/Delay/zweite Discovery, Authevent, Scriptreihenfolge, vollständige Admin/API/Auth-/Modulsuite geprüft.
+- **Ergebnis:** P3.4 abgeschlossen; alle vier P3-Pakete sind code-seitig erledigt.
+- **Offene Punkte:** zwei reale P8-Geräteprofile; keine P3-Architekturentscheidung offen.
+- **Commit-ID:** wird nach Commit verifiziert.
