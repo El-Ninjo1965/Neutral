@@ -250,3 +250,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P3.2 abgeschlossen; Sync bleibt außerhalb P3.
 - **Offene Punkte:** P3.3–P3.4.
 - **Commit-ID:** wird nach Commit verifiziert.
+
+### 2026-08-29 – P3.3 Auth- und API-Warteketten begrenzen
+
+- **Aufgabe:** Nicht erreichbare API kontrolliert abbrechen und den Admin-Login ohne redundanten Sessionroundtrip übergeben.
+- **Betroffene Dateien:** `api-client.js`, `master-ui.js`, API-Performancetests, `TODO.md`, `WORKFLOW.md`, `API.md`, `Security.md`, `Functions.md`.
+- **Änderung:** ApiClient besitzt 10-s-Standardtimeout und per Request konfigurierbaren Abort/Fallback mit `API_TIMEOUT`. Login zeigt sofort Status, übernimmt die autoritative Identität aus der erfolgreichen Serverantwort und spart das direkte zweite `auth/me`; Initial-Sessionprüfung bleibt serverautoritativ im Hintergrund und wird markiert.
+- **Zweck:** Langsamer/offliner Server friert die sichtbare UI nicht ein; erfolgreicher Login wirkt unmittelbar.
+- **Tests/Validierung:** hängender Fetch → 408/API_TIMEOUT, kein `me`-Doppelrequest im Loginhandler, serverseitige Auth-/CSRF-Gesamttests und Gesamtsuite geprüft.
+- **Ergebnis:** P3.3 abgeschlossen; keine Browseridentität ersetzt Serverrechte.
+- **Offene Punkte:** P3.4.
+- **Commit-ID:** wird nach Commit verifiziert.

@@ -53,7 +53,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P3.3 – Auth/API-Timeout und unmittelbarer Übergang
 
-- [ ] **Aufgabe:** Sessionprüfung im Hintergrund mit kontrolliertem Timeout ausführen und Login-Erfolg sofort als Übergangszustand darstellen. **Technische Ursache:** `ApiClient` besitzt keinen Abort-Timeout; Admin wartet seriell auf Startup, `auth/me` und Views, Login wartet nach erfolgreichem Login nochmals auf `me`. **Bereiche:** `api-client.js`, User-/Admin-Authstatus, `master-ui.js`, Tests, API-/Security-Doku. **Abhängigkeiten:** serverseitige Session bleibt Autorität; kein Cache als Rechteentscheidung. **Abnahme:** Fetch endet kontrolliert; Shell bleibt bei Offline/Timeout sichtbar; erfolgreicher Login zeigt sofort „Session wird geöffnet“ und verwendet die Loginidentität, zusätzliche `me`-Validierung läuft nur wo erforderlich. **Status:** OFFEN.
+- [x] **Aufgabe:** Sessionprüfung im Hintergrund mit kontrolliertem Timeout ausführen und Login-Erfolg sofort als Übergangszustand darstellen. **Technische Ursache:** `ApiClient` besitzt keinen Abort-Timeout; Admin wartet seriell auf Startup, `auth/me` und Views, Login wartet nach erfolgreichem Login nochmals auf `me`. **Bereiche:** `api-client.js`, User-/Admin-Authstatus, `master-ui.js`, Tests, API-/Security-Doku. **Abhängigkeiten:** serverseitige Session bleibt Autorität; kein Cache als Rechteentscheidung. **Abnahme:** Fetch endet kontrolliert; Shell bleibt bei Offline/Timeout sichtbar; erfolgreicher Login zeigt sofort „Session wird geöffnet“ und verwendet die Loginidentität, zusätzliche `me`-Validierung läuft nur wo erforderlich. **Status:** ERLEDIGT.
 
 ### P3.4 – Einmalige Discovery und Admin-Initialisierung
 

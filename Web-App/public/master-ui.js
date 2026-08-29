@@ -3023,6 +3023,11 @@
         const passwordInput = document.getElementById('loginPassword');
         const username = usernameInput ? usernameInput.value.trim() : 'Developer';
         const password = passwordInput ? passwordInput.value : '';
+        const authMessage = document.getElementById('authMessage');
+        if (authMessage) {
+          authMessage.className = 'message info';
+          authMessage.textContent = 'Signing in…';
+        }
 
         if (!serverApiClient) {
           const authMessage = document.getElementById('authMessage');
@@ -3047,21 +3052,10 @@
           return;
         }
 
-        const meResult = await serverApiClient.me();
-        const meData = extractApiData(meResult);
-        if (!meResult.ok || !meData || !meData.user) {
-          const authMessage = document.getElementById('authMessage');
-          if (authMessage) {
-            authMessage.className = 'message error';
-            authMessage.textContent = meResult && meResult.error ? meResult.error : 'Server session could not be established.';
-          }
-          return;
-        }
-
         const user = applyServerIdentity({
-          user: meData.user || serverLoginData.user || null,
-          roles: Array.isArray(meData.roles) ? meData.roles : serverLoginData.roles,
-          permissions: Array.isArray(meData.permissions) ? meData.permissions : serverLoginData.permissions
+          user: serverLoginData.user || null,
+          roles: Array.isArray(serverLoginData.roles) ? serverLoginData.roles : [],
+          permissions: Array.isArray(serverLoginData.permissions) ? serverLoginData.permissions : []
         });
         if (!user) {
           const authMessage = document.getElementById('authMessage');
@@ -3070,6 +3064,10 @@
             authMessage.textContent = 'No authenticated user was returned by the server.';
           }
           return;
+        }
+        if (authMessage) {
+          authMessage.className = 'message success';
+          authMessage.textContent = 'Session established. Opening workspace…';
         }
 
         const target = resolveRoleRoute(user);
@@ -3151,6 +3149,7 @@
             permissions: Array.isArray(sessionData.permissions) ? sessionData.permissions : []
           });
         }
+        if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');
       }
     }
     const currentUser = getCurrentUser();

@@ -28,6 +28,7 @@ class ApiClient {
   constructor(baseUrl = null, defaultHeaders = {}) {
     this.baseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.replace(/\/$/, '') : null;
     this.csrfToken = null;
+    this.timeoutMs = 10000;
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       ...defaultHeaders
@@ -81,6 +82,10 @@ class ApiClient {
         ...options.headers
       }
     };
+    const timeoutMs = Number.isFinite(Number(options.timeoutMs)) ? Math.max(0, Number(options.timeoutMs)) : this.timeoutMs;
+    const supportsAbort = typeof AbortController === 'function';
+    const controller = supportsAbort ? new AbortController() : null;
+    if (controller) config.signal = controller.signal;
 
     if (csrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase()) && !config.headers['x-csrf-token']) {
       config.headers['x-csrf-token'] = csrf;
@@ -92,8 +97,19 @@ class ApiClient {
       config.body = options.body;
     }
 
+    let timeoutId = null;
     try {
-      const response = await fetch(url, config);
+      const timeout = new Promise((_, reject) => {
+        if (!timeoutMs) return;
+        timeoutId = setTimeout(() => {
+          if (controller) controller.abort();
+          const error = new Error(`Request timed out after ${timeoutMs}ms`);
+          error.code = 'API_TIMEOUT';
+          error.status = 408;
+          reject(error);
+        }, timeoutMs);
+      });
+      const response = await (timeoutMs ? Promise.race([fetch(url, config), timeout]) : fetch(url, config));
       
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
@@ -121,10 +137,13 @@ class ApiClient {
     } catch (error) {
       return {
         ok: false,
-        status: error.status || 500,
+        status: error.status || (error.name === 'AbortError' ? 408 : 0),
+        code: error.code || (error.name === 'AbortError' ? 'API_TIMEOUT' : 'API_NETWORK_ERROR'),
         error: error.message,
         data: error.data
       };
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 

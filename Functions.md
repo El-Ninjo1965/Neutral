@@ -83,3 +83,5 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | `CorePerformance` | datensparsame Startphasen; `Web-App/core/core-performance.js` | `mark`, `has`, `get`, `snapshot` | Phasenname → monotone Zeitmarke | Browser Performance API mit Date-Fallback | doppelte Marken verändern den Erstwert nicht | VORHANDEN |
 
 `CoreStartup.start()` liefert die interaktive Minimalbereitschaft. `startBackground()` startet dedupliziert Storage, Corefacaden und Modul-Discovery; `getStatus()` meldet nur technische Phasen. Marken: `minimal-core-ready`, `storage-ready`, `module-discovery-complete`, `background-initialization-complete`.
+
+`ApiClient.request(endpoint, {timeoutMs})` beendet hängende Requests kontrolliert (Standard 10 s) und liefert `API_TIMEOUT` statt unbegrenzt zu warten; kein automatischer Retry verändert Schreib-/Authsemantik.

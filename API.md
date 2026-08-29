@@ -74,3 +74,7 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar.
 ## 5. Erweiterungsregel
 
 Neue Endpunkte benötigen vor Implementierung: dokumentierten Vertrag, Auth-/Permissionentscheidung, Requestvalidierung, Fehlercodes, Datenbank-/Transaktionskonzept, Datenschutzprüfung, Tests und Eintrag in diesem Dokument. Module können derzeit nicht selbstständig produktive PHP-Routen registrieren (**FEHLT/GEPLANT**).
+
+## Client-Timeout – P3 IST
+
+`ApiClient.request()` begrenzt Requests standardmäßig auf 10 Sekunden; `timeoutMs` kann pro Request gesetzt oder mit `0` bewusst deaktiviert werden. Wenn `AbortController` vorhanden ist, wird der Fetch abgebrochen; ältere Browser erhalten einen Promise-Timeout-Fallback. Das Ergebnis ist `{ok:false,status:408,code:"API_TIMEOUT"}`. Es gibt keinen automatischen Retry für Login oder andere Schreiboperationen.

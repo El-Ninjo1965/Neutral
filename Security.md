@@ -82,3 +82,5 @@
 Client-Modulkonfiguration wird unter `moduleSettings.<id>` isoliert. Schlüssel, die Passwörter, Secrets, Tokens, Private Keys oder Credentials darstellen, werden vom öffentlichen Configvertrag abgelehnt; serverseitige Geheimnisse bleiben ausschließlich in hostlokaler Serverkonfiguration.
 
 Der Browser-Fehlerpfad redigiert sensible Kontextschlüssel sowie typische Token-/Passwortmuster in Meldung und Stack. Das öffentliche Fehler-Event transportiert keinen rohen `Error`; das In-Memory-Log ist begrenzt. Diese Schutzschicht ersetzt nicht die Pflicht, personenbezogene oder geheime Daten gar nicht erst als Diagnosekontext zu übergeben.
+
+Die initiale `auth/me`-Prüfung läuft nach sichtbarer Shell und bleibt die Autorität für vorhandene Sessions. Eine erfolgreiche Loginantwort ist selbst eine serverseitig authentifizierte Identitätsentscheidung und wird ohne redundanten direkten `me`-Roundtrip übernommen. Geschützte Admininhalte bleiben bis bestätigter Serveridentität verborgen; Timeout/Offline erteilt keine Rechte.
