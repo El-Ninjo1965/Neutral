@@ -57,3 +57,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | zentraler API-Timeout und Retry-Policy | FEHLT/TODO | ApiClient verwendet Fetch ohne Timeout/Retry |
 | versionierte Event-/Serviceverträge | FEHLT/TODO | globale Namen und Payloads sind nicht formal versioniert |
 | abstrahierte Geräte-Service-Schicht | FEHLT/TODO | GPS greift direkt auf Browser-Geolocation zu |
+
+## Versionierter öffentlicher Vertrag
+
+`CoreContracts` (`Web-App/core/core-contracts.js`) ist **VORHANDEN**. `Core.contractVersion`, `Core.getContract()`, `Core.events` und `Core.isPublicFacade(name)` liefern den unveränderlichen Vertrag `1.0.0`. Facaden in `publicFacades` sind öffentlich; Einträge in `internalGlobals` sind Implementierungsdetails und dürfen von Modulen nicht als stabil angenommen werden.

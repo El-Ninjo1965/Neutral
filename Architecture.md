@@ -147,3 +147,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 **TEILWEISE:** Modul-Datenbanktabellen können deklariert und bei sicher deklarierter Deinstallation entfernt werden; eine allgemeine Modul-Migrationsausführung ist noch nicht vollständig als öffentlicher Vertrag umgesetzt.
 
 **FEHLT:** produktive Modul-API-Registrierung, standardisierte Hooks, Modul-Sandboxing sowie vollständige Offline-/Sync-Verträge. Details stehen in `ModuleCreation.md`.
+
+### Versionierter Client-Core-Vertrag – IST
+
+`Web-App/core/core-contracts.js` veröffentlicht Vertrag `1.0.0`. Nur die dort gelisteten Facaden sind für Erweiterungen öffentlich; `CoreEventBus`, `CoreEventRing`, `CoreLoader`, `CoreState`, `MasterFramework` und `ErrorLog` bleiben interne Kompatibilitätsobjekte. Die globale Skript-Ladefolge bleibt derzeit technisch erforderlich, ist aber kein Freibrief für Module, beliebige Globals zu verwenden.

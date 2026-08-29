@@ -19,7 +19,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.1 – Vertragsinventar und öffentliche Facade
 
-- [ ] **Aufgabe:** versionierten Core-Vertragskatalog für öffentliche Facaden, Events und Services bereitstellen; private Implementierungsobjekte ausdrücklich abgrenzen. **Zweck:** Module erhalten eine prüfbare, fachfreie API statt impliziter `window.*`-Annahmen. **Bereiche:** `Web-App/core/core.js`, neuer Vertragskatalog, Ladefolge, `Functions.md`, `Architecture.md`, `ModuleCreation.md`. **Abhängigkeiten:** bestehende globale APIs bleiben kompatibel. **Status:** OFFEN. **Tests:** Vertragsversion, unveränderliche Kataloge, öffentliche Facaden und unbekannte Verträge.
+- [x] **Aufgabe:** versionierten Core-Vertragskatalog für öffentliche Facaden, Events und Services bereitstellen; private Implementierungsobjekte ausdrücklich abgrenzen. **Zweck:** Module erhalten eine prüfbare, fachfreie API statt impliziter `window.*`-Annahmen. **Bereiche:** `Web-App/core/core.js`, neuer Vertragskatalog, Ladefolge, `Functions.md`, `Architecture.md`, `ModuleCreation.md`. **Abhängigkeiten:** bestehende globale APIs bleiben kompatibel. **Status:** OFFEN. **Tests:** Vertragsversion, unveränderliche Kataloge, öffentliche Facaden und unbekannte Verträge.
 
 ### P2.2 – Event- und Serviceverträge
 

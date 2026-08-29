@@ -52,6 +52,7 @@
     </div>
 
     <script src="/Web-App/core/core.js"></script>
+    <script src="/Web-App/core/core-contracts.js"></script>
     <script src="/Web-App/core/core-event-bus.js"></script>
     <script src="/Web-App/core/core-error-handler.js"></script>
     <script src="/Web-App/core/error-log.js"></script>

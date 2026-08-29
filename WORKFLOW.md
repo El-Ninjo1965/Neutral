@@ -140,3 +140,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** GitHub-Workflow verwendet die neue Struktur und deployt keine Node-Entwicklungsruntime; der vorherige Auftrag ist strukturell vollständig abgeschlossen.
 - **Offene Punkte:** keine aus dieser Abschlussphase; die unabhängigen Produktaufgaben bleiben priorisiert in `TODO.md`.
 - **Commit-ID:** `380c3f552aa3b1226ddaabf2f2a9ba4f84136309`.
+
+### 2026-08-29 – P2.1 versionierten Core-Vertrag veröffentlichen
+
+- **Aufgabe:** Öffentliche Core-Facaden von internen Kompatibilitätsobjekten abgrenzen.
+- **Betroffene Dateien:** `Web-App/core/core-contracts.js`, Browser-/Admin-Ladefolge, `tests/core-contracts.test.js`, `TODO.md`, `WORKFLOW.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`.
+- **Änderung:** Unveränderlichen Vertrag `1.0.0` mit öffentlichen Facaden, internen Globals, kanonischen Eventnamen, Service-Sichtbarkeit und Modul-Namenskonvention ergänzt; `Core` stellt nur lesenden Vertragszugriff bereit.
+- **Zweck:** Module können veröffentlichte Schnittstellen prüfen, ohne private Implementierungsobjekte als stabilen Vertrag anzunehmen.
+- **Tests/Validierung:** Vertragsversion, Freeze-Garantien, Eventkatalog sowie Public/Internal-Abgrenzung automatisiert geprüft; Gesamtsuite ausgeführt.
+- **Ergebnis:** P2.1 abgeschlossen, bestehende Globals bleiben als kompatible Ladezeit-API erhalten.
+- **Offene Punkte:** P2.2 bis P2.6.
+- **Commit-ID:** wird nach dem Commit verifiziert.

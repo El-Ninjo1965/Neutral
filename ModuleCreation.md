@@ -99,6 +99,8 @@ Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` 
 
 ## 10. Erlaubte Core-Schnittstellen
 
+Maßgeblich ist Vertrag `window.Core.getContract()` in Version `1.0.0`. Nur Namen in `publicFacades` sind Modul-APIs; `internalGlobals` sind trotz globaler Erreichbarkeit privat.
+
 Module dürfen ausschließlich dokumentierte öffentliche Facaden nutzen:
 
 - `window.Core`: `on`, `off`, `once`, `emit` und dokumentierter Corezustand
