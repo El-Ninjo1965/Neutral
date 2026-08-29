@@ -3,7 +3,7 @@
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const ServerBootstrap = require('../server/bootstrap/server.js');
+const ServerBootstrap = require('../Server/node/bootstrap/server.js');
 
 let app;
 let port;

@@ -80,3 +80,8 @@ config/*.json
 *.pid
 *.pid.lock
 *.seed
+
+# Generated deployment/runtime state
+.neutral-deploy-manifest.json
+Server/node/runtime/
+Server/runtime/

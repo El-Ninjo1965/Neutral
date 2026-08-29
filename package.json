@@ -1,8 +1,8 @@
 {
   "name": "neutral-web-platform",
   "version": "1.0.0",
-  "description": "Neutral reusable web application platform with core, server, webroot, administration, and module scaffolding.",
-  "main": "server/server.js",
+  "description": "Neutral two-component framework with a browser Web-App and PHP production Server.",
+  "main": "Server/node/server.js",
   "scripts": {
     "start": "node scripts/neutral-start.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",

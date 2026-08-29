@@ -5,8 +5,8 @@ const path = require('node:path');
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const MasterFramework = require('../platform/master-framework');
-const ServerBootstrap = require('../server/bootstrap/server.js');
+const MasterFramework = require('../Web-App/core/master-framework');
+const ServerBootstrap = require('../Server/node/bootstrap/server.js');
 
 /**
  * Admin API Integration Tests
@@ -20,7 +20,7 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
   let testRoleId = null;
 
   const cleanupConfigFiles = () => {
-    const configDir = path.resolve(__dirname, '../config');
+    const configDir = path.resolve(__dirname, '../Server/config');
     if (fs.existsSync(configDir)) {
       for (const filename of ['setup-state.json', 'admin-users.json', 'admin-roles.json', 'admin-settings.json', 'audit-log.json']) {
         const filePath = path.join(configDir, filename);
@@ -30,7 +30,7 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
       }
     }
 
-    const runtimeDir = path.resolve(__dirname, '../server/runtime');
+    const runtimeDir = path.resolve(__dirname, '../Server/node/runtime');
     if (fs.existsSync(runtimeDir)) {
       for (const filename of ['setup-state.json', 'admin-state.json']) {
         const filePath = path.join(runtimeDir, filename);

@@ -8,7 +8,7 @@
 
 ## 1. IndexedDB
 
-**VORHANDEN:** `platform/database-manager.js` konfiguriert standardmäßig Typ `indexeddb`, Name `CoreDB`, Version `1`. `init()` öffnet die Datenbank; `onupgradeneeded` erzeugt fehlende Stores. Öffentliche Operationen sind `save`, `get`, `insert`, `update`, `delete`, `clear`, `findByIndex`, `getAll` und `transaction`.
+**VORHANDEN:** `Web-App/core/database-manager.js` konfiguriert standardmäßig Typ `indexeddb`, Name `CoreDB`, Version `1`. `init()` öffnet die Datenbank; `onupgradeneeded` erzeugt fehlende Stores. Öffentliche Operationen sind `save`, `get`, `insert`, `update`, `delete`, `clear`, `findByIndex`, `getAll` und `transaction`.
 
 ### Tatsächlich definierte Stores
 
@@ -42,13 +42,13 @@
 
 ## 6. Engine und Zugriff
 
-**VORHANDEN:** `core/php/src/Database.php` verwendet PDO mit MySQL/MariaDB-Konfiguration aus `AppConfig`. Verbindungen verwenden Exceptions und vorbereitete Statements in den Services. `ensureDatabaseExists()` kann die konfigurierte Datenbank anlegen. Produktion benötigt `pdo_mysql`.
+**VORHANDEN:** `Server/php/src/Database.php` verwendet PDO mit MySQL/MariaDB-Konfiguration aus `AppConfig`. Verbindungen verwenden Exceptions und vorbereitete Statements in den Services. `ensureDatabaseExists()` kann die konfigurierte Datenbank anlegen. Produktion benötigt `pdo_mysql`.
 
 Node-Entwicklung besitzt zusätzlich file-/memory-basierte Persistenzadapter. Diese sind keine MariaDB-Produktionstabellen.
 
 ## 7. Tatsächlich definierte Tabellen
 
-Quelle ist `core/php/src/SchemaMigrator.php`; zusätzliche Tabellen dürfen nicht aus Zielvorstellungen abgeleitet werden.
+Quelle ist `Server/php/src/SchemaMigrator.php`; zusätzliche Tabellen dürfen nicht aus Zielvorstellungen abgeleitet werden.
 
 | Tabelle | Zweck | Wesentliche Beziehungen |
 |---|---|---|

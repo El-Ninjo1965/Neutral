@@ -5,11 +5,11 @@ const path = require('node:path');
 const { test, describe, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const ServerBootstrap = require('../server/bootstrap/server.js');
-const userService = require('../server/services/user-service');
-const authService = require('../server/services/auth-service');
-const loginRateLimiter = require('../server/services/login-rate-limiter');
-const { MemorySessionStore, FileSessionStore } = require('../server/services/session-store');
+const ServerBootstrap = require('../Server/node/bootstrap/server.js');
+const userService = require('../Server/node/services/user-service');
+const authService = require('../Server/node/services/auth-service');
+const loginRateLimiter = require('../Server/node/services/login-rate-limiter');
+const { MemorySessionStore, FileSessionStore } = require('../Server/node/services/session-store');
 
 /**
  * Phase 5B Integration Tests
@@ -24,7 +24,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
   let app;
   let port;
 
-  const configDir = path.resolve(__dirname, '../config');
+  const configDir = path.resolve(__dirname, '../Server/config');
 
   const cleanupConfigFiles = () => {
     if (!fs.existsSync(configDir)) {
@@ -373,7 +373,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'multi-instance', password: 'correct-horse-battery-staple' } });
 
     // Instance B: independently created server bound to a different port,
-    // sharing the same on-disk config/sessions.json file.
+    // sharing the same on-disk Server/config/sessions.json file.
     const instanceB = ServerBootstrap.createServer();
     await new Promise((resolve) => instanceB.listen(0, '127.0.0.1', resolve));
     const portB = instanceB.address().port;

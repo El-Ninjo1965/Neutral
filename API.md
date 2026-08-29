@@ -2,9 +2,9 @@
 
 ## 1. Geltungsbereich
 
-Die Produktionsoberfläche ist der PHP-Router `webroot/api/index.php`, erreichbar relativ zur Installation unter `<API-Basis>/api/...`. `webroot/api/.htaccess` leitet API-Anfragen an diesen Router. Die konkrete öffentliche Basis ist Deploymentkonfiguration und darf nicht im Client-Core fest codiert werden.
+Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. `Server/public/api/.htaccess` leitet API-Anfragen an diesen Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; die konkrete öffentliche Basis darf nicht im Client-Core fest codiert werden.
 
-`server/bootstrap/server.js` bietet zusätzlich eine Node-Referenz- und Test-API. Sie ist tatsächlich vorhanden, aber keine Voraussetzung der Shared-Hosting-Produktion und nicht automatisch vertraglich identisch mit PHP.
+`Server/node/bootstrap/server.js` bietet zusätzlich eine Node-Referenz- und Test-API. Sie ist tatsächlich vorhanden, aber keine Voraussetzung der Shared-Hosting-Produktion und nicht automatisch vertraglich identisch mit PHP.
 
 Antworten der PHP-API verwenden grundsätzlich JSON-Umschläge von `JsonResponse`: Erfolg `{ "ok": true, "data": ... }`, Fehler `{ "ok": false, "error": { "message": ... }, "details": ... }` (Details abhängig vom Fehler).
 
@@ -69,7 +69,7 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar.
 
 ## 4. Node-Referenz-API
 
-`server/bootstrap/server.js` implementiert zusätzlich Status/Health/Logs, Frameworkdiagnostik, Release/Maintenance, Auth, Connections, Providers, Backups/Restore, Setup/Aktivierung, Server-/DB-Tests, Devices, Licenses, Updates, Marketplace, Module sowie Benutzer-, Rollen-, Audit- und Settings-CRUD. Diese Endpunkte werden in Node-Integrationstests verwendet. Nur Endpunkte, die auch im PHP-Router vorhanden und geprüft sind, dürfen als Produktionsvertrag vorausgesetzt werden.
+`Server/node/bootstrap/server.js` implementiert zusätzlich Status/Health/Logs, Frameworkdiagnostik, Release/Maintenance, Auth, Connections, Providers, Backups/Restore, Setup/Aktivierung, Server-/DB-Tests, Devices, Licenses, Updates, Module sowie Benutzer-, Rollen-, Audit- und Settings-CRUD. Diese Endpunkte werden in Node-Integrationstests verwendet. Nur Endpunkte, die auch im PHP-Router vorhanden und geprüft sind, dürfen als Produktionsvertrag vorausgesetzt werden.
 
 ## 5. Erweiterungsregel
 

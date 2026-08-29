@@ -12,13 +12,13 @@ Diese Anleitung installiert ausschließlich den statischen Browserclient. Sie in
 
 ## 2. Relevante Struktur
 
-- `webroot/index.html` – User-Einstieg
-- `webroot/style.css`, `webroot/master-ui.js`, `webroot/user-app.js`, `webroot/api-client.js` – Client
-- `webroot/admin/*.js`, `webroot/admin-init.js` – Admin-Client (benötigt servergeschützten `admin.php` für Produktion)
-- `platform/*.js` – neutraler Browser-Core
-- `app/index.js` – App-Shell
-- `app/modules/index.json` und Modulverzeichnisse – Clientmodule
-- `apps/neutral-app/app-info.json` – Appmetadaten
+- `Web-App/public/index.html` – User-Einstieg
+- `Web-App/public/style.css`, `Web-App/public/master-ui.js`, `Web-App/public/user-app.js`, `Web-App/public/api-client.js` – Client
+- `Web-App/public/admin/*.js`, `Web-App/public/admin-init.js` – Admin-Client; der serverseitig geschützte Einstieg liegt in `Server/public/admin.php`
+- `Web-App/core/*.js` – neutraler Browser-Core
+- `Web-App/app/index.js` – App-Shell
+- `Web-App/app/modules/index.json` und Modulverzeichnisse – Clientmodule
+- `Web-App/apps/neutral-app/app-info.json` – Appmetadaten
 
 Die Deployment-Allowlist in `scripts/manual-ftps-deploy.js` ist maßgeblich, wenn das vorhandene FTPS-Werkzeug genutzt wird.
 
@@ -45,16 +45,16 @@ Danach die vom Prozess ausgegebene URL verwenden. Zugangsdaten bleiben ausschlie
 ## 5. Statisches Deployment
 
 1. Repository in sauberem Commit auschecken.
-2. Nur die für die Web-App allowlisteten Dateien bereitstellen: Clientdateien aus `webroot/`, `platform/`, `app/` und notwendige App-/Modulmanifeste.
+2. Den vollständigen Ordner `Web-App/` mit `public/`, `core/`, `app/` und den notwendigen App-/Modulmanifesten bereitstellen.
 3. Keine `.env`, Serverruntime, Logs, Tests, `node_modules` oder Git-Metadaten hochladen.
-4. Dateien so ablegen, dass relative Pfade zwischen HTML, `platform/`, `app/` und Modulen erhalten bleiben.
+4. Die innere `Web-App/`-Struktur unverändert erhalten.
 5. HTTPS aktivieren.
 6. API-Basis und Same-Origin-Routing prüfen.
 
 Vorhandenes Werkzeug:
 
 ```bash
-npm run deploy:manual -- --web-app
+npm run deploy:manual -- --dry-run
 ```
 
 Es verwendet hostlokale Deploymentkonfiguration. Vor Ausführung die Skripthilfe und Stagingliste prüfen; keine Credentials protokollieren.

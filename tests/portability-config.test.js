@@ -5,16 +5,15 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const configModulePath = path.resolve(__dirname, '../server/config/index.js');
-const legacyConfigModulePath = path.resolve(__dirname, '../config/index.js');
-const phpEnvLoaderPath = path.resolve(__dirname, '../core/php/src/EnvLoader.php');
+const configModulePath = path.resolve(__dirname, '../Server/node/config/index.js');
+const phpEnvLoaderPath = path.resolve(__dirname, '../Server/php/src/EnvLoader.php');
 
 const createAlternativeInstall = () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-portability-'));
   const appRoot = path.join(tempRoot, 'alt-install', 'app');
 
   fs.mkdirSync(path.join(appRoot, 'server'), { recursive: true });
-  fs.mkdirSync(path.join(appRoot, 'webroot'), { recursive: true });
+  fs.mkdirSync(path.join(appRoot, 'Web-App', 'public'), { recursive: true });
 
   fs.writeFileSync(path.join(appRoot, 'package.json'), JSON.stringify({
     name: 'neutral-portability-test',
@@ -65,7 +64,6 @@ const preserveEnv = () => {
       }
     }
     delete require.cache[require.resolve(configModulePath)];
-    delete require.cache[require.resolve(legacyConfigModulePath)];
   };
 };
 
@@ -81,19 +79,12 @@ test('Node runtime resolves project root and API base from the active installati
     process.env.INSTALL_ROOT = appRoot;
     process.env.APP_API_BASE = '/portable-api';
     delete require.cache[require.resolve(configModulePath)];
-    delete require.cache[require.resolve(legacyConfigModulePath)];
 
     const config = require(configModulePath);
-    const legacyConfig = require(legacyConfigModulePath);
     assert.equal(config.projectRoot, appRoot);
     assert.equal(config.rootDir, appRoot);
-    assert.equal(config.webRootDir, path.join(appRoot, 'webroot'));
+    assert.equal(config.webRootDir, path.join(appRoot, 'Web-App', 'public'));
     assert.equal(config.apiBase, '/portable-api');
-    assert.equal(legacyConfig.projectRoot, appRoot);
-    assert.equal(legacyConfig.apiBase, '/portable-api');
-    assert.ok(!config.projectRoot.includes('/home/web1819'));
-    assert.ok(!config.webRootDir.includes('/home/web1819'));
-    assert.ok(!config.installRoot.includes('/home/web1819'));
   } finally {
     restoreEnv();
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -114,8 +105,6 @@ test('PHP runtime prefers the active install root over shared-host fallback cand
     const candidates = JSON.parse(stdout);
     assert.ok(candidates[0] === path.join(appRoot, '.env'));
     assert.ok(candidates.includes(path.join(appRoot, '.env')));
-    assert.ok(candidates.includes('/home/web1819/.env'));
-    assert.ok(candidates.indexOf(path.join(appRoot, '.env')) < candidates.indexOf('/home/web1819/.env'));
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

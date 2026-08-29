@@ -6,7 +6,9 @@ const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ft
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
   test('gps standalone entry is allowlisted for deployment', () => {
-    assert.ok(allowedEntries.includes('app/modules/gps/index.html'));
+    assert.ok(allowedEntries.includes('Web-App'));
+    assert.ok(allowedEntries.includes('Server/php'));
+    assert.ok(allowedEntries.includes('Server/public'));
   });
 
   test('new file is uploaded', () => {

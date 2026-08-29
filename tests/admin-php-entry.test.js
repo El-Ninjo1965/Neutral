@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
 const net = require('node:net');
 
 const projectRoot = path.resolve(__dirname, '..');
-const webrootDir = path.join(projectRoot, 'webroot');
+const webrootDir = path.join(projectRoot, 'Server', 'public');
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -132,10 +132,12 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     await waitForServerReady(serverPort);
 
     tempRuntimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-admin-php-runtime-'));
-    const tempWebroot = path.join(tempRuntimeRoot, 'webroot');
-    const tempCore = path.join(tempRuntimeRoot, 'core');
+    const tempServer = path.join(tempRuntimeRoot, 'Server');
+    const tempWebroot = path.join(tempServer, 'public');
+    const tempPhp = path.join(tempServer, 'php');
+    fs.mkdirSync(tempServer, { recursive: true });
     fs.cpSync(webrootDir, tempWebroot, { recursive: true });
-    fs.cpSync(path.join(projectRoot, 'core'), tempCore, { recursive: true });
+    fs.cpSync(path.join(projectRoot, 'Server', 'php'), tempPhp, { recursive: true });
     fs.rmSync(path.join(tempWebroot, 'setup.php'));
 
     setuplessServerPort = await getFreePort();
@@ -204,8 +206,8 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     });
     assert.equal(result.statusCode, 200);
     assert.match(result.body, /id="appShell"/);
-    assert.match(result.body, /src="master-ui\.js"/);
-    assert.match(result.body, /src="admin-init\.js"/);
+    assert.match(result.body, /src="\/Web-App\/public\/master-ui\.js"/);
+    assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js"/);
   });
 
   test('Fall D: Runtime remains bootstrappable without setup.php', async () => {

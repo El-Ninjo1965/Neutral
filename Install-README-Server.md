@@ -13,21 +13,21 @@ Diese Anleitung beschreibt die PHP-Produktion auf einfachem Shared Hosting. Node
 - Schreibrecht für ausdrücklich benötigte Runtime-/Logverzeichnisse
 - kein Bedarf an Passenger, SSH, öffentlichem Port 3000 oder dauerhaftem Node-Prozess
 
-Die tatsächlichen Voraussetzungen können mit `webroot/diagnose.php`, `PrerequisiteChecker` und dem cPanel-Preflight geprüft werden. Diagnosezugänge nach Installation absichern oder entfernen.
+Die tatsächlichen Voraussetzungen werden durch `PrerequisiteChecker`, Setupstatus und den cPanel-Preflight geprüft. Die frühere öffentliche Diagnose-Einzeldatei wurde entfernt.
 
 ## 2. Serverstruktur
 
-- `core/php/bootstrap.php`, `core/php/src/` – PHP-Core
-- `webroot/api/index.php` – zentraler API-Router
-- `webroot/api/.htaccess` – Rewrite an den Router
-- `webroot/api/setup/status.php`, `setup/install.php`, `status.php` – Einstieg/Kompatibilitätsendpunkte
-- `webroot/admin.php` – serverseitig geschützte Adminoberfläche
-- `webroot/setup.php` – Setupoberfläche
-- `webroot/diagnose.php` – Diagnose
-- `app/modules/*/module.json` – serverseitig entdeckte Modulmanifeste
-- Runtime-/Logpfade gemäß Bootstrap und Environment
+- `Server/php/bootstrap.php`, `Server/php/src/` – PHP-Core
+- `Server/public/api/index.php` – zentraler API-Router
+- `Server/public/api/.htaccess` – Rewrite an den Router
+- `Server/public/api/setup/status.php`, `setup/install.php`, `status.php` – Einstieg/Kompatibilitätsendpunkte
+- `Server/public/admin.php` – serverseitig geschützte Adminoberfläche
+- `Server/public/setup.php` – Setupoberfläche
+- `Web-App/app/modules/*/module.json` – serverseitig entdeckte Modulmanifeste
+- `Server/runtime/` – ignorierte PHP-Runtime-/Logdaten
+- `Server/node/` – ausschließlich lokale Referenz- und Testlaufzeit
 
-Der öffentliche Document-Root soll auf `webroot/` zeigen oder serverseitig so gemappt werden, dass `core/`, `.env`, Logs und Runtimezustand nicht öffentlich ausgeliefert werden.
+Der öffentliche PHP-Document-Root zeigt auf `Server/public/`. Der Webserver stellt zusätzlich die Browserassets aus `Web-App/` unter ihrem konfigurierten Pfad bereit. `Server/php/`, `.env`, Logs und Runtimezustand dürfen nicht öffentlich ausgeliefert werden.
 
 ## 3. Environment-Konfiguration
 
@@ -51,14 +51,14 @@ Es existiert absichtlich keine mit echten Werten gefüllte Vorlage im Repository
 ## 5. Installation
 
 1. Sauberen Git-Stand verwenden.
-2. Server-Allowlist/Deploymentskript prüfen und PHP-Core, Webroot-API, notwendige Client-/Adminassets sowie Modulmanifeste hochladen.
+2. Server-Allowlist/Deploymentskript prüfen und ausschließlich `Server/php/`, `Server/public/` sowie die getrennte `Web-App/` bereitstellen.
 3. `.env`, `.git`, Tests, `node_modules`, lokale Datenbanken und nicht allowlistete Runtimeartefakte ausschließen.
-4. `webroot/api/.htaccess` und Rewriteunterstützung sicherstellen.
+4. `Server/public/api/.htaccess` und Rewriteunterstützung sicherstellen.
 5. Schreibbare Runtime-/Logverzeichnisse mit minimal nötigen Rechten anlegen; kein pauschales `777`.
 6. HTTPS aktivieren und HTTP umleiten.
 7. Setupstatus aufrufen und Installation/Migration einmalig über den autorisierten Setupweg ausführen.
 8. Bootstrap-Admin nur aus autorisierten lokalen Environmentwerten erzeugen.
-9. Setup-/Diagnoseoberflächen nach erfolgreicher Aktivierung schützen.
+9. Setupoberfläche nach erfolgreicher Aktivierung schützen.
 
 Optionaler lokaler Vorabcheck:
 

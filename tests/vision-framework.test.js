@@ -45,21 +45,21 @@ test('theme engine supports neutral and app-specific themes', () => {
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/theme-engine.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/theme-engine.js'));
 
   const neutralTheme = context.window.ThemeEngine.getCurrentTheme();
   assert.equal(neutralTheme.id, 'neutral-theme');
 
   const customTheme = context.window.ThemeEngine.registerTheme({
-    id: 'camping-theme',
-    name: 'Camping Theme',
+    id: 'custom-theme',
+    name: 'Custom Theme',
     config: { accent: '#2d6a4f', background: '#edf5ee' }
   });
 
-  assert.equal(customTheme.id, 'camping-theme');
+  assert.equal(customTheme.id, 'custom-theme');
 
-  context.window.ThemeEngine.activateTheme('camping-theme');
-  assert.equal(documentStub.body.dataset.theme, 'camping-theme');
+  context.window.ThemeEngine.activateTheme('custom-theme');
+  assert.equal(documentStub.body.dataset.theme, 'custom-theme');
   assert.equal(styles.get('--accent'), '#2d6a4f');
   assert.equal(eventLog.includes('theme:changed'), true);
 });
@@ -117,7 +117,7 @@ test('media manager optimizes supported image uploads', async () => {
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/media-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/media-manager.js'));
 
   const result = await context.window.MediaManager.optimizeImage({
     name: 'sample.jpg',
@@ -182,10 +182,10 @@ test('developer setup persists a hashed local password for login and admin acces
   windowStub.window = windowStub;
 
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/core-auth.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/core-user.js'));
-  loadScript(context, path.resolve(__dirname, '../platform/local-auth.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/core-auth.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/core-user.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/local-auth.js'));
 
   windowStub.ConfigManager.init();
 
@@ -244,10 +244,10 @@ test('developer setup persists a hashed local password for login and admin acces
   reloadedWindow.window = reloadedWindow;
 
   const reloadedContext = vm.createContext(reloadedWindow);
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/core-auth.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/core-user.js'));
-  loadScript(reloadedContext, path.resolve(__dirname, '../platform/local-auth.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../Web-App/core/config-manager.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../Web-App/core/core-auth.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../Web-App/core/core-user.js'));
+  loadScript(reloadedContext, path.resolve(__dirname, '../Web-App/core/local-auth.js'));
   reloadedWindow.ConfigManager.init();
 
   const loginResult = await reloadedContext.window.LocalAuth.login({
@@ -264,7 +264,7 @@ test('app config exposes a single neutral app name', () => {
   const windowStub = { window: null, ConfigManager: null };
   windowStub.window = windowStub;
   const context = vm.createContext(windowStub);
-  loadScript(context, path.resolve(__dirname, '../platform/config-manager.js'));
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/config-manager.js'));
   context.window.ConfigManager.init();
 
   const appName = context.window.ConfigManager.get('app').name;
@@ -274,9 +274,9 @@ test('app config exposes a single neutral app name', () => {
 });
 
 test('user shell keeps shared navigation while admin shell stays single-column and sidebar-free', () => {
-  const userHtml = fs.readFileSync(path.resolve(__dirname, '../webroot/index.html'), 'utf8');
-  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../core/php/views/admin-ui.php'), 'utf8');
-  const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../webroot/admin.php'), 'utf8');
+  const userHtml = fs.readFileSync(path.resolve(__dirname, '../Web-App/public/index.html'), 'utf8');
+  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../Server/php/views/admin-ui.php'), 'utf8');
+  const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../Server/public/admin.php'), 'utf8');
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);
@@ -284,4 +284,20 @@ test('user shell keeps shared navigation while admin shell stays single-column a
   assert.match(adminPhp, /id="topbarTitle"/);
   assert.match(adminPhp, /id="mainContent"/);
   assert.match(adminPhpEntry, /admin.php|admin-ui/);
+});
+
+test('two-component layout renders the shell before background startup and discovers modules once', () => {
+  const projectRoot = path.resolve(__dirname, '..');
+  for (const directory of ['Web-App', 'Server']) {
+    assert.equal(fs.statSync(path.join(projectRoot, directory)).isDirectory(), true);
+  }
+  for (const obsoleteDirectory of ['app', 'apps', 'core', 'platform', 'webroot', 'server']) {
+    assert.equal(fs.existsSync(path.join(projectRoot, obsoleteDirectory)), false);
+  }
+
+  const userApp = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
+  const startup = fs.readFileSync(path.join(projectRoot, 'Web-App/core/core-startup.js'), 'utf8');
+  assert.match(userApp, /renderApp\(\);\s*startBackgroundInitialization\(\);/);
+  assert.doesNotMatch(userApp, /ModuleManager\.discoverModules/);
+  assert.equal((startup.match(/ModuleManager\.discoverModules/g) || []).length, 2);
 });

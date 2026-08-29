@@ -10,40 +10,9 @@ const requiredDbKeys = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
 const requiredFtpKeys = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
 const allowedEntries = [
-  'package.json',
-  'package-lock.json',
-  'platform',
-  'server/server.js',
-  'server/bootstrap/server.js',
-  'server/config/index.js',
-  'server/database/connection.js',
-  'server/middleware/input-validation.js',
-  'server/api',
-  'server/services',
-  'app/index.js',
-  'app/modules/index.json',
-  'app/modules/gps/index.html',
-  'app/modules/gps/index.js',
-  'app/modules/gps/module.json',
-  'apps/neutral-app/app-info.json',
-  'apps/neutral-app/index.html',
-  'core/php/bootstrap.php',
-  'core/php/src',
-  'core/php/views',
-  'webroot/index.html',
-  'webroot/setup.php',
-  'webroot/admin.php',
-  'webroot/dev.html',
-  'webroot/style.css',
-  'webroot/master-ui.js',
-  'webroot/user-app.js',
-  'webroot/api-client.js',
-  'webroot/admin-init.js',
-  'webroot/admin/common.js',
-  'webroot/admin/index.js',
-  'webroot/admin/roles-view.js',
-  'webroot/admin/settings-view.js',
-  'webroot/admin/users-view.js'
+  'Web-App',
+  'Server/php',
+  'Server/public'
 ];
 
 function parseEnvFile(filePath) {
@@ -75,9 +44,6 @@ function collectEnv() {
     path.join(projectRoot, '.env.local'),
     path.join(projectRoot, '.env.production'),
     path.join(projectRoot, '.env.deploy'),
-    '/home/web1819/.env',
-    '/home/web1819/public_html/.env',
-    '/home/web1819/public_html/index/app/neutral/.env'
   ];
 
   const merged = {};

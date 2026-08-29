@@ -5,9 +5,9 @@ const path = require('node:path');
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const ServerBootstrap = require('../server/bootstrap/server.js');
+const ServerBootstrap = require('../Server/node/bootstrap/server.js');
 
-const logDir = path.resolve(__dirname, '../server/runtime/logs');
+const logDir = path.resolve(__dirname, '../Server/node/runtime/logs');
 const logFile = path.join(logDir, 'system.log.json');
 
 const cleanupLogs = () => {

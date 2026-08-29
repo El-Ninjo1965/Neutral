@@ -20,27 +20,46 @@ MariaDB/MySQL
 
 Web-App, Server und Datenbank sind durch dokumentierte Verträge getrennt. Infrastrukturdetails sind konfigurierbar.
 
+### Repositorystruktur – IST
+
+```text
+Neutral/
+├── Web-App/
+│   ├── app/          # App-Shell und GPS-Referenzmodul
+│   ├── apps/         # App-Metadaten
+│   ├── core/         # Browser-Core
+│   └── public/       # Browser-UI und Assets
+├── Server/
+│   ├── node/         # ausschließlich Entwicklung und Tests
+│   ├── php/          # produktiver PHP-Core
+│   └── public/       # PHP-Entrypoints und API
+├── tests/            # Entwicklungs-/Regressionstests
+└── scripts/          # notwendige Start-, Preflight- und Deploywerkzeuge
+```
+
+Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `platform`, `webroot`, `server` und `config` existieren nicht mehr. Generierte Zustände liegen ignoriert innerhalb `Server/`.
+
 ### Aktueller Gesamtzustand – IST/TEILWEISE
 
-- Browser-Client unter `webroot/` mit `index.html`, `user-app.js`, `api-client.js`, Adminoberfläche und Skripten aus `platform/`.
-- JavaScript-Client-Core unter `platform/` mit Lifecycle, Events, Konfiguration, Storage, IndexedDB, Services, Auth-/Benutzerfacade, Loader und Modulverwaltung.
-- PHP-Produktionsruntime unter `core/php/` und `webroot/api/`.
-- Node-Referenz-/Entwicklungsserver unter `server/`; er ist keine Voraussetzung der Shared-Hosting-Produktion.
-- GPS als einzige konkrete Referenzerweiterung unter `app/modules/gps/`.
+- Browser-Client vollständig unter `Web-App/`: `public/` enthält Shell und UI, `core/` den neutralen Client-Core, `app/` App-Shell und Erweiterungen sowie `apps/` die App-Metadaten.
+- Server vollständig unter `Server/`: `php/` enthält den PHP-Core, `public/` die PHP-Entrypoints/API und `node/` ausschließlich die Referenz-/Testlaufzeit.
+- Node ist keine Voraussetzung der Shared-Hosting-Produktion.
+- GPS als einzige konkrete Referenzerweiterung unter `Web-App/app/modules/gps/`.
 
 ## 2. Web-App
 
-**IST:** `webroot/index.html` lädt die Benutzeroberfläche; `webroot/user-app.js` verarbeitet Session und Modulkatalog; `webroot/master-ui.js` und `platform/` stellen Shell und Core-Funktionen bereit. `webroot/api-client.js` kapselt JSON-Fetch mit Same-Origin-Cookies und CSRF-Header.
+**IST:** `Web-App/public/index.html` stellt die Shell bereit. `Web-App/public/user-app.js` rendert sie sofort und startet Core, IndexedDB und Discovery danach im Hintergrund. `Web-App/public/api-client.js` kapselt JSON-Fetch und löst die zentrale, über `NeutralConfig` oder das Meta-Element `neutral-api-base` konfigurierbare API-Basis auf.
 
 **GEPLANT:** sofort sichtbare mobile Grundoberfläche vor langsamer Initialisierung; klare Schichten für Shell, Core und Erweiterungs-UI; messbare Browserkompatibilität.
 
-**FEHLT/TEILWEISE:** belastbare Startperformance-Budgets und eine dokumentierte Geräte-/Browser-Testmatrix.
+**FEHLT/TEILWEISE:** belastbare Startperformance-Budgets und eine dokumentierte Geräte-/Browser-Testmatrix; weitere direkte UI-Fetches sind noch nicht vollständig auf den zentralen Transportadapter konsolidiert.
 
 ## 3. Core
 
-**IST:** Browser-Core in `platform/`:
+**IST:** Browser-Core in `Web-App/core/`:
 
 - `core-lifecycle.js`: Zustände created, initializing, ready, running, stopped.
+- `core-network.js`: Browser-Online-/Offline-Zustand, Subscription und Event `network:changed`, ohne Servererreichbarkeit oder Sync zu behaupten.
 - `core-event-bus.js` und `core-event-ring.js`: synchrone Events und begrenzte Ereignishistorie.
 - `config-manager.js`/`core-config.js`: Konfigurationszugriff.
 - `core-storage.js` und `storage-manager.js`: lokale Schlüssel-/Adapter-Speicherung.
@@ -56,15 +75,15 @@ Web-App, Server und Datenbank sind durch dokumentierte Verträge getrennt. Infra
 
 ## 4. Server und PHP
 
-**IST:** `core/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `webroot/api/index.php` ist der zentrale PHP-API-Router. `webroot/admin.php` schützt die Adminoberfläche serverseitig. `webroot/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
+**IST:** `Server/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `Server/public/api/index.php` ist der zentrale PHP-API-Router. `Server/public/admin.php` schützt die Adminoberfläche serverseitig. `Server/public/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
 
-**IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `webroot/api/.htaccess` an `index.php`.
+**IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
 
 **GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.
 
 ## 5. Node-Laufzeit
 
-**IST:** `server/bootstrap/server.js` implementiert eine umfangreiche Node-API für lokale Entwicklung und Tests; `server/server.js` exportiert sie.
+**IST:** `Server/node/bootstrap/server.js` implementiert eine umfangreiche Node-API für lokale Entwicklung und Tests; `Server/node/server.js` exportiert sie.
 
 **Regel:** Node.js ist keine Voraussetzung der ersten Produktion. Verhalten der Node- und PHP-APIs darf nicht ungeprüft als identisch angenommen werden. `API.md` kennzeichnet beide Oberflächen getrennt.
 

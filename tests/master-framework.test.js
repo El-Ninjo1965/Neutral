@@ -5,14 +5,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const Framework = require('../platform/master-framework');
-const ServerBootstrap = require('../server/bootstrap/server');
+const Framework = require('../Web-App/core/master-framework');
+const ServerBootstrap = require('../Server/node/bootstrap/server');
 
 const cleanupRuntimeState = () => {
   Framework.setupState = null;
   Framework.adminState = null;
 
-  const runtimeDir = path.resolve(__dirname, '../server/runtime');
+  const runtimeDir = path.resolve(__dirname, '../Server/node/runtime');
   for (const filename of ['setup-state.json', 'admin-state.json']) {
     const filePath = path.join(runtimeDir, filename);
     if (fs.existsSync(filePath)) {
@@ -21,7 +21,7 @@ const cleanupRuntimeState = () => {
   }
 
   // Also clean up config directory (used by persistence service)
-  const configDir = path.resolve(__dirname, '../config');
+  const configDir = path.resolve(__dirname, '../Server/config');
   if (fs.existsSync(configDir)) {
     const configFiles = ['setup-state.json', 'admin-users.json', 'admin-roles.json', 'admin-settings.json', 'audit-log.json'];
     for (const filename of configFiles) {
@@ -164,11 +164,11 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
 
   const base = path.resolve(__dirname, '..');
   for (const scriptPath of [
-    'platform/module-interface.js',
-    'platform/module-registry.js',
-    'platform/module-manager.js',
-    'platform/core-loader.js',
-    'app/modules/gps/index.js'
+    'Web-App/core/module-interface.js',
+    'Web-App/core/module-registry.js',
+    'Web-App/core/module-manager.js',
+    'Web-App/core/core-loader.js',
+    'Web-App/app/modules/gps/index.js'
   ]) {
     loadScriptIntoContext(sandbox, path.join(base, scriptPath));
   }
@@ -182,18 +182,18 @@ test('registers and activates apps', () => {
   runtime.apps.clear();
 
   const app = runtime.registerApp({
-    appId: 'weather',
-    name: 'Weather App',
+    appId: 'sample-app',
+    name: 'Sample App',
     version: '1.0.0',
     active: false,
     modules: ['gps'],
     config: { mode: 'local' }
   });
 
-  assert.equal(app.appId, 'weather');
-  assert.equal(runtime.getApp('weather').name, 'Weather App');
-  runtime.activateApp('weather');
-  assert.equal(runtime.getApp('weather').status, 'active');
+  assert.equal(app.appId, 'sample-app');
+  assert.equal(runtime.getApp('sample-app').name, 'Sample App');
+  runtime.activateApp('sample-app');
+  assert.equal(runtime.getApp('sample-app').status, 'active');
 });
 
 test('prefers the active app in the app listing and keeps the neutral app as the default working app', () => {
@@ -227,9 +227,9 @@ test('prefers the active app in the app listing and keeps the neutral app as the
   assert.equal(runtime.getApp('neutral-app').status, 'active');
 });
 
-test('loads the current app from the /apps/<app-id>/app-info.json manifest', () => {
+test('loads the current app from the Web-App app manifest', () => {
   const runtime = Framework;
-  const appRoot = path.resolve(__dirname, '../apps/neutral-app');
+  const appRoot = path.resolve(__dirname, '../Web-App/apps/neutral-app');
   const manifestPath = path.join(appRoot, 'app-info.json');
   assert.equal(fs.existsSync(manifestPath), true);
 
@@ -251,7 +251,7 @@ test('loads the current app from the /apps/<app-id>/app-info.json manifest', () 
 });
 
 test('exposes the discovered GPS module through the admin module API', async () => {
-  const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../app/modules') });
+  const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../Web-App/app/modules') });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 
   const port = server.address().port;
@@ -342,7 +342,7 @@ test('preserves discovered module lifecycle state instead of forcing inactive in
   context.window = context;
   vm.createContext(context);
 
-  loadScriptIntoContext(context, path.resolve(__dirname, '../platform/module-manager.js'));
+  loadScriptIntoContext(context, path.resolve(__dirname, '../Web-App/core/module-manager.js'));
 
   const discovered = await context.ModuleManager.discoverModules();
   assert.equal(discovered.length, 1);
@@ -358,7 +358,7 @@ test('installing a module through the admin facade keeps it inactive until activ
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext();
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../Web-App/core/core-admin.js'));
 
   sandbox.ModuleManager.register(sandbox.GpsModule);
   sandbox.AdminModule.init();
@@ -404,8 +404,8 @@ test('keeps app runtime state isolated for each app instance', () => {
   });
 
   runtime.registerApp({
-    appId: 'weather',
-    name: 'Weather App',
+    appId: 'sample-app',
+    name: 'Sample App',
     version: '1.0.0',
     active: false,
     modules: ['gps'],
@@ -413,17 +413,17 @@ test('keeps app runtime state isolated for each app instance', () => {
   });
 
   const neutralAppRuntime = runtime.getAppRuntimeState('neutral-app');
-  const weatherRuntime = runtime.getAppRuntimeState('weather');
+  const sampleRuntime = runtime.getAppRuntimeState('sample-app');
 
   assert.equal(neutralAppRuntime.appId, 'neutral-app');
-  assert.equal(weatherRuntime.appId, 'weather');
+  assert.equal(sampleRuntime.appId, 'sample-app');
   assert.equal(neutralAppRuntime.storage.namespace, 'app:neutral-app:');
-  assert.equal(weatherRuntime.storage.namespace, 'app:weather:');
+  assert.equal(sampleRuntime.storage.namespace, 'app:sample-app:');
   assert.equal(runtime.getActiveApp().appId, 'neutral-app');
 
-  runtime.setActiveApp('weather');
-  assert.equal(runtime.getActiveApp().appId, 'weather');
-  assert.equal(runtime.getAppRuntimeState('weather').server.status, 'active');
+  runtime.setActiveApp('sample-app');
+  assert.equal(runtime.getActiveApp().appId, 'sample-app');
+  assert.equal(runtime.getAppRuntimeState('sample-app').server.status, 'active');
   assert.equal(runtime.getAppRuntimeState('neutral-app').server.status, 'active');
 });
 
@@ -469,7 +469,7 @@ test('supports app feature templates and role-based feature access', () => {
     active: true,
     features: [
       { id: 'dashboard', label: 'Dashboard', permissions: ['system:view'], roles: ['user', 'admin'] },
-      { id: undefined, label: 'Catch Log', permissions: ['user:read'], roles: ['admin', 'member'] }
+      { id: undefined, label: 'Record List', permissions: ['user:read'], roles: ['admin', 'member'] }
     ]
   });
 
@@ -498,8 +498,8 @@ test('registers and tests connections', async () => {
   runtime.connections.clear();
 
   runtime.registerConnection({
-    connectionId: 'weather-api',
-    appId: 'weather',
+    connectionId: 'remote-api',
+    appId: 'sample-app',
     serverUrl: 'https://example.com',
     apiBase: '/api',
     status: 'inactive',
@@ -507,11 +507,11 @@ test('registers and tests connections', async () => {
     authType: 'none'
   });
 
-  const connection = runtime.getConnection('weather-api');
-  assert.equal(connection.appId, 'weather');
+  const connection = runtime.getConnection('remote-api');
+  assert.equal(connection.appId, 'sample-app');
 
-  await runtime.testConnection('weather-api', async () => ({ ok: true, status: 'healthy', checkedAt: '2026-01-01T00:00:00.000Z' }));
-  assert.equal(runtime.getConnection('weather-api').status, 'healthy');
+  await runtime.testConnection('remote-api', async () => ({ ok: true, status: 'healthy', checkedAt: '2026-01-01T00:00:00.000Z' }));
+  assert.equal(runtime.getConnection('remote-api').status, 'healthy');
 });
 
 test('supports feature flags, permissions, and migrations', async () => {
@@ -627,7 +627,7 @@ test('allows developer roles to pass resource-scoped user write checks', () => {
   };
   context.window = context;
   vm.createContext(context);
-  loadScriptIntoContext(context, path.resolve(__dirname, '../platform/core-access.js'));
+  loadScriptIntoContext(context, path.resolve(__dirname, '../Web-App/core/core-access.js'));
 
   const result = context.window.CoreAccess.can({ id: 'dev-1', roles: ['developer'] }, 'user:write', 'user');
   assert.equal(result.ok, true);
@@ -645,7 +645,7 @@ test('creates a live file storage adapter and a sql-ready adapter for admin-mana
     connectionId: 'file-storage',
     appId: 'neutral-app',
     storageType: 'file',
-    storagePath: 'server/runtime/test-data'
+    storagePath: 'Server/node/runtime/test-data'
   });
 
   assert.equal(fileAdapter.type, 'file');
@@ -661,7 +661,7 @@ test('creates a live file storage adapter and a sql-ready adapter for admin-mana
     storageType: 'sqlite',
     databaseType: 'sqlite',
     databaseName: 'neutral-app.db',
-    storagePath: 'server/runtime/test-data'
+    storagePath: 'Server/node/runtime/test-data'
   });
 
   assert.equal(sqlAdapter.type, 'sqlite');
@@ -763,7 +763,7 @@ test('supports persisted setup state and connection updates', () => {
 
   const saved = runtime.saveSetupState({
     currentStep: 'connection-config',
-    appId: 'weather',
+    appId: 'sample-app',
     configuration: { defaultRegion: 'de' }
   });
 
@@ -772,17 +772,17 @@ test('supports persisted setup state and connection updates', () => {
   assert.equal(saved.status, 'CONFIGURATION_REQUIRED');
 
   const connection = runtime.registerConnection({
-    connectionId: 'weather-api',
-    appId: 'weather',
-    serverUrl: 'https://weather.example.com',
-    apiBase: '/weather-api',
+    connectionId: 'remote-api',
+    appId: 'sample-app',
+    serverUrl: 'https://api.example.test',
+    apiBase: '/remote-api',
     authType: 'token',
     status: 'inactive',
     active: false
   });
 
-  assert.equal(connection.serverUrl, 'https://weather.example.com');
-  const updated = runtime.updateConnection('weather-api', { status: 'active', active: true });
+  assert.equal(connection.serverUrl, 'https://api.example.test');
+  const updated = runtime.updateConnection('remote-api', { status: 'active', active: true });
   assert.equal(updated.status, 'active');
 });
 
@@ -932,7 +932,7 @@ test('provides diagnostic summary', () => {
   assert.ok(Array.isArray(diagnostics.applications));
 });
 
-test('supports admin devices, licenses, updates, and marketplace state', () => {
+test('supports admin devices, licenses, and updates', () => {
   cleanupRuntimeState();
   const runtime = Framework;
 
@@ -965,17 +965,6 @@ test('supports admin devices, licenses, updates, and marketplace state', () => {
   assert.equal(updateState.status, 'AVAILABLE');
   assert.equal(runtime.getUpdateState().availableVersion, '1.1.0');
 
-  runtime.setMarketplaceCatalog([
-    {
-      id: 'gps',
-      name: 'GPS Tracker',
-      type: 'module',
-      version: '1.0.0',
-      status: 'available',
-      source: 'local'
-    }
-  ]);
-  assert.equal(runtime.getMarketplaceEntries().length, 1);
 });
 
 test('loads and cycles the gps module lifecycle without duplicate watchers', async () => {
@@ -1087,8 +1076,8 @@ test('registers module-provided admin settings and applies them to gps runtime o
   cleanupRuntimeState();
 
   const { sandbox, geolocationState } = createGpsModuleContext();
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../Web-App/core/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.resolve(__dirname, '../Web-App/core/core-admin.js'));
 
   sandbox.ConfigManager.init();
   sandbox.ModuleManager.register(sandbox.GpsModule);
@@ -1154,10 +1143,10 @@ test('updates an existing user role and status through the user and admin facade
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-access.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-admin.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-access.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-admin.js'));
 
   sandbox.ConfigManager.init();
   const created = await sandbox.UserModule.createUser({
@@ -1348,9 +1337,9 @@ test('activates installation and bootstraps the developer user when the runtime 
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/master-framework.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/master-framework.js'));
 
   const runtime = sandbox.MasterFramework;
   runtime.setupState = {
@@ -1407,9 +1396,9 @@ test('bootstraps the developer user even when other users already exist', async 
   sandbox.window.localStorage = sandbox.localStorage;
 
   const base = path.resolve(__dirname, '..');
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-access.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/config-manager.js'));
-  loadScriptIntoContext(sandbox, path.join(base, 'platform/core-user.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-access.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/config-manager.js'));
+  loadScriptIntoContext(sandbox, path.join(base, 'Web-App/core/core-user.js'));
 
   sandbox.ConfigManager.init();
   sandbox.ConfigManager.set('bootstrap', {

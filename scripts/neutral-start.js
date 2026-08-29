@@ -106,7 +106,7 @@ if (!nodeBinary) {
   process.exit(127);
 }
 
-const serverScript = path.join(projectRoot, 'server', 'server.js');
+const serverScript = path.join(projectRoot, 'Server', 'node', 'server.js');
 if (!fs.existsSync(serverScript)) {
   console.error(`Neutral startup failed: server entry point not found at ${serverScript}`);
   process.exit(1);

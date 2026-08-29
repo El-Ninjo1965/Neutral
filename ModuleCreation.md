@@ -9,21 +9,21 @@ Diese Anleitung beschreibt den aktuellen Modulvertrag. Sie fordert kein neues Mo
 - Discovery, Installation und Aktivierung sind getrennt.
 - Ein Modul wird nie allein durch Discovery oder Installation aktiv.
 - Keine Secrets im Manifest oder Browsercode.
-- Keine direkten Änderungen an `platform/core*.js`, `master-framework.js`, `webroot/api/index.php`, PHP-Coreklassen oder Dateien anderer Module, nur um ein einzelnes Feature anzubinden.
+- Keine direkten Änderungen an `Web-App/core/core*.js`, `Web-App/core/master-framework.js`, `Server/public/api/index.php`, PHP-Coreklassen oder Dateien anderer Module, nur um ein einzelnes Feature anzubinden.
 - Fehlt ein universeller Vertrag, wird er in `TODO.md` dokumentiert und separat als Core-Entscheidung bearbeitet.
 
 ## 2. Tatsächliche Struktur
 
-Referenz ist `app/modules/gps/`:
+Referenz ist `Web-App/app/modules/gps/`:
 
 ```text
-app/modules/<module-id>/
+Web-App/app/modules/<module-id>/
 ├── module.json       # Pflichtmanifest
 ├── index.js          # deklarierter Browser-Entry
 └── index.html        # optionaler Standalone-Test, nur wenn deklariert
 ```
 
-`app/modules/index.json` kann Clientkatalogeinträge enthalten. PHP `Phase7ModuleRuntime` scannt Modulmanifeste im Projektmodulpfad. Pfade müssen relativ zum aktiven Installationskontext bleiben.
+`Web-App/app/modules/index.json` kann Clientkatalogeinträge enthalten. PHP `Phase7ModuleRuntime` scannt Modulmanifeste im Projektmodulpfad. Pfade müssen relativ zum aktiven Installationskontext bleiben.
 
 ## 3. Manifest
 
@@ -117,7 +117,7 @@ Vor Nutzung Methodensignatur in `Functions.md` und Quellcode prüfen. Globale Ob
 
 Ein Modul verändert nicht direkt:
 
-- Core-/Plattformdateien unter `platform/`
+- Core-/Plattformdateien unter `Web-App/core/`
 - `MasterFramework`-Interna oder dessen private Zustandsstrukturen
 - den zentralen PHP-Router oder Core-Schema nur für modulfachliche Logik
 - Adminshell, Auth-, Session- oder RBAC-Core
