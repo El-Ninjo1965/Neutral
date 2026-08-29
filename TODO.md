@@ -43,9 +43,26 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ## P3 – Startperformance
 
-- [ ] First Paint und Interaktionsbereitschaft auf realistischen Mobilgeräten messen und Budgets festlegen.
-- [x] sichtbare Shell vor Netzwerk, Authprüfung, IndexedDB und Modul-Discovery rendern; doppelte Discovery entfernen.
-- [ ] Hintergrundinitialisierung weiter in einzeln beobachtbare Phasen teilen und Lade-/Fehlerzustände vervollständigen.
+### P3.1 – Messung, statische Shell und Asset-Ladepfad
+
+- [ ] **Aufgabe:** datensparsame Startmesspunkte und sofort sichtbare Lade-/Offline-Shell einführen; klassische Skripte geordnet mit `defer` laden. **Technische Ursache:** 36 synchrone User-Skripte bzw. 46 Admin-Skripte stehen vor der initialen UI-Initialisierung; der Main-Bereich ist im HTML leer und es fehlen vergleichbare Phasenmarken. **Bereiche:** User-/Admin-HTML, neuer Performance-Core, CSS, Tests. **Abhängigkeiten:** bestehende globale Ladefolge muss erhalten bleiben. **Abnahme:** HTML enthält sichtbaren Status ohne JavaScript; alle externen Startscripte sind defer; Navigation, DOM, Shell, Minimal-Core und UI-Interaktivität werden ohne Nutzdaten markiert. **Status:** OFFEN.
+
+### P3.2 – Minimaler Core und nicht blockierende Hintergrundphasen
+
+- [ ] **Aufgabe:** CoreStartup in minimale synchrone Bereitschaft und beobachtbare Hintergrundphasen für Storage, Auth-Basis und Discovery trennen. **Technische Ursache:** `CoreStartup.start()` wartet seriell auf IndexedDB und Modul-Discovery, bevor `core:started` zurückkehrt. **Bereiche:** `core-startup.js`, `user-app.js`, Lifecycle/Performance, Tests. **Abhängigkeiten:** P2-Verträge; Funktionen mit DB-Bedarf warten gezielt auf Storage-Ready. **Abnahme:** Shell/UI werden vor `DatabaseManager.init()` und `discoverModules()` markiert; genau eine Hintergrund-Promise; Phasenfehler lassen die Shell bedienbar. **Status:** OFFEN.
+
+### P3.3 – Auth/API-Timeout und unmittelbarer Übergang
+
+- [ ] **Aufgabe:** Sessionprüfung im Hintergrund mit kontrolliertem Timeout ausführen und Login-Erfolg sofort als Übergangszustand darstellen. **Technische Ursache:** `ApiClient` besitzt keinen Abort-Timeout; Admin wartet seriell auf Startup, `auth/me` und Views, Login wartet nach erfolgreichem Login nochmals auf `me`. **Bereiche:** `api-client.js`, User-/Admin-Authstatus, `master-ui.js`, Tests, API-/Security-Doku. **Abhängigkeiten:** serverseitige Session bleibt Autorität; kein Cache als Rechteentscheidung. **Abnahme:** Fetch endet kontrolliert; Shell bleibt bei Offline/Timeout sichtbar; erfolgreicher Login zeigt sofort „Session wird geöffnet“ und verwendet die Loginidentität, zusätzliche `me`-Validierung läuft nur wo erforderlich. **Status:** OFFEN.
+
+### P3.4 – Einmalige Discovery und Admin-Initialisierung
+
+- [ ] **Aufgabe:** doppelte Admin-Discovery, 500-ms-Fallbackdelay und Auth-Polling beseitigen; unabhängige Adminansichten erst nach sichtbarer Shell laden. **Technische Ursache:** `CoreStartup` entdeckt Module und `master-ui.ensureRuntime()` entdeckt erneut; `admin-init.js` pollt Globals und verzögert bei bereits fertigem DOM pauschal. **Bereiche:** `master-ui.js`, `admin-init.js`, Admin-Ladevertrag, Tests. **Abhängigkeiten:** P3.2-Hintergrundpromise und Modul-Lifecycle. **Abnahme:** pro Start genau ein Discovery-Aufruf; kein Intervall/pauschaler 500-ms-Startdelay; geschützte Shell/Status sofort, Routerdaten parallel nach bestätigter Session. **Status:** OFFEN.
+
+### Reale Geräteabnahme (P8)
+
+- [ ] Safari/WebKit auf einem repräsentativen iPhone/iPad: First Paint, Interaktionsbereitschaft und Storage-Migration mit Performanceprofil messen.
+- [ ] Chromium/Android WebView auf einem repräsentativen schwächeren Androidgerät: First Paint, CPU-/Netzwerkdrosselung und Offline-Start messen.
 
 ## P4 – Web-App / Server / API
 

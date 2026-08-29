@@ -217,3 +217,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.1–P2.6 vollständig erledigt; Testzahl von 107 auf 116 erhöht, keine bestehende Abdeckung entfernt.
 - **Offene Punkte:** keine blockierende Architekturentscheidung. P6-Sync/Retry/Konflikte, P3-Performance und weitere priorisierte Phasen bleiben bewusst außerhalb P2.
 - **Commit-ID:** `18fa6152d66e6ae8de36e2e7e042bacde216ab9a`.
+
+### 2026-08-29 – P3-Startpfad analysieren und Arbeitsplan festlegen
+
+- **Aufgabe:** User- und Adminstart vom HTML-Parser bis Discovery/Auth/Storage evidenzbasiert zerlegen, bevor Laufzeitcode geändert wird.
+- **Betroffene Dateien:** `TODO.md`, `WORKFLOW.md`; analysiert wurden `Web-App/public/`, `Web-App/core/`, Admin-PHP-View und relevante Server-Authgrenzen.
+- **Änderung:** Vier prüfbare P3-Pakete mit Ursache, Bereichen, Abhängigkeiten und Abnahme definiert; zwei reale Mobilgeräteprüfungen ehrlich nach P8 abgegrenzt.
+- **Zweck:** First-Paint-, Core-, Auth-/API- und Adminprobleme getrennt beheben und jeden Stand einzeln nach GitHub übertragen.
+- **Tests/Validierung:** 36 synchrone User- und 46 Admin-Startscripte, leeres statisches Main, serielles IndexedDB/Discovery, doppelte Admin-Discovery, fehlender Fetch-Timeout, Auth-Serienkette, Polling und 500-ms-Fallback im Code nachgewiesen.
+- **Ergebnis:** konkrete P3-TODO 0/4 erstellt; keine Laufzeitänderung.
+- **Offene Punkte:** P3.1–P3.4; reale iOS-/Androidmessungen bleiben zwei P8-Gerätetests.
+- **Commit-ID:** wird nach Commit verifiziert.
