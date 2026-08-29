@@ -131,7 +131,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 
 **IST:** `Core.emit/on/off/once` delegiert an den Event-Bus. Lifecycle, Datenbank und Modulmanager emittieren Core-Events. `ServiceManager` registriert und liefert benannte Services. `MasterFramework` bietet weitere App-, Entity-, Provider-, Storage-, Rollen- und Modulfunktionen.
 
-**TEILWEISE:** Nicht alle Events besitzen versionierte Payloadverträge; globale `window.*`-Abhängigkeiten begrenzen Isolation.
+**IST:** Corevertrag `1.0.0` katalogisiert öffentliche Facaden und kanonische Events; der EventBus isoliert Handler und Services besitzen Sichtbarkeit/Cleanup. Globale `window.*`-Objekte bleiben als dokumentierte Kompatibilitätsschicht, private Globals sind nicht Teil des Modulvertrags.
 
 ## 11. Abhängigkeiten
 

@@ -105,15 +105,15 @@ Module dürfen ausschließlich dokumentierte öffentliche Facaden nutzen:
 
 - `window.Core`: `on`, `off`, `once`, `emit` und dokumentierter Corezustand
 - `window.ModuleManager`/`ModuleRegistry`: nur für Modulverwaltung durch Framework-/Admincode; ein Fachmodul verwaltet nicht fremde Module
-- `window.ConfigManager`: lesen/schreiben im eigenen Namespace `moduleSettings.<module-id>`
-- `window.CoreStorage` bzw. veröffentlichter StorageManager: nur namespaced eigene Daten
-- `window.DatabaseManager`: dokumentierte CRUD-Operationen; eigene Records/Stores nur nach freigegebenem Schemavertrag
-- `window.ServiceManager`: veröffentlichte Services beziehen; eigene Services unter kollisionsfreiem Modulnamen registrieren
-- `window.CoreErrorHandler`: Fehler mit Modulkontext melden
+- `Core.getFacade("ConfigManager")`: lesen/schreiben im eigenen Namespace `moduleSettings.<module-id>`
+- `Core.getFacade("CoreStorage")`: über `namespace("module:<id>")` nur eigene Daten
+- `Core.getFacade("DatabaseManager")`: dokumentierte CRUD-Operationen; eigene Records/Stores nur nach freigegebenem Schemavertrag
+- `Core.getFacade("ServiceManager")`: veröffentlichte Services beziehen; eigene Services unter kollisionsfreiem Modulnamen registrieren
+- `Core.getFacade("CoreErrorHandler")`: Fehler mit Modulkontext melden
 - `ApiClient`: dokumentierte Serverendpunkte verwenden
 - Browsergeräte-API nur, wenn noch kein Coreadapter existiert; Berechtigung und Fallback dokumentieren. GPS ist aktuelles Beispiel.
 
-Vor Nutzung Methodensignatur in `Functions.md` und Quellcode prüfen. Globale Objekte sind IST-Schnittstellen, aber noch nicht formal versioniert.
+Vor Nutzung Methodensignatur in `Functions.md` und Quellcode prüfen. Direkter Zugriff auf globale Implementierungsobjekte ist nur eine Bestands-Kompatibilitätsschicht und kein Modulvertrag.
 
 ## 11. Verbotene Core-Eingriffe
 
@@ -140,7 +140,7 @@ Regeln:
 - Module kommunizieren über Events oder explizit registrierte Services, niemals über Dateimanipulation oder private globale Variablen.
 - Request/Response über Events ist aktuell nicht formal standardisiert.
 
-**FEHLT/GEPLANT:** formales Hookregister, Eventversionierung, asynchrone Zustellgarantie und Sandbox.
+**VORHANDEN:** kanonischer Eventkatalog in Vertrag `1.0.0`. **FEHLT/GEPLANT:** formales Hookregister, versionsspezifische Payloadschemas, asynchrone Zustellgarantie und Sandbox.
 
 ## 13. Services
 

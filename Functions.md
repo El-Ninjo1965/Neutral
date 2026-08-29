@@ -55,7 +55,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | Konflikterkennung und Konfliktauflösung | FEHLT/TODO | kein allgemeiner Vertrag nachweisbar |
 | Datenversionierung für synchronisierte Records | FEHLT/TODO | nicht allgemein implementiert |
 | zentraler API-Timeout und Retry-Policy | FEHLT/TODO | ApiClient verwendet Fetch ohne Timeout/Retry |
-| versionierte Event-/Serviceverträge | FEHLT/TODO | globale Namen und Payloads sind nicht formal versioniert |
+| versionierter Core-/Event-/Servicekatalog | VORHANDEN | Vertrag `1.0.0`; Payload-Grundregeln und Service-Sichtbarkeit sind stabilisiert |
 | abstrahierte Geräte-Service-Schicht | FEHLT/TODO | GPS greift direkt auf Browser-Geolocation zu |
 
 ## Versionierter öffentlicher Vertrag

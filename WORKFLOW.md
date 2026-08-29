@@ -102,7 +102,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Dateiinventar, Ladefolge, globale Exporte, Eventemittenten, Service-/Storage-/Konfigurationsimplementierungen, Modul-Lifecycle und bestehende Tests statisch geprüft.
 - **Ergebnis:** konkrete P2-Arbeitsliste erstellt; noch keine Laufzeitimplementierung verändert.
 - **Offene Punkte:** P2.1 bis P2.6 werden in der dokumentierten Reihenfolge umgesetzt.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `e7ea9142bb8a7c9b75882970d27099886dd1fc85`.
 
 ### 2026-08-29 – Dokumentationsgrundlage vollständig neu aufbauen
 
@@ -150,7 +150,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Vertragsversion, Freeze-Garantien, Eventkatalog sowie Public/Internal-Abgrenzung automatisiert geprüft; Gesamtsuite ausgeführt.
 - **Ergebnis:** P2.1 abgeschlossen, bestehende Globals bleiben als kompatible Ladezeit-API erhalten.
 - **Offene Punkte:** P2.2 bis P2.6.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `d71674983dbdba4cf447f9455da3e8e24e4e0912`.
 
 ### 2026-08-29 – P2.2 Event- und Serviceverträge stabilisieren
 
@@ -161,7 +161,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Handlerfehler, Ringübergabe, Unsubscribe/Clear, Service-Sichtbarkeit, Duplikate und Disposal sowie Gesamtsuite geprüft.
 - **Ergebnis:** P2.2 abgeschlossen; bestehende Standardservices bleiben öffentlich.
 - **Offene Punkte:** P2.3 bis P2.6.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `7e3f857cb874862e9fc3694c5b3cbcc26796dc13`.
 
 ### 2026-08-29 – P2.3 Online-/Offline-Grundlage lifecyclefest machen
 
@@ -172,7 +172,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Doppelinitialisierung, Offline-Deduplizierung, Freeze, Dispose sowie Gesamtsuite geprüft.
 - **Ergebnis:** P2.3 abgeschlossen; API-Erreichbarkeit und Synchronisation bleiben bewusst außerhalb dieses Vertrags.
 - **Offene Punkte:** P2.4 bis P2.6.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `605d3d4fcffa991c978f9b2b80b89bc1eee30058`.
 
 ### 2026-08-29 – P2.4 Storage- und Konfigurationsgrenzen festlegen
 
@@ -183,7 +183,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Keykompatibilität, Modultrennung, Secret-Ausschluss, additives IndexedDB-Upgrade und Gesamtsuite geprüft.
 - **Ergebnis:** P2.4 abgeschlossen; keine Datenmigration oder Versionsanhebung erforderlich.
 - **Offene Punkte:** P2.5 und P2.6; Sync-Queue bleibt P6.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `4ed67787b519c96666ecc9ee5a5f68fa4fe12284`.
 
 ### 2026-08-29 – P2.5 Fehler- und Loggingpfad absichern
 
@@ -194,7 +194,7 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** Klassifikation, Kontextredaktion, Rohfehler-Ausschluss, Ringgrenze und Gesamtsuite geprüft.
 - **Ergebnis:** P2.5 abgeschlossen; persistentes/remote Logging bleibt eine getrennte spätere Betriebsentscheidung.
 - **Offene Punkte:** P2.6.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `a4878f28fe932ecab39a27e570faf3c0d3076914`.
 
 ### 2026-08-29 – P2.6 Modulvertrag und globale Kompatibilität abschließen
 
@@ -205,4 +205,15 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** kompletter Lifecycle inklusive inaktiver Installation, Update, Cleanup vor Uninstall, Eventgarantien, bestehende GPS-/Dependencytests und Gesamtsuite geprüft.
 - **Ergebnis:** P2.6 und damit alle sechs P2-Arbeitspakete abgeschlossen.
 - **Offene Punkte:** keine Breaking-Architekturentscheidung; globale Skriptobjekte bleiben dokumentierte Kompatibilitätsschicht, eine spätere ESM/DI-Migration wäre eine eigene Architekturentscheidung.
-- **Commit-ID:** wird nach dem Commit verifiziert.
+- **Commit-ID:** `a92d68e871a64febe4b1bef8c491907e745a1877`.
+
+### 2026-08-29 – P2-Core-Abschlussprüfung
+
+- **Aufgabe:** Alle sechs P2-Pakete gegen Code, Vision, Modulvertrag und vollständige Testsuite abschließend prüfen.
+- **Betroffene Dateien:** gesamter `Web-App/core/`, GPS-Referenz, Coretests sowie `TODO.md`, `WORKFLOW.md`, `Architecture.md`, `Functions.md`, `Database.md`, `Security.md`, `ModuleCreation.md`.
+- **Änderung:** Statusaussagen konsolidiert, veraltete FEHLT-/Global-API-Aussagen korrigiert und alle Paket-Commit-IDs nachgetragen. Keine API-/Server- oder Fachfunktion ergänzt.
+- **Zweck:** Nachweisbarer P2-Abschluss als stabile Grundlage für P3 bis P10.
+- **Tests/Validierung:** 116 Tests einschließlich Vertrags-, Event-, Service-, Network-, Storage-/Schema-, Config-/Secret-, Error-/Redaction-, Modul-/GPS-, API-, Auth- und PHP-Regressionen; Dokumentations-/Pfad-/Secretprüfung; GitHub-Abgleich.
+- **Ergebnis:** P2.1–P2.6 vollständig erledigt; Testzahl von 107 auf 116 erhöht, keine bestehende Abdeckung entfernt.
+- **Offene Punkte:** keine blockierende Architekturentscheidung. P6-Sync/Retry/Konflikte, P3-Performance und weitere priorisierte Phasen bleiben bewusst außerhalb P2.
+- **Commit-ID:** wird im nachfolgenden Protokollcommit festgehalten.
