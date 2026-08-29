@@ -27,7 +27,7 @@ Die tatsächlichen Voraussetzungen werden durch `PrerequisiteChecker`, Setupstat
 - `Server/runtime/` – ignorierte PHP-Runtime-/Logdaten
 - `Server/node/` – ausschließlich lokale Referenz- und Testlaufzeit
 
-Der öffentliche PHP-Document-Root zeigt auf `Server/public/`. Der Webserver stellt zusätzlich die Browserassets aus `Web-App/` unter ihrem konfigurierten Pfad bereit. `Server/php/`, `.env`, Logs und Runtimezustand dürfen nicht öffentlich ausgeliefert werden.
+Das vollständige Produktions-Staging wird in den vorhandenen Shared-Hosting-Document-Root übertragen. Die Root-`.htaccess` stellt `/`, `/api`, `/admin.php` und `/setup.php` auf die getrennten Repositorypfade durch und sperrt `Server/php/`, `Server/runtime/`, Dotfiles und Verzeichnislisten. Dadurch bleiben die relativen Projektpfade für PHP-Modul-Discovery und Runtime erhalten, während ausschließlich die vorgesehenen Einstiege öffentlich sind.
 
 ## 3. Environment-Konfiguration
 
@@ -51,9 +51,9 @@ Es existiert absichtlich keine mit echten Werten gefüllte Vorlage im Repository
 ## 5. Installation
 
 1. Sauberen Git-Stand verwenden.
-2. Server-Allowlist/Deploymentskript prüfen und ausschließlich `Server/php/`, `Server/public/` sowie die getrennte `Web-App/` bereitstellen.
+2. Server-Allowlist/Deploymentskript prüfen und ausschließlich Root-`.htaccess`, `Server/php/`, `Server/public/` sowie die getrennte `Web-App/` bereitstellen.
 3. `.env`, `.git`, Tests, `node_modules`, lokale Datenbanken und nicht allowlistete Runtimeartefakte ausschließen.
-4. `Server/public/api/.htaccess` und Rewriteunterstützung sicherstellen.
+4. Root-`.htaccess` und `Server/public/api/.htaccess` unverändert übertragen und Rewriteunterstützung sicherstellen.
 5. Schreibbare Runtime-/Logverzeichnisse mit minimal nötigen Rechten anlegen; kein pauschales `777`.
 6. HTTPS aktivieren und HTTP umleiten.
 7. Setupstatus aufrufen und Installation/Migration einmalig über den autorisierten Setupweg ausführen.
@@ -99,7 +99,7 @@ Nur Runtime-/Log-/ggf. Sessionpfade benötigen Schreibrechte. PHP-Quellcode, Man
 
 `scripts/manual-ftps-deploy.js` unterstützt allowlistetes FTPS-Deployment und liest hostlokale Deploymentkonfiguration. Vor jedem Lauf Stagingliste prüfen. Web-App- und Serverdeployment bleiben getrennte Modi. FTP/FTPS ist Deploymenttransport, nicht Laufzeit-API.
 
-Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produktionsumfang aus `Web-App/`, `Server/php/` und `Server/public/`. `Server/node/` bleibt Entwicklungs-/Testwerkzeug und wird nicht in das Produktions-Staging aufgenommen.
+Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produktionsumfang aus Root-`.htaccess`, `Web-App/`, `Server/php/` und `Server/public/`. `Server/node/`, Tests, Dokumentation und lokale Werkzeuge werden nicht in das Produktions-Staging aufgenommen. FTPS-Zertifikate werden validiert; ein Host mit ungültiger oder unvollständiger Zertifikatskette blockiert den Upload, statt die Prüfung abzuschalten.
 
 ## 10. Serverwechsel
 

@@ -40,6 +40,7 @@ jobs:
           copy_dir Web-App
           copy_dir Server/php
           copy_dir Server/public
+          cp .htaccess "$STAGING_DIR/.htaccess"
 
           test -f "$STAGING_DIR/Web-App/public/index.html"
           test -f "$STAGING_DIR/Web-App/app/modules/gps/module.json"
@@ -69,7 +70,7 @@ jobs:
           set cmd:fail-exit true
           set ftp:ssl-force true
           set ftp:ssl-protect-data true
-          set ssl:verify-certificate no
+          set ssl:verify-certificate true
           set net:timeout 30
           set net:max-retries 1
           open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"

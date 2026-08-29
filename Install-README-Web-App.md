@@ -27,7 +27,8 @@ Die Deployment-Allowlist in `scripts/manual-ftps-deploy.js` ist maßgeblich, wen
 1. Keine `.env`-Datei in den Browser-Document-Root kopieren.
 2. API-Basis relativ zur Installation oder über die vorhandene Clientkonfiguration setzen. Keine Produktionsabhängigkeit zu `localhost`, privaten Hosts oder Port 3000 einführen.
 3. Der Browserclient erwartet API-Pfade der Form `/api/...` relativ zur konfigurierten Basis.
-4. Same-Origin ist der einfachste unterstützte Produktionsbetrieb, weil Sessions mit `credentials: same-origin` gesendet werden. Cross-Origin benötigt einen bewusst implementierten CORS-/Cookievertrag und ist derzeit nicht Standard.
+4. Beim vorgesehenen Root-Deployment liefert die Root-`.htaccess` `/` aus `Web-App/public/index.html` aus und leitet `/api` zum PHP-Router; die Verzeichnisstruktur darf nicht abgeflacht werden.
+5. Same-Origin ist der einfachste unterstützte Produktionsbetrieb, weil Sessions mit `credentials: same-origin` gesendet werden. Cross-Origin benötigt einen bewusst implementierten CORS-/Cookievertrag und ist derzeit nicht Standard.
 
 ## 4. Lokaler Start
 

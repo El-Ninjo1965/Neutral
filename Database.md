@@ -72,6 +72,8 @@ Das GPS-Manifest deklariert aktuell `database.tables: []`; es besitzt daher kein
 
 ## 8. Migrationen
 
+Bei einer Neuinstallation prüft `PrerequisiteChecker` zunächst die Erreichbarkeit des konfigurierten MySQL-Servers, ohne ein bereits vorhandenes Schema vorauszusetzen. `SetupInstaller` lässt danach `Database.ensureDatabaseExists()` das konfigurierte Schema prüfen beziehungsweise mit ausreichendem temporärem Recht anlegen und führt erst anschließend `SchemaMigrator` und `CoreDataSeeder` aus.
+
 **VORHANDEN:** Migration `2026_08_25_0001_core_schema` erzeugt die genannten Tabellen. `status()` vergleicht bekannte und angewendete Keys; `migrate()` wendet ausstehende Statements an und speichert SHA-1-Checksummen.
 
 **TEILWEISE:** Statements einer Migration werden nicht im aktuellen Code als eine explizite Gesamttransaktion umschlossen. Modul-Migrationsrecords existieren, ein allgemeiner sicherer SQL-Migrationsvertrag für Module ist noch nicht vollständig veröffentlicht.

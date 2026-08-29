@@ -93,6 +93,17 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 ## 10. Fortlaufendes Arbeitsprotokoll
 
+### 2026-08-29 – Neuinstallation auf leerem Shared Hosting vorbereiten
+
+- **Aufgabe:** Aktuellen GitHub-main-Stand ohne Live-Deployment vollständig auf Web-App-, PHP-, Datenbank- und FTPS-Neuinstallierbarkeit prüfen.
+- **Betroffene Dateien:** Root-`.htaccess`, Setup-/Prerequisite-Code, manuelles Deployment, GitHub-Workflow, Deploymenttest, `TODO.md`, Architektur-, API-, DB-, Security- und Installationsdokumentation.
+- **Gefundene Korrekturen:** Im FTPS-Staging fehlte ein öffentlicher Root-Router, obwohl der Browser `/api` und `/Web-App` erwartet; die Setupseite verwendete abweichend den Ordner `Server/` als Projektroot; der DB-Vorabcheck verlangte das Schema vor dessen vorgesehener Erstellung; cPanel-Preflight verlangte produktionsfremde Node-Variablen; FTPS-Zertifikatsprüfung war deaktiviert.
+- **Änderung:** Root-Routing und Zugriffsschutz ergänzt, Setup-Projektroot vereinheitlicht, MySQL-Servercheck vor Schemaerstellung getrennt, Produktions-Preflight von Node entkoppelt, beide Stagingwege um `.htaccess` erweitert und Zertifikatsprüfung aktiviert.
+- **Tests/Validierung:** vollständige Node-Testsuite, PHP-Syntaxprüfung, Deployment-Dry-Run, Staginginventar/Node-Ausschluss, YAML-Parsing, Secret- und Altpfadsuche sowie Git-Diffprüfung.
+- **Ergebnis:** Repositoryseitige Installationsblocker behoben; kein Live-Deploy ausgeführt. Sechs unvermeidbare Live-Hosting-Prüfungen bleiben konkret in `TODO.md` offen.
+- **Offene Punkte:** ausschließlich die sechs markierten LIVE-Prüfungen; produktunabhängige spätere Phasen bleiben unverändert.
+- **Commit-ID:** wird mit diesem Abschlusscommit nachgetragen.
+
 ### 2026-08-29 – P2-Core-Arbeitsplan aus dem Ist-Code ableiten
 
 - **Aufgabe:** Vor Implementierungsänderungen den gesamten Browser-Core und seine Server-/Modulgrenzen prüfen und P2 in einzeln abnehmbare Pakete zerlegen.

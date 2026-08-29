@@ -77,6 +77,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** `Server/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `Server/public/api/index.php` ist der zentrale PHP-API-Router. `Server/public/admin.php` schützt die Adminoberfläche serverseitig. `Server/public/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
 
+**IST:** Das Shared-Hosting-Staging behält `Web-App/` und `Server/` als getrennte Komponenten unter dem Deploymentroot. Die Root-`.htaccess` bildet die öffentlichen Pfade auf diese Struktur ab und sperrt PHP-Core, Runtime und Dotfiles. `Server/node/` ist nicht Bestandteil des Produktions-Stagings.
+
 **IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
 
 **GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.

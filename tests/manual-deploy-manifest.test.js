@@ -6,9 +6,20 @@ const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ft
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
   test('gps standalone entry is allowlisted for deployment', () => {
+    assert.ok(allowedEntries.includes('.htaccess'));
     assert.ok(allowedEntries.includes('Web-App'));
     assert.ok(allowedEntries.includes('Server/php'));
     assert.ok(allowedEntries.includes('Server/public'));
+  });
+
+  test('production staging exposes routing protection and excludes Node runtime', () => {
+    const { buildStagingTree } = require('../scripts/manual-ftps-deploy.js');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const { stagingRoot, missing } = buildStagingTree();
+    assert.deepStrictEqual(missing, []);
+    assert.equal(fs.existsSync(path.join(stagingRoot, '.htaccess')), true);
+    assert.equal(fs.existsSync(path.join(stagingRoot, 'Server', 'node')), false);
   });
 
   test('new file is uploaded', () => {

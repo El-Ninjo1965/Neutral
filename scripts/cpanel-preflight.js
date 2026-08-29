@@ -5,7 +5,6 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
-const requiredRuntimeKeys = ['PORT', 'HOST', 'NODE_ENV', 'DEFAULT_APP_ID'];
 const requiredDbKeys = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
 const requiredFtpKeys = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
@@ -86,7 +85,6 @@ function runDryRun() {
 function main() {
   const merged = collectEnv();
   const checks = [
-    checkRequiredKeys('runtime', requiredRuntimeKeys, merged),
     checkRequiredKeys('database', requiredDbKeys, merged),
     checkRequiredKeys('ftp', requiredFtpKeys, merged)
   ];
@@ -109,9 +107,8 @@ function main() {
       note: dryRun.ok ? 'Deployment dry-run succeeded.' : 'Deployment dry-run failed. Fix missing configuration or runtime state before live deployment.'
     },
     summary: {
-      runtimeEnvReady: checks[0].ok,
-      databaseReady: checks[1].ok,
-      ftpReady: checks[2].ok,
+      databaseReady: checks[0].ok,
+      ftpReady: checks[1].ok,
       allowlistReady: allowlist.ok,
       dryRunReady: dryRun.ok
     }

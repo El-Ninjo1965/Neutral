@@ -14,6 +14,7 @@ const manifestFile = path.join(projectRoot, '.neutral-deploy-manifest.json');
 const required = ['FTP_SERVER', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD', 'FTP_TARGET_DIR', 'FTP_PROTOCOL'];
 
 const allowedEntries = [
+  '.htaccess',
   'Web-App',
   'Server/php',
   'Server/public'
@@ -248,7 +249,7 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
     'set net:max-retries 1',
     `set ftp:ssl-force ${config.FTP_PROTOCOL === 'ftps' ? 'true' : 'false'}`,
     'set ftp:ssl-protect-data true',
-    'set ssl:verify-certificate no',
+    'set ssl:verify-certificate true',
     `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
     `mirror -R --only-newer --verbose --parallel=1 --no-perms --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
     deleteCommands ? deleteCommands : '',

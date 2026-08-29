@@ -15,6 +15,21 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 - [ ] Dokumentation bei jeder Vertragsänderung zusammen mit Code und Tests fortschreiben.
 - [x] GitHub-FTPS-Workflow auf die Produktionsquellen `Web-App/`, `Server/php/` und `Server/public/` umstellen.
 
+### P1.1 – Neuinstallation auf leerem Shared Hosting
+
+- [x] öffentliches Root-Routing für `/api`, `/admin.php`, `/setup.php` und die Web-App bereitstellen sowie PHP-Core, Runtime, Dotfiles und Verzeichnislisten sperren.
+- [x] Setupoberfläche auf denselben Projektroot wie API, Migrationen, Runtime und Modul-Discovery ausrichten.
+- [x] Erstinstallation einer noch nicht vorhandenen Datenbank ermöglichen: Voraussetzungstest prüft den MySQL-Server, die Installationsroutine legt danach das konfigurierte Schema an und migriert es.
+- [x] manuelles und GitHub-FTPS-Staging um die Root-`.htaccess` ergänzen, Node konsequent ausschließen und Zertifikatsprüfung aktivieren.
+- [x] cPanel-Preflight von Node-Runtimevariablen entkoppeln; Produktion benötigt nur PHP-/DB- und Deploymentkonfiguration.
+- [x] Installationsanleitungen und Architektur-/API-/DB-/Security-Dokumentation gegen den korrigierten Produktionsumfang abgleichen.
+- [ ] **LIVE:** FTPS-Anmeldung, Zielverzeichnis sowie Lese-/Schreibrecht mit den GitHub-Secrets prüfen.
+- [ ] **LIVE:** LiteSpeed-/Apache-Verarbeitung der Root-`.htaccess` und die öffentlichen Pfade `/`, `/api/status`, `/setup.php`, `/admin.php` prüfen.
+- [ ] **LIVE:** PHP 8.x, `json`, `pdo`, `pdo_mysql`, Session und OpenSSL im Hosting prüfen.
+- [ ] **LIVE:** leeres MariaDB-/MySQL-Schema anlegen bzw. Erstellungsrecht prüfen und Setup/Migration einmalig ausführen.
+- [ ] **LIVE:** HTTPS, Zertifikatskette, Secure-/HttpOnly-/SameSite-Cookies und CSRF im echten Origin prüfen.
+- [ ] **LIVE:** Web-App-Assets, GPS-Manifest, Same-Origin-API und geschützte Adminoberfläche im Browser prüfen.
+
 ## P2 – Core
 
 ### P2.1 – Vertragsinventar und öffentliche Facade

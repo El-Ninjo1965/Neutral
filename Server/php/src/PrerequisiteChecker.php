@@ -82,11 +82,13 @@ final class PrerequisiteChecker
         ];
         if ($checks['database_config']['ok']) {
             try {
-                $dbConnectionCheck['ok'] = $this->database->ping();
+                $statement = $this->database->connectServer()->query('SELECT 1 AS ok');
+                $result = $statement === false ? false : $statement->fetch();
+                $dbConnectionCheck['ok'] = is_array($result) && (string) ($result['ok'] ?? '') === '1';
                 $dbConnectionCheck['status'] = $dbConnectionCheck['ok'] ? 'ready' : 'error';
                 $dbConnectionCheck['message'] = $dbConnectionCheck['ok']
-                    ? 'Database connection is available.'
-                    : 'Database ping returned an unexpected result.';
+                    ? 'MySQL server connection is available.'
+                    : 'MySQL server ping returned an unexpected result.';
             } catch (\Throwable $exception) {
                 $dbConnectionCheck['ok'] = false;
                 $dbConnectionCheck['status'] = 'error';

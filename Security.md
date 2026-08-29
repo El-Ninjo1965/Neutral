@@ -49,6 +49,8 @@
 
 ## 9. Secrets
 
+**VORHANDEN:** Das Produktions-Staging enthält eine Root-`.htaccess`, die Dotfiles, `Server/php/`, `Server/runtime/` und Verzeichnislisten vor HTTP-Zugriff schützt. GitHub- und manuelles FTPS-Deployment validieren die Serverzertifikatskette; das Abschalten der Zertifikatsprüfung ist kein unterstützter Produktionsweg.
+
 **VORHANDEN ALS REPOSITORY-REGEL:** `.env` und `.env.*` sind ignoriert; `.env.example` darf nur bereinigte Platzhalter enthalten. Keine Zugangsdaten in Clientcode, Dokumentation, Logs, Commits oder Screenshots. Bereits offengelegte Tokens müssen rotiert werden.
 
 ## 10. Datenbankzugriff

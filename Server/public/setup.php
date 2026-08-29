@@ -101,7 +101,6 @@ function setup_check_text(string $checkName, array $check): string
 }
 
 $runtime = neutral_bootstrap([
-    'project_root' => dirname(__DIR__),
     'register_error_handler' => false,
 ]);
 $setupStateStore = new SetupStateStore(SetupStateStore::defaultStateFile($runtime->projectRoot()));

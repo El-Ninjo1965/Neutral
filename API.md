@@ -2,7 +2,7 @@
 
 ## 1. Geltungsbereich
 
-Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. `Server/public/api/.htaccess` leitet API-Anfragen an diesen Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; die konkrete öffentliche Basis darf nicht im Client-Core fest codiert werden.
+Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Beim Shared-Hosting-Root-Deployment leitet die Root-`.htaccess` `/api` nach `Server/public/api/`; dort leitet `Server/public/api/.htaccess` Unterpfade an den Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; die konkrete öffentliche Basis darf nicht im Client-Core fest codiert werden.
 
 `Server/node/bootstrap/server.js` bietet zusätzlich eine Node-Referenz- und Test-API. Sie ist tatsächlich vorhanden, aber keine Voraussetzung der Shared-Hosting-Produktion und nicht automatisch vertraglich identisch mit PHP.
 

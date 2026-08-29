@@ -1,0 +1,14 @@
+Options -Indexes
+DirectoryIndex Web-App/public/index.html
+
+RewriteEngine On
+
+# Never expose configuration, server internals, runtime state, or repository data.
+RewriteRule (^|/)\. - [F,L]
+RewriteRule ^Server/(php|runtime)(/|$) - [F,L,NC]
+
+# Preserve the repository's two-component layout while exposing stable public URLs.
+RewriteRule ^api(?:/(.*))?$ Server/public/api/$1 [L,QSA]
+RewriteRule ^admin\.php$ Server/public/admin.php [L,QSA]
+RewriteRule ^setup\.php$ Server/public/setup.php [L,QSA]
+
