@@ -69,3 +69,29 @@ test('service manager enforces names, visibility, duplicate protection and dispo
   assert.equal(browser.ServiceManager.unregister('module.example'), true);
   assert.equal(disposed, true);
 });
+
+test('network service initializes once, emits only transitions and can be disposed', () => {
+  const handlers = new Map();
+  const emitted = [];
+  const browser = {
+    window: null,
+    navigator: { onLine: true },
+    Core: { emit(name, payload) { emitted.push({ name, payload }); } },
+    addEventListener(name, handler) { handlers.set(name, handler); },
+    removeEventListener(name, handler) { if (handlers.get(name) === handler) handlers.delete(name); }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'core-network.js');
+  browser.CoreNetwork.init();
+  browser.CoreNetwork.init();
+  assert.equal(handlers.size, 2);
+  handlers.get('offline')();
+  handlers.get('offline')();
+  assert.equal(browser.CoreNetwork.isOnline(), false);
+  assert.equal(emitted.filter(({ name }) => name === 'network:changed').length, 1);
+  assert.equal(Object.isFrozen(browser.CoreNetwork.getStatus()), true);
+  browser.CoreNetwork.dispose();
+  assert.equal(handlers.size, 0);
+  assert.equal(browser.CoreNetwork.getStatus().initialized, false);
+});

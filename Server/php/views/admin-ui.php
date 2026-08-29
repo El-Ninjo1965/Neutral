@@ -76,6 +76,7 @@
     <script src="/Web-App/core/core-admin.js"></script>
     <script src="/Web-App/core/service-manager.js"></script>
     <script src="/Web-App/core/core-network.js"></script>
+    <script src="/Web-App/core/core-shutdown.js"></script>
     <script src="/Web-App/core/core-startup.js"></script>
     <script src="/Web-App/core/core-runtime.js"></script>
     <script src="/Web-App/core/core-entry.js"></script>

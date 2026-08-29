@@ -162,3 +162,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.2 abgeschlossen; bestehende Standardservices bleiben öffentlich.
 - **Offene Punkte:** P2.3 bis P2.6.
 - **Commit-ID:** wird nach dem Commit verifiziert.
+
+### 2026-08-29 – P2.3 Online-/Offline-Grundlage lifecyclefest machen
+
+- **Aufgabe:** Browser-Netzwerkstatus ohne Sync-/API-Behauptung stabil initialisieren und freigeben.
+- **Betroffene Dateien:** `core-network.js`, `core-shutdown.js`, Browser-/Admin-Ladefolge, Core-Vertragstests, `TODO.md`, `WORKFLOW.md`, `Functions.md`, `Architecture.md`.
+- **Änderung:** Stabile Handlerreferenzen, idempotentes `init`, `dispose` mit Listener-/Subscriber-Cleanup und Shutdown-Anbindung ergänzt; Snapshots bleiben unveränderlich und Events entstehen nur bei Übergängen.
+- **Zweck:** Verlässliche P6-Basis und keine doppelten Listener nach Restart.
+- **Tests/Validierung:** Doppelinitialisierung, Offline-Deduplizierung, Freeze, Dispose sowie Gesamtsuite geprüft.
+- **Ergebnis:** P2.3 abgeschlossen; API-Erreichbarkeit und Synchronisation bleiben bewusst außerhalb dieses Vertrags.
+- **Offene Punkte:** P2.4 bis P2.6.
+- **Commit-ID:** wird nach dem Commit verifiziert.

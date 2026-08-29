@@ -27,7 +27,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.3 – Online-/Offline-Grundlage
 
-- [ ] **Aufgabe:** `CoreNetwork` idempotent initialisierbar und wieder sauber freigebbar machen, unveränderliche Statussnapshots und genau ein `network:changed` je Zustandswechsel garantieren. **Zweck:** stabile fachfreie Grundlage für P6 ohne Syncbehauptung. **Bereiche:** `core-network.js`, Startup/Shutdown. **Abhängigkeiten:** Eventvertrag aus P2.2. **Status:** OFFEN (Grundfunktion vorhanden). **Tests:** initial/online/offline, doppelte Initialisierung, Subscribe/Unsubscribe, Dispose/Re-init.
+- [x] **Aufgabe:** `CoreNetwork` idempotent initialisierbar und wieder sauber freigebbar machen, unveränderliche Statussnapshots und genau ein `network:changed` je Zustandswechsel garantieren. **Zweck:** stabile fachfreie Grundlage für P6 ohne Syncbehauptung. **Bereiche:** `core-network.js`, Startup/Shutdown. **Abhängigkeiten:** Eventvertrag aus P2.2. **Status:** OFFEN (Grundfunktion vorhanden). **Tests:** initial/online/offline, doppelte Initialisierung, Subscribe/Unsubscribe, Dispose/Re-init.
 
 ### P2.4 – Storage- und Konfigurationsgrenzen
 

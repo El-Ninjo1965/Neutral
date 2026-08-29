@@ -9,6 +9,8 @@
     let initialized = false;
     let online = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
     const listeners = new Set();
+    const handleOnline = () => publish(true);
+    const handleOffline = () => publish(false);
 
     const publish = (nextOnline) => {
         const previousOnline = online;
@@ -23,8 +25,8 @@
     const CoreNetwork = {
         init() {
             if (initialized || typeof window === 'undefined') return this.getStatus();
-            window.addEventListener('online', () => publish(true));
-            window.addEventListener('offline', () => publish(false));
+            window.addEventListener('online', handleOnline);
+            window.addEventListener('offline', handleOffline);
             initialized = true;
             return this.getStatus();
         },
@@ -38,6 +40,15 @@
             if (typeof listener !== 'function') throw new TypeError('Network listener must be a function.');
             listeners.add(listener);
             return () => listeners.delete(listener);
+        },
+        dispose() {
+            if (initialized && typeof window !== 'undefined') {
+                window.removeEventListener('online', handleOnline);
+                window.removeEventListener('offline', handleOffline);
+            }
+            listeners.clear();
+            initialized = false;
+            return this.getStatus();
         }
     };
 

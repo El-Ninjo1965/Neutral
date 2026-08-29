@@ -66,6 +66,14 @@
                 window.CoreStartup.reset();
             }
 
+            if (window.CoreNetwork && typeof window.CoreNetwork.dispose === 'function') {
+                window.CoreNetwork.dispose();
+            }
+
+            if (window.ServiceManager && typeof window.ServiceManager.clear === 'function') {
+                window.ServiceManager.clear({ includeInternal: true, reset: true });
+            }
+
             if (window.Core && typeof window.Core.emit === 'function') {
                 window.Core.emit('core:stopped');
             }

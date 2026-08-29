@@ -151,3 +151,5 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 ### Versionierter Client-Core-Vertrag – IST
 
 `Web-App/core/core-contracts.js` veröffentlicht Vertrag `1.0.0`. Nur die dort gelisteten Facaden sind für Erweiterungen öffentlich; `CoreEventBus`, `CoreEventRing`, `CoreLoader`, `CoreState`, `MasterFramework` und `ErrorLog` bleiben interne Kompatibilitätsobjekte. Die globale Skript-Ladefolge bleibt derzeit technisch erforderlich, ist aber kein Freibrief für Module, beliebige Globals zu verwenden.
+
+`CoreNetwork` ist die öffentliche, fachfreie Connectivity-Facade. Startup initialisiert sie idempotent, Shutdown gibt Listener frei. API-Health, Retry und fachliche Synchronisation bleiben getrennte spätere Schichten.
