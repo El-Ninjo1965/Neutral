@@ -91,3 +91,11 @@ Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Date
 - **FEHLT:** formale Clientmigrationen mit Tests für Versionssprünge.
 - **FEHLT:** dokumentierte Backup-/Restore- und Aufbewahrungspolitik für Produktion.
 - **FEHLT:** allgemeine Modul-Datenmigration mit Transaktions-/Rollbackvertrag.
+
+## 12. Verbindliche Client-Verantwortlichkeiten
+
+- `CoreStorage`: kleine, nicht sensible, namespaced Key-Value-Daten in `localStorage`.
+- `DatabaseManager`: strukturierte/offlinefähige Datensätze und additive IndexedDB-Schema-Upgrades; vorhandene Stores werden nicht ersetzt.
+- `StorageManager`: Adapter für Framework-/Entwicklungs- und Serverpersistenz, nicht parallele Autorität für browserseitige CoreDB-Records.
+- `cache`: strukturierter Cache-Store; Gültigkeits-/Invalidierungspolitik bleibt eine separate offene Produktaufgabe.
+- `sync`: nur reservierte Persistenzgrundlage; P2 implementiert keine Queue- oder Konfliktlogik.

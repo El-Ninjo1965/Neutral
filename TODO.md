@@ -31,7 +31,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.4 – Storage- und Konfigurationsgrenzen
 
-- [ ] **Aufgabe:** Verantwortlichkeiten von `CoreStorage`, `StorageManager`, `DatabaseManager`, Cache und Konfiguration eindeutig festlegen; sichere Namespaces und kompatible Schema-Upgrades testen. **Zweck:** widersprüchliche Speicherwege vermeiden, ohne vorhandene Daten zu brechen. **Bereiche:** Storage-/DB-/Config-Core und `Database.md`. **Abhängigkeiten:** vorhandene Keys und IndexedDB-Version bleiben kompatibel. **Status:** OFFEN. **Tests:** Namespaces, JSON-/Quotafehler, Adaptervertrag, bestehende/fehlende Stores beim Upgrade, Konfigurationsisolation und Secret-Ausschluss.
+- [x] **Aufgabe:** Verantwortlichkeiten von `CoreStorage`, `StorageManager`, `DatabaseManager`, Cache und Konfiguration eindeutig festlegen; sichere Namespaces und kompatible Schema-Upgrades testen. **Zweck:** widersprüchliche Speicherwege vermeiden, ohne vorhandene Daten zu brechen. **Bereiche:** Storage-/DB-/Config-Core und `Database.md`. **Abhängigkeiten:** vorhandene Keys und IndexedDB-Version bleiben kompatibel. **Status:** OFFEN. **Tests:** Namespaces, JSON-/Quotafehler, Adaptervertrag, bestehende/fehlende Stores beim Upgrade, Konfigurationsisolation und Secret-Ausschluss.
 
 ### P2.5 – Fehlerbehandlung und Logging
 

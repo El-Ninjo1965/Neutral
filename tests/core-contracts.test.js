@@ -95,3 +95,50 @@ test('network service initializes once, emits only transitions and can be dispos
   assert.equal(handlers.size, 0);
   assert.equal(browser.CoreNetwork.getStatus().initialized, false);
 });
+
+test('core storage namespaces module keys without changing the persisted prefix', () => {
+  const values = new Map();
+  const localStorage = {
+    get length() { return values.size; }, key(index) { return [...values.keys()][index] || null; },
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, value); }, removeItem(key) { values.delete(key); }
+  };
+  const browser = { window: null, localStorage };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'core-storage.js');
+  const storage = browser.CoreStorage.namespace('module:gps');
+  storage.set('last-position', { latitude: 1 });
+  assert.equal(values.has('core:module:gps:last-position'), true);
+  assert.equal(storage.get('last-position').latitude, 1);
+});
+
+test('module config is isolated by module id and rejects secret-shaped values', () => {
+  const browser = { window: null, Core: { emit() {} } };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'config-manager.js');
+  browser.ConfigManager.set('moduleSettings', {});
+  browser.ConfigManager.setModule('gps', { accuracy: 'high' });
+  assert.equal(browser.ConfigManager.getModule('gps').accuracy, 'high');
+  assert.throws(() => browser.ConfigManager.setModule('gps', { apiToken: 'unsafe' }), /must not contain secrets/);
+});
+
+test('database schema upgrade creates missing stores without replacing existing stores', () => {
+  const created = [];
+  const existing = new Set(['users', 'settings']);
+  const browser = { window: null };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'database-manager.js');
+  browser.DatabaseManager.createStores({
+    objectStoreNames: { contains: (name) => existing.has(name) },
+    createObjectStore(name) {
+      created.push(name);
+      return { createIndex() {} };
+    }
+  });
+  assert.equal(created.includes('users'), false);
+  assert.equal(created.includes('settings'), false);
+  assert.deepEqual(created.sort(), ['cache', 'logs', 'modules', 'sessions', 'sync'].sort());
+});

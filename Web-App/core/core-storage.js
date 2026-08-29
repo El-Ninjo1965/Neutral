@@ -80,6 +80,17 @@
             });
         },
 
+        namespace(namespace) {
+            this.validateKey(namespace);
+            const prefix = `${namespace.trim()}:`;
+            return Object.freeze({
+                set: (key, value) => this.set(`${prefix}${key}`, value),
+                get: (key, fallback = null) => this.get(`${prefix}${key}`, fallback),
+                has: (key) => this.has(`${prefix}${key}`),
+                remove: (key) => this.remove(`${prefix}${key}`)
+            });
+        },
+
         validateKey(key) {
             if (typeof key !== 'string' || !key.trim()) {
                 throw new Error('Storage key is required.');

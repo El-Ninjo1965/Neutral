@@ -148,7 +148,7 @@ Eigene Services werden mit einem Namen wie `module.<id>.<service>` als öffentli
 
 ## 14. Storage und lokale Datenbank
 
-- Keys immer mit Modul-ID namespacen.
+- Keys über `CoreStorage.namespace("module:<id>")` immer mit Modul-ID namespacen.
 - Kein Passwort oder Server-Sessiongeheimnis lokal speichern.
 - localStorage nur für kleine, unkritische Werte.
 - IndexedDB für strukturierte/offlinefähige Daten.
@@ -171,7 +171,7 @@ Keine direkte DB-Verbindung aus dem Browser. Keine feste Produktionsdomain im Mo
 
 ## 17. Konfiguration
 
-Adminsettings im Manifest verwenden Pfade unter `moduleSettings.<module-id>`. Defaults sind keine Secrets. Einstellungen werden validiert und über Config/Settings-Service gelesen. Ein Modul liest oder löscht keine fremden Namespaces. Serverseitige sicherheitsrelevante Konfiguration bleibt serverseitig.
+Adminsettings im Manifest verwenden Pfade unter `moduleSettings.<module-id>` und werden über `ConfigManager.setModule/getModule` bereitgestellt. Defaults sind keine Secrets. Einstellungen werden validiert und über Config/Settings-Service gelesen. Ein Modul liest oder löscht keine fremden Namespaces. Serverseitige sicherheitsrelevante Konfiguration bleibt serverseitig.
 
 ## 18. Logging und Fehler
 

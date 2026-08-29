@@ -78,3 +78,5 @@
 3. lokales Datenschutz-/Verschlüsselungsmodell für Offline-Daten definieren.
 4. Refresh/Remember nur bei tatsächlichem Bedarf mit Rotation entwerfen.
 5. Securitytests für jede neue API, Modulpermission und Migration verpflichtend halten.
+
+Client-Modulkonfiguration wird unter `moduleSettings.<id>` isoliert. Schlüssel, die Passwörter, Secrets, Tokens, Private Keys oder Credentials darstellen, werden vom öffentlichen Configvertrag abgelehnt; serverseitige Geheimnisse bleiben ausschließlich in hostlokaler Serverkonfiguration.

@@ -67,3 +67,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 `CoreEventBus.publish()` validiert den Eventnamen, isoliert fehlerhafte Listener, liefert die Anzahl erfolgreicher Zustellungen und übergibt veröffentlichte Events an den begrenzten `CoreEventRing`. `ServiceManager.register(name, service, {visibility})` akzeptiert kollisionsfreie Kleinbuchstaben-Namen, überschreibt keine Registrierung und unterstützt `unregister`/`clear`; interne Services sind nur mit `{includeInternal:true}` erreichbar.
 
 `CoreNetwork.dispose()` entfernt Browserlistener und Subscribers und erlaubt eine saubere erneute Initialisierung. `network:changed` wird genau einmal pro tatsächlichem Browserstatuswechsel mit unveränderlichem Snapshot emittiert; der Status ist ausdrücklich kein API-Health- oder Syncnachweis.
+
+### Storage- und Modulkonfiguration
+
+`CoreStorage.namespace(namespace)` erzeugt eine eingeschränkte Key-Value-Facade und behält das bestehende Format `core:<namespace>:<key>`. `ConfigManager.setModule/getModule` verwaltet ausschließlich `moduleSettings.<id>`; secretartige Felder werden im ausgelieferten Clientvertrag abgelehnt.

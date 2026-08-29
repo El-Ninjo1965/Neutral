@@ -210,6 +210,32 @@
             }
         },
 
+        setModule(moduleId, value) {
+            if (typeof moduleId !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(moduleId)) {
+                throw new Error('Valid module ID is required');
+            }
+            if (!value || typeof value !== 'object' || Array.isArray(value)) {
+                throw new Error('Module config must be an object');
+            }
+            const forbidden = /(?:password|secret|token|privatekey|credential)/i;
+            const containsSecret = (input) => Object.entries(input).some(([key, nested]) =>
+                forbidden.test(key) || (nested && typeof nested === 'object' && containsSecret(nested))
+            );
+            if (containsSecret(value)) {
+                throw new Error('Client module config must not contain secrets');
+            }
+            const current = this.get('moduleSettings', {});
+            this.set('moduleSettings', { ...current, [moduleId]: { ...value } });
+            return this.get('moduleSettings')[moduleId];
+        },
+
+        getModule(moduleId, defaultValue = {}) {
+            const settings = this.get('moduleSettings', {});
+            return settings && Object.prototype.hasOwnProperty.call(settings, moduleId)
+                ? settings[moduleId]
+                : defaultValue;
+        },
+
         /**
          * Gibt eine Konfiguration zurück
          * @param {string} key - Konfigurationsschlüssel

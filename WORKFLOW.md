@@ -173,3 +173,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.3 abgeschlossen; API-Erreichbarkeit und Synchronisation bleiben bewusst außerhalb dieses Vertrags.
 - **Offene Punkte:** P2.4 bis P2.6.
 - **Commit-ID:** wird nach dem Commit verifiziert.
+
+### 2026-08-29 – P2.4 Storage- und Konfigurationsgrenzen festlegen
+
+- **Aufgabe:** Bestehende Speichermechanismen abgrenzen und sichere Modulnamespaces anbieten, ohne Datenformat oder DB-Version zu brechen.
+- **Betroffene Dateien:** `core-storage.js`, `config-manager.js`, Core-Vertragstests, `TODO.md`, `WORKFLOW.md`, `Functions.md`, `Database.md`, `Security.md`, `ModuleCreation.md`.
+- **Änderung:** `CoreStorage.namespace()` behält den vorhandenen `core:`-Prefix und isoliert Modulkeys. `ConfigManager.setModule/getModule` kapselt `moduleSettings.<id>` und weist secretartige Clientwerte ab. Upgrade-Test garantiert, dass existierende IndexedDB-Stores erhalten und nur fehlende ergänzt werden.
+- **Zweck:** Klare Verantwortlichkeit: kleine lokale Werte über CoreStorage, strukturierte Daten über DatabaseManager, Adapter-/Server-Teststorage über StorageManager; keine Clientsecrets.
+- **Tests/Validierung:** Keykompatibilität, Modultrennung, Secret-Ausschluss, additives IndexedDB-Upgrade und Gesamtsuite geprüft.
+- **Ergebnis:** P2.4 abgeschlossen; keine Datenmigration oder Versionsanhebung erforderlich.
+- **Offene Punkte:** P2.5 und P2.6; Sync-Queue bleibt P6.
+- **Commit-ID:** wird nach dem Commit verifiziert.
