@@ -282,4 +282,4 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** vollständige Suite mit 121 Tests; statische Prüfung aller externen Startscripts auf `defer`; genau eine Discovery-Aufrufstelle; keine Adminintervalle/Startdelays; alle neun Messphasen; Timeout-/Offlinepfad; Secret-/Diff-/Dokumentationsprüfung. Fehlende lokale Node-Abhängigkeiten wurden vor der maßgeblichen Gesamtsuite über `npm install` aus dem Lockfile wiederhergestellt und blieben ignoriert.
 - **Ergebnis:** P3.1–P3.4 vollständig; Testabdeckung von 116 auf 121 erhöht. Reale Millisekunden wurden mangels iOS-/Android-Hardware nicht erfunden.
 - **Offene Punkte:** genau zwei reale Gerätetests (Safari/WebKit und Android Chromium/WebView) sind in P8 vorgemerkt; keine offene P3-Architekturentscheidung.
-- **Commit-ID:** wird im Abschlusscommit verifiziert.
+- **Commit-ID:** `46a6aa3a4f3dc2f4ad06efa7611c7163bffc73b1`.
