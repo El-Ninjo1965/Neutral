@@ -42,10 +42,51 @@ jobs:
             cp -a "$source_path"/. "$target_path"/
           }
 
-          # Production is sourced exclusively from the two runtime components.
-          copy_dir Web-App
-          copy_dir Server/php
-          copy_dir Server/public
+          copy_file package.json
+          copy_file package-lock.json
+
+          copy_dir platform
+
+          mkdir -p "$STAGING_DIR/server/api"
+          mkdir -p "$STAGING_DIR/server/bootstrap"
+          mkdir -p "$STAGING_DIR/server/config"
+          mkdir -p "$STAGING_DIR/server/database"
+          mkdir -p "$STAGING_DIR/server/middleware"
+          copy_dir server/api
+          copy_dir server/services
+          copy_file server/server.js
+          copy_file server/bootstrap/server.js
+          copy_file server/config/index.js
+          copy_file server/database/connection.js
+          copy_file server/middleware/input-validation.js
+
+          mkdir -p "$STAGING_DIR/app/modules/gps"
+          copy_file app/index.js
+          copy_file app/modules/index.json
+          copy_file app/modules/gps/index.js
+          copy_file app/modules/gps/module.json
+
+          mkdir -p "$STAGING_DIR/webroot/admin"
+          copy_file webroot/index.html
+          copy_file webroot/setup.php
+          copy_file webroot/diagnose.php
+          copy_file webroot/admin.php
+          copy_file webroot/dev.html
+          copy_file webroot/style.css
+          copy_file webroot/master-ui.js
+          copy_file webroot/user-app.js
+          copy_file webroot/api-client.js
+          copy_file webroot/admin-init.js
+          copy_file webroot/admin/common.js
+          copy_file webroot/admin/index.js
+          copy_file webroot/admin/roles-view.js
+          copy_file webroot/admin/settings-view.js
+          copy_file webroot/admin/users-view.js
+
+          mkdir -p "$STAGING_DIR/apps/neutral-app"
+          copy_file apps/neutral-app/app-info.json
+          copy_file apps/neutral-app/index.html
+
           echo "Staging tree:"
           find "$STAGING_DIR" -type f | sort
 
@@ -95,7 +136,7 @@ jobs:
           set net:timeout 30
           set net:max-retries 1
           open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          rm -f "/admin.html"
-          rm -f "/setup.html"
+          rm -f "/webroot/admin.html"
+          rm -f "/webroot/setup.html"
           bye
           EOF
