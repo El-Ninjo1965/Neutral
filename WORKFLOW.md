@@ -128,4 +128,4 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** erfolgreicher GitHub-Workflow-Schreibtest; YAML-Parsing; lokale Staging-Simulation; Repositorysuche nach aktiven alten Rootpfaden und alten Fachdomänen; vollständiges `npm test`. Der Bootstrap-API-Test prüft in einer sauberen Umgebung die Verfügbarkeit und Struktur des Datenbankstatus, ohne fälschlich eine erreichbare externe Produktionsdatenbank vorauszusetzen; Git-/GitHub-Synchronitätsprüfung.
 - **Ergebnis:** GitHub-Workflow verwendet die neue Struktur und deployt keine Node-Entwicklungsruntime; der vorherige Auftrag ist strukturell vollständig abgeschlossen.
 - **Offene Punkte:** keine aus dieser Abschlussphase; die unabhängigen Produktaufgaben bleiben priorisiert in `TODO.md`.
-- **Commit-ID:** wird nach dem Commit über Git und GitHub verifiziert.
+- **Commit-ID:** `380c3f552aa3b1226ddaabf2f2a9ba4f84136309`.
