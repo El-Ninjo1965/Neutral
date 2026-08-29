@@ -216,4 +216,4 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Tests/Validierung:** 116 Tests einschließlich Vertrags-, Event-, Service-, Network-, Storage-/Schema-, Config-/Secret-, Error-/Redaction-, Modul-/GPS-, API-, Auth- und PHP-Regressionen; Dokumentations-/Pfad-/Secretprüfung; GitHub-Abgleich.
 - **Ergebnis:** P2.1–P2.6 vollständig erledigt; Testzahl von 107 auf 116 erhöht, keine bestehende Abdeckung entfernt.
 - **Offene Punkte:** keine blockierende Architekturentscheidung. P6-Sync/Retry/Konflikte, P3-Performance und weitere priorisierte Phasen bleiben bewusst außerhalb P2.
-- **Commit-ID:** wird im nachfolgenden Protokollcommit festgehalten.
+- **Commit-ID:** `18fa6152d66e6ae8de36e2e7e042bacde216ab9a`.
