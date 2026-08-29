@@ -149,6 +149,14 @@ All work is expected to follow the repository’s standard branch and PR workflo
 
 No direct push to main is permitted.
 
+## Repository synchronization record (2026-08-29)
+
+The full local repository state was audited against `El-Ninjo1965/Neutral` on `origin/main` before synchronization. Local `main` and `origin/main` started at the same commit, the secondary local `work` branch contained no commit absent from `origin/main`, and there were no uncommitted project-source or documentation changes to recover. No reset, forced update, or replacement from an older remote file was used.
+
+The audit found generated dependencies and three host-local environment files tracked by Git. They were removed from the Git index without deleting the local files. `.gitignore` now excludes `node_modules/`, `.env`, and `.env.*`, while allowing a future sanitized `.env.example`. This is required repository hygiene: generated dependencies and operational credentials must remain local and must not be transferred in synchronization commits.
+
+The requested documentation inventory was also checked directly in the local tree and on `origin/main`. `VISION.md`, `WORKFLOW.md`, and `TODO.md` are present. `Architecture.md`, `Functions.md`, `API.md`, `Database.md`, `Security.md`, `Install-README-Web-App.md`, `Install-README-Server.md`, and `ModuleCreation.md` are absent and were not fabricated during synchronization.
+
 ## Deployment
 
 Production deployment follows the repository’s deployment rules and configuration, not a Node-port assumption.

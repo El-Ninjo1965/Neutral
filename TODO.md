@@ -20,6 +20,17 @@ This is the current operational task ledger for the repository. It is intentiona
 - The public module catalog must expose lifecycle-aware module state and respect server-resolved module visibility permissions so active modules can appear in the user app without discovery implicitly activating them.
 - Modules may declare a lightweight standalone test entry for isolated developer validation when they do not require the full app runtime.
 
+## Repository synchronization status (2026-08-29)
+
+- [x] Fetch `origin` and compare local `main` with `origin/main` without resetting or overwriting local work.
+- [x] Audit local branches, commits, tracked changes, untracked files, and the requested documentation set.
+- [x] Confirm that no local commit or project-source change was waiting to be transferred to `main` before this synchronization commit.
+- [x] Stop tracking generated `node_modules/` dependencies while preserving the local installation.
+- [x] Stop tracking host-local `.env` files while preserving the local runtime files.
+- [x] Add durable ignore rules for generated dependencies and host-local environment files.
+- [x] Record the controlled synchronization in `WORKFLOW.md` and prepare the resulting repository state for `origin/main`.
+- [x] Verify the requested documentation inventory without inventing missing documents: `VISION.md`, `WORKFLOW.md`, and `TODO.md` exist; the other requested standalone documents do not exist in the current local project tree.
+
 ## Current web app integration work
 
 - [x] Consolidate the last three web-app prompts into a single live integration task without discarding the original assignment.
