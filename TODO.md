@@ -10,27 +10,30 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 - [x] getrennte Installationsanleitungen für Web-App und PHP-Server erstellen.
 - [x] verbindlichen aktuellen Modulerstellungsvertrag dokumentieren.
 - [x] Workflow auf Arbeitsregeln und vollständiges Arbeitsprotokoll bereinigen.
+- [x] Laufzeit vollständig in die zwei Hauptordner `Web-App/` und `Server/` migrieren und parallele Root-Laufzeitstrukturen entfernen.
+- [x] veraltete Diagnose-/Setup-Seiten, Platzhalter, doppelte Konfiguration, erzeugte Runtimeartefakte und ungenutzte Hilfsskripte evidenzbasiert entfernen.
 - [ ] Dokumentation bei jeder Vertragsänderung zusammen mit Code und Tests fortschreiben.
 
 ## P2 – Core
 
 - [ ] öffentliche Core-, Event- und Serviceverträge versionieren und globale/private APIs eindeutig trennen.
-- [ ] universellen Online-/Offline-Service definieren; keine fachliche Logik in den Core aufnehmen.
+- [x] universellen, fachfreien Online-/Offline-Statusservice mit `network:changed` bereitstellen.
 - [ ] Fehler-, Logging-, Konfigurations- und Storageverträge vereinheitlichen und mit Migrationstests absichern.
 - [ ] Abhängigkeiten zwischen `Core`, `MasterFramework` und globalen Browserobjekten reduzieren, ohne funktionierende APIs unkontrolliert zu brechen.
 
 ## P3 – Startperformance
 
 - [ ] First Paint und Interaktionsbereitschaft auf realistischen Mobilgeräten messen und Budgets festlegen.
-- [ ] sichtbare Shell vor Netzwerk, Authprüfung, IndexedDB, Sync und Modul-Discovery rendern.
-- [ ] langsame Initialisierung in beobachtbare Hintergrundphasen verschieben und Fehler-/Offlinezustände anzeigen.
+- [x] sichtbare Shell vor Netzwerk, Authprüfung, IndexedDB und Modul-Discovery rendern; doppelte Discovery entfernen.
+- [ ] Hintergrundinitialisierung weiter in einzeln beobachtbare Phasen teilen und Lade-/Fehlerzustände vervollständigen.
 
 ## P4 – Web-App / Server / API
 
 - [ ] PHP-Produktionsvertrag und Node-Testvertrag endpointweise abgleichen; Abweichungen bewusst dokumentieren oder schließen.
 - [ ] API-Versionierungsstrategie definieren.
 - [ ] zentralen API-Timeout und sichere Retryregeln (nur idempotent bzw. mit Idempotenzschlüssel) implementieren.
-- [ ] konfigurierbare API-Basis und portable Deploymentpfade automatisiert testen.
+- [x] zentrale konfigurierbare API-Basis im `ApiClient` und portable Zwei-Ordner-Pfade automatisiert testen.
+- [ ] verbleibende direkte UI-Fetches vollständig über den zentralen Transportservice führen.
 
 ## P5 – Authentifizierung
 
