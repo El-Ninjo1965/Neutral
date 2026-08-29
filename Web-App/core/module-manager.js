@@ -312,6 +312,13 @@
                 module.install();
             }
 
+            module.registered = true;
+            module.active = false;
+            module.enabled = false;
+            module.status = 'installed';
+            module.lifecycleState = 'INACTIVE';
+            if (window.Core) window.Core.emit('module:installed', { id: moduleId });
+
             return module;
         },
 
@@ -350,6 +357,12 @@
                 module.activate();
             }
 
+            module.registered = true;
+            module.active = true;
+            module.enabled = true;
+            module.status = 'enabled';
+            module.lifecycleState = 'ACTIVE';
+
             if (window.Core) {
                 window.Core.state.activeModule = moduleId;
                 window.Core.emit('module:activated', {
@@ -376,6 +389,11 @@
             } else if (typeof module.deactivate === 'function') {
                 module.deactivate();
             }
+
+            module.active = false;
+            module.enabled = false;
+            module.status = 'disabled';
+            module.lifecycleState = 'INACTIVE';
 
             if (
                 window.Core &&
@@ -406,6 +424,8 @@
                 module.update();
             }
 
+            if (window.Core) window.Core.emit('module:updated', { id: moduleId, version: module.version || null });
+
             return module;
         },
 
@@ -418,11 +438,14 @@
                 return false;
             }
 
+            if (module.active || module.enabled) this.disable(moduleId);
+
             if (typeof module.uninstall === 'function') {
                 module.uninstall();
             }
-
-            return this.unregister(moduleId);
+            const removed = this.unregister(moduleId);
+            if (removed && window.Core) window.Core.emit('module:uninstalled', { id: moduleId });
+            return removed;
         },
 
         activate(moduleId) {

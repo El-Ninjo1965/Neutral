@@ -39,7 +39,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.6 – Modulvertrag und globale Kopplung
 
-- [ ] **Aufgabe:** Modul-Lifecycle gegen `DISCOVER → INSTALL/INACTIVE → ACTIVATE/ACTIVE → DEACTIVATE → UPDATE → UNINSTALL` regressionsprüfen und Module auf die öffentliche Core-Facade verweisen; verbleibende globale Kompatibilitätsschicht dokumentieren. **Zweck:** generischer Vertrag ohne GPS-Sonderlogik oder Breaking Change. **Bereiche:** Modulruntime, GPS-Referenztest, `ModuleCreation.md`. **Abhängigkeiten:** P2.1–P2.5. **Status:** OFFEN. **Tests:** kompletter Lifecycle, Installation bleibt inaktiv, Cleanup, Dependencyfehler, keine GPS-Verzweigung im Core.
+- [x] **Aufgabe:** Modul-Lifecycle gegen `DISCOVER → INSTALL/INACTIVE → ACTIVATE/ACTIVE → DEACTIVATE → UPDATE → UNINSTALL` regressionsprüfen und Module auf die öffentliche Core-Facade verweisen; verbleibende globale Kompatibilitätsschicht dokumentieren. **Zweck:** generischer Vertrag ohne GPS-Sonderlogik oder Breaking Change. **Bereiche:** Modulruntime, GPS-Referenztest, `ModuleCreation.md`. **Abhängigkeiten:** P2.1–P2.5. **Status:** OFFEN. **Tests:** kompletter Lifecycle, Installation bleibt inaktiv, Cleanup, Dependencyfehler, keine GPS-Verzweigung im Core.
 
 ## P3 – Startperformance
 

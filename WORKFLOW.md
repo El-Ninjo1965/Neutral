@@ -195,3 +195,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.5 abgeschlossen; persistentes/remote Logging bleibt eine getrennte spätere Betriebsentscheidung.
 - **Offene Punkte:** P2.6.
 - **Commit-ID:** wird nach dem Commit verifiziert.
+
+### 2026-08-29 – P2.6 Modulvertrag und globale Kompatibilität abschließen
+
+- **Aufgabe:** Generischen Modul-Lifecycle explizit machen und Referenzmodule von privaten Globals wegführen.
+- **Betroffene Dateien:** `core-contracts.js`, `module-manager.js`, GPS-Referenz, Core-Vertragstests, `TODO.md`, `WORKFLOW.md`, `Functions.md`, `Architecture.md`, `ModuleCreation.md`.
+- **Änderung:** `Core.getFacade()` löst ausschließlich veröffentlichte Facaden. GPS nutzt diese generische Auflösung mit kompatiblem Fallback. Install setzt stets INACTIVE, Activate ACTIVE, Deactivate INACTIVE; Update und Uninstall emittieren kanonische Events, aktives Uninstall deaktiviert zuerst.
+- **Zweck:** Vollständiger, fachfreier Lifecycle ohne GPS-Sonderzweig und weniger direkte `window.*`-Kopplung.
+- **Tests/Validierung:** kompletter Lifecycle inklusive inaktiver Installation, Update, Cleanup vor Uninstall, Eventgarantien, bestehende GPS-/Dependencytests und Gesamtsuite geprüft.
+- **Ergebnis:** P2.6 und damit alle sechs P2-Arbeitspakete abgeschlossen.
+- **Offene Punkte:** keine Breaking-Architekturentscheidung; globale Skriptobjekte bleiben dokumentierte Kompatibilitätsschicht, eine spätere ESM/DI-Migration wäre eine eigene Architekturentscheidung.
+- **Commit-ID:** wird nach dem Commit verifiziert.

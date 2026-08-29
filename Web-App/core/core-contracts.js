@@ -53,6 +53,10 @@
             isPublicFacade: {
                 value: (name) => contracts.publicFacades.includes(String(name || '')),
                 enumerable: true
+            },
+            getFacade: {
+                value: (name) => contracts.publicFacades.includes(String(name || '')) ? window[name] || null : null,
+                enumerable: true
             }
         });
     }

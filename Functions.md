@@ -75,3 +75,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 ### Fehlervertrag
 
 `CoreErrorHandler.handle(error, context)` erzeugt über das interne `ErrorLog` einen klassifizierten Eintrag (`type`, `severity`, `code`) und emittiert `error:handled` ohne rohes Errorobjekt. Kontext, Meldung und Stack werden auf typische Secretmuster bereinigt; die lokale Historie ist auf 256 Einträge begrenzt.
+
+### Facadenauflösung und Modulzustände
+
+`Core.getFacade(name)` liefert nur Facaden des versionierten Public-Katalogs. Der `ModuleManager` garantiert: Discovery aktiviert nicht; `install` endet `INACTIVE`; `activate` endet `ACTIVE`; `deactivate` endet `INACTIVE`; `update` emittiert `module:updated`; `uninstall` deaktiviert aktive Module vor Cleanup/Entfernung und emittiert `module:uninstalled`.

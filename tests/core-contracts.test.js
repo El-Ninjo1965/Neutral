@@ -166,3 +166,33 @@ test('error path classifies, redacts and bounds diagnostic entries', () => {
   for (let index = 0; index < 300; index += 1) browser.ErrorLog.record(`error-${index}`);
   assert.equal(browser.ErrorLog.getAll().length, 256);
 });
+
+test('generic module lifecycle keeps install inactive and cleans active modules before uninstall', () => {
+  const events = [];
+  const calls = [];
+  const modules = new Map();
+  const registry = {
+    register(module) { modules.set(module.id, module); return module; },
+    unregister(id) { return modules.delete(id); }, get(id) { return modules.get(id) || null; },
+    getAll() { return [...modules.values()]; }, getByApp() { return [...modules.values()]; }, has(id) { return modules.has(id); }
+  };
+  const browser = { window: null, ModuleRegistry: registry, Core: { state: {}, emit(name) { events.push(name); } } };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'module-manager.js');
+  browser.ModuleManager.register({
+    id: 'reference', name: 'Reference', dependencies: [],
+    install() { calls.push('install'); }, activate() { calls.push('activate'); },
+    deactivate() { calls.push('deactivate'); }, update() { calls.push('update'); }, uninstall() { calls.push('uninstall'); }
+  });
+  const installed = browser.ModuleManager.install('reference');
+  assert.equal(installed.lifecycleState, 'INACTIVE');
+  assert.equal(installed.active, false);
+  browser.ModuleManager.activate('reference');
+  assert.equal(installed.lifecycleState, 'ACTIVE');
+  browser.ModuleManager.update('reference');
+  browser.ModuleManager.uninstall('reference');
+  assert.deepEqual(calls, ['install', 'activate', 'update', 'deactivate', 'uninstall']);
+  assert.equal(browser.ModuleManager.get('reference'), null);
+  assert.equal(events.includes('module:uninstalled'), true);
+});

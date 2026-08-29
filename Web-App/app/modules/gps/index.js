@@ -14,6 +14,10 @@
 (() => {
     'use strict';
 
+    const coreFacade = (name) => window.Core && typeof window.Core.getFacade === 'function'
+        ? window.Core.getFacade(name)
+        : window[name] || null;
+
     // ── Internal state ────────────────────────────────────────────────────────
 
     let watchId = null;
@@ -132,8 +136,11 @@
     const canUseModule = () => hasAnyPermission(access.usagePermissions);
 
     const readSettings = () => {
-        const configured = window.ConfigManager && typeof window.ConfigManager.getPath === 'function'
-            ? window.ConfigManager.getPath('moduleSettings.gps', {})
+        const configManager = coreFacade('ConfigManager');
+        const configured = configManager && typeof configManager.getModule === 'function'
+            ? configManager.getModule('gps', {})
+            : configManager && typeof configManager.getPath === 'function'
+                ? configManager.getPath('moduleSettings.gps', {})
             : {};
 
         return {
@@ -167,14 +174,16 @@
         };
         const settings = readSettings();
 
-        if (settings.persistLocationHistory && window.DatabaseManager && typeof window.DatabaseManager.save === 'function') {
-            window.DatabaseManager.save('sync', record).catch(() => {
+        const database = coreFacade('DatabaseManager');
+        if (settings.persistLocationHistory && database && typeof database.save === 'function') {
+            database.save('sync', record).catch(() => {
                 // Fallback is intentionally silent.
             });
         }
 
-        if (settings.persistLocationHistory && window.CoreStorage && typeof window.CoreStorage.set === 'function') {
-            window.CoreStorage.set('gps:lastPosition', record);
+        const storage = coreFacade('CoreStorage');
+        if (settings.persistLocationHistory && storage && typeof storage.set === 'function') {
+            storage.set('gps:lastPosition', record);
         }
 
         return record;
@@ -495,8 +504,9 @@
 
         getLastPosition() {
             // Prefer CoreStorage if a previous position was saved there.
-            if (window.CoreStorage && typeof window.CoreStorage.get === 'function') {
-                const stored = window.CoreStorage.get('gps:lastPosition');
+            const storage = coreFacade('CoreStorage');
+            if (storage && typeof storage.get === 'function') {
+                const stored = storage.get('gps:lastPosition');
                 if (stored) {
                     return stored;
                 }
