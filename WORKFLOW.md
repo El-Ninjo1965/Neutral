@@ -93,6 +93,17 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 ## 10. Fortlaufendes Arbeitsprotokoll
 
+### 2026-08-29 – P2-Core-Arbeitsplan aus dem Ist-Code ableiten
+
+- **Aufgabe:** Vor Implementierungsänderungen den gesamten Browser-Core und seine Server-/Modulgrenzen prüfen und P2 in einzeln abnehmbare Pakete zerlegen.
+- **Betroffene Dateien:** `TODO.md`, `WORKFLOW.md`; analysiert wurden `Web-App/core/`, `Web-App/app/modules/gps/`, `Server/php/`, `Server/node/` und die Coretests.
+- **Änderung:** Sechs konkrete Pakete für Vertragsfacade, Events/Services, Netzwerk, Storage/Config, Fehler/Logging sowie Modulvertrag/globale Kopplung mit Zweck, Bereichen, Abhängigkeiten, Status und Tests festgelegt.
+- **Zweck:** P2 nachvollziehbar und ohne unkontrollierten Großcommit abarbeiten; öffentliche Kompatibilität und P6-Grenze schützen.
+- **Tests/Validierung:** Dateiinventar, Ladefolge, globale Exporte, Eventemittenten, Service-/Storage-/Konfigurationsimplementierungen, Modul-Lifecycle und bestehende Tests statisch geprüft.
+- **Ergebnis:** konkrete P2-Arbeitsliste erstellt; noch keine Laufzeitimplementierung verändert.
+- **Offene Punkte:** P2.1 bis P2.6 werden in der dokumentierten Reihenfolge umgesetzt.
+- **Commit-ID:** wird nach dem Commit verifiziert.
+
 ### 2026-08-29 – Dokumentationsgrundlage vollständig neu aufbauen
 
 - **Aufgabe:** Ausstehenden Dokumentationsauftrag nachholen, die Vision vollständig bereinigen und alle geforderten technischen Dokumente aus dem aktuellen Code ableiten.

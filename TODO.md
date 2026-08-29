@@ -17,10 +17,29 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ## P2 – Core
 
-- [ ] öffentliche Core-, Event- und Serviceverträge versionieren und globale/private APIs eindeutig trennen.
-- [x] universellen, fachfreien Online-/Offline-Statusservice mit `network:changed` bereitstellen.
-- [ ] Fehler-, Logging-, Konfigurations- und Storageverträge vereinheitlichen und mit Migrationstests absichern.
-- [ ] Abhängigkeiten zwischen `Core`, `MasterFramework` und globalen Browserobjekten reduzieren, ohne funktionierende APIs unkontrolliert zu brechen.
+### P2.1 – Vertragsinventar und öffentliche Facade
+
+- [ ] **Aufgabe:** versionierten Core-Vertragskatalog für öffentliche Facaden, Events und Services bereitstellen; private Implementierungsobjekte ausdrücklich abgrenzen. **Zweck:** Module erhalten eine prüfbare, fachfreie API statt impliziter `window.*`-Annahmen. **Bereiche:** `Web-App/core/core.js`, neuer Vertragskatalog, Ladefolge, `Functions.md`, `Architecture.md`, `ModuleCreation.md`. **Abhängigkeiten:** bestehende globale APIs bleiben kompatibel. **Status:** OFFEN. **Tests:** Vertragsversion, unveränderliche Kataloge, öffentliche Facaden und unbekannte Verträge.
+
+### P2.2 – Event- und Serviceverträge
+
+- [ ] **Aufgabe:** Eventnamen/Payload-Grundregeln sowie Service-Namensraum, Sichtbarkeit und Lifecycle im Core erzwingen und dokumentieren. **Zweck:** vorhersehbare Modulkommunikation und klare öffentliche/private Services. **Bereiche:** `core-event-bus.js`, `core-event-ring.js`, `service-manager.js`. **Abhängigkeiten:** P2.1-Katalog; bestehende Event-/Servicenamen dürfen nicht brechen. **Status:** OFFEN. **Tests:** Subscribe/Unsubscribe, Handlerisolation, Eventhistorie, Service-Duplikate, Sichtbarkeit und Cleanup.
+
+### P2.3 – Online-/Offline-Grundlage
+
+- [ ] **Aufgabe:** `CoreNetwork` idempotent initialisierbar und wieder sauber freigebbar machen, unveränderliche Statussnapshots und genau ein `network:changed` je Zustandswechsel garantieren. **Zweck:** stabile fachfreie Grundlage für P6 ohne Syncbehauptung. **Bereiche:** `core-network.js`, Startup/Shutdown. **Abhängigkeiten:** Eventvertrag aus P2.2. **Status:** OFFEN (Grundfunktion vorhanden). **Tests:** initial/online/offline, doppelte Initialisierung, Subscribe/Unsubscribe, Dispose/Re-init.
+
+### P2.4 – Storage- und Konfigurationsgrenzen
+
+- [ ] **Aufgabe:** Verantwortlichkeiten von `CoreStorage`, `StorageManager`, `DatabaseManager`, Cache und Konfiguration eindeutig festlegen; sichere Namespaces und kompatible Schema-Upgrades testen. **Zweck:** widersprüchliche Speicherwege vermeiden, ohne vorhandene Daten zu brechen. **Bereiche:** Storage-/DB-/Config-Core und `Database.md`. **Abhängigkeiten:** vorhandene Keys und IndexedDB-Version bleiben kompatibel. **Status:** OFFEN. **Tests:** Namespaces, JSON-/Quotafehler, Adaptervertrag, bestehende/fehlende Stores beim Upgrade, Konfigurationsisolation und Secret-Ausschluss.
+
+### P2.5 – Fehlerbehandlung und Logging
+
+- [ ] **Aufgabe:** Fehlerklassifikation, sichere Kontextbereinigung und einheitlichen Event-/Ring-/Logpfad herstellen. **Zweck:** diagnostizierbare, abfangbare Fehler ohne Secrets oder unnötige personenbezogene Daten. **Bereiche:** `core-error-handler.js`, `error-log.js`, EventRing, `Security.md`. **Abhängigkeiten:** P2.2-Eventvertrag. **Status:** OFFEN. **Tests:** Klassifikation, Redaction, begrenzte Historie, Handlerfehler ohne Rekursion.
+
+### P2.6 – Modulvertrag und globale Kopplung
+
+- [ ] **Aufgabe:** Modul-Lifecycle gegen `DISCOVER → INSTALL/INACTIVE → ACTIVATE/ACTIVE → DEACTIVATE → UPDATE → UNINSTALL` regressionsprüfen und Module auf die öffentliche Core-Facade verweisen; verbleibende globale Kompatibilitätsschicht dokumentieren. **Zweck:** generischer Vertrag ohne GPS-Sonderlogik oder Breaking Change. **Bereiche:** Modulruntime, GPS-Referenztest, `ModuleCreation.md`. **Abhängigkeiten:** P2.1–P2.5. **Status:** OFFEN. **Tests:** kompletter Lifecycle, Installation bleibt inaktiv, Cleanup, Dependencyfehler, keine GPS-Verzweigung im Core.
 
 ## P3 – Startperformance
 
