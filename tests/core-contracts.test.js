@@ -216,3 +216,32 @@ test('startup performance marks are idempotent and contain no payload data', () 
   assert.deepEqual(Object.keys(browser.CorePerformance.snapshot()).sort(), ['dom-available', 'navigation-start', 'shell-visible', 'ui-interactive']);
   assert.equal(marks.includes('neutral:ui-interactive'), true);
 });
+
+test('core startup exposes the interactive minimum before storage and single discovery', async () => {
+  const calls = [];
+  let phase = 'created';
+  const browser = {
+    window: null,
+    Core: { emit() {} }, CoreLoader: { init() { calls.push('loader'); return true; } },
+    CoreContext: { setRuntimeValue() {} }, CoreConfig: { core: { version: '1.0.0' } },
+    CoreLifecycle: {
+      phases: { INITIALIZING: 'initializing', READY: 'ready', RUNNING: 'running' },
+      getPhase() { return phase; }, setPhase(next) { phase = next; calls.push(next); }
+    },
+    ModuleRegistry: {}, ModuleManager: { async discoverModules() { calls.push('discover'); } },
+    ConfigManager: { init() { calls.push('config'); } }, CoreNetwork: { init() { calls.push('network'); } },
+    DatabaseManager: { async init() { calls.push('storage'); } },
+    CorePerformance: { mark(name) { calls.push(name); } }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'core-startup.js');
+  await browser.CoreStartup.start();
+  assert.equal(calls.includes('storage'), false);
+  assert.equal(calls.includes('discover'), false);
+  assert.equal(calls.includes('minimal-core-ready'), true);
+  await Promise.all([browser.CoreStartup.startBackground(), browser.CoreStartup.startBackground()]);
+  assert.equal(calls.filter((name) => name === 'storage').length, 1);
+  assert.equal(calls.filter((name) => name === 'discover').length, 1);
+  assert.equal(browser.CoreStartup.getStatus().backgroundComplete, true);
+});

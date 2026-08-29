@@ -81,3 +81,5 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 `Core.getFacade(name)` liefert nur Facaden des versionierten Public-Katalogs. Der `ModuleManager` garantiert: Discovery aktiviert nicht; `install` endet `INACTIVE`; `activate` endet `ACTIVE`; `deactivate` endet `INACTIVE`; `update` emittiert `module:updated`; `uninstall` deaktiviert aktive Module vor Cleanup/Entfernung und emittiert `module:uninstalled`.
 
 | `CorePerformance` | datensparsame Startphasen; `Web-App/core/core-performance.js` | `mark`, `has`, `get`, `snapshot` | Phasenname → monotone Zeitmarke | Browser Performance API mit Date-Fallback | doppelte Marken verändern den Erstwert nicht | VORHANDEN |
+
+`CoreStartup.start()` liefert die interaktive Minimalbereitschaft. `startBackground()` startet dedupliziert Storage, Corefacaden und Modul-Discovery; `getStatus()` meldet nur technische Phasen. Marken: `minimal-core-ready`, `storage-ready`, `module-discovery-complete`, `background-initialization-complete`.

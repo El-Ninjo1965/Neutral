@@ -540,6 +540,8 @@
       try {
         if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
           await window.CoreStartup.start();
+          if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
+          await window.CoreStartup.startBackground();
         }
       } catch (error) {
         if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {

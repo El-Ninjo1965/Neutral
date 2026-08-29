@@ -239,3 +239,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P3.1 abgeschlossen; echte Millisekundenbudgets werden nicht ohne Mobilhardware erfunden.
 - **Offene Punkte:** P3.2–P3.4; zwei reale Gerätetests in P8.
 - **Commit-ID:** wird nach Commit verifiziert.
+
+### 2026-08-29 – P3.2 Minimal-Core von Hintergrundstart trennen
+
+- **Aufgabe:** IndexedDB, Diagnose, Benutzerfacaden und Modul-Discovery aus der interaktiven Minimalphase lösen.
+- **Betroffene Dateien:** `core-startup.js`, `user-app.js`, Core-/Starttests, `TODO.md`, `WORKFLOW.md`, `Architecture.md`, `Functions.md`, `Database.md`.
+- **Änderung:** `start()` initialisiert nur Verträge, Loader, Config, Network und READY; `startBackground()` kapselt genau eine Promise für Storage, Facaden und genau eine Discovery. Jede Phase markiert Erfolg/Fehler, ohne die Shell zu entfernen.
+- **Zweck:** UI-Interaktivität wartet weder auf Flash-/IndexedDB-Zugriff noch Manifestfetch.
+- **Tests/Validierung:** Minimalphase vor Storage/Discovery, Promise-Deduplizierung, genau ein Storage-/Discovery-Aufruf, Fehlergrenzen und Gesamtsuite geprüft.
+- **Ergebnis:** P3.2 abgeschlossen; Sync bleibt außerhalb P3.
+- **Offene Punkte:** P3.3–P3.4.
+- **Commit-ID:** wird nach Commit verifiziert.

@@ -49,7 +49,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P3.2 – Minimaler Core und nicht blockierende Hintergrundphasen
 
-- [ ] **Aufgabe:** CoreStartup in minimale synchrone Bereitschaft und beobachtbare Hintergrundphasen für Storage, Auth-Basis und Discovery trennen. **Technische Ursache:** `CoreStartup.start()` wartet seriell auf IndexedDB und Modul-Discovery, bevor `core:started` zurückkehrt. **Bereiche:** `core-startup.js`, `user-app.js`, Lifecycle/Performance, Tests. **Abhängigkeiten:** P2-Verträge; Funktionen mit DB-Bedarf warten gezielt auf Storage-Ready. **Abnahme:** Shell/UI werden vor `DatabaseManager.init()` und `discoverModules()` markiert; genau eine Hintergrund-Promise; Phasenfehler lassen die Shell bedienbar. **Status:** OFFEN.
+- [x] **Aufgabe:** CoreStartup in minimale synchrone Bereitschaft und beobachtbare Hintergrundphasen für Storage, Auth-Basis und Discovery trennen. **Technische Ursache:** `CoreStartup.start()` wartet seriell auf IndexedDB und Modul-Discovery, bevor `core:started` zurückkehrt. **Bereiche:** `core-startup.js`, `user-app.js`, Lifecycle/Performance, Tests. **Abhängigkeiten:** P2-Verträge; Funktionen mit DB-Bedarf warten gezielt auf Storage-Ready. **Abnahme:** Shell/UI werden vor `DatabaseManager.init()` und `discoverModules()` markiert; genau eine Hintergrund-Promise; Phasenfehler lassen die Shell bedienbar. **Status:** ERLEDIGT.
 
 ### P3.3 – Auth/API-Timeout und unmittelbarer Übergang
 

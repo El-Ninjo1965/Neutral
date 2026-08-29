@@ -159,3 +159,5 @@ Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin gl
 ## Startperformance – P3 IST
 
 Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.
+
+`CoreStartup.start()` ist die minimale READY-Phase und wartet nicht auf IndexedDB oder Module. `startBackground()` ist die deduplizierte Hintergrundkette für Storage, Clientfacaden und Discovery; ihre Phasen emittieren Status und bleiben bei Einzelproblemen diagnostizierbar. Nur storageabhängige Funktionen warten auf `startup:storage-ready` bzw. die Hintergrund-Promise.

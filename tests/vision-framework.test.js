@@ -297,7 +297,9 @@ test('two-component layout renders the shell before background startup and disco
 
   const userApp = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
   const startup = fs.readFileSync(path.join(projectRoot, 'Web-App/core/core-startup.js'), 'utf8');
-  assert.match(userApp, /renderApp\(\);\s*startBackgroundInitialization\(\);/);
+  assert.match(userApp, /renderApp\(\);[\s\S]*startBackgroundInitialization\(\);/);
   assert.doesNotMatch(userApp, /ModuleManager\.discoverModules/);
   assert.equal((startup.match(/ModuleManager\.discoverModules/g) || []).length, 2);
+  assert.match(startup, /startBackground\(\)/);
+  assert.match(startup, /mark\('storage-ready'\)/);
 });

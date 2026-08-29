@@ -99,3 +99,5 @@ Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Date
 - `StorageManager`: Adapter für Framework-/Entwicklungs- und Serverpersistenz, nicht parallele Autorität für browserseitige CoreDB-Records.
 - `cache`: strukturierter Cache-Store; Gültigkeits-/Invalidierungspolitik bleibt eine separate offene Produktaufgabe.
 - `sync`: nur reservierte Persistenzgrundlage; P2 implementiert keine Queue- oder Konfliktlogik.
+
+IndexedDB wird in P3 ausschließlich in `CoreStartup.startBackground()` geöffnet. First Paint und UI-Interaktivität warten nicht darauf; Operationen, die strukturierte Daten benötigen, müssen die Storage-Ready-Phase abwarten. Ein Öffnungsfehler wird diagnostiziert und darf die statische Shell nicht ausblenden.
