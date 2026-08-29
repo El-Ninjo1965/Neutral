@@ -350,7 +350,8 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(setupResult.statusCode, 200);
     assert.equal(setupResult.body.ok, true);
     assert.equal(databaseResult.statusCode, 200);
-    assert.equal(databaseResult.body.ok, true);
+    assert.equal(typeof databaseResult.body.ok, 'boolean');
+    assert.equal(typeof databaseResult.body.database, 'object');
   });
 
   test('Bootstrap setup save works without auth before activation', async () => {

@@ -12,7 +12,7 @@ const createAlternativeInstall = () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-portability-'));
   const appRoot = path.join(tempRoot, 'alt-install', 'app');
 
-  fs.mkdirSync(path.join(appRoot, 'server'), { recursive: true });
+  fs.mkdirSync(path.join(appRoot, 'Server'), { recursive: true });
   fs.mkdirSync(path.join(appRoot, 'Web-App', 'public'), { recursive: true });
 
   fs.writeFileSync(path.join(appRoot, 'package.json'), JSON.stringify({
@@ -26,7 +26,7 @@ const createAlternativeInstall = () => {
     'HOST=0.0.0.0',
     'NODE_ENV=production',
     'PUBLIC_URL=https://alt.example.test',
-    'PUBLIC_WEBROOT_PATH=/alt-install/app/webroot',
+    'PUBLIC_WEBROOT_PATH=/alt-install/app/Web-App/public',
     'API_BASE=/portable-api',
     'APP_API_BASE=/portable-api',
     'DB_TYPE=mysql',

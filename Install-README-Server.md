@@ -99,6 +99,8 @@ Nur Runtime-/Log-/ggf. Sessionpfade benötigen Schreibrechte. PHP-Quellcode, Man
 
 `scripts/manual-ftps-deploy.js` unterstützt allowlistetes FTPS-Deployment und liest hostlokale Deploymentkonfiguration. Vor jedem Lauf Stagingliste prüfen. Web-App- und Serverdeployment bleiben getrennte Modi. FTP/FTPS ist Deploymenttransport, nicht Laufzeit-API.
 
+Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produktionsumfang aus `Web-App/`, `Server/php/` und `Server/public/`. `Server/node/` bleibt Entwicklungs-/Testwerkzeug und wird nicht in das Produktions-Staging aufgenommen.
+
 ## 10. Serverwechsel
 
 1. Datenbank konsistent sichern und Restore testen.

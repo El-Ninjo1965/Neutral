@@ -13,7 +13,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 - [x] Laufzeit vollständig in die zwei Hauptordner `Web-App/` und `Server/` migrieren und parallele Root-Laufzeitstrukturen entfernen.
 - [x] veraltete Diagnose-/Setup-Seiten, Platzhalter, doppelte Konfiguration, erzeugte Runtimeartefakte und ungenutzte Hilfsskripte evidenzbasiert entfernen.
 - [ ] Dokumentation bei jeder Vertragsänderung zusammen mit Code und Tests fortschreiben.
-- [ ] GitHub-FTPS-Workflow auf `Web-App/`/`Server/` umstellen, sobald der GitHub-Token die Berechtigung zum Ändern von Workflowdateien besitzt.
+- [x] GitHub-FTPS-Workflow auf die Produktionsquellen `Web-App/`, `Server/php/` und `Server/public/` umstellen.
 
 ## P2 – Core
 
