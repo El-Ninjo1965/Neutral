@@ -155,3 +155,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 `CoreNetwork` ist die öffentliche, fachfreie Connectivity-Facade. Startup initialisiert sie idempotent, Shutdown gibt Listener frei. API-Health, Retry und fachliche Synchronisation bleiben getrennte spätere Schichten.
 
 Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin global geladenen Objekte sichern Bestandskompatibilität; nicht im Vertragskatalog gelistete Globals bleiben privat. Eine vollständige ESM-/Dependency-Injection-Migration wird nicht als verdeckte Breaking Change in P2 durchgeführt.
+
+## Startperformance – P3 IST
+
+Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.

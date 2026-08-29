@@ -101,3 +101,7 @@ Zusätzlich im Browser prüfen:
 ## 9. Sicherheitsregel
 
 Clientdateien sind öffentlich. Niemals DB-Passwörter, API-Admin-Tokens, FTP-Zugangsdaten oder Sessiongeheimnisse einbauen. Browserseitige Rollenanzeigen ersetzen keine serverseitige Prüfung.
+
+## 10. Startdiagnostik
+
+`CorePerformance.snapshot()` liefert ausschließlich lokale monotone Phasenzeiten, keine Nutzer- oder Payloaddaten. Die statische Shell muss auch bei gedrosseltem/offline Netzwerk vor Hintergrundinitialisierung sichtbar bleiben. Externe Scripts werden ohne Buildzwang geordnet mit `defer` geladen.

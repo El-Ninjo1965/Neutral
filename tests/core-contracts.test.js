@@ -196,3 +196,23 @@ test('generic module lifecycle keeps install inactive and cleans active modules 
   assert.equal(browser.ModuleManager.get('reference'), null);
   assert.equal(events.includes('module:uninstalled'), true);
 });
+
+
+test('startup performance marks are idempotent and contain no payload data', () => {
+  let clock = 0;
+  const marks = [];
+  const browser = {
+    window: null,
+    document: { readyState: 'complete', querySelector() { return {}; }, addEventListener() {} },
+    performance: { now() { clock += 1; return clock; }, mark(name) { marks.push(name); } }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'core-performance.js');
+  const first = browser.CorePerformance.mark('ui-interactive');
+  assert.equal(browser.CorePerformance.mark('ui-interactive'), first);
+  assert.equal(browser.CorePerformance.has('navigation-start'), true);
+  assert.equal(Object.isFrozen(browser.CorePerformance.snapshot()), true);
+  assert.deepEqual(Object.keys(browser.CorePerformance.snapshot()).sort(), ['dom-available', 'navigation-start', 'shell-visible', 'ui-interactive']);
+  assert.equal(marks.includes('neutral:ui-interactive'), true);
+});

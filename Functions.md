@@ -79,3 +79,5 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 ### Facadenauflösung und Modulzustände
 
 `Core.getFacade(name)` liefert nur Facaden des versionierten Public-Katalogs. Der `ModuleManager` garantiert: Discovery aktiviert nicht; `install` endet `INACTIVE`; `activate` endet `ACTIVE`; `deactivate` endet `INACTIVE`; `update` emittiert `module:updated`; `uninstall` deaktiviert aktive Module vor Cleanup/Entfernung und emittiert `module:uninstalled`.
+
+| `CorePerformance` | datensparsame Startphasen; `Web-App/core/core-performance.js` | `mark`, `has`, `get`, `snapshot` | Phasenname → monotone Zeitmarke | Browser Performance API mit Date-Fallback | doppelte Marken verändern den Erstwert nicht | VORHANDEN |

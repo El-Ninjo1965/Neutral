@@ -28,7 +28,7 @@
         version: '1.0.0',
         events,
         publicFacades: freezeList([
-            'Core', 'CoreContracts', 'CoreLifecycle', 'CoreNetwork', 'CoreStorage',
+            'Core', 'CoreContracts', 'CorePerformance', 'CoreLifecycle', 'CoreNetwork', 'CoreStorage',
             'ConfigManager', 'DatabaseManager', 'ServiceManager', 'CoreErrorHandler',
             'ModuleManager', 'ModuleRegistry', 'ApiClient'
         ]),

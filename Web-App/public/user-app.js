@@ -552,6 +552,9 @@
   };
 
   // First paint and basic navigation do not wait for IndexedDB, auth, network or module discovery.
+  if (window.CorePerformance) window.CorePerformance.mark('shell-visible');
   renderApp();
+  if (content) content.setAttribute('aria-busy', 'false');
+  if (window.CorePerformance) window.CorePerformance.mark('ui-interactive');
   startBackgroundInitialization();
 })();

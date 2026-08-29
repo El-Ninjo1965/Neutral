@@ -45,7 +45,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P3.1 – Messung, statische Shell und Asset-Ladepfad
 
-- [ ] **Aufgabe:** datensparsame Startmesspunkte und sofort sichtbare Lade-/Offline-Shell einführen; klassische Skripte geordnet mit `defer` laden. **Technische Ursache:** 36 synchrone User-Skripte bzw. 46 Admin-Skripte stehen vor der initialen UI-Initialisierung; der Main-Bereich ist im HTML leer und es fehlen vergleichbare Phasenmarken. **Bereiche:** User-/Admin-HTML, neuer Performance-Core, CSS, Tests. **Abhängigkeiten:** bestehende globale Ladefolge muss erhalten bleiben. **Abnahme:** HTML enthält sichtbaren Status ohne JavaScript; alle externen Startscripte sind defer; Navigation, DOM, Shell, Minimal-Core und UI-Interaktivität werden ohne Nutzdaten markiert. **Status:** OFFEN.
+- [x] **Aufgabe:** datensparsame Startmesspunkte und sofort sichtbare Lade-/Offline-Shell einführen; klassische Skripte geordnet mit `defer` laden. **Technische Ursache:** 36 synchrone User-Skripte bzw. 46 Admin-Skripte stehen vor der initialen UI-Initialisierung; der Main-Bereich ist im HTML leer und es fehlen vergleichbare Phasenmarken. **Bereiche:** User-/Admin-HTML, neuer Performance-Core, CSS, Tests. **Abhängigkeiten:** bestehende globale Ladefolge muss erhalten bleiben. **Abnahme:** HTML enthält sichtbaren Status ohne JavaScript; alle externen Startscripte sind defer; Navigation, DOM, Shell, Minimal-Core und UI-Interaktivität werden ohne Nutzdaten markiert. **Status:** ERLEDIGT.
 
 ### P3.2 – Minimaler Core und nicht blockierende Hintergrundphasen
 

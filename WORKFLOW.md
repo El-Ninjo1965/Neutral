@@ -228,3 +228,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** konkrete P3-TODO 0/4 erstellt; keine Laufzeitänderung.
 - **Offene Punkte:** P3.1–P3.4; reale iOS-/Androidmessungen bleiben zwei P8-Gerätetests.
 - **Commit-ID:** wird nach Commit verifiziert.
+
+### 2026-08-29 – P3.1 Shell, Defer-Ladepfad und Messpunkte
+
+- **Aufgabe:** Leeren Startframe entfernen und browsernative, datensparsame Phasenmessung bereitstellen.
+- **Betroffene Dateien:** User-/Admin-HTML, `core-performance.js`, Corevertrag, `user-app.js`, Tests sowie P3-Dokumentation.
+- **Änderung:** Statische User-Ladeoberfläche und Admin-Sessionstatus sind ohne JavaScript sichtbar; externe Scripts laden geordnet mit `defer`. `CorePerformance` markiert Navigation, DOM, Shell und Interaktivität idempotent über Performance-API mit Fallback, ohne Payload/Nutzerdaten.
+- **Zweck:** HTML-Parsing und sichtbare Shell nicht durch 77 externe Startscript-Tags blockieren; objektive Code-Level-Phasen schaffen.
+- **Tests/Validierung:** statische Shell, Defer-Reihenfolge, Freeze/Idempotenz/Marknamen und Gesamtsuite geprüft.
+- **Ergebnis:** P3.1 abgeschlossen; echte Millisekundenbudgets werden nicht ohne Mobilhardware erfunden.
+- **Offene Punkte:** P3.2–P3.4; zwei reale Gerätetests in P8.
+- **Commit-ID:** wird nach Commit verifiziert.
