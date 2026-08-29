@@ -71,3 +71,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 ### Storage- und Modulkonfiguration
 
 `CoreStorage.namespace(namespace)` erzeugt eine eingeschränkte Key-Value-Facade und behält das bestehende Format `core:<namespace>:<key>`. `ConfigManager.setModule/getModule` verwaltet ausschließlich `moduleSettings.<id>`; secretartige Felder werden im ausgelieferten Clientvertrag abgelehnt.
+
+### Fehlervertrag
+
+`CoreErrorHandler.handle(error, context)` erzeugt über das interne `ErrorLog` einen klassifizierten Eintrag (`type`, `severity`, `code`) und emittiert `error:handled` ohne rohes Errorobjekt. Kontext, Meldung und Stack werden auf typische Secretmuster bereinigt; die lokale Historie ist auf 256 Einträge begrenzt.

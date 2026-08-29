@@ -80,3 +80,5 @@
 5. Securitytests für jede neue API, Modulpermission und Migration verpflichtend halten.
 
 Client-Modulkonfiguration wird unter `moduleSettings.<id>` isoliert. Schlüssel, die Passwörter, Secrets, Tokens, Private Keys oder Credentials darstellen, werden vom öffentlichen Configvertrag abgelehnt; serverseitige Geheimnisse bleiben ausschließlich in hostlokaler Serverkonfiguration.
+
+Der Browser-Fehlerpfad redigiert sensible Kontextschlüssel sowie typische Token-/Passwortmuster in Meldung und Stack. Das öffentliche Fehler-Event transportiert keinen rohen `Error`; das In-Memory-Log ist begrenzt. Diese Schutzschicht ersetzt nicht die Pflicht, personenbezogene oder geheime Daten gar nicht erst als Diagnosekontext zu übergeben.

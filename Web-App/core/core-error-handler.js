@@ -27,8 +27,9 @@
                 window.Core.emit(
                     'error:handled',
                     {
-                        error: normalizedError,
-                        context,
+                        type: entry ? entry.type : (context.type || 'runtime'),
+                        code: entry ? entry.code : 'CORE_RUNTIME_ERROR',
+                        context: entry ? entry.context : {},
                         entry
                     }
                 );

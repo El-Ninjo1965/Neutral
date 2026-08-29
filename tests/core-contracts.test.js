@@ -142,3 +142,27 @@ test('database schema upgrade creates missing stores without replacing existing 
   assert.equal(created.includes('settings'), false);
   assert.deepEqual(created.sort(), ['cache', 'logs', 'modules', 'sessions', 'sync'].sort());
 });
+
+test('error path classifies, redacts and bounds diagnostic entries', () => {
+  const listeners = new Map();
+  const emitted = [];
+  const browser = {
+    window: null,
+    addEventListener(name, handler) { listeners.set(name, handler); },
+    Core: { emit(name, payload) { emitted.push({ name, payload }); } }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'error-log.js');
+  load(context, 'core-error-handler.js');
+  browser.CoreErrorHandler.handle(new Error('failed'), {
+    type: 'module-lifecycle', moduleId: 'example', apiToken: 'do-not-log'
+  });
+  const entry = browser.ErrorLog.getAll()[0];
+  assert.equal(entry.type, 'module-lifecycle');
+  assert.equal(entry.code, 'CORE_RUNTIME_ERROR');
+  assert.equal(entry.context.apiToken, '[redacted]');
+  assert.equal(emitted[0].payload.error, undefined);
+  for (let index = 0; index < 300; index += 1) browser.ErrorLog.record(`error-${index}`);
+  assert.equal(browser.ErrorLog.getAll().length, 256);
+});

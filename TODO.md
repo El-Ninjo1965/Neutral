@@ -35,7 +35,7 @@ Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreih
 
 ### P2.5 – Fehlerbehandlung und Logging
 
-- [ ] **Aufgabe:** Fehlerklassifikation, sichere Kontextbereinigung und einheitlichen Event-/Ring-/Logpfad herstellen. **Zweck:** diagnostizierbare, abfangbare Fehler ohne Secrets oder unnötige personenbezogene Daten. **Bereiche:** `core-error-handler.js`, `error-log.js`, EventRing, `Security.md`. **Abhängigkeiten:** P2.2-Eventvertrag. **Status:** OFFEN. **Tests:** Klassifikation, Redaction, begrenzte Historie, Handlerfehler ohne Rekursion.
+- [x] **Aufgabe:** Fehlerklassifikation, sichere Kontextbereinigung und einheitlichen Event-/Ring-/Logpfad herstellen. **Zweck:** diagnostizierbare, abfangbare Fehler ohne Secrets oder unnötige personenbezogene Daten. **Bereiche:** `core-error-handler.js`, `error-log.js`, EventRing, `Security.md`. **Abhängigkeiten:** P2.2-Eventvertrag. **Status:** OFFEN. **Tests:** Klassifikation, Redaction, begrenzte Historie, Handlerfehler ohne Rekursion.
 
 ### P2.6 – Modulvertrag und globale Kopplung
 

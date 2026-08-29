@@ -184,3 +184,14 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - **Ergebnis:** P2.4 abgeschlossen; keine Datenmigration oder Versionsanhebung erforderlich.
 - **Offene Punkte:** P2.5 und P2.6; Sync-Queue bleibt P6.
 - **Commit-ID:** wird nach dem Commit verifiziert.
+
+### 2026-08-29 – P2.5 Fehler- und Loggingpfad absichern
+
+- **Aufgabe:** Browserfehler einheitlich klassifizieren, begrenzen und ohne Geheimnisse diagnostizierbar machen.
+- **Betroffene Dateien:** `error-log.js`, `core-error-handler.js`, Core-Vertragstests, `TODO.md`, `WORKFLOW.md`, `Functions.md`, `Security.md`.
+- **Änderung:** Fehler erhalten Typ, Severity und Code; Kontext sowie typische Secretmuster in Meldung/Stack werden redigiert; In-Memory-Log ist auf 256 Einträge begrenzt. Das öffentliche `error:handled`-Payload enthält keinen rohen Error mehr.
+- **Zweck:** Kontrollierbare Diagnostik ohne unbeschränktes Wachstum oder versehentliche Token-/Credentialweitergabe.
+- **Tests/Validierung:** Klassifikation, Kontextredaktion, Rohfehler-Ausschluss, Ringgrenze und Gesamtsuite geprüft.
+- **Ergebnis:** P2.5 abgeschlossen; persistentes/remote Logging bleibt eine getrennte spätere Betriebsentscheidung.
+- **Offene Punkte:** P2.6.
+- **Commit-ID:** wird nach dem Commit verifiziert.
