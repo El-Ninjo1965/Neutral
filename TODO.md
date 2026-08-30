@@ -1,6 +1,19 @@
 # NEUTRAL – TODO
 
-Stand: 2026-08-29. Diese Liste bildet die tatsächliche weitere Entwicklungsreihenfolge ab. Erledigt wird nur markiert, was durch aktuellen Code, Dokumentation oder Tests nachgewiesen ist.
+Stand: 2026-08-30. Diese Liste bildet die tatsächliche weitere Entwicklungsreihenfolge ab. Erledigt wird nur markiert, was durch aktuellen Code, Dokumentation oder Tests nachgewiesen ist.
+
+## P0 – Unmittelbare nächste Arbeitsschritte
+
+Die folgende Reihenfolge konkretisiert den nächsten Arbeitsblock. Sie ersetzt nicht die nachgelagerten Phasen P1 bis P10.
+
+- [ ] **1. Lokalen Repository-Stand herstellen:** GitHub-`main` vollständig lokal bereitstellen; Branch, Commit, Arbeitsbaum und Abweichung zu `origin/main` prüfen; die bestehende Gesamttestsuite ausführen und den nachgewiesenen Ausgangsstand dokumentieren.
+- [ ] **2. Dokumentationswidersprüche korrigieren:** insbesondere Aussagen zum bereits implementierten API-Timeout in `API.md`, `Architecture.md`, `Functions.md`, `TODO.md` und tatsächlichem Code abgleichen; keine Architektur oder Funktion neu entwerfen.
+- [ ] **3. cPanel-Deployment-Paket prüfen:** ausschließlich Root-`.htaccess`, `Web-App/`, `Server/php/` und `Server/public/` bereitstellen; Node, Tests, Git-Dateien, Dokumentation, `.env` und Entwicklungsartefakte ausschließen; Zielverzeichnis und erhaltene Verzeichnisstruktur kontrollieren.
+- [ ] **4. cPanel-Live-Voraussetzungen prüfen:** PHP 8.x, `json`, `pdo`, `pdo_mysql`, Session und OpenSSL; MariaDB/MySQL-Datenbank und Benutzerzuordnung; HTTPS und Rewrite; minimale notwendige Schreibrechte, niemals pauschal `777`.
+- [ ] **5. Neuinstallation auf leerem Webspace durchführen:** Produktionsdateien per SFTP/FTPS übertragen, hostlokale `.env` anhand des aktuellen `AppConfig` erstellen, `/setup.php` aufrufen, Datenbank verbinden oder anlegen, Migrationen und Core-Seeding ausführen und Setup anschließend schützen.
+- [ ] **6. Öffentliche Pfade live testen:** `/`, `/api/status`, `/setup.php`, `/admin.php`, Login, `auth/me`, Logout, CSRF, Web-App-Assets, GPS-Manifest und Same-Origin-API im realen Browser prüfen.
+- [ ] **7. Produktionssicherheit prüfen:** HTTPS-Umleitung, Zertifikatskette, `Secure`-/`HttpOnly`-/`SameSite`-Cookies, Zugriffsschutz für `.env`, `Server/php`, Runtime und Dotfiles sowie Secretfreiheit von Clientdateien, Antworten und Logs nachweisen.
+- [ ] **8. Danach P4 beginnen:** PHP-Produktions- und Node-Test-API endpointweise vergleichen, API-Versionierung festlegen, sichere Retryregeln nur für idempotente Requests definieren und verbleibende direkte UI-Fetches über `ApiClient` führen; anschließend P5 und P6 bearbeiten.
 
 ## P1 – Dokumentation und Architektur
 
