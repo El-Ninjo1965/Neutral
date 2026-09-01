@@ -91,6 +91,11 @@ final class AppConfig
         ];
     }
 
+    public function backupKey(): string
+    {
+        return trim($this->env['NEUTRAL_BACKUP_KEY'] ?? '');
+    }
+
     /**
      * @return array{
      *   type:string,
