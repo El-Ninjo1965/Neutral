@@ -6,6 +6,8 @@
 
 Diese Datei beschreibt die lokale Entwicklungsumgebung. Sie ändert nicht die Produktionsvoraussetzungen: Neutral Core 1.0 muss weiterhin ohne Node.js auf PHP-/MySQL-Shared-Hosting funktionieren.
 
+Die verbindliche Übersicht zu PC-, GitHub-, FTPS- und Webserververbindungen sowie deren Wiederherstellung steht in [`CONNECTIONS.md`](CONNECTIONS.md).
+
 ## Installierte Werkzeuge
 
 | Werkzeug | Version | Zweck |
