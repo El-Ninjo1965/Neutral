@@ -1,5 +1,10 @@
 # NEUTRAL – Architektur
 
+**Status:** TECHNISCHER IST-/ZIELVERTRAG
+
+**Geprüft:** 2026-09-01
+**Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
+
 ## Statuslegende
 
 - **IST**: im aktuellen Repository nachweisbar implementiert.
@@ -99,7 +104,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 
 **GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, explizite Versionierungsstrategie, Timeouts, Retry nur für sichere/idempotente Fälle und Offline-Queue.
 
-**FEHLT:** API-Version im URL-/Headervertrag, zentraler Fetch-Timeout und allgemeiner Retry.
+**FEHLT/TEILWEISE:** API-Version im URL-/Headervertrag und allgemeiner sicherer Retry fehlen. Ein zentraler kontrollierter Fetch-Timeout ist **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
 
 ## 7. Datenbank und lokale Speicherung
 

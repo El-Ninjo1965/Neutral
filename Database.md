@@ -1,5 +1,10 @@
 # NEUTRAL – Datenhaltung
 
+**Status:** DETAILVERTRAG
+
+**Geprüft:** 2026-09-01
+**Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
+
 ## Statuslegende
 
 **VORHANDEN**, **TEILWEISE**, **FEHLT**, **GEPLANT** beziehen sich auf den aktuellen Code.

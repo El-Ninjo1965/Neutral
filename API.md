@@ -1,5 +1,10 @@
 # NEUTRAL – API
 
+**Status:** DETAILVERTRAG
+
+**Geprüft:** 2026-09-01
+**Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
+
 ## 1. Geltungsbereich
 
 Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Beim Shared-Hosting-Root-Deployment leitet die Root-`.htaccess` `/api` nach `Server/public/api/`; dort leitet `Server/public/api/.htaccess` Unterpfade an den Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; die konkrete öffentliche Basis darf nicht im Client-Core fest codiert werden.
@@ -15,7 +20,7 @@ Antworten der PHP-API verwenden grundsätzlich JSON-Umschläge von `JsonResponse
 - **Rechte:** serverseitige Permissionprüfung; UI-Sichtbarkeit erteilt keine Rechte.
 - **Request:** JSON-Body bei schreibenden API-Aufrufen; ungültiges JSON ergibt 400.
 - **Versionierung:** **FEHLT** – kein URL-/Header-basierter API-Versionsvertrag.
-- **Timeout:** **FEHLT** – `ApiClient` setzt keinen zentralen Timeout.
+- **Timeout:** **VORHANDEN** – `ApiClient` beendet Requests kontrolliert über `AbortController`; `tests/api-timeout.test.js` prüft den Fehlerpfad.
 - **Retry:** **FEHLT** – keine allgemeine Retry-/Backoff-Policy. Schreibrequests dürfen nicht blind wiederholt werden.
 - **Offline:** **TEILWEISE** – Client erhält strukturierte Netzwerkfehler; persistentes Queueing fehlt.
 

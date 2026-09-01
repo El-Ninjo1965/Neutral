@@ -1,5 +1,10 @@
 # NEUTRAL – Verbindliche Anleitung zur Modulerstellung
 
+**Status:** VERBINDLICHER AKTUELLER MODULVERTRAG
+
+**Geprüft:** 2026-09-01
+**Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md); noch fehlende Core-1.0-Modulfähigkeiten stehen in [`STATUS.md`](STATUS.md).
+
 Diese Anleitung beschreibt den aktuellen Modulvertrag. Sie fordert kein neues Modul. Status **FEHLT/GEPLANT** bezeichnet nicht vorhandene Fähigkeiten, die nicht erfunden oder durch direkte Core-Manipulation umgangen werden dürfen.
 
 ## 1. Grundregeln

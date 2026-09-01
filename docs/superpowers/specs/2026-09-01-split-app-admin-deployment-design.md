@@ -1,7 +1,9 @@
 # NEUTRAL: getrennte Web-App-/Admin-/Server-Deploymentarchitektur
 
 **Datum:** 2026-09-01  
-**Status:** Entwurf zur Freigabe  
+**Status:** HISTORISCHER, NICHT FREIGEGEBENER ENTWURF
+
+**Hinweis:** Dieser Entwurf entstand vor der verbindlichen Dokumentationsordnung und den späteren Präzisierungen der Produktvision. Er ist keine Umsetzungsfreigabe. Verbindlich sind `VISION.md`, `CORE-1.0.md`, `DOCUMENTATION.md` und der aktuelle Architekturvertrag; eine spätere Deploymententscheidung muss diesen Entwurf damit neu abgleichen.
 **Grundlage:** `VISION.md`, `Architecture.md`, die bestätigte cPanel-/LiteSpeed-/PHP-Umgebung und der funktionsfähige FTPS-Zugang.
 
 ## 1. Ziel

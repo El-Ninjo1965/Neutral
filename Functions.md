@@ -1,5 +1,10 @@
 # NEUTRAL – Funktionskatalog des Core
 
+**Status:** NACHGEWIESENES FUNKTIONSINVENTAR
+
+**Geprüft:** 2026-09-01
+**Autorität:** beschreibt den Ist-Code; Anforderungen stehen in [`CORE-1.0.md`](CORE-1.0.md).
+
 Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante Funktionen. Detailmethoden bleiben im Quellcode maßgeblich.
 
 ## Status
@@ -54,7 +59,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | persistente Sync-Queue mit Backoff/Idempotenz | FEHLT/TODO | IndexedDB-Store `sync` existiert, Orchestrierung fehlt |
 | Konflikterkennung und Konfliktauflösung | FEHLT/TODO | kein allgemeiner Vertrag nachweisbar |
 | Datenversionierung für synchronisierte Records | FEHLT/TODO | nicht allgemein implementiert |
-| zentraler API-Timeout und Retry-Policy | FEHLT/TODO | ApiClient verwendet Fetch ohne Timeout/Retry |
+| zentraler API-Timeout und Retry-Policy | TEILWEISE | kontrollierter Timeout ist vorhanden und getestet; allgemeine sichere Retry-Policy fehlt |
 | versionierter Core-/Event-/Servicekatalog | VORHANDEN | Vertrag `1.0.0`; Payload-Grundregeln und Service-Sichtbarkeit sind stabilisiert |
 | abstrahierte Geräte-Service-Schicht | FEHLT/TODO | GPS greift direkt auf Browser-Geolocation zu |
 

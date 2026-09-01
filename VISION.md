@@ -1,5 +1,10 @@
 # NEUTRAL – Vision
 
+**Status:** LANGFRISTIGES ZIELBILD
+
+**Geprüft:** 2026-09-01
+**Einordnung:** Umfang und Abnahme der ersten stabilen Version stehen in [`CORE-1.0.md`](CORE-1.0.md). Der aktuelle Stand steht in [`STATUS.md`](STATUS.md).
+
 ## 1. Identität und Zweck
 
 NEUTRAL ist ein neutrales Entwicklungsframework und eine technische Grundlage für zukünftige Anwendungen. NEUTRAL ist selbst keine Fachanwendung und enthält keine fachliche Produkt-Roadmap. Der Core bleibt unabhängig von jeder späteren Anwendung; fachliche Funktionen werden ausschließlich über definierte Erweiterungsschnittstellen angebunden.
@@ -116,6 +121,8 @@ UI zuerst → notwendiger minimaler Core → Hintergrundinitialisierung
 Die Anwendung zeigt belastbare Lade-, Offline- und Fehlerzustände. Startzeit, First Paint und Interaktionsbereitschaft werden auf realistischen Mobilgeräten gemessen. Nicht benötigte Module und Daten werden verzögert geladen.
 
 ## 8. Server-Minimalarchitektur und Portabilität
+
+Die verbindliche Mindestplattform für Core 1.0 ist PHP 8.x mit MySQL/MariaDB und HTTPS auf normalem Shared Hosting. Node.js, permanente Worker, Redis und WebSockets dürfen später als leistungsfähigere Adapter ergänzt werden, sind aber keine Voraussetzung für die Grundfunktion. Ein Infrastrukturwechsel soll den öffentlichen App-/API-Vertrag nicht unnötig verändern.
 
 Die erste Produktionsversion muss auf einfachem Shared Hosting lauffähig sein. Referenzumgebung:
 

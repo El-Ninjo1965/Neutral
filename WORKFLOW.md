@@ -1,5 +1,10 @@
 # NEUTRAL – Workflow
 
+**Status:** VERBINDLICHE ARBEITSREGELN
+
+**Geprüft:** 2026-09-01
+**Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
+
 ## 1. Zweck
 
 Dieses Dokument enthält verbindliche Arbeitsregeln und ein fortlaufendes Arbeitsprotokoll. Zielarchitektur steht in `VISION.md`; tatsächliche technische Verträge stehen in den jeweiligen Fachdokumenten. Historische Bugs und abgeschlossene Live-Diagnosen gehören nicht in die Arbeitsregeln.
@@ -92,6 +97,8 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - `TODO.md`: nur tatsächliche Reihenfolge und nicht nachweislich erledigte Arbeit offen lassen.
 
 ## 10. Fortlaufendes Arbeitsprotokoll
+
+Dieser Abschnitt ist historisch und endet mit dem Stand 2026-08-29. Neue abgeschlossene Änderungen werden ausschließlich in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Dadurch wachsen Arbeitsregeln und Tagesprotokolle nicht länger in derselben Datei zusammen.
 
 ### 2026-08-29 – Neuinstallation auf leerem Shared Hosting vorbereiten
 
