@@ -271,36 +271,48 @@ final class SchemaMigrator
     public function migrate(): array
     {
         $pdo = $this->database->connect();
-        $this->ensureMigrationTable($pdo);
-        $alreadyApplied = $this->appliedKeys($pdo);
-        $appliedNow = [];
-        $skipped = [];
-
-        foreach ($this->definitions() as $migration) {
-            $key = $migration['key'];
-            if (in_array($key, $alreadyApplied, true)) {
-                $skipped[] = $key;
-                continue;
-            }
-
-            foreach ($migration['statements'] as $statement) {
-                $pdo->exec($statement);
-            }
-
-            $insert = $pdo->prepare('INSERT INTO ' . self::MIGRATION_TABLE . ' (migration_key, checksum, applied_at) VALUES (:key, :checksum, CURRENT_TIMESTAMP)');
-            $insert->execute([
-                ':key' => $key,
-                ':checksum' => $migration['checksum'],
-            ]);
-            $appliedNow[] = $key;
+        $connection = $this->database->connectionConfig();
+        $lockName = 'neutral_schema_' . substr(hash('sha256', (string) ($connection['name'] ?? 'default')), 0, 32);
+        $lockStatement = $pdo->prepare('SELECT GET_LOCK(:lock_name, 10)');
+        $lockStatement->execute([':lock_name' => $lockName]);
+        if ((int) $lockStatement->fetchColumn() !== 1) {
+            throw new \RuntimeException('Could not acquire schema migration lock.');
         }
+        try {
+            $this->ensureMigrationTable($pdo);
+            $alreadyApplied = $this->appliedKeys($pdo);
+            $appliedNow = [];
+            $skipped = [];
 
-        $status = $this->status();
-        return [
-            'applied' => $appliedNow,
-            'skipped' => $skipped,
-            'pending' => $status['pending'],
-        ];
+            foreach ($this->definitions() as $migration) {
+                $key = $migration['key'];
+                if (in_array($key, $alreadyApplied, true)) {
+                    $skipped[] = $key;
+                    continue;
+                }
+
+                foreach ($migration['statements'] as $statement) {
+                    $pdo->exec($statement);
+                }
+
+                $insert = $pdo->prepare('INSERT INTO ' . self::MIGRATION_TABLE . ' (migration_key, checksum, applied_at) VALUES (:key, :checksum, CURRENT_TIMESTAMP)');
+                $insert->execute([
+                    ':key' => $key,
+                    ':checksum' => $migration['checksum'],
+                ]);
+                $appliedNow[] = $key;
+            }
+
+            $status = $this->status();
+            return [
+                'applied' => $appliedNow,
+                'skipped' => $skipped,
+                'pending' => $status['pending'],
+            ];
+        } finally {
+            $release = $pdo->prepare('SELECT RELEASE_LOCK(:lock_name)');
+            $release->execute([':lock_name' => $lockName]);
+        }
     }
 
     /**

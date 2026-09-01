@@ -504,4 +504,13 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     assert.equal(result.statusCode, 401, result.body);
     assert.match(result.body, /Admin session required/i);
   });
+
+  test('Fall S: bootstrap tokens cannot download encrypted backup artifacts', async () => {
+    const result = await request(`/api/admin/backups/${'e'.repeat(32)}/download`, {
+      port: serverPort,
+      headers: { 'X-Admin-Access-Token': 'test-token' }
+    });
+    assert.equal(result.statusCode, 401, result.body);
+    assert.match(result.body, /Admin session required/i);
+  });
 });

@@ -127,12 +127,12 @@ function require_any_permission_or_fail(?array $identity, Phase4AuthManager $aut
 }
 
 /** @param array<string,mixed>|null $identity */
-function require_admin_session_permission_or_fail(?array $identity, Phase4AuthManager $authManager, string $permission, array $headers): void
+function require_admin_session_permission_or_fail(?array $identity, Phase4AuthManager $authManager, string $permission, array $headers, bool $needsCsrf = true): void
 {
     if (!$identity || (($identity['via'] ?? '') !== 'session')) {
         JsonResponse::error('Admin session required.', 401);
     }
-    require_permission_or_fail($identity, $authManager, $permission, true, $headers);
+    require_permission_or_fail($identity, $authManager, $permission, $needsCsrf, $headers);
 }
 
 /**
@@ -938,7 +938,7 @@ if ($route === 'admin/backups/upload' && $method === 'POST') {
 }
 
 if (preg_match('#^admin/backups/([a-f0-9]{32})/download$#', $route, $backupMatches) === 1 && $method === 'GET') {
-    require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
+    require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers, false);
     try {
         $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
         $path = $backupService->pathForDownload($backupMatches[1]);
