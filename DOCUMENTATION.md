@@ -16,6 +16,8 @@ Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie leg
 
 [`ROADMAP.md`](ROADMAP.md) enthält bewusst auf später verschobene Ziele. [`CHANGELOG.md`](CHANGELOG.md) dokumentiert abgeschlossene Änderungen. Installationsanleitungen konkretisieren ausschließlich den Betrieb und stehen unter den genannten Verträgen.
 
+[`DEVELOPMENT.md`](DEVELOPMENT.md) beschreibt die verifizierte lokale Entwicklungsumgebung. Sie ist kein Produktionsvertrag und darf Node.js nicht zur Shared-Hosting-Voraussetzung machen.
+
 ## Konfliktregel
 
 Bei einem Widerspruch gilt die höher eingeordnete Datei. Ein untergeordnetes Dokument darf keine neue Vision oder neue Core-1.0-Pflicht erfinden. Ein erkannter Widerspruch wird im selben Änderungssatz korrigiert und im Changelog genannt.

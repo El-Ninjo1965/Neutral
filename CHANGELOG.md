@@ -2,6 +2,15 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-01 – Windows-Entwicklungsumgebung hergestellt
+
+- Git, GitHub CLI, Node.js LTS und PHP 8.5 installiert und verifiziert,
+- Git-Autorenidentität, Credential Manager und sichere Git-Standards global konfiguriert,
+- GitHub CLI über den Windows-Schlüsselbund autorisiert und Repository-/Pushzugriff geprüft,
+- PHP-Erweiterungen für Shared-Hosting-Kompatibilität aktiviert,
+- Node-Abhängigkeiten reproduzierbar installiert; Audit meldet keine bekannte Paketlücke,
+- vollständige Testsuite erstmals ohne Werkzeugabbrüche ausgeführt und den tatsächlichen Stand `116/125` dokumentiert.
+
 ## 2026-09-01 – Dokumentationsordnung und Core-1.0-Vertrag
 
 - verbindliche Dokumentationshierarchie und Konfliktregeln eingeführt,

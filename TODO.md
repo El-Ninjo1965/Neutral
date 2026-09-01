@@ -9,9 +9,10 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 ## 1. Reproduzierbare Ausgangsbasis
 
-- vollständige lokale Testwerkzeuge bereitstellen: Node-Abhängigkeiten einschließlich `argon2` und PHP-CLI,
-- bereits vorhandenen Fehler in `tests/vision-framework.test.js` analysieren und beheben,
-- vollständige Testsuite auf unverändertem Produktionsvertrag grün ausführen,
+- neun reproduzierbare Fehler aus der vollständigen Suite ursachenweise gruppieren,
+- PHP-Admin-Sessionerkennung und PHP-Environment-Priorität beheben,
+- GPS-Discovery/Lifecycle, Setup-Aktivierungsrecht und Startreihenfolge beheben,
+- vollständige Testsuite nach jeder unabhängigen Korrektur grün ausführen,
 - PHP- und Node-Referenzverträge endpointweise vergleichen; PHP bleibt Core-1.0-Referenz.
 
 **Abnahme:** alle bestehenden automatisierten Tests laufen in einer dokumentierten Umgebung ohne Ausfälle.

@@ -40,17 +40,17 @@ Die bisherige Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigke
 
 ## Testzustand am 2026-09-01
 
-Ein unveränderter lokaler Ausgangsstand wurde mit der gebündelten Node-Laufzeit geprüft:
+Die lokale Referenzumgebung aus [`DEVELOPMENT.md`](DEVELOPMENT.md) kann jetzt die gesamte Suite einschließlich Node-, PHP- und `argon2`-Pfaden starten:
 
-- 30 Tests bestanden.
-- Node-API-Tests konnten wegen des lokal fehlenden nativen Pakets `argon2` nicht geladen werden.
-- PHP-Tests konnten wegen eines lokal nicht installierten PHP-CLI nicht ausgeführt werden.
-- `tests/vision-framework.test.js` enthielt zusätzlich einen echten bereits auf `origin/main` vorhandenen Fehlschlag.
+- 125 Tests wurden vollständig ausgeführt,
+- 116 Tests bestanden,
+- 9 Tests schlugen fehl,
+- 0 Tests wurden abgebrochen.
 
-Das ist kein vollständiger grüner Baseline-Nachweis. Diese Dokumentationsüberarbeitung darf deshalb keinen vollständig bestandenen Gesamttest behaupten. Die betroffenen Punkte stehen in [`TODO.md`](TODO.md).
+Die neun Fehler betreffen PHP-Admin-Sessionerkennung, GPS-Modul-Discovery/Lifecycle, Setup-Aktivierungsrechte, PHP-Environment-Priorität und die Startreihenfolge der Zwei-Komponenten-Oberfläche. Sie sind reproduzierbare Projektfehler; fehlende lokale Werkzeuge sind nicht mehr die Ursache.
 
-Nach der Dokumentationsänderung bestanden 24 gezielt ausführbare Tests für Core-Verträge, API-Timeout, Adminstart und das sichere Produktions-Staging ohne Fehler. Diese Teilprüfung ersetzt nicht die noch offene vollständige Suite.
+Das ist noch kein grüner Baseline-Nachweis. Die Fehler werden gemäß [`TODO.md`](TODO.md) systematisch analysiert und einzeln behoben.
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist eine reproduzierbare Core-1.0-Baseline: vollständige lokale Werkzeuge, grüne bestehende Tests und eine dokumentierte leere PHP-Installation. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
+Der nächste Meilenstein ist eine grüne Core-1.0-Baseline: die neun reproduzierbaren Fehler beheben und anschließend eine dokumentierte leere PHP-Installation durchführen. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
