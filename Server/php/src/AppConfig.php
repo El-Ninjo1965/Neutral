@@ -58,6 +58,28 @@ final class AppConfig
         return $this->environment() !== 'production';
     }
 
+    public function isSetupRecoveryEnabled(): bool
+    {
+        $value = strtolower(trim($this->env['NEUTRAL_SETUP_RECOVERY_ENABLED'] ?? ''));
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    public function setupRecoveryToken(): string
+    {
+        return trim($this->env['NEUTRAL_SETUP_RECOVERY_TOKEN'] ?? '');
+    }
+
+    public function hasDatabaseConfiguration(): bool
+    {
+        $database = $this->database();
+        if (trim($database['url']) !== '') {
+            return true;
+        }
+        return trim($database['host']) !== ''
+            && trim($database['name']) !== ''
+            && trim($database['user']) !== '';
+    }
+
     /**
      * @return array{
      *   type:string,

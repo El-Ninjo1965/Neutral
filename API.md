@@ -30,9 +30,9 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar.
 
 | Methode | Pfad | Zweck | Auth / Recht | Request | Response | Fehler / DB-Bezug | Status |
 |---|---|---|---|---|---|---|---|
-| GET | `/api/setup/status` | Setupstatus und Voraussetzungen | vor Aktivierung öffentlich | – | Setupstatus | 500 bei Runtime/DB; Setup-/Migrationsstatus | VORHANDEN |
-| POST | `/api/setup/install` | DB anlegen, migrieren, Core-Daten seeden | Setupzustand; keine normale Session vor Erstinstallation | Installationsdaten/Environment | Installationsresultat | 400/500; alle Coretabellen | VORHANDEN |
-| GET | `/api/status` | Laufzeit-, DB- und Migrationsstatus | öffentlich | – | Statusobjekt | 500; DB-Ping/Migrationstatus | VORHANDEN |
+| GET | `/api/setup/status` | Setupstatus und Voraussetzungen | vor Aktivierung öffentlich; nach Aktivierung nur mit Recoveryflag und HTTP-Basic-Recoverytoken | – | Setupstatus | 404 ohne Flag, 401 ohne gültiges Token; 500 bei Runtime/DB | VORHANDEN |
+| POST | `/api/setup/install` | DB anlegen, migrieren, Core-Daten seeden | vor Aktivierung öffentlich; nach Aktivierung nur mit Recoveryflag und HTTP-Basic-Recoverytoken | Installationsdaten/Environment | Installationsresultat | 404 ohne Flag, 401 ohne gültiges Token; 400/500; alle Coretabellen | VORHANDEN |
+| GET | `/api/status` | öffentlicher Betriebs- und DB-Erreichbarkeitsstatus | öffentlich | – | Service, Umgebung, App und ausschließlich DB-Zustand | 500; DB-Ping | VORHANDEN |
 | POST | `/api/auth/login` | Benutzer authentifizieren, Session starten | öffentlich, Credentials erforderlich | `username`, `password` | öffentliche Identität, CSRF/Sessionkontext | 400/401; `users`, `user_roles`, `roles`, `permissions`, `sessions` | VORHANDEN |
 | POST | `/api/auth/logout` | aktive Session beenden | Session; CSRF | – | Logoutbestätigung | 401/403; `sessions` | VORHANDEN |
 | GET | `/api/auth/me` | aktuelle Identität und effektive Rechte | Session | – | User/Rollen/Permissions | 401; Session/RBAC-Tabellen | VORHANDEN |

@@ -9,6 +9,7 @@ use Neutral\Core\Phase4RoleService;
 use Neutral\Core\Phase4UserService;
 use Neutral\Core\PrerequisiteChecker;
 use Neutral\Core\Security;
+use Neutral\Core\SetupAccessGuard;
 use Neutral\Core\SetupInstaller;
 use Neutral\Core\SetupStateStore;
 
@@ -106,6 +107,8 @@ $runtime = neutral_bootstrap([
 $setupStateStore = new SetupStateStore(SetupStateStore::defaultStateFile($runtime->projectRoot()));
 $prerequisiteChecker = new PrerequisiteChecker($runtime->config(), $runtime->database());
 $setupInstaller = new SetupInstaller($runtime, $setupStateStore, $prerequisiteChecker);
+
+SetupAccessGuard::enforce($runtime->config(), $setupInstaller);
 
 $messages = [];
 $errors = [];

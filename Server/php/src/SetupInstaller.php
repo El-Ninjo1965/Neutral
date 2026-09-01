@@ -10,14 +10,23 @@ final class SetupInstaller
     private PrerequisiteChecker $checker;
     private SchemaMigrator $migrator;
     private CoreDataSeeder $seeder;
+    private ?\Closure $installationEvidenceInspector;
 
-    public function __construct(AppRuntime $runtime, SetupStateStore $store, PrerequisiteChecker $checker)
+    public function __construct(
+        AppRuntime $runtime,
+        SetupStateStore $store,
+        PrerequisiteChecker $checker,
+        ?callable $installationEvidenceInspector = null
+    )
     {
         $this->runtime = $runtime;
         $this->store = $store;
         $this->checker = $checker;
         $this->migrator = new SchemaMigrator($runtime->database());
         $this->seeder = new CoreDataSeeder($runtime->database(), $runtime->config());
+        $this->installationEvidenceInspector = $installationEvidenceInspector === null
+            ? null
+            : \Closure::fromCallable($installationEvidenceInspector);
     }
 
     /**
@@ -27,7 +36,7 @@ final class SetupInstaller
     {
         $state = $this->store->load();
         $checkResult = $this->checker->run($this->runtime->projectRoot(), $this->runtime->envFile());
-        $installationEvidence = $this->inspectInstallationEvidence();
+        $installationEvidence = $this->installationEvidence();
 
         $state['checks'] = $checkResult['checks'];
         $state['checkSummary'] = $checkResult['summary'];
@@ -70,6 +79,27 @@ final class SetupInstaller
             $this->store->save($state);
         }
         return $state;
+    }
+
+    public function hasInstallationEvidence(): bool
+    {
+        if ($this->store->isInstalled()) {
+            return true;
+        }
+
+        $evidence = $this->installationEvidence();
+        if (!(bool) ($evidence['installed'] ?? false)) {
+            $probeFailed = trim((string) ($evidence['error'] ?? '')) !== '';
+            return $probeFailed && $this->runtime->config()->hasDatabaseConfiguration();
+        }
+
+        $state = $this->store->load();
+        $state['status'] = 'ACTIVE';
+        $state['installation']['active'] = true;
+        $state['installation']['state'] = 'ACTIVE';
+        $state['installation']['message'] = 'Existing installation detected from server-side state.';
+        $this->store->save($state);
+        return true;
     }
 
     /**
@@ -386,6 +416,18 @@ final class SetupInstaller
         }
 
         return $evidence;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function installationEvidence(): array
+    {
+        if ($this->installationEvidenceInspector !== null) {
+            $result = ($this->installationEvidenceInspector)();
+            return is_array($result) ? $result : ['installed' => false];
+        }
+        return $this->inspectInstallationEvidence();
     }
 
     private function tableExists(\PDO $pdo, string $tableName): bool

@@ -17,13 +17,11 @@ foreach (['host', 'port', 'name', 'user'] as $requiredKey) {
 }
 
 $dbState = 'not_configured';
-$dbError = null;
 if ($missingDbKeys === []) {
     try {
         $dbState = $runtime->database()->ping() ? 'ok' : 'error';
     } catch (Throwable $exception) {
         $dbState = 'error';
-        $dbError = $exception->getMessage();
     }
 }
 
@@ -36,19 +34,7 @@ JsonResponse::success([
         'name' => $config->appName(),
         'apiBase' => $config->apiBase(),
     ],
-    'runtime' => [
-        'phpVersion' => PHP_VERSION,
-        'sapi' => php_sapi_name(),
-        'envFile' => $runtime->envFile(),
-    ],
     'database' => [
         'state' => $dbState,
-        'type' => $database['type'],
-        'host' => $database['host'],
-        'port' => $database['port'],
-        'name' => $database['name'],
-        'user' => $database['user'],
-        'missing' => $missingDbKeys,
-        'error' => $dbError,
     ],
 ], 200);

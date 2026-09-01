@@ -58,6 +58,8 @@
 
 **VORHANDEN ALS REPOSITORY-REGEL:** `.env` und `.env.*` sind ignoriert; `.env.example` darf nur bereinigte Platzhalter enthalten. Keine Zugangsdaten in Clientcode, Dokumentation, Logs, Commits oder Screenshots. Bereits offengelegte Tokens müssen rotiert werden.
 
+**VORHANDEN:** Eine aktive Installation verbirgt `setup.php` sowie direkte und geroutete Setup-API-Endpunkte standardmäßig mit HTTP 404. Die Sperre berücksichtigt persistierten Runtimezustand und serverseitig erkannte Datenbankinstallation, stellt eine verlorene Runtime-Markierung aus DB-Evidenz wieder her und bleibt bei vollständig konfigurierter, aber nicht prüfbarer Datenbank konservativ geschlossen. Wiederherstellung erfordert das deaktivierte Flag `NEUTRAL_SETUP_RECOVERY_ENABLED` und ein mindestens 32 Zeichen langes `NEUTRAL_SETUP_RECOVERY_TOKEN`, das per HTTP Basic Auth geprüft wird; beide Werte werden nach dem Recoveryfenster entfernt. Der öffentliche Status enthält nur Betriebsbereitschaft und keine Environmentpfade, Datenbanknamen, Datenbankbenutzer oder internen Fehlertexte.
+
 ## 10. Datenbankzugriff
 
 **VORHANDEN:** ausschließlich serverseitig über PDO/Services; Passwörter bleiben in Environmentkonfiguration; relevante Services nutzen vorbereitete Statements. Schema nutzt Foreign Keys und eindeutige Indizes.

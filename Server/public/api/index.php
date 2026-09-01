@@ -224,6 +224,16 @@ function module_permissions_payload(array $module, array $roles): array
     ];
 }
 
+if ($route === 'setup/status') {
+    require __DIR__ . '/setup/status.php';
+    exit;
+}
+
+if ($route === 'setup/install') {
+    require __DIR__ . '/setup/install.php';
+    exit;
+}
+
 if ($method === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
@@ -235,26 +245,14 @@ if ($method === 'OPTIONS') {
 $headers = request_headers_lower();
 $identity = $authManager->resolveIdentity($headers);
 
-if ($route === 'setup/status') {
-    require __DIR__ . '/setup/status.php';
-    exit;
-}
-
-if ($route === 'setup/install') {
-    require __DIR__ . '/setup/install.php';
-    exit;
-}
-
 if ($route === 'status') {
     $database = $config->database();
     $dbState = 'not_configured';
-    $dbError = null;
     if (trim($database['host']) !== '' && trim($database['name']) !== '' && trim($database['user']) !== '') {
         try {
             $dbState = $runtime->database()->ping() ? 'ok' : 'error';
         } catch (Throwable $exception) {
             $dbState = 'error';
-            $dbError = $exception->getMessage();
         }
     }
 
@@ -267,19 +265,8 @@ if ($route === 'status') {
             'name' => $config->appName(),
             'apiBase' => $config->apiBase(),
         ],
-        'runtime' => [
-            'phpVersion' => PHP_VERSION,
-            'sapi' => php_sapi_name(),
-            'envFile' => $runtime->envFile(),
-        ],
         'database' => [
             'state' => $dbState,
-            'type' => $database['type'],
-            'host' => $database['host'],
-            'port' => $database['port'],
-            'name' => $database['name'],
-            'user' => $database['user'],
-            'error' => $dbError,
         ],
     ]);
 }

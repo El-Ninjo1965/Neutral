@@ -58,7 +58,15 @@ Es existiert absichtlich keine mit echten Werten gefüllte Vorlage im Repository
 6. HTTPS aktivieren und HTTP umleiten.
 7. Setupstatus aufrufen und Installation/Migration einmalig über den autorisierten Setupweg ausführen.
 8. Bootstrap-Admin nur aus autorisierten lokalen Environmentwerten erzeugen.
-9. Setupoberfläche nach erfolgreicher Aktivierung schützen.
+9. Nach erfolgreicher Aktivierung werden Setupoberfläche und Setup-API automatisch mit HTTP 404 verborgen.
+
+Für eine ausdrücklich geplante Wiederherstellung setzt der Betreiber hostlokal vorübergehend
+`NEUTRAL_SETUP_RECOVERY_ENABLED=1` und `NEUTRAL_SETUP_RECOVERY_TOKEN=<zufälliges Geheimnis>`.
+Das Token muss mindestens 32 Zeichen lang sein und wird als Passwort einer HTTP-Basic-Anmeldung
+verwendet; der Benutzername ist frei wählbar. Flag und Token dürfen nur für das kurze
+Recoveryfenster aktiv sein und müssen danach entfernt beziehungsweise deaktiviert werden. Das
+Token gehört ausschließlich in die geschützte Hostkonfiguration, nie in URL, Repository oder Log.
+Eine zusätzliche IP-/Basic-Auth-Sperre des Hosters bleibt empfohlen.
 
 Optionaler lokaler Vorabcheck:
 
@@ -71,8 +79,8 @@ Diese Befehle benötigen lokal Node, nicht auf dem Produktionshost.
 
 ## 6. API-Prüfung
 
-1. `GET <Basis>/api/status` liefert JSON.
-2. Setupstatus meldet keine ausstehende Migration.
+1. `GET <Basis>/api/status` liefert ausschließlich öffentlichen Betriebsstatus ohne Serverpfade oder Datenbankkennungen.
+2. Nach Aktivierung liefern Setupoberfläche und Setup-API ohne Recoveryflag HTTP 404; Recovery erfordert zusätzlich das hostseitige Token.
 3. Login setzt Serversession und CSRF-Kontext.
 4. `GET /api/auth/me` liefert die Identität nur mit gültiger Session.
 5. Adminseite liefert ohne Session 401, ohne Adminrecht 403 und mit Adminsession die Oberfläche.

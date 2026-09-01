@@ -11,7 +11,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 - leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen,
 - öffentliche Pfade, Login, Logout, CSRF, Cookies, HTTPS und Dateischutz live prüfen,
-- Setup nach Installation sperren und Secretfreiheit von Client, Antworten und Logs prüfen,
+- Secretfreiheit von Client, übrigen Antworten und Logs vollständig prüfen,
 - API-Version 1 festschreiben.
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.

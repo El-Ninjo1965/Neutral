@@ -34,15 +34,23 @@ function getFreePort() {
   });
 }
 
-function request(pathname, { port, cookies = {} }) {
+function request(pathname, { port, cookies = {}, method = 'GET', body = '', headers: extraHeaders = {} }) {
   return new Promise((resolve, reject) => {
     const cookieHeader = Object.entries(cookies).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('; ');
+    const headers = { ...extraHeaders };
+    if (cookieHeader) {
+      headers.Cookie = cookieHeader;
+    }
+    if (body !== '') {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(body);
+    }
     const req = http.request({
       host: '127.0.0.1',
       port,
       path: pathname,
-      method: 'GET',
-      headers: cookieHeader ? { Cookie: cookieHeader } : {}
+      method,
+      headers
     }, (res) => {
       let data = '';
       res.setEncoding('utf8');
@@ -50,6 +58,9 @@ function request(pathname, { port, cookies = {} }) {
       res.on('end', () => resolve({ statusCode: res.statusCode, body: data, headers: res.headers }));
     });
     req.on('error', reject);
+    if (body !== '') {
+      req.write(body);
+    }
     req.end();
   });
 }
@@ -79,13 +90,18 @@ session_write_close();
   }
 }
 
-function startPhpServer({ docroot, port, sessionSavePath }) {
-  const processHandle = spawn('php', [
+function startPhpServer({ docroot, port, sessionSavePath, env = {}, router = '' }) {
+  const args = [
     '-d', `session.save_path=${sessionSavePath}`,
     '-S', `127.0.0.1:${port}`,
     '-t', docroot
-  ], {
+  ];
+  if (router !== '') {
+    args.push(router);
+  }
+  const processHandle = spawn('php', args, {
     cwd: projectRoot,
+    env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
@@ -118,6 +134,15 @@ function waitForServerReady(port, timeoutMs = 10000) {
   });
 }
 
+function writeActiveSetupState(root) {
+  const runtimeDir = path.join(root, 'Server', 'runtime');
+  fs.mkdirSync(runtimeDir, { recursive: true });
+  fs.writeFileSync(path.join(runtimeDir, 'setup-state.json'), JSON.stringify({
+    status: 'ACTIVE',
+    installation: { active: true, state: 'ACTIVE' }
+  }));
+}
+
 describe('Admin PHP entry protection', { concurrency: false }, () => {
   let serverPort;
   let serverProcess;
@@ -125,6 +150,14 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
   let tempRuntimeRoot;
   let setuplessServerPort;
   let setuplessServerProcess;
+  let activeSetupRoot;
+  let lockedSetupPort;
+  let lockedSetupProcess;
+  let recoverySetupPort;
+  let recoverySetupProcess;
+  let routedSetupPort;
+  let routedSetupProcess;
+  const recoveryToken = 'test-recovery-token-32-characters';
 
   before(async () => {
     sessionSavePath = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-admin-php-session-'));
@@ -144,6 +177,45 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     setuplessServerPort = await getFreePort();
     setuplessServerProcess = startPhpServer({ docroot: tempWebroot, port: setuplessServerPort, sessionSavePath });
     await waitForServerReady(setuplessServerPort);
+
+    activeSetupRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-active-setup-'));
+    const activeServer = path.join(activeSetupRoot, 'Server');
+    const activeWebroot = path.join(activeServer, 'public');
+    const activePhp = path.join(activeServer, 'php');
+    fs.cpSync(webrootDir, activeWebroot, { recursive: true });
+    fs.cpSync(path.join(projectRoot, 'Server', 'php'), activePhp, { recursive: true });
+    writeActiveSetupState(activeSetupRoot);
+
+    lockedSetupPort = await getFreePort();
+    lockedSetupProcess = startPhpServer({
+      docroot: activeWebroot,
+      port: lockedSetupPort,
+      sessionSavePath,
+      env: { NEUTRAL_SETUP_RECOVERY_ENABLED: '0' }
+    });
+    await waitForServerReady(lockedSetupPort);
+
+    recoverySetupPort = await getFreePort();
+    recoverySetupProcess = startPhpServer({
+      docroot: activeWebroot,
+      port: recoverySetupPort,
+      sessionSavePath,
+      env: {
+        NEUTRAL_SETUP_RECOVERY_ENABLED: '1',
+        NEUTRAL_SETUP_RECOVERY_TOKEN: recoveryToken
+      }
+    });
+    await waitForServerReady(recoverySetupPort);
+
+    routedSetupPort = await getFreePort();
+    routedSetupProcess = startPhpServer({
+      docroot: activeWebroot,
+      port: routedSetupPort,
+      sessionSavePath,
+      env: { NEUTRAL_SETUP_RECOVERY_ENABLED: '0' },
+      router: path.join(activeWebroot, 'api', 'index.php')
+    });
+    await waitForServerReady(routedSetupPort);
   });
 
   after(async () => {
@@ -153,11 +225,23 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     if (setuplessServerProcess && !setuplessServerProcess.killed) {
       setuplessServerProcess.kill('SIGTERM');
     }
+    if (lockedSetupProcess && !lockedSetupProcess.killed) {
+      lockedSetupProcess.kill('SIGTERM');
+    }
+    if (recoverySetupProcess && !recoverySetupProcess.killed) {
+      recoverySetupProcess.kill('SIGTERM');
+    }
+    if (routedSetupProcess && !routedSetupProcess.killed) {
+      routedSetupProcess.kill('SIGTERM');
+    }
     if (sessionSavePath) {
       fs.rmSync(sessionSavePath, { recursive: true, force: true });
     }
     if (tempRuntimeRoot) {
       fs.rmSync(tempRuntimeRoot, { recursive: true, force: true });
+    }
+    if (activeSetupRoot) {
+      fs.rmSync(activeSetupRoot, { recursive: true, force: true });
     }
   });
 
@@ -224,5 +308,138 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
 
     const me = await request('/api/auth/me', { port: serverPort });
     assert.equal(me.statusCode, 401);
+  });
+
+  test('Fall F: public status omits runtime paths and database identifiers', async () => {
+    const result = await request('/api/status', { port: serverPort });
+    assert.equal(result.statusCode, 200);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(Object.keys(payload.data).sort(), ['app', 'database', 'environment', 'service', 'status']);
+    assert.deepEqual(Object.keys(payload.data.database), ['state']);
+    assert.equal(payload.data.runtime, undefined);
+  });
+
+  test('Fall F2: compatibility status endpoint omits runtime paths and database identifiers', async () => {
+    const result = await request('/api/status.php', { port: serverPort });
+    assert.equal(result.statusCode, 200);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(Object.keys(payload.data).sort(), ['app', 'database', 'environment', 'service', 'status']);
+    assert.deepEqual(Object.keys(payload.data.database), ['state']);
+    assert.equal(payload.data.runtime, undefined);
+  });
+
+  test('Fall G: active installation hides setup and reset controls by default', async () => {
+    const result = await request('/setup.php', { port: lockedSetupPort });
+    assert.equal(result.statusCode, 404);
+    assert.doesNotMatch(result.body, /Neutral setup/i);
+    assert.doesNotMatch(result.body, /reset application state/i);
+  });
+
+  test('Fall H: recovery flag alone does not expose setup without operator credentials', async () => {
+    const result = await request('/setup.php', { port: recoverySetupPort });
+    assert.equal(result.statusCode, 401);
+    assert.doesNotMatch(result.body, /Neutral setup|reset application state/i);
+  });
+
+  test('Fall H2: recovery requires the host-side token through HTTP Basic auth', async () => {
+    const authorization = `Basic ${Buffer.from(`recovery:${recoveryToken}`).toString('base64')}`;
+    const result = await request('/setup.php', {
+      port: recoverySetupPort,
+      headers: { Authorization: authorization }
+    });
+    assert.equal(result.statusCode, 200);
+    assert.match(result.body, /Neutral setup/i);
+  });
+
+  test('Fall I: active installation hides setup API status by default', async () => {
+    writeActiveSetupState(activeSetupRoot);
+    const result = await request('/api/setup/status.php', { port: lockedSetupPort });
+    assert.equal(result.statusCode, 404);
+    assert.doesNotMatch(result.body, /installationEvidence|databaseState|envFile/i);
+  });
+
+  test('Fall J: active installation rejects setup API installation by default', async () => {
+    writeActiveSetupState(activeSetupRoot);
+    const result = await request('/api/setup/install.php', {
+      port: lockedSetupPort,
+      method: 'POST',
+      body: '{}'
+    });
+    assert.equal(result.statusCode, 404);
+    assert.doesNotMatch(result.body, /installationEvidence|databaseState|envFile/i);
+  });
+
+  test('Fall K: active installation hides setup install API before method validation', async () => {
+    for (const method of ['GET', 'OPTIONS']) {
+      const result = await request('/api/setup/install.php', { port: lockedSetupPort, method });
+      assert.equal(result.statusCode, 404);
+      assert.doesNotMatch(result.body, /Method not allowed|installationEvidence|databaseState|envFile/i);
+    }
+  });
+
+  test('Fall K2: routed setup endpoints are hidden before global OPTIONS handling', async () => {
+    for (const pathname of ['/api/setup/status', '/api/setup/install']) {
+      for (const method of ['GET', 'OPTIONS']) {
+        const result = await request(pathname, { port: routedSetupPort, method });
+        assert.equal(result.statusCode, 404, `${method} ${pathname}`);
+      }
+    }
+  });
+
+  test('Fall L: database-backed evidence restores the setup lock when runtime state is missing', () => {
+    const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-setup-evidence-'));
+    try {
+      const script = `
+require getenv('NEUTRAL_TEST_BOOTSTRAP');
+$runtime = neutral_bootstrap(['project_root' => getenv('NEUTRAL_TEST_ROOT'), 'register_error_handler' => false]);
+$store = new \\Neutral\\Core\\SetupStateStore(\\Neutral\\Core\\SetupStateStore::defaultStateFile(getenv('NEUTRAL_TEST_ROOT')));
+$checker = new \\Neutral\\Core\\PrerequisiteChecker($runtime->config(), $runtime->database());
+$installer = new \\Neutral\\Core\\SetupInstaller($runtime, $store, $checker, static fn (): array => ['installed' => true]);
+echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted' => $store->isInstalled()]);
+`;
+      const result = spawnSync('php', ['-r', script], {
+        cwd: projectRoot,
+        env: {
+          ...process.env,
+          NEUTRAL_TEST_BOOTSTRAP: path.join(projectRoot, 'Server', 'php', 'bootstrap.php'),
+          NEUTRAL_TEST_ROOT: evidenceRoot
+        },
+        encoding: 'utf8'
+      });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.deepEqual(JSON.parse(result.stdout), { locked: true, persisted: true });
+    } finally {
+      fs.rmSync(evidenceRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('Fall M: configured but unreadable database fails closed when runtime state is missing', () => {
+    const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-setup-unknown-'));
+    try {
+      const script = `
+require getenv('NEUTRAL_TEST_BOOTSTRAP');
+$runtime = neutral_bootstrap(['project_root' => getenv('NEUTRAL_TEST_ROOT'), 'register_error_handler' => false]);
+$store = new \\Neutral\\Core\\SetupStateStore(\\Neutral\\Core\\SetupStateStore::defaultStateFile(getenv('NEUTRAL_TEST_ROOT')));
+$checker = new \\Neutral\\Core\\PrerequisiteChecker($runtime->config(), $runtime->database());
+$installer = new \\Neutral\\Core\\SetupInstaller($runtime, $store, $checker, static fn (): array => ['installed' => false, 'error' => 'database unavailable']);
+echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted' => $store->isInstalled()]);
+`;
+      const result = spawnSync('php', ['-r', script], {
+        cwd: projectRoot,
+        env: {
+          ...process.env,
+          NEUTRAL_TEST_BOOTSTRAP: path.join(projectRoot, 'Server', 'php', 'bootstrap.php'),
+          NEUTRAL_TEST_ROOT: evidenceRoot,
+          DB_HOST: 'database.internal',
+          DB_NAME: 'neutral',
+          DB_USER: 'neutral_user'
+        },
+        encoding: 'utf8'
+      });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.deepEqual(JSON.parse(result.stdout), { locked: true, persisted: false });
+    } finally {
+      fs.rmSync(evidenceRoot, { recursive: true, force: true });
+    }
   });
 });
