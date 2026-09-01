@@ -1,0 +1,77 @@
+name: One-time public_html cleanup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-time-cleanup-public-html.yml
+
+jobs:
+  cleanup:
+    if: ${{ contains(github.event.head_commit.message, '[cleanup-public-html]') }}
+    runs-on: ubuntu-latest
+    env:
+      FTP_HOST: ${{ secrets.FTP_HOST }}
+      FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_PORT: ${{ secrets.FTP_PORT || 21 }}
+      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR }}
+      FTP_SSL_CHECK_HOSTNAME: ${{ secrets.FTP_SSL_CHECK_HOSTNAME || 'true' }}
+
+    steps:
+      - name: Zielverzeichnis absichern
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$FTP_TARGET_DIR" != "/public_html" ]]; then
+            echo "Cleanup verweigert: FTP_TARGET_DIR ist nicht exakt /public_html."
+            exit 1
+          fi
+
+      - name: FTPS-Client bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: public_html leeren und cPanel-Verzeichnisse bewahren
+        shell: bash
+        run: |
+          set -euo pipefail
+          EMPTY_DIR="${RUNNER_TEMP}/neutral-empty-public-html"
+          LISTING_FILE="${RUNNER_TEMP}/neutral-public-html-after-cleanup.txt"
+          mkdir -p "$EMPTY_DIR"
+
+          lftp <<EOF
+          set cmd:fail-exit true
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:check-hostname $FTP_SSL_CHECK_HOSTNAME
+          set ssl:verify-certificate true
+          set net:timeout 30
+          set net:max-retries 1
+          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
+          mirror -R --delete --verbose \
+            --exclude-glob .well-known \
+            --exclude-glob .well-known/** \
+            --exclude-glob .well-know \
+            --exclude-glob .well-know/** \
+            "$EMPTY_DIR" "$FTP_TARGET_DIR"
+          cls -1a "$FTP_TARGET_DIR" > "$LISTING_FILE"
+          bye
+          EOF
+
+          unexpected="$(
+            sed -e '/^[[:space:]]*$/d' -e '/^\.$/d' -e '/^\.\.$/d' "$LISTING_FILE" |
+            grep -Ev '^\.well-known/?$|^\.well-know/?$' || true
+          )"
+
+          if [[ -n "$unexpected" ]]; then
+            echo "Cleanup unvollständig; unerwartete Einträge verbleiben:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+          echo "public_html ist leer; .well-known und .well-know wurden dauerhaft ausgeschlossen."
