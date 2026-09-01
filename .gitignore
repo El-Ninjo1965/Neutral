@@ -86,3 +86,4 @@ config/*.json
 .neutral-deploy-manifest.json
 Server/node/runtime/
 Server/runtime/
+.worktrees/
