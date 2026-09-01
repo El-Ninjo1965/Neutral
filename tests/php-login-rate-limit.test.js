@@ -35,15 +35,15 @@ $clock = static fn (): int => 1000;
 $store = new MemoryAttempts();
 $limiter = new \\Neutral\\Core\\LoginRateLimiter($store, $clock);
 $results = [];
-for ($i = 0; $i < 5; $i++) { $results[] = $limiter->registerFailure('Admin', '203.0.113.8'); }
+for ($i = 0; $i < 6; $i++) { $results[] = $limiter->registerFailure('Admin', '203.0.113.8'); }
 $results[] = $limiter->check('admin', '203.0.113.8');
 echo json_encode($results);
 `);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const outcomes = JSON.parse(result.stdout);
-  assert.deepEqual(outcomes.slice(0, 4).map((entry) => entry.allowed), [true, true, true, true]);
-  assert.equal(outcomes[4].allowed, false);
-  assert.deepEqual(outcomes[5], { allowed: false, retryAfter: 900 });
+  assert.deepEqual(outcomes.slice(0, 5).map((entry) => entry.allowed), [true, true, true, true, true]);
+  assert.equal(outcomes[5].allowed, false);
+  assert.deepEqual(outcomes[6], { allowed: false, retryAfter: 900 });
 });
 
 test('PHP login limiter applies an IP-wide limit and success clears only matching scopes', () => {
@@ -66,13 +66,15 @@ $limiter = new \\Neutral\\Core\\LoginRateLimiter($store, static fn (): int => 20
 $limiter->registerFailure('first', '203.0.113.9');
 $limiter->registerFailure('second', '203.0.113.9');
 $third = $limiter->registerFailure('third', '203.0.113.9');
+$fourth = $limiter->registerFailure('fourth', '203.0.113.9');
 $limiter->registerFailure('other', '198.51.100.4');
 $limiter->registerSuccess('other', '198.51.100.4');
-echo json_encode(['third' => $third, 'ip' => $limiter->check('new-name', '203.0.113.9'), 'other' => $limiter->check('other', '198.51.100.4')]);
+echo json_encode(['third' => $third, 'fourth' => $fourth, 'ip' => $limiter->check('new-name', '203.0.113.9'), 'other' => $limiter->check('other', '198.51.100.4')]);
 `);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.deepEqual(JSON.parse(result.stdout), {
-    third: { allowed: false, retryAfter: 900 },
+    third: { allowed: true, retryAfter: 0 },
+    fourth: { allowed: false, retryAfter: 900 },
     ip: { allowed: false, retryAfter: 900 },
     other: { allowed: true, retryAfter: 0 }
   });

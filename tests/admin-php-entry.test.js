@@ -481,7 +481,7 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     assert.doesNotMatch(result.body, /DB_HOST|password|runtime|file_ref/i);
   });
 
-  test('Fall Q: viewer token cannot create a portability backup', async () => {
+  test('Fall Q: bootstrap tokens cannot mutate portability backups without a session', async () => {
     const result = await request('/api/admin/backups', {
       port: serverPort,
       method: 'POST',
@@ -491,18 +491,17 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
         'X-Framework-Role': 'viewer'
       }
     });
-    assert.equal(result.statusCode, 403, result.body);
+    assert.equal(result.statusCode, 401, result.body);
   });
 
-  test('Fall R: backup backend failures are sanitized', async () => {
+  test('Fall R: even admin bootstrap tokens cannot bypass session and CSRF for backups', async () => {
     const result = await request('/api/admin/backups', {
       port: serverPort,
       method: 'POST',
       body: '{}',
       headers: { 'X-Admin-Access-Token': 'test-token' }
     });
-    assert.equal(result.statusCode, 503, result.body);
-    assert.match(result.body, /Backup service temporarily unavailable/i);
-    assert.doesNotMatch(result.body, /PDO|SQL|DB_HOST|password|stack/i);
+    assert.equal(result.statusCode, 401, result.body);
+    assert.match(result.body, /Admin session required/i);
   });
 });

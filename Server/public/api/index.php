@@ -126,6 +126,15 @@ function require_any_permission_or_fail(?array $identity, Phase4AuthManager $aut
     JsonResponse::error('Insufficient privileges.', 403, ['permissions' => $permissions]);
 }
 
+/** @param array<string,mixed>|null $identity */
+function require_admin_session_permission_or_fail(?array $identity, Phase4AuthManager $authManager, string $permission, array $headers): void
+{
+    if (!$identity || (($identity['via'] ?? '') !== 'session')) {
+        JsonResponse::error('Admin session required.', 401);
+    }
+    require_permission_or_fail($identity, $authManager, $permission, true, $headers);
+}
+
 /**
  * @param array<string,mixed> $user
  * @return array<string,mixed>
@@ -281,6 +290,7 @@ if ($route === 'auth/login' && $method === 'POST') {
     $password = (string) ($payload['password'] ?? '');
     $clientIp = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     try {
+        (new SchemaMigrator($runtime->database()))->migrate();
         $loginLimiter = new LoginRateLimiter(
             new PdoLoginAttemptStore($runtime->database()),
             static fn (): int => time(),
@@ -892,7 +902,7 @@ if ($route === 'admin/backups' && $method === 'GET') {
 }
 
 if ($route === 'admin/backups' && $method === 'POST') {
-    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     try {
         $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
         $backup = $backupService->create();
@@ -904,15 +914,22 @@ if ($route === 'admin/backups' && $method === 'POST') {
 }
 
 if ($route === 'admin/backups/upload' && $method === 'POST') {
-    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
     if ($contentLength > 100 * 1024 * 1024) {
         JsonResponse::error('Backup upload is too large.', 413);
     }
-    $bytes = file_get_contents('php://input');
     try {
         $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
-        $backup = $backupService->storeUpload(is_string($bytes) ? $bytes : '');
+        $input = fopen('php://input', 'rb');
+        if (!is_resource($input)) {
+            throw new RuntimeException('Could not open backup upload stream.');
+        }
+        try {
+            $backup = $backupService->storeUploadStream($input, 100 * 1024 * 1024);
+        } finally {
+            fclose($input);
+        }
         $auditService->log('backup.upload', 'backup', $backup['backupId'], actor_user_id($identity), ['size' => $backup['size']]);
         JsonResponse::success(['backup' => $backup], 201);
     } catch (Throwable $exception) {
@@ -940,7 +957,7 @@ if (preg_match('#^admin/backups/([a-f0-9]{32})/download$#', $route, $backupMatch
 }
 
 if (preg_match('#^admin/backups/([a-f0-9]{32})/restore$#', $route, $backupMatches) === 1 && $method === 'POST') {
-    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     try {
         $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
         $backup = $backupService->restore($backupMatches[1]);

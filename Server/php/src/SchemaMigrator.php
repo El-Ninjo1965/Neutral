@@ -7,6 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
+    public const SCHEMA_VERSION = '2026_09_01_0002';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -308,6 +309,11 @@ final class SchemaMigrator
     public function managedTables(): array
     {
         return array_values(array_unique(array_merge(self::CORE_TABLES, [self::MIGRATION_TABLE])));
+    }
+
+    public static function schemaVersion(): string
+    {
+        return self::SCHEMA_VERSION;
     }
 
     private function migrationTableExists(PDO $pdo): bool

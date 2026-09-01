@@ -58,6 +58,7 @@ final class DatabaseBackupService
         }
         $payload = [
             'format' => self::FORMAT,
+            'schemaVersion' => SchemaMigrator::schemaVersion(),
             'createdAt' => $createdAt,
             'tables' => $tables,
         ];
@@ -98,7 +99,8 @@ final class DatabaseBackupService
         foreach (glob($this->backupDirectory . '/*.neutral-backup') ?: [] as $path) {
             $raw = file_get_contents($path);
             $decoded = is_string($raw) ? json_decode($raw, true) : null;
-            if (!is_array($decoded) || !$this->validBackupId((string) ($decoded['backupId'] ?? ''))) {
+            $fileId = basename($path, '.neutral-backup');
+            if (!is_array($decoded) || !$this->validBackupId((string) ($decoded['backupId'] ?? '')) || (string) $decoded['backupId'] !== $fileId) {
                 continue;
             }
             $items[] = [
@@ -119,11 +121,21 @@ final class DatabaseBackupService
         if (!is_array($tables)) {
             throw new \RuntimeException('Backup table payload is invalid.');
         }
+        if (($payload['schemaVersion'] ?? '') !== SchemaMigrator::schemaVersion()) {
+            throw new \RuntimeException('Backup schema version is incompatible.');
+        }
         $allowed = array_flip($this->portableTables());
         foreach ($tables as $table => $rows) {
             if (!is_string($table) || !isset($allowed[$table]) || !is_array($rows)) {
                 throw new \RuntimeException('Backup contains an unsupported table.');
             }
+        }
+        $expectedTables = $this->portableTables();
+        $providedTables = array_keys($tables);
+        sort($expectedTables);
+        sort($providedTables);
+        if ($providedTables !== $expectedTables) {
+            throw new \RuntimeException('Backup does not contain the complete managed table set.');
         }
         ($this->importer)($tables);
         return ['backupId' => $backupId, 'status' => 'restored', 'restoredTables' => count($tables)];
@@ -132,20 +144,57 @@ final class DatabaseBackupService
     /** @return array{backupId:string,status:string,size:int} */
     public function storeUpload(string $bytes): array
     {
-        if (strlen($bytes) < 32 || strlen($bytes) > 100 * 1024 * 1024) {
-            throw new \RuntimeException('Backup upload size is invalid.');
+        $stream = fopen('php://temp', 'w+b');
+        if (!is_resource($stream)) {
+            throw new \RuntimeException('Could not open backup upload stream.');
+        }
+        fwrite($stream, $bytes);
+        rewind($stream);
+        try {
+            return $this->storeUploadStream($stream, 100 * 1024 * 1024);
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    /** @param resource $stream @return array{backupId:string,status:string,size:int} */
+    public function storeUploadStream($stream, int $maximumBytes = 104857600): array
+    {
+        if (!is_resource($stream) || $maximumBytes < 32) {
+            throw new \RuntimeException('Backup upload stream or size limit is invalid.');
         }
         $this->ensureDirectory();
         $temporary = $this->backupDirectory . '/upload-' . bin2hex(random_bytes(12)) . '.tmp';
-        if (file_put_contents($temporary, $bytes, LOCK_EX) === false) {
+        $output = fopen($temporary, 'xb');
+        if (!is_resource($output)) {
             throw new \RuntimeException('Could not store backup upload.');
         }
+        $size = 0;
         try {
+            while (!feof($stream)) {
+                $chunk = fread($stream, 8192);
+                if ($chunk === false) {
+                    throw new \RuntimeException('Could not read backup upload stream.');
+                }
+                $size += strlen($chunk);
+                if ($size > $maximumBytes) {
+                    throw new \RuntimeException('Backup upload exceeded the size limit.');
+                }
+                if ($chunk !== '' && fwrite($output, $chunk) !== strlen($chunk)) {
+                    throw new \RuntimeException('Could not store backup upload.');
+                }
+            }
+            fclose($output);
+            $output = null;
+            if ($size < 32) {
+                throw new \RuntimeException('Backup upload size is invalid.');
+            }
             $payload = $this->decryptFile($temporary);
             if (($payload['format'] ?? '') !== self::FORMAT) {
                 throw new \RuntimeException('Backup format is unsupported.');
             }
-            $decoded = json_decode($bytes, true, 512, JSON_THROW_ON_ERROR);
+            $raw = file_get_contents($temporary);
+            $decoded = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
             $backupId = is_array($decoded) ? (string) ($decoded['backupId'] ?? '') : '';
             if (!$this->validBackupId($backupId)) {
                 throw new \RuntimeException('Backup identifier is invalid.');
@@ -158,8 +207,11 @@ final class DatabaseBackupService
                 throw new \RuntimeException('Could not finalize backup upload.');
             }
             @chmod($destination, 0600);
-            return ['backupId' => $backupId, 'status' => 'uploaded', 'size' => strlen($bytes)];
+            return ['backupId' => $backupId, 'status' => 'uploaded', 'size' => $size];
         } finally {
+            if (is_resource($output)) {
+                fclose($output);
+            }
             if (is_file($temporary)) {
                 @unlink($temporary);
             }
@@ -188,11 +240,21 @@ final class DatabaseBackupService
     {
         $pdo = $this->database->connect();
         $result = [];
-        foreach ($tables as $table) {
-            $this->assertIdentifier($table);
-            $statement = $pdo->query('SELECT * FROM `' . $table . '`');
-            $rows = $statement ? $statement->fetchAll(\PDO::FETCH_ASSOC) : [];
-            $result[$table] = is_array($rows) ? $rows : [];
+        $pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        $pdo->beginTransaction();
+        try {
+            foreach ($tables as $table) {
+                $this->assertIdentifier($table);
+                $statement = $pdo->query('SELECT * FROM `' . $table . '`');
+                $rows = $statement ? $statement->fetchAll(\PDO::FETCH_ASSOC) : [];
+                $result[$table] = is_array($rows) ? $rows : [];
+            }
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
         }
         return $result;
     }

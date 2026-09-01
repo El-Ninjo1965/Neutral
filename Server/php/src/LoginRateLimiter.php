@@ -152,8 +152,8 @@ final class LoginRateLimiter
     {
         $now = ($this->clock)();
         [$identifierKey, $ipKey] = $this->scopeKeys($identifier, $ip);
-        $identifierState = $this->store->recordFailure($identifierKey, $this->options['identifierLimit'], $this->options['windowSeconds'], $this->options['lockSeconds'], $now);
-        $ipState = $this->store->recordFailure($ipKey, $this->options['ipLimit'], $this->options['windowSeconds'], $this->options['lockSeconds'], $now);
+        $identifierState = $this->store->recordFailure($identifierKey, $this->options['identifierLimit'] + 1, $this->options['windowSeconds'], $this->options['lockSeconds'], $now);
+        $ipState = $this->store->recordFailure($ipKey, $this->options['ipLimit'] + 1, $this->options['windowSeconds'], $this->options['lockSeconds'], $now);
         $this->store->purgeExpired($now - ($this->options['windowSeconds'] + $this->options['lockSeconds']));
         $retryAfter = max(0, $identifierState['lockedUntil'] - $now, $ipState['lockedUntil'] - $now);
         return ['allowed' => $retryAfter === 0, 'retryAfter' => $retryAfter];
