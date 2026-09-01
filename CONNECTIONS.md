@@ -63,6 +63,8 @@ Nachweise:
 - [FTPS-Testdeployment](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485515863)
 - [FTPS-Cleanup-Deployment](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485756322)
 - [CodeQL des Cleanup-Commits](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485756143)
+- [FTPS-Deployment der Setup-Härtung](https://github.com/El-Ninjo1965/Neutral/actions/runs/33490787101)
+- [CodeQL der Setup-Härtung](https://github.com/El-Ninjo1965/Neutral/actions/runs/33490786715)
 
 Die temporäre Datei ist lokal, auf GitHub und auf dem Server entfernt.
 

@@ -24,20 +24,20 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 | Modul-SQL-Migration und Rollback | TEILWEISE | Tabellen/`module_migrations` existieren; allgemeiner Runner fehlt |
 | Modulsettings | TEILWEISE | deklarative Felder und Namespace vorhanden; sichere Secrets/Provider fehlen |
 | Drittanbieter-Provideradapter | FEHLT | vorhandener Provider-Manager beschreibt primär Deployment und simuliert Operationen |
-| Login, Session, CSRF, RBAC | VORHANDEN | PHP-Router und Services; produktive Hostprüfung bleibt offen |
+| Login, Session, CSRF, RBAC | VORHANDEN | PHP-Router und Services; produktiver 401-Schutz des Admin-Einstiegs geprüft, vollständiger Login-/Schreibfluss bleibt offen |
 | Setup-Sperre und öffentlicher Status | VORHANDEN | aktive Installation verbirgt Setup/UI/API; Statusantwort ist auf ungefährliche Betriebsdaten reduziert; Sicherheitstests vorhanden |
 | PHP-Login-Drosselung | FEHLT | in der PHP-Produktion nicht nachgewiesen |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | FEHLT | kein verbindlicher URL-/Headervertrag |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; Setup-Sperre und Statusbereinigung automatisiert geprüft; vollständige Installation/API/DB-Abnahme offen |
+| Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; Setup-Sperre und Statusbereinigung lokal automatisiert und am Produktivhost geprüft; vollständige Installation/API/DB-Abnahme offen |
 | Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
 | PWA/Store-Verpackung | GEPLANT | bewusst nach Core 1.0 verschoben |
 | Optionale Node-Erweiterung | GEPLANT | Node-Referenzcode existiert, ist keine Produktionsvoraussetzung |
 
 ## Bestätigte Hostinggrundlage
 
-Die bisherige Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. FTPS-Deployment auf den Zielwebspace funktionierte. Eine vollständige leere Neuinstallation mit produktiver Datenbank, Login, Moduloperationen, Backup/Restore und Umzug ist noch nicht als zusammenhängende Abnahme dokumentiert.
+Die Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. Der Security-Commit `a75470a` wurde erfolgreich per FTPS ausgerollt und durch CodeQL geprüft. Die produktiven Statusendpunkte liefern nur Service-, Environment-, App- und DB-Zustand; Setupseite sowie geroutete Setup-Status-/Installpfade liefern ohne Recoveryfreigabe für GET, OPTIONS und POST HTTP 404; der Admin-Einstieg liefert ohne Sitzung HTTP 401. Eine vollständige leere Neuinstallation mit produktiver Datenbank, authentifiziertem Login, Moduloperationen, Backup/Restore und Umzug ist noch nicht als zusammenhängende Abnahme dokumentiert.
 
 ## Testzustand am 2026-09-01
 
