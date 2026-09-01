@@ -69,7 +69,12 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar.
 | GET | `/api/admin/release/status` | Releasezustand | Admin/Systemrecht | – | Releaseobjekt | 401/403; `release_state` | VORHANDEN |
 | GET | `/api/admin/providers`, `/api/providers` | konfigurierte Provider lesen | Adminvariante geschützt; öffentliche Variante gemäß Router | – | Providerliste | 403; Katalog/Runtime | VORHANDEN |
 | GET | `/api/admin/connections`, `/api/connections` | Verbindungen lesen | Adminvariante geschützt | – | sanitiserte Verbindungen | 403; Runtimekonfiguration | VORHANDEN |
-| GET | `/api/admin/backups`, `/api/backups`, `/api/admin/backup` | Backups lesen | Adminvariante geschützt | – | Backupliste/-status | 403; `backups` | VORHANDEN |
+| GET | `/api/admin/system/inventory` | aggregiertes DB-Inventar für Portabilitätsprüfung | `backups.view` | – | Tabellenzahlen und Migrationszustand | 401/403/503; keine Zeileninhalte | VORHANDEN |
+| GET | `/api/admin/backups` | verschlüsselte Backupmetadaten lesen | `backups.view` | – | ID, Erstellzeit, Größe | 401/403/503 | VORHANDEN |
+| POST | `/api/admin/backups` | verschlüsseltes logisches Backup erzeugen | `backups.manage`, CSRF | – | Backup-ID und Metadaten | 401/403/503; verwaltete Coretabellen | VORHANDEN |
+| GET | `/api/admin/backups/{id}/download` | verschlüsseltes Backup laden | `backups.view` | – | Binärartefakt | 400/401/403/404 | VORHANDEN |
+| POST | `/api/admin/backups/upload` | verschlüsseltes Backup übertragen | `backups.manage`, CSRF | Binärartefakt bis 100 MiB | gespeicherte Metadaten | 400/401/403/413 | VORHANDEN |
+| POST | `/api/admin/backups/{id}/restore` | Backup validieren und transaktional wiederherstellen | `backups.manage`, CSRF | – | Restorestatus; Sitzung endet | 400/401/403; verwaltete Coretabellen | VORHANDEN |
 | GET | `/api/admin/updates`, `/api/updates` | Updatezustand lesen | Adminvariante geschützt | – | Updateinformationen | 403; Runtime | VORHANDEN |
 
 ## 4. Node-Referenz-API

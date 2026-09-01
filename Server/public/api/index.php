@@ -18,6 +18,8 @@ use Neutral\Core\Phase7ModuleRuntime;
 use Neutral\Core\Security;
 use Neutral\Core\LoginRateLimiter;
 use Neutral\Core\PdoLoginAttemptStore;
+use Neutral\Core\DatabaseBackupService;
+use Neutral\Core\SchemaMigrator;
 
 $runtime = neutral_bootstrap();
 $config = $runtime->config();
@@ -707,6 +709,25 @@ if ($route === 'admin/system/health' && $method === 'GET') {
     ]);
 }
 
+if ($route === 'admin/system/inventory' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
+    try {
+        $migrator = new SchemaMigrator($runtime->database());
+        $pdo = $runtime->database()->connect();
+        $tables = [];
+        foreach ($migrator->managedTables() as $table) {
+            if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $table) !== 1) {
+                throw new RuntimeException('Unsafe managed table identifier.');
+            }
+            $statement = $pdo->query('SELECT COUNT(*) FROM `' . $table . '`');
+            $tables[] = ['table' => $table, 'rows' => $statement ? (int) $statement->fetchColumn() : 0];
+        }
+        JsonResponse::success(['inventory' => ['tables' => $tables, 'migration' => $migrator->status()]]);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Inventory service temporarily unavailable.', 503);
+    }
+}
+
 if ($route === 'admin/diagnostics' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
     JsonResponse::success([
@@ -856,11 +877,79 @@ if ($route === 'connections' && $method === 'GET') {
 }
 
 if ($route === 'admin/backups' && $method === 'GET') {
-    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
-    JsonResponse::success([
-        'backups' => [],
-        'status' => 'not_configured',
-    ]);
+    require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
+    try {
+        $backupService = new DatabaseBackupService(
+            $runtime->database(),
+            new SchemaMigrator($runtime->database()),
+            $config,
+            $runtime->projectRoot()
+        );
+        JsonResponse::success(['backups' => $backupService->list(), 'status' => 'available']);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Backup service temporarily unavailable.', 503);
+    }
+}
+
+if ($route === 'admin/backups' && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    try {
+        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backup = $backupService->create();
+        $auditService->log('backup.create', 'backup', $backup['backupId'], actor_user_id($identity), ['size' => $backup['size']]);
+        JsonResponse::success(['backup' => $backup], 201);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Backup service temporarily unavailable.', 503);
+    }
+}
+
+if ($route === 'admin/backups/upload' && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($contentLength > 100 * 1024 * 1024) {
+        JsonResponse::error('Backup upload is too large.', 413);
+    }
+    $bytes = file_get_contents('php://input');
+    try {
+        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backup = $backupService->storeUpload(is_string($bytes) ? $bytes : '');
+        $auditService->log('backup.upload', 'backup', $backup['backupId'], actor_user_id($identity), ['size' => $backup['size']]);
+        JsonResponse::success(['backup' => $backup], 201);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Backup upload was rejected.', 400);
+    }
+}
+
+if (preg_match('#^admin/backups/([a-f0-9]{32})/download$#', $route, $backupMatches) === 1 && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
+    try {
+        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $path = $backupService->pathForDownload($backupMatches[1]);
+        if (!is_file($path) || !is_readable($path)) {
+            JsonResponse::error('Backup not found.', 404);
+        }
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="neutral-' . $backupMatches[1] . '.neutral-backup"');
+        header('Content-Length: ' . (string) filesize($path));
+        header('Cache-Control: no-store');
+        readfile($path);
+        exit;
+    } catch (Throwable $exception) {
+        JsonResponse::error('Backup download was rejected.', 400);
+    }
+}
+
+if (preg_match('#^admin/backups/([a-f0-9]{32})/restore$#', $route, $backupMatches) === 1 && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'backups.manage', true, $headers);
+    try {
+        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backup = $backupService->restore($backupMatches[1]);
+        $auditService->log('backup.restore', 'backup', $backup['backupId'], actor_user_id($identity), ['restoredTables' => $backup['restoredTables']]);
+        $authManager->logout();
+        JsonResponse::success(['backup' => $backup]);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Backup restore was rejected.', 400);
+    }
 }
 
 if ($route === 'backups' && $method === 'GET') {

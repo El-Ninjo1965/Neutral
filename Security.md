@@ -64,7 +64,11 @@
 
 **VORHANDEN:** ausschließlich serverseitig über PDO/Services; Passwörter bleiben in Environmentkonfiguration; relevante Services nutzen vorbereitete Statements. Schema nutzt Foreign Keys und eindeutige Indizes.
 
-**TEILWEISE:** Least-Privilege-DB-Rollen, Backupverschlüsselung, Rotation und produktive DB-Audits sind Betreiberaufgaben und noch nicht vollständig automatisiert.
+**TEILWEISE:** Least-Privilege-DB-Rollen, Schlüsselrotation und produktive DB-Audits sind Betreiberaufgaben und noch nicht vollständig automatisiert.
+
+**VORHANDEN:** PHP-Logins werden persistent nach gehashter Kennung/IP und IP-weit gedrosselt. Standardmäßig sperren fünf kombinierte beziehungsweise zwanzig IP-weite Fehlversuche für 15 Minuten; ein nicht prüfbares Drosselungsbackend fällt in Produktion geschlossen aus.
+
+**VORHANDEN:** Portabilitätsbackups enthalten ausschließlich verwaltete Neutral-Tabellen, schließen Sessions und Login-Drosselungszustand aus und werden mit AES-256-GCM sowie einem hostlokalen Schlüssel von mindestens 32 Zeichen authentifiziert verschlüsselt. Restore prüft Envelope, GCM-Tag, Format, Hash und Tabellennamen vor der Transaktion. Backup-APIs benötigen serverseitige Rechte; Mutationen zusätzlich CSRF.
 
 ## 11. Lokale Speicherung
 

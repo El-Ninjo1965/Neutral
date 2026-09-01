@@ -18,6 +18,8 @@ final class Phase4AuthRbac
         'settings.write',
         'session.read',
         'audit.read',
+        'backups.view',
+        'backups.manage',
     ];
 
     /** @var array<string, list<string>> */
@@ -35,6 +37,8 @@ final class Phase4AuthRbac
             'settings.write',
             'session.read',
             'audit.read',
+            'backups.view',
+            'backups.manage',
         ],
         'developer' => [
             'admin.read',
@@ -1364,7 +1368,15 @@ final class Phase4AuthManager
         if ($roles === []) {
             $roles = ['admin'];
         }
-        $permissions = $this->roles->permissionsForRoles($roles);
+        try {
+            $permissions = $this->roles->permissionsForRoles($roles);
+        } catch (\Throwable $exception) {
+            $permissions = [];
+            foreach ($roles as $role) {
+                $permissions = array_merge($permissions, Phase4AuthRbac::ROLE_PERMISSIONS[$role] ?? []);
+            }
+            $permissions = array_values(array_unique($permissions));
+        }
 
         return [
             'userId' => 'bootstrap-token',

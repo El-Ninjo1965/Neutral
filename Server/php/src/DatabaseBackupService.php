@@ -204,6 +204,9 @@ final class DatabaseBackupService
         $pdo->beginTransaction();
         try {
             $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+            foreach (['sessions', 'login_attempts'] as $ephemeralTable) {
+                $pdo->exec('DELETE FROM `' . $ephemeralTable . '`');
+            }
             foreach (array_reverse(array_keys($tables)) as $table) {
                 $this->assertIdentifier($table);
                 $pdo->exec('DELETE FROM `' . $table . '`');

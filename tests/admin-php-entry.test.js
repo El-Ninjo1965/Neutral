@@ -162,7 +162,15 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
   before(async () => {
     sessionSavePath = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-admin-php-session-'));
     serverPort = await getFreePort();
-    serverProcess = startPhpServer({ docroot: webrootDir, port: serverPort, sessionSavePath });
+    serverProcess = startPhpServer({
+      docroot: webrootDir,
+      port: serverPort,
+      sessionSavePath,
+      env: {
+        APP_ENV: 'development',
+        NEUTRAL_BACKUP_KEY: 'test-backup-key-32-characters-long'
+      }
+    });
     await waitForServerReady(serverPort);
 
     tempRuntimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-admin-php-runtime-'));
@@ -289,7 +297,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
       port: serverPort,
       cookies: { neutral_session: 'admin-session' }
     });
-    assert.equal(result.statusCode, 200);
+    assert.equal(result.statusCode, 200, result.body);
     assert.match(result.body, /id="appShell"/);
     assert.match(result.body, /src="\/Web-App\/public\/master-ui\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js"/);
@@ -312,7 +320,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
 
   test('Fall F: public status omits runtime paths and database identifiers', async () => {
     const result = await request('/api/status', { port: serverPort });
-    assert.equal(result.statusCode, 200);
+    assert.equal(result.statusCode, 200, result.body);
     const payload = JSON.parse(result.body);
     assert.deepEqual(Object.keys(payload.data).sort(), ['app', 'database', 'environment', 'service', 'status']);
     assert.deepEqual(Object.keys(payload.data.database), ['state']);
@@ -452,5 +460,49 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     assert.equal(result.statusCode, 503);
     assert.match(result.body, /Authentication service temporarily unavailable/i);
     assert.doesNotMatch(result.body, /PDO|database|SQL|password_hash|stack/i);
+  });
+
+  test('Fall O: portability inventory and backup metadata require authentication', async () => {
+    for (const pathname of ['/api/admin/system/inventory', '/api/admin/backups']) {
+      const result = await request(pathname, { port: serverPort });
+      assert.equal(result.statusCode, 401, pathname);
+    }
+  });
+
+  test('Fall P: admin token can list encrypted backup metadata without database details', async () => {
+    const result = await request('/api/admin/backups', {
+      port: serverPort,
+      headers: { 'X-Admin-Access-Token': 'test-token' }
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(payload.data.backups, []);
+    assert.equal(payload.data.status, 'available');
+    assert.doesNotMatch(result.body, /DB_HOST|password|runtime|file_ref/i);
+  });
+
+  test('Fall Q: viewer token cannot create a portability backup', async () => {
+    const result = await request('/api/admin/backups', {
+      port: serverPort,
+      method: 'POST',
+      body: '{}',
+      headers: {
+        'X-Admin-Access-Token': 'test-token',
+        'X-Framework-Role': 'viewer'
+      }
+    });
+    assert.equal(result.statusCode, 403, result.body);
+  });
+
+  test('Fall R: backup backend failures are sanitized', async () => {
+    const result = await request('/api/admin/backups', {
+      port: serverPort,
+      method: 'POST',
+      body: '{}',
+      headers: { 'X-Admin-Access-Token': 'test-token' }
+    });
+    assert.equal(result.statusCode, 503, result.body);
+    assert.match(result.body, /Backup service temporarily unavailable/i);
+    assert.doesNotMatch(result.body, /PDO|SQL|DB_HOST|password|stack/i);
   });
 });

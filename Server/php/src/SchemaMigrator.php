@@ -212,6 +212,14 @@ final class SchemaMigrator
                 KEY ix_login_attempts_last_attempt (last_attempt_at),
                 KEY ix_login_attempts_locked_until (locked_until)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "INSERT INTO permissions (permission_key, description, scope)
+             VALUES ('backups.view', 'View encrypted backup metadata and inventory', 'backups')
+             ON DUPLICATE KEY UPDATE description = VALUES(description), scope = VALUES(scope)",
+            "INSERT INTO permissions (permission_key, description, scope)
+             VALUES ('backups.manage', 'Create, transfer and restore encrypted backups', 'backups')
+             ON DUPLICATE KEY UPDATE description = VALUES(description), scope = VALUES(scope)",
+            "INSERT IGNORE INTO role_permissions (role_id, permission_id)
+             SELECT r.id, p.id FROM roles r JOIN permissions p ON p.permission_key IN ('backups.view','backups.manage') WHERE r.role_key = 'admin'",
         ];
 
         return [
