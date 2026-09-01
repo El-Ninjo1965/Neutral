@@ -125,10 +125,10 @@ final class EnvLoader
             }
             $seen[$normalizedRoot] = true;
 
-            $candidates[] = $normalizedRoot . '/.env';
-            $candidates[] = $normalizedRoot . '/.env.local';
-            $candidates[] = $normalizedRoot . '/.env.production';
-            $candidates[] = $normalizedRoot . '/.env.development';
+            $candidates[] = $normalizedRoot . DIRECTORY_SEPARATOR . '.env';
+            $candidates[] = $normalizedRoot . DIRECTORY_SEPARATOR . '.env.local';
+            $candidates[] = $normalizedRoot . DIRECTORY_SEPARATOR . '.env.production';
+            $candidates[] = $normalizedRoot . DIRECTORY_SEPARATOR . '.env.development';
         }
 
         $explicit = (string) getenv('NEUTRAL_ENV_FILE');

@@ -7,17 +7,7 @@
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
-## 1. Reproduzierbare Ausgangsbasis
-
-- neun reproduzierbare Fehler aus der vollständigen Suite ursachenweise gruppieren,
-- PHP-Admin-Sessionerkennung und PHP-Environment-Priorität beheben,
-- GPS-Discovery/Lifecycle, Setup-Aktivierungsrecht und Startreihenfolge beheben,
-- vollständige Testsuite nach jeder unabhängigen Korrektur grün ausführen,
-- PHP- und Node-Referenzverträge endpointweise vergleichen; PHP bleibt Core-1.0-Referenz.
-
-**Abnahme:** alle bestehenden automatisierten Tests laufen in einer dokumentierten Umgebung ohne Ausfälle.
-
-## 2. Installation und Produktionssicherheit
+## 1. Installation und Produktionssicherheit
 
 - leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen,
 - öffentliche Pfade, Login, Logout, CSRF, Cookies, HTTPS und Dateischutz live prüfen,
@@ -26,7 +16,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
-## 3. Modulvertrag vervollständigen
+## 2. Modulvertrag vervollständigen
 
 - allgemeine PHP-Routen- und Service-Registrierung je Modul,
 - versionierte Modul-SQL-Migrationen mit Fehler- und Rollbackstrategie,
@@ -36,7 +26,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** GPS und ein zweites fachlich unabhängiges Referenzmodul bestehen denselben Lifecycle- und Sicherheitstest.
 
-## 4. Sichere Provider und Administration
+## 3. Sichere Provider und Administration
 
 - serverseitigen Provideradaptervertrag definieren,
 - Secrets geschützt speichern und ausschließlich serverseitig verwenden,
@@ -45,7 +35,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Wechsel zwischen zwei Testprovidern ohne Clientänderung oder Secret-Leak.
 
-## 5. Portabilität und Core-1.0-Abnahme
+## 4. Portabilität und Core-1.0-Abnahme
 
 - Backup, Restore, Update und Rollback reproduzierbar machen,
 - Serverumzug auf eine leere kompatible Umgebung testen,

@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-01  
-**Referenz:** GitHub `main` bei Beginn der Prüfung: `52cc5a5`
+**Referenz:** lokaler `main` auf Basis von GitHub-Commit `aa0e357`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -40,17 +40,17 @@ Die bisherige Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigke
 
 ## Testzustand am 2026-09-01
 
-Die lokale Referenzumgebung aus [`DEVELOPMENT.md`](DEVELOPMENT.md) kann jetzt die gesamte Suite einschließlich Node-, PHP- und `argon2`-Pfaden starten:
+Die lokale Referenzumgebung aus [`DEVELOPMENT.md`](DEVELOPMENT.md) führt die gesamte Suite einschließlich Node-, PHP- und `argon2`-Pfaden erfolgreich aus:
 
 - 125 Tests wurden vollständig ausgeführt,
-- 116 Tests bestanden,
-- 9 Tests schlugen fehl,
+- 125 Tests bestanden,
+- 0 Tests schlugen fehl,
 - 0 Tests wurden abgebrochen.
 
-Die neun Fehler betreffen PHP-Admin-Sessionerkennung, GPS-Modul-Discovery/Lifecycle, Setup-Aktivierungsrechte, PHP-Environment-Priorität und die Startreihenfolge der Zwei-Komponenten-Oberfläche. Sie sind reproduzierbare Projektfehler; fehlende lokale Werkzeuge sind nicht mehr die Ursache.
+Die zuvor reproduzierten Fehler wurden auf fünf plattformabhängige Ursachen zurückgeführt und behoben: synthetische PHP-Sessions unter PHP-Strict-Mode, absolute Windows-Modulpfade, statische URL-Auflösung unter Windows, native PHP-Environment-Pfade und case-sensitive Architekturprüfung.
 
-Das ist noch kein grüner Baseline-Nachweis. Die Fehler werden gemäß [`TODO.md`](TODO.md) systematisch analysiert und einzeln behoben.
+`npm run setup:preflight` läuft erfolgreich durch. Allowlist und Deployment-Dry-Run sind grün. Lokale DB-/FTP-Bereitschaft bleibt absichtlich `false`, solange produktive Secrets ausschließlich außerhalb des Repositorys verwaltet werden; die GitHub-FTPS-Ausführung wurde bereits separat erfolgreich nachgewiesen.
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist eine grüne Core-1.0-Baseline: die neun reproduzierbaren Fehler beheben und anschließend eine dokumentierte leere PHP-Installation durchführen. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
+Der nächste Meilenstein ist die dokumentierte leere PHP-/MySQL-Installation auf dem bestätigten Shared Hosting. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.

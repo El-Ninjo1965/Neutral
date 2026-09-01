@@ -2,6 +2,15 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-01 – Plattformübergreifende Baseline stabilisiert
+
+- PHP-Admin-Session-Fixtures mit PHP 8.5 Strict Mode kompatibel gemacht, ohne die Produktionssicherheit abzuschalten,
+- absolute Windows-Pfade für externe Modulmanifeste und GPS-Lifecycle unterstützt,
+- statische Node-Auslieferung und PHP-Environment-Kandidaten plattformübergreifend normalisiert,
+- Architekturprüfung auf exakte Verzeichnisnamen statt Windows-case-insensitiver Dateisystemauflösung umgestellt,
+- vollständige Suite mit `125/125` bestandenen Tests und `0` Fehlern verifiziert,
+- Hosting-Preflight ausgeführt; Allowlist und Deployment-Dry-Run bestehen, produktive Secrets bleiben außerhalb des Repositorys.
+
 ## 2026-09-01 – Windows-Entwicklungsumgebung hergestellt
 
 - Git, GitHub CLI, Node.js LTS und PHP 8.5 installiert und verifiziert,

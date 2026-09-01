@@ -64,6 +64,7 @@ session_write_close();
 `;
   const result = spawnSync('php', [
     '-d', `session.save_path=${sessionSavePath}`,
+    '-d', 'session.use_strict_mode=0',
     '-r', script
   ], {
     env: {

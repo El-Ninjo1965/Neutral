@@ -78,6 +78,11 @@
             return null;
         }
 
+        if (typeof basePath === 'string' && /^[A-Za-z]:[\\/]/.test(basePath)) {
+            const separator = basePath.includes('\\') ? '\\' : '/';
+            return `${basePath.replace(/[\\/]+$/, '')}${separator}${candidate.replace(/^[\\/]+/, '')}`;
+        }
+
         if (/^(https?:)?\/\//i.test(candidate)) {
             return candidate;
         }

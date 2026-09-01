@@ -748,7 +748,7 @@ const requireAdminAccess = (req, res) => requireAuthentication(req, res, { allow
 const requireViewerOrAdminAccess = (req, res) => requireAuthentication(req, res, { allowedRoles: ['admin', 'developer'], allowViewer: true });
 
 const safeResolve = (baseDir, requestPath) => {
-  const normalized = path.normalize(requestPath).replace(/^\/+/, '');
+  const normalized = path.normalize(requestPath).replace(/^[/\\]+/, '');
   const resolved = path.resolve(baseDir, normalized);
 
   if (resolved !== baseDir && !resolved.startsWith(baseDir + path.sep)) {

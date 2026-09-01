@@ -291,8 +291,9 @@ test('two-component layout renders the shell before background startup and disco
   for (const directory of ['Web-App', 'Server']) {
     assert.equal(fs.statSync(path.join(projectRoot, directory)).isDirectory(), true);
   }
+  const rootEntries = fs.readdirSync(projectRoot);
   for (const obsoleteDirectory of ['app', 'apps', 'core', 'platform', 'webroot', 'server']) {
-    assert.equal(fs.existsSync(path.join(projectRoot, obsoleteDirectory)), false);
+    assert.equal(rootEntries.includes(obsoleteDirectory), false);
   }
 
   const userApp = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
