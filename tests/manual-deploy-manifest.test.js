@@ -2,7 +2,12 @@
 
 const assert = require('node:assert');
 const { test, describe } = require('node:test');
-const { allowedEntries, compareDeploymentFiles } = require('../scripts/manual-ftps-deploy.js');
+const {
+  allowedEntries,
+  buildLftpCommandScript,
+  compareDeploymentFiles,
+  parseBooleanSetting
+} = require('../scripts/manual-ftps-deploy.js');
 
 describe('Manual deployment manifest diffing', { concurrency: false }, () => {
   test('gps standalone entry is allowlisted for deployment', () => {
@@ -100,5 +105,26 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.deepStrictEqual(result.update, []);
     assert.deepStrictEqual(result.deleteCandidates, []);
     assert.deepStrictEqual(result.keep, ['developer.php']);
+  });
+
+  test('hostname verification can be disabled explicitly for mismatched FTPS certificates', () => {
+    const script = buildLftpCommandScript('/tmp/staging', {
+      FTP_PROTOCOL: 'ftps',
+      FTP_SSL_CHECK_HOSTNAME: false,
+      FTP_USERNAME: 'user',
+      FTP_PASSWORD: 'secret',
+      FTP_PORT: '21',
+      FTP_SERVER: 'ftp.example.test',
+      FTP_TARGET_DIR: '/'
+    });
+
+    assert.match(script, /set ssl:check-hostname false/);
+    assert.match(script, /set ssl:verify-certificate true/);
+  });
+
+  test('boolean deploy settings reject invalid values', () => {
+    assert.equal(parseBooleanSetting('true'), true);
+    assert.equal(parseBooleanSetting('false'), false);
+    assert.throws(() => parseBooleanSetting('maybe'), /Invalid boolean setting/);
   });
 });

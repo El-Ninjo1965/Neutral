@@ -25,6 +25,21 @@ const explicitCleanupTargets = [
   '/setup.html'
 ];
 
+function parseBooleanSetting(value, defaultValue = true) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return defaultValue;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  throw new Error(`Invalid boolean setting: ${value}`);
+}
+
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
     return {};
@@ -172,6 +187,7 @@ function getConfig() {
 
   normalized.FTP_TARGET_DIR = normalized.FTP_TARGET_DIR || '/';
   normalized.FTP_PROTOCOL = (normalized.FTP_PROTOCOL || 'ftps').toLowerCase();
+  normalized.FTP_SSL_CHECK_HOSTNAME = parseBooleanSetting(merged.FTP_SSL_CHECK_HOSTNAME, true);
   return normalized;
 }
 
@@ -243,19 +259,7 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
   const mergedDeleteTargets = Array.from(new Set([...deleteTargets, ...explicitCleanupTargets]));
   const deleteCommands = mergedDeleteTargets.map((target) => `rm -f "${target}"`).join('\n');
 
-  const commandScript = [
-    'set cmd:fail-exit true',
-    'set net:timeout 30',
-    'set net:max-retries 1',
-    `set ftp:ssl-force ${config.FTP_PROTOCOL === 'ftps' ? 'true' : 'false'}`,
-    'set ftp:ssl-protect-data true',
-    'set ssl:verify-certificate true',
-    `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
-    `mirror -R --only-newer --verbose --parallel=1 --no-perms --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
-    deleteCommands ? deleteCommands : '',
-    'bye'
-  ].filter(Boolean).join('\n');
-
+  const commandScript = buildLftpCommandScript(stagingRoot, config, diff, deleteCommands);
   const result = spawnSync('lftp', ['-e', commandScript], {
     stdio: 'inherit',
     shell: false
@@ -264,6 +268,22 @@ function runManualDeploy(stagingRoot, config, diff = { upload: [], update: [], d
   if (result.status !== 0) {
     throw new Error('manual FTPS deploy failed');
   }
+}
+
+function buildLftpCommandScript(stagingRoot, config, diff = { upload: [], update: [], deleteCandidates: [], keep: [] }, deleteCommands = '') {
+  return [
+    'set cmd:fail-exit true',
+    'set net:timeout 30',
+    'set net:max-retries 1',
+    `set ftp:ssl-force ${config.FTP_PROTOCOL === 'ftps' ? 'true' : 'false'}`,
+    'set ftp:ssl-protect-data true',
+    `set ssl:check-hostname ${config.FTP_SSL_CHECK_HOSTNAME ? 'true' : 'false'}`,
+    'set ssl:verify-certificate true',
+    `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
+    `mirror -R --only-newer --verbose --parallel=1 --no-perms --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
+    deleteCommands ? deleteCommands : '',
+    'bye'
+  ].filter(Boolean).join('\n');
 }
 
 function printHelp() {
@@ -314,6 +334,7 @@ function main() {
     missingAllowlistEntries: missing,
     transferTarget: config.FTP_TARGET_DIR || '/',
     ftpProtocol: config.FTP_PROTOCOL || 'ftps',
+    sslCheckHostname: config.FTP_SSL_CHECK_HOSTNAME,
     upload: diff.upload,
     update: diff.update,
     delete: diff.deleteCandidates,
@@ -351,5 +372,7 @@ module.exports = {
   readDeploymentManifest,
   writeDeploymentManifest,
   normalizeManifestPath,
-  getConfig
+  getConfig,
+  parseBooleanSetting,
+  buildLftpCommandScript
 };

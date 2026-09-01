@@ -14,6 +14,8 @@ jobs:
       FTP_USER: ${{ secrets.FTP_USER }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_PORT: ${{ secrets.FTP_PORT || 21 }}
+      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR || '/' }}
+      FTP_SSL_CHECK_HOSTNAME: ${{ secrets.FTP_SSL_CHECK_HOSTNAME || 'true' }}
 
     steps:
       - name: Repository auschecken
@@ -70,12 +72,13 @@ jobs:
           set cmd:fail-exit true
           set ftp:ssl-force true
           set ftp:ssl-protect-data true
+          set ssl:check-hostname $FTP_SSL_CHECK_HOSTNAME
           set ssl:verify-certificate true
           set net:timeout 30
           set net:max-retries 1
           open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
           mirror -R --only-newer --verbose \
             --exclude-glob .env \
-            "$STAGING_DIR" /
+            "$STAGING_DIR" "$FTP_TARGET_DIR"
           bye
           EOF
