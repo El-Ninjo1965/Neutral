@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { test, describe } = require('node:test');
 const {
   allowedEntries,
@@ -126,5 +128,12 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.equal(parseBooleanSetting('true'), true);
     assert.equal(parseBooleanSetting('false'), false);
     assert.throws(() => parseBooleanSetting('maybe'), /Invalid boolean setting/);
+  });
+
+  test('critical FTPS workflow files stay present in the repository', () => {
+    const projectRoot = path.resolve(__dirname, '..');
+    assert.equal(fs.existsSync(path.join(projectRoot, 'scripts', 'manual-ftps-deploy.js')), true);
+    assert.equal(fs.existsSync(path.join(projectRoot, '.github', 'workflows', 'ftp-upload.yml')), true);
+    assert.equal(fs.existsSync(path.join(projectRoot, '.env.ftp.deploy.example')), true);
   });
 });
