@@ -16,6 +16,8 @@ use Neutral\Core\Phase6AuditService;
 use Neutral\Core\Phase6SettingsService;
 use Neutral\Core\Phase7ModuleRuntime;
 use Neutral\Core\Security;
+use Neutral\Core\LoginRateLimiter;
+use Neutral\Core\PdoLoginAttemptStore;
 
 $runtime = neutral_bootstrap();
 $config = $runtime->config();
@@ -275,7 +277,31 @@ if ($route === 'auth/login' && $method === 'POST') {
     $payload = parse_json_body();
     $username = trim((string) ($payload['username'] ?? ''));
     $password = (string) ($payload['password'] ?? '');
-    $result = $authManager->authenticate($username, $password);
+    $clientIp = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    try {
+        $loginLimiter = new LoginRateLimiter(
+            new PdoLoginAttemptStore($runtime->database()),
+            static fn (): int => time(),
+            $config->loginRateLimit()
+        );
+        $rateState = $loginLimiter->check($username, $clientIp);
+        if (!$rateState['allowed']) {
+            header('Retry-After: ' . max(1, $rateState['retryAfter']));
+            JsonResponse::error('Too many failed login attempts. Try again later.', 429);
+        }
+        $result = $authManager->authenticate($username, $password);
+        if (!$result) {
+            $rateState = $loginLimiter->registerFailure($username, $clientIp);
+            if (!$rateState['allowed']) {
+                header('Retry-After: ' . max(1, $rateState['retryAfter']));
+                JsonResponse::error('Too many failed login attempts. Try again later.', 429);
+            }
+        } else {
+            $loginLimiter->registerSuccess($username, $clientIp);
+        }
+    } catch (\Throwable $exception) {
+        JsonResponse::error('Authentication service temporarily unavailable.', 503);
+    }
     if (!$result) {
         JsonResponse::error('Invalid username or password.', 401);
     }

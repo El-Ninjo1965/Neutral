@@ -15,6 +15,7 @@ final class SchemaMigrator
         'user_roles',
         'role_permissions',
         'sessions',
+        'login_attempts',
         'settings',
         'modules',
         'module_state',
@@ -200,11 +201,31 @@ final class SchemaMigrator
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
 
-        return [[
-            'key' => '2026_08_25_0001_core_schema',
-            'checksum' => sha1(implode("\n", $statements)),
-            'statements' => $statements,
-        ]];
+        $loginThrottleStatements = [
+            "CREATE TABLE IF NOT EXISTS login_attempts (
+                scope_key CHAR(64) NOT NULL,
+                attempt_count INT UNSIGNED NOT NULL DEFAULT 0,
+                window_started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                locked_until TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (scope_key),
+                KEY ix_login_attempts_last_attempt (last_attempt_at),
+                KEY ix_login_attempts_locked_until (locked_until)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ];
+
+        return [
+            [
+                'key' => '2026_08_25_0001_core_schema',
+                'checksum' => sha1(implode("\n", $statements)),
+                'statements' => $statements,
+            ],
+            [
+                'key' => '2026_09_01_0002_login_throttle',
+                'checksum' => sha1(implode("\n", $loginThrottleStatements)),
+                'statements' => $loginThrottleStatements,
+            ],
+        ];
     }
 
     /**

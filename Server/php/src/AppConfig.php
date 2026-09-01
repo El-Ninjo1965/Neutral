@@ -80,6 +80,17 @@ final class AppConfig
             && trim($database['user']) !== '';
     }
 
+    /** @return array{identifierLimit:int,ipLimit:int,windowSeconds:int,lockSeconds:int} */
+    public function loginRateLimit(): array
+    {
+        return [
+            'identifierLimit' => max(1, (int) ($this->env['AUTH_LOGIN_IDENTIFIER_LIMIT'] ?? 5)),
+            'ipLimit' => max(1, (int) ($this->env['AUTH_LOGIN_IP_LIMIT'] ?? 20)),
+            'windowSeconds' => max(60, (int) ($this->env['AUTH_LOGIN_WINDOW_SECONDS'] ?? 900)),
+            'lockSeconds' => max(60, (int) ($this->env['AUTH_LOGIN_LOCK_SECONDS'] ?? 900)),
+        ];
+    }
+
     /**
      * @return array{
      *   type:string,

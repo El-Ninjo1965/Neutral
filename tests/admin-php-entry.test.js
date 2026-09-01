@@ -442,4 +442,15 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
       fs.rmSync(evidenceRoot, { recursive: true, force: true });
     }
   });
+
+  test('Fall N: PHP login fails closed when the throttle backend is unavailable', async () => {
+    const result = await request('/api/auth/login', {
+      port: serverPort,
+      method: 'POST',
+      body: JSON.stringify({ username: 'admin', password: 'wrong-password' })
+    });
+    assert.equal(result.statusCode, 503);
+    assert.match(result.body, /Authentication service temporarily unavailable/i);
+    assert.doesNotMatch(result.body, /PDO|database|SQL|password_hash|stack/i);
+  });
 });

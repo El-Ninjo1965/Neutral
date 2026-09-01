@@ -13,6 +13,7 @@ require_once __DIR__ . '/src/PrerequisiteChecker.php';
 require_once __DIR__ . '/src/InfrastructureCatalog.php';
 require_once __DIR__ . '/src/SetupInstaller.php';
 require_once __DIR__ . '/src/SetupAccessGuard.php';
+require_once __DIR__ . '/src/LoginRateLimiter.php';
 require_once __DIR__ . '/src/Phase4AuthRbac.php';
 require_once __DIR__ . '/src/SchemaMigrator.php';
 require_once __DIR__ . '/src/CoreDataSeeder.php';
