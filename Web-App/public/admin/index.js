@@ -736,65 +736,17 @@ class AdminRouter {
 
   async init(container) {
     this.container = container;
-    this.renderLayout();
-    this.setupNavigation();
-    await this.showView('dashboard');
-    const initial = this.container.querySelector('.nav-link[data-view="dashboard"]');
-    if (initial) {
-      initial.classList.add('active');
-    }
-  }
-
-  renderLayout() {
-    this.container.innerHTML = `
-      <div class="admin-panel">
-        <section class="admin-content">
-          <header class="admin-header">
-            <div class="admin-header-main">
-              <div class="breadcrumb">
-                <span id="breadcrumb-text">Dashboard</span>
-              </div>
-              <nav class="admin-top-nav" aria-label="Admin navigation">
-                <button type="button" class="nav-link active" data-view="dashboard">Dashboard</button>
-                <button type="button" class="nav-link" data-view="users">Users</button>
-                <button type="button" class="nav-link" data-view="roles">Roles</button>
-                <button type="button" class="nav-link" data-view="permissions">Permissions</button>
-                <button type="button" class="nav-link" data-view="sessions">Sessions</button>
-                <button type="button" class="nav-link" data-view="modules">Modules</button>
-                <button type="button" class="nav-link" data-view="settings">Settings</button>
-                <button type="button" class="nav-link" data-view="theme">Theme</button>
-                <button type="button" class="nav-link" data-view="connections">Connections</button>
-                <button type="button" class="nav-link" data-view="server">Server</button>
-                <button type="button" class="nav-link" data-view="database">Database</button>
-                <button type="button" class="nav-link" data-view="diagnostics">Diagnostics</button>
-                <button type="button" class="nav-link" data-view="audit">Audit Log</button>
-                <button type="button" class="nav-link" data-view="updates">Updates</button>
-              </nav>
-            </div>
-            <div class="admin-header-tools">
-              <span class="admin-user-info" id="current-user">Admin</span>
-              <button class="btn btn-sm btn-secondary" onclick="adminRouter.logout()">Logout</button>
-            </div>
-          </header>
-
-          <main class="admin-main" id="admin-main"></main>
-        </section>
-      </div>
-    `;
-    this.injectStyles();
-  }
-
-  setupNavigation() {
-    const navLinks = this.container.querySelectorAll('.nav-link');
-    navLinks.forEach((link) => {
-      link.addEventListener('click', async (event) => {
-        event.preventDefault();
-        const viewName = link.dataset.view;
-        await this.showView(viewName);
-        navLinks.forEach((item) => item.classList.remove('active'));
-        link.classList.add('active');
-      });
+    const currentUser = window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function'
+      ? window.CoreAuth.getCurrentUser()
+      : null;
+    this.shell = new window.AdminShell(container, {
+      groups: window.AdminNavigation.groups,
+      userLabel: currentUser?.displayName || currentUser?.username || 'Developer',
+      onNavigate: (viewId) => this.showView(viewId),
+      onLogout: () => this.logout()
     });
+    this.shell.mount();
+    await this.showView('dashboard');
   }
 
   async showView(viewName) {
@@ -803,12 +755,12 @@ class AdminRouter {
       return;
     }
     const mainContainer = document.getElementById('admin-main');
-    const breadcrumbText = document.getElementById('breadcrumb-text');
-    if (breadcrumbText) {
-      breadcrumbText.textContent = this.formatViewName(viewName);
-    }
+    const title = this.formatViewName(viewName);
+    this.shell.setActive(viewName);
+    this.shell.setTitle(title);
     await view.init(mainContainer);
     this.currentView = viewName;
+    this.shell.focusTitle();
   }
 
   formatViewName(name) {
@@ -832,31 +784,10 @@ class AdminRouter {
     return names[name] || name;
   }
 
-  logout() {
-    if (confirm('Logout now?')) {
-      window.location.href = '/';
-    }
-  }
-
-  injectStyles() {
-    if (document.getElementById('admin-styles')) {
-      return;
-    }
-
-    const style = document.createElement('style');
-    style.id = 'admin-styles';
-    style.textContent = `
-      .admin-main { padding: 22px 0 0; }
-      .permission-list { display: flex; flex-wrap: wrap; gap: 8px; }
-      .inline-empty { display: inline-flex; }
-      @media (max-width: 980px) {
-        .admin-main { padding-top: 22px; }
-      }
-      @media (max-width: 640px) {
-        .admin-main { padding-top: 18px; }
-      }
-    `;
-    document.head.appendChild(style);
+  async logout() {
+    if (!confirm('Logout now?')) return;
+    await this.api.logout();
+    window.location.replace('/Server/public/admin.php');
   }
 }
 

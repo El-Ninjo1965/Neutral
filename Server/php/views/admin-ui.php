@@ -38,17 +38,8 @@
       </div>
     </div>
 
-    <div id="appShell" class="app-shell hidden">
-      <main class="main-panel">
-        <header class="topbar">
-          <div id="topbarTitle" class="topbar-title">Neutral Platform Administration</div>
-          <div class="header-actions">
-            <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">Dark</button>
-            <button id="logoutBtn" class="secondary" type="button">Lockout</button>
-          </div>
-        </header>
-        <div id="mainContent" class="content-wrap"></div>
-      </main>
+    <div id="appShell" class="hidden">
+      <div id="mainContent"></div>
     </div>
 
     <script defer src="/Web-App/core/core.js"></script>
@@ -94,6 +85,8 @@
     <script defer src="/Web-App/public/admin/settings-view.js"></script>
     <script defer src="/Web-App/public/admin/audit-view.js"></script>
     <script defer src="/Web-App/public/admin/modules-view.js"></script>
+    <script defer src="/Web-App/public/admin/navigation.js"></script>
+    <script defer src="/Web-App/public/admin/shell.js"></script>
     <script defer src="/Web-App/public/admin/index.js"></script>
     <script defer src="/Web-App/public/admin-init.js"></script>
     <script>

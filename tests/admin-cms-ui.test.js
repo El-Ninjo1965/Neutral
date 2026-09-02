@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 test('admin navigation groups every supported management destination exactly once', () => {
   const AdminNavigation = require('../Web-App/public/admin/navigation.js');
@@ -28,4 +30,11 @@ test('admin shell renders a semantic sidebar, drawer controls and content target
   assert.match(html, /data-admin-view="backups"/);
   assert.match(html, /id="admin-main"/);
   assert.match(html, />Developer</);
+});
+
+test('admin router delegates layout and navigation to AdminShell', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+  assert.match(source, /new window\.AdminShell/);
+  assert.match(source, /onNavigate:\s*\(viewId\)\s*=>\s*this\.showView\(viewId\)/);
+  assert.doesNotMatch(source, /admin-top-nav/);
 });

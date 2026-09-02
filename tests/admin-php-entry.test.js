@@ -301,6 +301,8 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.match(result.body, /id="appShell"/);
     assert.match(result.body, /src="\/Web-App\/public\/master-ui\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js"/);
+    assert.match(result.body, /src="\/Web-App\/public\/admin\/navigation\.js"/);
+    assert.match(result.body, /src="\/Web-App\/public\/admin\/shell\.js"/);
   });
 
   test('Fall D: Runtime remains bootstrappable without setup.php', async () => {

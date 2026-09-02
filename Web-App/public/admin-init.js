@@ -6,7 +6,8 @@
 
   const dependenciesReady = () => [
     window.ApiClient, window.AdminCommon, window.AdminUsersView, window.AdminRolesView,
-    window.AdminSettingsView, window.AdminAuditView, window.AdminModulesView, window.AdminRouter
+    window.AdminSettingsView, window.AdminAuditView, window.AdminModulesView, window.AdminNavigation,
+    window.AdminShell, window.AdminRouter
   ].every(Boolean);
 
   const resolveBase = () => {
@@ -23,8 +24,7 @@
       if (!appShell || appShell.classList.contains('hidden') || !dependenciesReady()) return false;
 
       const apiClient = new window.ApiClient(resolveBase());
-      const roleElement = document.getElementById('summaryRoleBadge');
-      apiClient.setAuthRole(roleElement ? roleElement.textContent.toLowerCase() : 'admin');
+      apiClient.setAuthRole('admin');
       let container = document.getElementById('adminPanel');
       if (!container) {
         container = document.createElement('div');
