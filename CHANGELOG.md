@@ -2,6 +2,14 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-02 – Portable Installationsarchitektur freigegeben
+
+- die portable Installationsbasis als eigenständiges erstes Core-1.0-Arbeitspaket spezifiziert,
+- Domain-Root, eigener physischer Document-Root und URL-Unterpfad über einen validierten `NEUTRAL_BASE_PATH` eindeutig getrennt,
+- Produktionspaket, wertfreie Konfiguration, lokaler App-Bootstrap, Preflight, Sicherheitsgrenzen und testbare Abnahmekriterien verbindlich beschrieben,
+- Modulvertrag, Providerverwaltung und Betriebsportabilität bewusst als nachgelagerte eigenständige Arbeitspakete abgegrenzt,
+- spezifiziert und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
+
 ## 2026-09-02 – Core-1.0-Neuinstallationslücken präzisiert
 
 - nachgewiesenen Domain-Root-Deploy, einen neuen physischen Document-Root und eine noch nicht bestandene Installation unter URL-Unterpfaden klar getrennt,

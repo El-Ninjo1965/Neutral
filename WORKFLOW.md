@@ -101,6 +101,17 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
 
+### 2026-09-02 – Portable Installationsbasis spezifizieren
+
+- **Aufgabe:** Den ersten eigenständig lieferbaren Teil des Core-1.0-Abschlusses so entwerfen, dass derselbe Quellstand im Domain-Root, in einem eigenen physischen Document-Root und unter einem URL-Unterpfad ohne manuelle Codeänderung installierbar wird.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **Entscheidung:** Ein zentral normalisierter `NEUTRAL_BASE_PATH` wird von PHP, Admin, Browser-App, API- und Assetauflösung gemeinsam verwendet; das physische FTPS-Ziel bleibt eine davon unabhängige Deployment-Einstellung.
+- **Liefergrenzen:** Reproduzierbares Produktionspaket mit Manifest/Prüfsummen, wertfreie Environmentvorlage, neutralisierte FTPS-Beispielwerte, lokaler App-Bootstrap und sicherer Preflight gehören zum Paket. Automatische GitHub-Repository-Erstellung, Modulvertrag, Provider und Backup/Restore gehören nicht dazu.
+- **Sicherheitsgrenzen:** Keine Secrets im Browser, Paket, Repository oder Diagnoseausgaben; TLS-Prüfung bleibt standardmäßig aktiv; Build und Preflight brechen bei verbotenen Pfaden, ungültiger Basis oder Secretmustern ab.
+- **Nachweis:** Freigegebenes Chat-Architekturdesign wurde in `docs/superpowers/specs/2026-09-02-portable-installation-design.md` vollständig und ohne offene Platzhalter festgeschrieben; Implementierung und Live-Abnahme werden nicht vorweggenommen.
+- **Ergebnis:** Die Spezifikation ist bereit für das Betreiberreview und anschließend für einen testgetriebenen Implementierungsplan.
+- **Offene Punkte:** alle Implementierungs- und Abnahmeschritte in `TODO.md`; die weiteren Core-1.0-Subsysteme erhalten nach diesem Paket eigene Spezifikationen.
+
 ### 2026-08-29 – Neuinstallation auf leerem Shared Hosting vorbereiten
 
 - **Aufgabe:** Aktuellen GitHub-main-Stand ohne Live-Deployment vollständig auf Web-App-, PHP-, Datenbank- und FTPS-Neuinstallierbarkeit prüfen.

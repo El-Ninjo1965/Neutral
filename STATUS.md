@@ -10,6 +10,8 @@ Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie veränder
 
 Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der Modul-Lifecycle sind substanziell vorhanden. Die offenen Kernarbeiten sind endlich und konkret: universelle Modul-Servererweiterung, Modulmigrationen, Limits, sichere Drittanbieterprovider, Portabilitätsabnahme und vollständige Produktionsprüfung.
 
+Die portable Installationsarchitektur für Domain-Root, eigenen physischen Document-Root und URL-Unterpfad ist in `docs/superpowers/specs/2026-09-02-portable-installation-design.md` spezifiziert. Implementierung und Live-Abnahme sind weiterhin offen.
+
 ## Funktionsmatrix
 
 | Bereich | Status | Nachweis / offene Lücke |
