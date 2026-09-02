@@ -662,7 +662,7 @@ class AdminInfrastructureView {
     if (!confirmed) return;
     const result = await this.api.post(`/api/admin/backups/${backupId}/restore`, {});
     if (!result.ok) { this.notify(`Backup restore failed: ${result.error || 'Unknown error'}`, 'error'); return; }
-    window.location.replace('/Server/public/admin.php');
+    window.location.replace('/admin.php');
   }
 
   formatBytes(value) {
@@ -832,8 +832,12 @@ class AdminRouter {
   async logout() {
     if (!AdminCommon.confirmAction('Logout now?')) return;
     await this.api.logout();
-    window.location.replace('/Server/public/admin.php');
+    window.location.replace('/admin.php');
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.AdminRouter = AdminRouter;
 }
 
 if (typeof module !== 'undefined' && module.exports) {

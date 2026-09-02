@@ -35,8 +35,15 @@ test('admin shell renders a semantic sidebar, drawer controls and content target
 test('admin router delegates layout and navigation to AdminShell', () => {
   const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
   assert.match(source, /new window\.AdminShell/);
+  assert.match(source, /window\.AdminRouter\s*=\s*AdminRouter/);
   assert.match(source, /onNavigate:\s*\(viewId\)\s*=>\s*this\.showView\(viewId\)/);
   assert.doesNotMatch(source, /admin-top-nav/);
+});
+
+test('admin logout returns to the deployed root entry', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+  assert.match(source, /location\.replace\('\/admin\.php'\)/);
+  assert.doesNotMatch(source, /location\.replace\('\/Server\/public\/admin\.php'\)/);
 });
 
 test('admin CMS CSS provides desktop sidebar and iPad drawer behavior', () => {
