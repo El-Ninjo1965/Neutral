@@ -147,4 +147,21 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.equal(fs.existsSync(path.join(projectRoot, '.github', 'workflows', 'ftp-upload.yml')), true);
     assert.equal(fs.existsSync(path.join(projectRoot, '.env.ftp.deploy.example')), true);
   });
+
+  test('FTPS deployment uploads the root htaccess explicitly', () => {
+    const projectRoot = path.resolve(__dirname, '..');
+    const workflow = fs.readFileSync(path.join(projectRoot, '.github', 'workflows', 'ftp-upload.yml'), 'utf8');
+    assert.match(workflow, /put \"\$STAGING_DIR\/\.htaccess\" -o \"\$FTP_TARGET_DIR\/\.htaccess\"/);
+
+    const script = buildLftpCommandScript('/tmp/staging', {
+      FTP_PROTOCOL: 'ftps',
+      FTP_SSL_CHECK_HOSTNAME: true,
+      FTP_USERNAME: 'user',
+      FTP_PASSWORD: 'secret',
+      FTP_PORT: '21',
+      FTP_SERVER: 'ftp.example.test',
+      FTP_TARGET_DIR: '/public_html'
+    });
+    assert.match(script, /put "\/tmp\/staging\/\.htaccess" -o "\/public_html\/\.htaccess"/);
+  });
 });

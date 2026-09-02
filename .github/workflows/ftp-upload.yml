@@ -81,5 +81,6 @@ jobs:
           mirror -R --only-newer --verbose \
             --exclude-glob .env \
             "$STAGING_DIR" "$FTP_TARGET_DIR"
+          put "$STAGING_DIR/.htaccess" -o "$FTP_TARGET_DIR/.htaccess"
           bye
           EOF

@@ -281,6 +281,7 @@ function buildLftpCommandScript(stagingRoot, config, diff = { upload: [], update
     'set ssl:verify-certificate true',
     `open -u ${config.FTP_USERNAME},${config.FTP_PASSWORD} -p ${config.FTP_PORT} ${config.FTP_SERVER}`,
     `mirror -R --only-newer --verbose --parallel=1 --no-perms --exclude-glob .env --exclude-glob app-node-test --exclude-glob app-node-test/** ${stagingRoot} ${config.FTP_TARGET_DIR}`,
+    `put "${path.join(stagingRoot, '.htaccess').split(path.sep).join('/')}" -o "${String(config.FTP_TARGET_DIR).replace(/\/$/, '')}/.htaccess"`,
     deleteCommands ? deleteCommands : '',
     'bye'
   ].filter(Boolean).join('\n');
