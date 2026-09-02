@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHE ARBEITSREGELN
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-02
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
 ## 1. Zweck
@@ -95,10 +95,11 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - Installationsanleitungen: reproduzierbare Schritte ohne echte Secrets.
 - `ModuleCreation.md`: verbindlicher aktueller Erweiterungsvertrag.
 - `TODO.md`: nur tatsächliche Reihenfolge und nicht nachweislich erledigte Arbeit offen lassen.
+- `WORKFLOW.md`: jede materielle Änderung mit Aufgabe, ausführender/dokumentierender Instanz, Nachweisen, Ergebnis und offenen Punkten protokollieren.
 
 ## 10. Fortlaufendes Arbeitsprotokoll
 
-Dieser Abschnitt ist historisch und endet mit dem Stand 2026-08-29. Neue abgeschlossene Änderungen werden ausschließlich in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Dadurch wachsen Arbeitsregeln und Tagesprotokolle nicht länger in derselben Datei zusammen.
+Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
 
 ### 2026-08-29 – Neuinstallation auf leerem Shared Hosting vorbereiten
 
@@ -301,3 +302,18 @@ Dieser Abschnitt ist historisch und endet mit dem Stand 2026-08-29. Neue abgesch
 - **Ergebnis:** P3.1–P3.4 vollständig; Testabdeckung von 116 auf 121 erhöht. Reale Millisekunden wurden mangels iOS-/Android-Hardware nicht erfunden.
 - **Offene Punkte:** genau zwei reale Gerätetests (Safari/WebKit und Android Chromium/WebView) sind in P8 vorgemerkt; keine offene P3-Architekturentscheidung.
 - **Commit-ID:** `46a6aa3a4f3dc2f4ad06efa7611c7163bffc73b1`.
+
+### 2026-09-02 – Admin-CMS-Browserstart reparieren und live verifizieren
+
+- **Aufgabe:** Ermitteln, warum nach erfolgreicher Anmeldung weiterhin das alte „FRAMEWORK DASHBOARD“ erschien, den Fehler minimal beheben, automatisiert deployen und die neue CMS-Oberfläche live prüfen.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **Ursache:** `admin-init.js` erwartete sechs Abhängigkeiten unter `window.*`; `common.js`, `users-view.js`, `roles-view.js`, `settings-view.js`, `audit-view.js` und `modules-view.js` stellten jedoch ausschließlich CommonJS-Exports bereit. Dadurch blieb der neue Router inaktiv und die alte Master-UI sichtbar.
+- **Änderung:** Die sechs vorhandenen Implementierungen zusätzlich als Browser-Globals veröffentlicht; CommonJS-Kompatibilität erhalten. Ein browsernaher VM-Test führt die realen Skripte aus und prüft alle von `admin-init.js` benötigten Exporte. `Server/config/*.json` wird ignoriert, weil dort lokale Tests Sitzungs-IDs, CSRF-Werte und Passwort-Hashes erzeugen können.
+- **Betroffene Dateien:** `.gitignore`, sechs Dateien unter `Web-App/public/admin/`, `tests/admin-cms-ui.test.js`, `CHANGELOG.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md` und `DOCUMENTATION.md`.
+- **Tests/Validierung:** Der neue Test wurde vor der Implementierung mit `window.AdminCommon === undefined` fehlschlagend bestätigt und bestand danach zusammen mit allen Admin-CMS-Tests (`11/11`). Die in der Cloud ohne PHP-Binary ausführbare Suite bestand mit `132/132`; PHP-Prozesstests wurden wegen fehlendem lokalem PHP nicht als erfolgreich ausgegeben. Diff-, JavaScript-Syntax- und Secretgrenzen wurden geprüft. Ein unabhängiges Codex-Review meldete keine Critical- oder Codefehler; der Runtime-Datei-Befund wurde vor dem Commit behoben.
+- **GitHub/Deployment:** Implementierungscommit `156e6e90768b797e49f921df62975272111eb1a9` liegt auf `main`. CodeQL-Lauf `33681855268` und FTPS-Lauf `33681855656` wurden jeweils mit Ergebnis `success` verifiziert.
+- **Live-Prüfung:** Authentifizierter Aufruf von `https://www.turbolikes.com/admin.php` zeigte die neue Sidebar mit Overview, Platform, Access, Infrastructure und Monitoring sowie das neue Dashboard. „FRAMEWORK DASHBOARD“ war nicht vorhanden; Navigation zu Users und zurück zum Dashboard reagierte.
+- **Secretbehandlung:** Keine FTP-, Admin- oder kurzzeitig genannten HTTP-Basic-Zugangswerte wurden in versionierte Repositorydateien oder diese Dokumentation aufgenommen. Der Betreiber bestätigte anschließend die Entfernung der zusätzlichen `.htaccess`-Schutzschicht.
+- **Ergebnis:** Der konkrete Produktionsfehler ist behoben und live nachgewiesen; die Dokumentationspflicht inklusive Urheber-/Ausführungsvermerk ist als verbindliche Regel ergänzt.
+- **Offene Punkte:** Vollständiger Login-/Logout-/CSRF-Durchlauf und reale responsive Abnahme auf iPad/Safari bleiben in `TODO.md` offen.
+- **Dokumentationscommit:** dieser nachfolgende Commit; die SHA ist über die Git-Historie eindeutig zugeordnet.

@@ -7,7 +7,11 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 - sechs Admin-Komponenten veröffentlichen ihre bereits vorhandenen Implementierungen jetzt als die von `admin-init.js` erwarteten Browser-Globals,
 - der moderne Admin-Router kann dadurch nach erfolgreichem Login die alte Dashboard-Fallbackansicht ersetzen,
 - lokale Runtime-Konfiguration unter `Server/config/` wird wegen möglicher Sitzungs-, CSRF- und Passwort-Hash-Daten nicht mehr von Git erfasst,
-- ein browsernaher VM-Regressionstest prüft alle erforderlichen Exporte; der gezielte Admin-Test besteht mit `11/11`, die in dieser Cloud ohne PHP ausführbare Suite mit `132/132` Tests.
+- ein browsernaher VM-Regressionstest prüft alle erforderlichen Exporte; der gezielte Admin-Test besteht mit `11/11`, die in dieser Cloud ohne PHP ausführbare Suite mit `132/132` Tests,
+- Commit `156e6e90768b797e49f921df62975272111eb1a9`, CodeQL-Lauf `33681855268` und FTPS-Lauf `33681855656` wurden erfolgreich verifiziert,
+- ein authentifizierter Aufruf von `https://www.turbolikes.com/admin.php` zeigte die neue CMS-Shell mit den Bereichen Overview, Platform, Access, Infrastructure und Monitoring; die alte Ansicht „FRAMEWORK DASHBOARD“ war nicht vorhanden und die Navigation zu Users sowie zurück zum Dashboard reagierte,
+- der vollständige Login-/Logout-/CSRF-Durchlauf und die reale responsive iPad-/Safari-Abnahme bleiben offen,
+- ausgeführt und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
 
 ## 2026-09-01 – Aktive Produktion gegen Setupzugriffe gehärtet
 
@@ -47,4 +51,4 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 
 ## Historischer Stand bis 2026-08-29
 
-Die früheren detaillierten Arbeitsprotokolle bleiben in [`WORKFLOW.md`](WORKFLOW.md) als historischer Nachweis erhalten. Neue Abschlussprotokolle werden nur noch hier ergänzt.
+Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFLOW.md) erhalten. Das Changelog bleibt die kompakte Chronik abgeschlossener Änderungen; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).

@@ -12,7 +12,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - ~~leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen~~ (am 2026-09-02 nachgewiesen),
 - ~~öffentliche Startseite, Admin-Zugangsschutz, HTTPS und Shared-Hosting-Assetpfade live prüfen~~ (2026-09-02),
 - authentifizierten Login-/Logout-Durchlauf einschließlich produktiver Session- und CSRF-Cookies einmal mit Betreiberzugang abnehmen,
-- moderne Admin-CMS-Shell nach dem Browserstart-Fix produktiv abnehmen (Navigation, Ansichten und responsive iPad-Darstellung),
+- responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
 - ~~Secretfreiheit versionierter Dateien und des Clients prüfen~~ (2026-09-02; nur Beispielkonfiguration und Test-Fixtures gefunden),
 - ~~API-Version 1 festschreiben~~ (2026-09-02; `/api/v1`, Legacypräfix kompatibel).
 

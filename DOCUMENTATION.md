@@ -1,7 +1,7 @@
 # NEUTRAL – Dokumentationsordnung
 
 **Status:** VERBINDLICH  
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-02
 
 Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand, nächste Schritte und abgeschlossene Änderungen stehen.
 
@@ -38,6 +38,6 @@ Neutral Core 1.0 muss produktiv mit PHP 8.x, MySQL/MariaDB, HTTPS und den üblic
 
 ## Pflege bei jeder materiellen Änderung
 
-Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md` und `CHANGELOG.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden.
+Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und das Arbeitsprotokoll in `WORKFLOW.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden. Jeder neue Workflow-Eintrag nennt außerdem, wer die Änderung ausgeführt und dokumentiert hat, damit spätere Codex-Sitzungen die Herkunft nachvollziehen können.
 
 Abgehakte historische Aufgaben gehören nicht dauerhaft in `TODO.md`; sie werden im Changelog bewahrt.

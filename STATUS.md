@@ -25,11 +25,11 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 | Modulsettings | TEILWEISE | deklarative Felder und Namespace vorhanden; sichere Secrets/Provider fehlen |
 | Drittanbieter-Provideradapter | FEHLT | vorhandener Provider-Manager beschreibt primär Deployment und simuliert Operationen |
 | Login, Session, CSRF, RBAC | VORHANDEN | PHP-Router und Services; produktiver 401-Schutz des Admin-Einstiegs geprüft, vollständiger Login-/Schreibfluss bleibt offen |
-| Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und Fachansichten vorhanden; Browser-Globals und Regressionstest repariert, produktive Abnahme nach Deployment offen |
+| Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und Fachansichten vorhanden; Browserstart nach Commit `156e6e9` produktiv durch Codex geprüft, alte Fallbackansicht nicht mehr sichtbar; reale responsive iPad-/Safari-Abnahme bleibt offen |
 | Setup-Sperre und öffentlicher Status | VORHANDEN | aktive Installation verbirgt Setup/UI/API; Statusantwort ist auf ungefährliche Betriebsdaten reduziert; Sicherheitstests vorhanden |
 | PHP-Login-Drosselung | FEHLT | in der PHP-Produktion nicht nachgewiesen |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
-| API-Versionierung | FEHLT | kein verbindlicher URL-/Headervertrag |
+| API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
 | Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; produktive MySQL-Neuinstallation mit korrekter Datenbankidentität, 16 aktuellen Tabellen, 2 Migrationen und Status `ACTIVE` nachgewiesen; vollständige Login-/API-Abnahme offen |
 | Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
@@ -39,6 +39,8 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 ## Bestätigte Hostinggrundlage
 
 Die Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. Der Security-Commit `a75470a` wurde erfolgreich per FTPS ausgerollt und durch CodeQL geprüft. Die produktiven Statusendpunkte liefern nur Service-, Environment-, App- und DB-Zustand; Setupseite sowie geroutete Setup-Status-/Installpfade liefern ohne Recoveryfreigabe für GET, OPTIONS und POST HTTP 404; der Admin-Einstieg liefert ohne Sitzung HTTP 401.
+
+Am 2026-09-02 reparierte Codex (ChatGPT Work / GitHub-Connector) mit Commit `156e6e9` die fehlenden Browser-Exports der Admin-Komponenten. CodeQL und FTPS-Deployment wurden erfolgreich abgeschlossen. Eine anschließende authentifizierte Live-Prüfung unter `https://www.turbolikes.com/admin.php` zeigte die neue CMS-Shell mit allen fünf Navigationsgruppen und ohne die frühere Ansicht „FRAMEWORK DASHBOARD“. Die reale responsive Abnahme auf iPad/Safari ist weiterhin offen.
 
 Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter Datenbankidentität und exaktem Alt-Tabellensatz zurückgesetzt und mit dem aktuellen Installer neu aufgebaut. Ein separater read-only Nachweis bestätigte anschließend Verbindung, Status `ACTIVE`, 16 vom aktuellen Schema erwartete Tabellen einschließlich `login_attempts` und 2 angewendete Migrationen. Alle temporären Prüf- und Ergebnisdateien wurden per FTPS entfernt; erneute Löschversuche bestätigten für sämtliche älteren Markerdateien `No such file or directory`. Die noch offene Produktionsabnahme umfasst authentifizierten Login, Moduloperationen, Backup/Restore und Umzug.
 
