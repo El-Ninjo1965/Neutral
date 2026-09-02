@@ -2,12 +2,12 @@
 
 **Status:** DETAILVERTRAG
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-02
 **Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
 
 ## 1. Geltungsbereich
 
-Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Beim Shared-Hosting-Root-Deployment leitet die Root-`.htaccess` `/api` nach `Server/public/api/`; dort leitet `Server/public/api/.htaccess` Unterpfade an den Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; die konkrete öffentliche Basis darf nicht im Client-Core fest codiert werden.
+Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Der kanonische Produktionspräfix ist `/api/v1`; der bisherige Präfix `/api` bleibt vorerst kompatibel. Beim Shared-Hosting-Root-Deployment leitet die Root-`.htaccess` `/api` nach `Server/public/api/`; dort leitet `Server/public/api/.htaccess` Unterpfade an den Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; beide verwenden standardmäßig `/api/v1`.
 
 `Server/node/bootstrap/server.js` bietet zusätzlich eine Node-Referenz- und Test-API. Sie ist tatsächlich vorhanden, aber keine Voraussetzung der Shared-Hosting-Produktion und nicht automatisch vertraglich identisch mit PHP.
 
@@ -19,14 +19,14 @@ Antworten der PHP-API verwenden grundsätzlich JSON-Umschläge von `JsonResponse
 - **CSRF:** Zustandsändernde geschützte Requests benötigen `x-csrf-token`; `ApiClient` liest dazu `neutral_csrf`.
 - **Rechte:** serverseitige Permissionprüfung; UI-Sichtbarkeit erteilt keine Rechte.
 - **Request:** JSON-Body bei schreibenden API-Aufrufen; ungültiges JSON ergibt 400.
-- **Versionierung:** **FEHLT** – kein URL-/Header-basierter API-Versionsvertrag.
+- **Versionierung:** **VORHANDEN** – `/api/v1` ist kanonisch, `/api` bleibt abwärtskompatibel; Antworten senden `X-Neutral-API-Version: 1`, unbekannte explizite Versionen wie `/api/v2` ergeben 404.
 - **Timeout:** **VORHANDEN** – `ApiClient` beendet Requests kontrolliert über `AbortController`; `tests/api-timeout.test.js` prüft den Fehlerpfad.
 - **Retry:** **FEHLT** – keine allgemeine Retry-/Backoff-Policy. Schreibrequests dürfen nicht blind wiederholt werden.
 - **Offline:** **TEILWEISE** – Client erhält strukturierte Netzwerkfehler; persistentes Queueing fehlt.
 
 ## 3. PHP-Endpunkte
 
-Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar.
+Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabelle zeigt die kompatiblen Kurzpfade unter `/api`; für neue Aufrufer ist jeweils `/api/v1/...` verbindlich.
 
 | Methode | Pfad | Zweck | Auth / Recht | Request | Response | Fehler / DB-Bezug | Status |
 |---|---|---|---|---|---|---|---|

@@ -2,7 +2,7 @@
 
 **Status:** AUSFÜHRUNGSREIHENFOLGE
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-02
 **Ziel:** [`CORE-1.0.md`](CORE-1.0.md)
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
@@ -10,9 +10,10 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 ## 1. Installation und Produktionssicherheit
 
 - ~~leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen~~ (am 2026-09-02 nachgewiesen),
-- öffentliche Pfade, Login, Logout, CSRF, Cookies, HTTPS und Dateischutz live prüfen,
-- Secretfreiheit von Client, übrigen Antworten und Logs vollständig prüfen,
-- API-Version 1 festschreiben.
+- ~~öffentliche Startseite, Admin-Zugangsschutz, HTTPS und Shared-Hosting-Assetpfade live prüfen~~ (2026-09-02),
+- authentifizierten Login-/Logout-Durchlauf einschließlich produktiver Session- und CSRF-Cookies einmal mit Betreiberzugang abnehmen,
+- ~~Secretfreiheit versionierter Dateien und des Clients prüfen~~ (2026-09-02; nur Beispielkonfiguration und Test-Fixtures gefunden),
+- ~~API-Version 1 festschreiben~~ (2026-09-02; `/api/v1`, Legacypräfix kompatibel).
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
