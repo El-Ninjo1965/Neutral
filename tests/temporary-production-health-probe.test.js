@@ -17,6 +17,6 @@ test('temporary production health probe is read-only and secretsafe', () => {
 });
 
 test('temporary health route is exact and does not expose server internals', () => {
-  assert.match(routing, /\^health-proof-91c4e7a2\$/);
+  assert.match(routing, /\^n91c4e7a2\$/);
   assert.match(routing, /Server\/public\/health-91c4e7a2\.php/);
 });
