@@ -8,7 +8,7 @@ const path = require('node:path');
 const projectRoot = path.resolve(__dirname, '..');
 const probePath = path.join(projectRoot, 'Server', 'public', 'neutral-db-inspect-91c4e7a2.php');
 const workflowPath = path.join(projectRoot, '.github', 'workflows', 'ftp-upload.yml');
-const resetPath = path.join(projectRoot, 'Server', 'public', 'neutral-db-reset-91c4e7a2.php');
+const resetPath = path.join(projectRoot, 'Server', 'public', 'neutral-db-action-91c4e7a2.php');
 
 test('temporary database probe exposes evidence without credential values', () => {
   const source = fs.readFileSync(probePath, 'utf8');
