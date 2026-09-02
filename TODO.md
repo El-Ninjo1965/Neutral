@@ -9,7 +9,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 ## 1. Installation und Produktionssicherheit
 
-- leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen,
+- ~~leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen~~ (am 2026-09-02 nachgewiesen),
 - öffentliche Pfade, Login, Logout, CSRF, Cookies, HTTPS und Dateischutz live prüfen,
 - Secretfreiheit von Client, übrigen Antworten und Logs vollständig prüfen,
 - API-Version 1 festschreiben.

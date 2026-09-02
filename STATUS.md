@@ -1,7 +1,7 @@
 # NEUTRAL – Status
 
 **Status:** NACHGEWIESENER IST-STAND  
-**Geprüft:** 2026-09-01  
+**Geprüft:** 2026-09-02
 **Referenz:** aktueller `main`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
@@ -30,21 +30,23 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | FEHLT | kein verbindlicher URL-/Headervertrag |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; Setup-Sperre und Statusbereinigung lokal automatisiert und am Produktivhost geprüft; vollständige Installation/API/DB-Abnahme offen |
+| Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; produktive MySQL-Neuinstallation mit korrekter Datenbankidentität, 16 aktuellen Tabellen, 2 Migrationen und Status `ACTIVE` nachgewiesen; vollständige Login-/API-Abnahme offen |
 | Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
 | PWA/Store-Verpackung | GEPLANT | bewusst nach Core 1.0 verschoben |
 | Optionale Node-Erweiterung | GEPLANT | Node-Referenzcode existiert, ist keine Produktionsvoraussetzung |
 
 ## Bestätigte Hostinggrundlage
 
-Die Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. Der Security-Commit `a75470a` wurde erfolgreich per FTPS ausgerollt und durch CodeQL geprüft. Die produktiven Statusendpunkte liefern nur Service-, Environment-, App- und DB-Zustand; Setupseite sowie geroutete Setup-Status-/Installpfade liefern ohne Recoveryfreigabe für GET, OPTIONS und POST HTTP 404; der Admin-Einstieg liefert ohne Sitzung HTTP 401. Eine vollständige leere Neuinstallation mit produktiver Datenbank, authentifiziertem Login, Moduloperationen, Backup/Restore und Umzug ist noch nicht als zusammenhängende Abnahme dokumentiert.
+Die Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. Der Security-Commit `a75470a` wurde erfolgreich per FTPS ausgerollt und durch CodeQL geprüft. Die produktiven Statusendpunkte liefern nur Service-, Environment-, App- und DB-Zustand; Setupseite sowie geroutete Setup-Status-/Installpfade liefern ohne Recoveryfreigabe für GET, OPTIONS und POST HTTP 404; der Admin-Einstieg liefert ohne Sitzung HTTP 401.
 
-## Testzustand am 2026-09-01
+Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter Datenbankidentität und exaktem Alt-Tabellensatz zurückgesetzt und mit dem aktuellen Installer neu aufgebaut. Ein separater read-only Nachweis bestätigte anschließend Verbindung, Status `ACTIVE`, 16 vom aktuellen Schema erwartete Tabellen einschließlich `login_attempts` und 2 angewendete Migrationen. Alle temporären Prüf- und Ergebnisdateien wurden per FTPS entfernt; erneute Löschversuche bestätigten für sämtliche älteren Markerdateien `No such file or directory`. Die noch offene Produktionsabnahme umfasst authentifizierten Login, Moduloperationen, Backup/Restore und Umzug.
+
+## Testzustand am 2026-09-02
 
 Die lokale Referenzumgebung aus [`DEVELOPMENT.md`](DEVELOPMENT.md) führt die gesamte Suite einschließlich Node-, PHP- und `argon2`-Pfaden erfolgreich aus:
 
-- 136 Tests wurden vollständig ausgeführt,
-- 136 Tests bestanden,
+- 150 Tests wurden vollständig ausgeführt,
+- 150 Tests bestanden,
 - 0 Tests schlugen fehl,
 - 0 Tests wurden abgebrochen.
 
@@ -54,4 +56,4 @@ Die zuvor reproduzierten Fehler wurden auf fünf plattformabhängige Ursachen zu
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist die dokumentierte leere PHP-/MySQL-Installation auf dem bestätigten Shared Hosting. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
+Der nächste Meilenstein ist die vollständige Live-Sicherheits- und API-Abnahme der neu installierten Produktion. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
