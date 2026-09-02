@@ -52,7 +52,7 @@ try {
 }
 
 $result['self_deleted'] = @unlink(__FILE__);
-$resultPath = __DIR__ . '/neutral-db-result-91c4e7a2.json';
+$resultPath = __DIR__ . '/neutral-db-result-91c4e7a2.php';
 $result['result_persisted'] = false;
 $encoded = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;
 $result['result_persisted'] = file_put_contents($resultPath, $encoded, LOCK_EX) !== false;
