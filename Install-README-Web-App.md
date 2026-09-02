@@ -30,6 +30,8 @@ Die Deployment-Allowlist in `scripts/manual-ftps-deploy.js` ist maßgeblich, wen
 4. Beim vorgesehenen Root-Deployment liefert die Root-`.htaccess` `/` aus `Web-App/public/index.html` aus und leitet `/api` zum PHP-Router; die Verzeichnisstruktur darf nicht abgeflacht werden.
 5. Same-Origin ist der einfachste unterstützte Produktionsbetrieb, weil Sessions mit `credentials: same-origin` gesendet werden. Cross-Origin benötigt einen bewusst implementierten CORS-/Cookievertrag und ist derzeit nicht Standard.
 
+**Aktuelle Einschränkung:** Der produktiv geprüfte Stand gilt für eine Installation im Domain-Root. Ein neuer physischer Serverordner kann separat als Document-Root konfiguriert werden; davon zu unterscheiden ist ein URL-Unterpfad. Mehrere öffentliche Pfade beginnen noch absolut mit `/Web-App`, `/api`, `/admin.php` oder `/setup.php`. Eine URL-Installation unter beispielsweise `/meine-app/` ist deshalb noch nicht freigegeben und muss zuerst über eine zentrale Installationsbasis umgesetzt und getestet werden.
+
 ## 4. Lokaler Start
 
 Für einen reinen statischen Sichttest einen lokalen HTTP-Server im Repository verwenden; Dateien nicht direkt über `file://` öffnen, da Fetch, Module und Browserrechte sonst abweichen können. Der Repositorybefehl `npm start` startet die Node-Entwicklungsruntime und ist kein Produktionsnachweis.

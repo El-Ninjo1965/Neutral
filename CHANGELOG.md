@@ -2,6 +2,14 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-02 – Core-1.0-Neuinstallationslücken präzisiert
+
+- nachgewiesenen Domain-Root-Deploy, einen neuen physischen Document-Root und eine noch nicht bestandene Installation unter URL-Unterpfaden klar getrennt,
+- root-absolute Client-, Admin- und API-Pfade als Blocker für URL-Unterpfade dokumentiert; das physische FTPS-Ziel bleibt eine separate Konfiguration,
+- fehlendes Produktionspaket, Environment-Bootstrap, Neu-Repository-Verfahren sowie leere End-to-End-Installation als konkrete Abnahmepakete in `TODO.md` aufgenommen,
+- verbindlich festgehalten, dass Root-`.htaccess`, der vollständige Ordner `Web-App/`, `Server/php/` und `Server/public/` gemeinsam und ohne Abflachung übertragen werden müssen,
+- analysiert und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
+
 ## 2026-09-02 – Admin-CMS-Browserstart repariert
 
 - sechs Admin-Komponenten veröffentlichen ihre bereits vorhandenen Implementierungen jetzt als die von `admin-init.js` erwarteten Browser-Globals,

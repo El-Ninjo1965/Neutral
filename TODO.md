@@ -9,16 +9,30 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 ## 1. Installation und Produktionssicherheit
 
-- ~~leere PHP-/MySQL-Neuinstallation auf dem bestätigten Shared Hosting durchführen~~ (am 2026-09-02 nachgewiesen),
-- ~~öffentliche Startseite, Admin-Zugangsschutz, HTTPS und Shared-Hosting-Assetpfade live prüfen~~ (2026-09-02),
 - authentifizierten Login-/Logout-Durchlauf einschließlich produktiver Session- und CSRF-Cookies einmal mit Betreiberzugang abnehmen,
+- PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
 - responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
-- ~~Secretfreiheit versionierter Dateien und des Clients prüfen~~ (2026-09-02; nur Beispielkonfiguration und Test-Fixtures gefunden),
-- ~~API-Version 1 festschreiben~~ (2026-09-02; `/api/v1`, Legacypräfix kompatibel).
+- alle Admin-Hauptansichten und deren serverseitige Rechte mit dem Betreiberkonto produktiv abnehmen,
+- die umgebungsspezifische FTPS-Beispielkonfiguration neutralisieren und TLS-Hostnameprüfung als sicheren Standard dokumentieren.
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
-## 2. Modulvertrag vervollständigen
+## 2. Reproduzierbare Neuinstallation in neuem Repository und physischem Serverziel
+
+- physischen neuen Zielordner als eigenen Document-Root und eine Installation unter einem URL-Unterpfad wie `/meine-app/` getrennt unterstützen und testen,
+- verbindlichen URL-Basispfad einführen, damit Client, Admin, API und Assets sowohl im Domain-Root als auch unter einem frei gewählten URL-Unterpfad funktionieren,
+- root-absolute Pfade wie `/Web-App/...`, `/api/v1`, `/admin.php` und `/setup.php` durch eine zentral konfigurierte, getestete Installationsbasis ersetzen,
+- einen Produktionspaket-Befehl erstellen, der ausschließlich Root-`.htaccess`, den vollständigen Ordner `Web-App/`, `Server/php/` und `Server/public/` mit Manifest und Prüfsummen ausgibt,
+- eine wertfreie `.env.example` beziehungsweise einen sicheren Konfigurationsassistenten für App-, Datenbank-, Backup- und Bootstrapwerte bereitstellen, ohne Secrets in Repository oder Browserclient zu schreiben,
+- einen Bootstrap-Ablauf für ein neues Repository dokumentieren und testen: App-ID/-Name setzen, optionale Referenzmodule auswählen, GitHub-FTPS-Secrets und Zielordner konfigurieren,
+- Preflight und Deployment so erweitern, dass ein leerer Zielordner, falsche Basis-URLs, fehlende Rewriteunterstützung, unvollständige PHP-Erweiterungen und versehentliche Node-/Secretdateien vor Upload erkannt werden,
+- komplette leere Testinstallation in einem neuen physischen Document-Root und einer neuen Datenbank durchführen: Paket übertragen, `.env` hostlokal anlegen, Setup/Migration/Seed ausführen, Betreiber anmelden und Setup danach gesperrt nachweisen,
+- denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` ausführen,
+- denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren.
+
+**Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
+
+## 3. Modulvertrag vervollständigen
 
 - allgemeine PHP-Routen- und Service-Registrierung je Modul,
 - versionierte Modul-SQL-Migrationen mit Fehler- und Rollbackstrategie,
@@ -28,7 +42,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** GPS und ein zweites fachlich unabhängiges Referenzmodul bestehen denselben Lifecycle- und Sicherheitstest.
 
-## 3. Sichere Provider und Administration
+## 4. Sichere Provider und Administration
 
 - serverseitigen Provideradaptervertrag definieren,
 - Secrets geschützt speichern und ausschließlich serverseitig verwenden,
@@ -37,11 +51,12 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Wechsel zwischen zwei Testprovidern ohne Clientänderung oder Secret-Leak.
 
-## 4. Portabilität und Core-1.0-Abnahme
+## 5. Portabilität und Core-1.0-Abnahme
 
 - Backup, Restore, Update und Rollback reproduzierbar machen,
 - Serverumzug auf eine leere kompatible Umgebung testen,
-- Installationspaket erzeugen und dokumentieren,
+- erzeugtes Installationspaket, Manifest und Prüfsummen gegen den Quellcommit verifizieren,
+- Neuinstallation, Update, Backup/Restore und Umzug jeweils als automatisierten oder exakt reproduzierbaren Abnahmelauf dokumentieren,
 - alle Kriterien aus `CORE-1.0.md` gegen Code, Tests und Live-Bericht prüfen.
 
 **Abnahme:** `STATUS.md` enthält für Core 1.0 ausschließlich `VORHANDEN`; Release wird als **BESTANDEN** markiert.

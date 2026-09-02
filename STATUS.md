@@ -27,11 +27,13 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 | Login, Session, CSRF, RBAC | VORHANDEN | PHP-Router und Services; produktiver 401-Schutz des Admin-Einstiegs geprüft, vollständiger Login-/Schreibfluss bleibt offen |
 | Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und Fachansichten vorhanden; Browserstart nach Commit `156e6e9` produktiv durch Codex geprüft, alte Fallbackansicht nicht mehr sichtbar; reale responsive iPad-/Safari-Abnahme bleibt offen |
 | Setup-Sperre und öffentlicher Status | VORHANDEN | aktive Installation verbirgt Setup/UI/API; Statusantwort ist auf ungefährliche Betriebsdaten reduziert; Sicherheitstests vorhanden |
-| PHP-Login-Drosselung | FEHLT | in der PHP-Produktion nicht nachgewiesen |
+| PHP-Login-Drosselung | TEILWEISE | `LoginRateLimiter` und persistenter PDO-Store einschließlich Fail-closed-Pfad sind getestet; produktiver Lockout-/Retry-Nachweis fehlt |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
 | Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; produktive MySQL-Neuinstallation mit korrekter Datenbankidentität, 16 aktuellen Tabellen, 2 Migrationen und Status `ACTIVE` nachgewiesen; vollständige Login-/API-Abnahme offen |
+| Neuinstallation/neues Repository | TEILWEISE | Root-Deployment überträgt `.htaccess`, `Web-App/`, `Server/php/` und `Server/public/`; versioniertes Installationspaket, neutraler Environment-Bootstrap und reproduzierter Neu-Repository-Ablauf fehlen |
+| Installation unter URL-Unterpfad | FEHLT | physisches Deploymentziel ist konfigurierbar, aber root-absolute Client-/Admin-/API-Pfade verhindern derzeit eine belastbare Freigabe für URL-Präfixe wie `/meine-app/` |
 | Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
 | PWA/Store-Verpackung | GEPLANT | bewusst nach Core 1.0 verschoben |
 | Optionale Node-Erweiterung | GEPLANT | Node-Referenzcode existiert, ist keine Produktionsvoraussetzung |
@@ -59,4 +61,4 @@ Die zuvor reproduzierten Fehler wurden auf fünf plattformabhängige Ursachen zu
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist die vollständige Live-Sicherheits- und API-Abnahme der neu installierten Produktion. Danach werden die offenen Modulverträge in der Reihenfolge aus `TODO.md` umgesetzt.
+Der nächste Meilenstein ist die vollständige Live-Sicherheits- und API-Abnahme sowie der reproduzierbare Neuinstallationsweg für ein neues Repository, einen neuen physischen Document-Root und einen optionalen URL-Unterpfad. Erst wenn Installationsbasis, Paket, Environment-Bootstrap und leere End-to-End-Neuinstallation nachgewiesen sind, folgen die verbleibenden Modul-/Providerverträge und die finale Core-1.0-Abnahme gemäß `TODO.md`.

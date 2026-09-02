@@ -2,7 +2,7 @@
 
 **Status:** DETAILVERTRAG
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-02
 **Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
 
 ## Statuslegende
@@ -16,7 +16,7 @@
 
 **VORHANDEN:** `POST /api/auth/login` authentifiziert serverseitig gegen gespeicherte Passwort-Hashes. PHP verwendet `password_hash`/`password_verify`; die Node-Referenzruntime verwendet den Password-Hash-Service mit Argon2 bzw. unterstütztem Fallback. Fehlversuche liefern keine Passwortdaten.
 
-**TEILWEISE:** Node besitzt Rate-Limiting; für die PHP-Produktion ist im aktuellen Router keine gleichwertige persistente Login-Drosselung nachgewiesen. Diese ist TODO.
+**VORHANDEN/PRODUKTIONSABNAHME OFFEN:** PHP-Logins werden über `LoginRateLimiter` und den persistenten `PdoLoginAttemptStore` nach gehashter Kennung/IP sowie IP-weit gedrosselt. Positive, Sperr- und Fail-closed-Pfade sind automatisiert getestet; der echte produktive Lockout-/Retry-Ablauf muss noch ohne Offenlegung von Benutzer- oder IP-Daten abgenommen werden.
 
 ## 2. Logout
 
@@ -86,7 +86,7 @@
 
 ## 14. Offene Prioritäten
 
-1. PHP-Login-Drosselung und Missbrauchsschutz nachweisen/ergänzen.
+1. PHP-Login-Drosselung und Missbrauchsschutz im produktiven HTTPS-Betrieb abnehmen.
 2. Cookieflags im realen HTTPS-Betrieb automatisiert prüfen.
 3. lokales Datenschutz-/Verschlüsselungsmodell für Offline-Daten definieren.
 4. Refresh/Remember nur bei tatsächlichem Bedarf mit Rotation entwerfen.

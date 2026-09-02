@@ -29,6 +29,8 @@ Die tatsächlichen Voraussetzungen werden durch `PrerequisiteChecker`, Setupstat
 
 Das vollständige Produktions-Staging wird in den vorhandenen Shared-Hosting-Document-Root übertragen. Die Root-`.htaccess` stellt `/`, `/api`, `/admin.php` und `/setup.php` auf die getrennten Repositorypfade durch und sperrt `Server/php/`, `Server/runtime/`, Dotfiles und Verzeichnislisten. Dadurch bleiben die relativen Projektpfade für PHP-Modul-Discovery und Runtime erhalten, während ausschließlich die vorgesehenen Einstiege öffentlich sind.
 
+Der aktuelle Live-Nachweis gilt ausschließlich für den Domain-Root. `FTP_TARGET_DIR` kann zwar auf einen anderen Serverordner zeigen, aber root-absolute Browser-/Admin-/API-Pfade sind noch nicht auf eine frei wählbare URL-Basis umgestellt. Ein erfolgreicher Upload in einen Unterordner beweist daher derzeit noch keine funktionsfähige Unterordnerinstallation.
+
 ## 3. Environment-Konfiguration
 
 1. Eine hostlokale `.env` außerhalb öffentlicher Auslieferung anlegen.
@@ -105,9 +107,9 @@ Nur Runtime-/Log-/ggf. Sessionpfade benötigen Schreibrechte. PHP-Quellcode, Man
 
 ## 9. Deployment
 
-`scripts/manual-ftps-deploy.js` unterstützt allowlistetes FTPS-Deployment und liest hostlokale Deploymentkonfiguration. Vor jedem Lauf Stagingliste prüfen. Web-App- und Serverdeployment bleiben getrennte Modi. FTP/FTPS ist Deploymenttransport, nicht Laufzeit-API.
+`scripts/manual-ftps-deploy.js` unterstützt allowlistetes FTPS-Deployment und liest hostlokale Deploymentkonfiguration. Vor jedem Lauf Stagingliste prüfen. Web-App und PHP-Server bleiben getrennte Verzeichnisbereiche, werden aber gemeinsam als ein Produktions-Staging deployt. FTP/FTPS ist Deploymenttransport, nicht Laufzeit-API.
 
-Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produktionsumfang aus Root-`.htaccess`, `Web-App/`, `Server/php/` und `Server/public/`. `Server/node/`, Tests, Dokumentation und lokale Werkzeuge werden nicht in das Produktions-Staging aufgenommen. FTPS-Zertifikate werden validiert; ein Host mit ungültiger oder unvollständiger Zertifikatskette blockiert den Upload, statt die Prüfung abzuschalten.
+Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produktionsumfang aus Root-`.htaccess`, `Web-App/`, `Server/php/` und `Server/public/`. `Server/node/`, Tests, Dokumentation und lokale Werkzeuge werden nicht in das Produktions-Staging aufgenommen. Die Zertifikatskette wird validiert; die versionierte Beispielkonfiguration deaktiviert derzeit jedoch die Hostnamenprüfung und enthält umgebungsspezifische Server-/Kontometadaten. Beides muss vor dem wiederverwendbaren Core-1.0-Paket neutralisiert werden.
 
 ## 10. Serverwechsel
 
@@ -120,3 +122,7 @@ Der GitHub-Workflow `.github/workflows/ftp-upload.yml` erstellt denselben Produk
 7. DNS erst nach erfolgreicher Prüfung umschalten; Rollbackplan bereithalten.
 
 Der Wechsel darf über Konfiguration/Adapter erfolgen. Ein Node-Dauerprozess darf dabei nicht implizit zur Voraussetzung werden.
+
+## 11. Noch fehlender Neuinstallationsstandard
+
+Vor Core-1.0-Freigabe muss ein versioniertes Produktionspaket reproduzierbar Root-`.htaccess`, `Web-App/`, `Server/php/` und `Server/public/` enthalten. Zusätzlich sind ein wertfreier Environment-Bootstrap, eine zentrale Installationsbasis für Root und Unterordner, Manifest/Prüfsummen sowie ein vollständiger Test aus einem neuen Repository in einen leeren Serverordner und eine leere Datenbank erforderlich. Manuelle Codeänderungen nach dem Upload sind kein akzeptierter Installationsweg.
