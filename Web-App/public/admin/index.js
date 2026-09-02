@@ -209,7 +209,7 @@ class AdminInfrastructureView {
     const requests = {
       connections: this.api.get('/api/connections'),
       providers: this.api.get('/api/providers'),
-      backups: this.api.get('/api/backups'),
+      backups: this.api.get('/api/admin/backups'),
       release: this.api.get('/api/admin/release/status'),
       setup: this.api.get('/api/setup/status'),
       database: this.api.get('/api/database/status'),
@@ -242,7 +242,8 @@ class AdminInfrastructureView {
     if (this.kind === 'connections') return 'Connections';
     if (this.kind === 'server') return 'Server';
     if (this.kind === 'database') return 'Database';
-    if (this.kind === 'updates') return 'Updates & Backup';
+    if (this.kind === 'backups') return 'Backups & Restore';
+    if (this.kind === 'updates') return 'Maintenance & Updates';
     return 'Infrastructure';
   }
 
@@ -261,6 +262,10 @@ class AdminInfrastructureView {
     }
     if (this.kind === 'updates') {
       this.renderUpdates();
+      return;
+    }
+    if (this.kind === 'backups') {
+      this.renderBackups();
       return;
     }
     this.renderOverview();
@@ -554,12 +559,11 @@ class AdminInfrastructureView {
   }
 
   renderUpdates() {
-    const backups = this.snapshot.backups || [];
     const release = this.snapshot.release || {};
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header">
-          <h2>Updates & Backup</h2>
+          <h2>Maintenance & Updates</h2>
         </div>
         <div class="card-grid">
           <div class="card panel-box">
@@ -581,18 +585,6 @@ class AdminInfrastructureView {
             </form>
           </div>
         </div>
-        <div class="card panel-box">
-          <div class="card-header"><h3>Backups</h3></div>
-          ${backups.length ? `<ul class="mini-list">${backups.map((backup) => `<li>${backup.label || backup.name || 'Backup'} <span>${backup.status || 'ready'}</span></li>`).join('')}</ul>` : '<p class="empty-state">No backups available yet.</p>'}
-          <form id="backup-form" class="admin-form compact-form">
-            <div class="form-grid">
-              <label>Backup label<input name="label" value="" placeholder="Daily database snapshot" /></label>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Create backup</button>
-            </div>
-          </form>
-        </div>
       </div>
     `;
 
@@ -612,13 +604,26 @@ class AdminInfrastructureView {
       });
     }
 
+  }
+
+  renderBackups() {
+    const backups = this.snapshot.backups || [];
+    this.container.innerHTML = `
+      <div class="admin-infrastructure-view">
+        <div class="section-header"><h2>Backups & Restore</h2></div>
+        <div class="card panel-box">
+          <div class="card-header"><h3>Encrypted database backups</h3></div>
+          <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
+          ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
+          <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary">Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
+        </div>
+      </div>`;
+
     const backupForm = this.container.querySelector('#backup-form');
     if (backupForm) {
       backupForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(backupForm);
-        const payload = { label: formData.get('label') || `backup-${new Date().toISOString()}` };
-        const result = await this.api.post('/api/backups', payload);
+        const result = await this.api.post('/api/admin/backups', {});
         if (result.ok) {
           this.notify('Backup created', 'success');
           await this.init(this.container);
@@ -627,6 +632,44 @@ class AdminInfrastructureView {
         }
       });
     }
+    const upload = this.container.querySelector('#backup-upload');
+    if (upload) upload.addEventListener('change', async () => {
+      const file = upload.files && upload.files[0];
+      if (!file) return;
+      const result = await this.api.upload('/api/admin/backups/upload', file);
+      if (result.ok) { this.notify('Encrypted backup uploaded', 'success'); await this.init(this.container); }
+      else this.notify(`Backup upload failed: ${result.error || 'Unknown error'}`, 'error');
+    });
+    this.container.querySelectorAll('[data-backup-download]').forEach((button) => button.addEventListener('click', () => this.downloadBackup(button.dataset.backupDownload)));
+    this.container.querySelectorAll('[data-backup-restore]').forEach((button) => button.addEventListener('click', () => this.restoreBackup(button.dataset.backupRestore)));
+  }
+
+  async downloadBackup(backupId) {
+    const result = await this.api.download(`/api/admin/backups/${backupId}/download`);
+    if (!result.ok) { this.notify(`Backup download failed: ${result.error || 'Unknown error'}`, 'error'); return; }
+    const url = URL.createObjectURL(result.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${backupId}.neutral-backup`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async restoreBackup(backupId) {
+    const confirmed = window.AdminCommon.confirmAction(`Restore backup ${backupId}? Current managed data will be replaced and you will be signed out.`);
+    if (!confirmed) return;
+    const result = await this.api.post(`/api/admin/backups/${backupId}/restore`, {});
+    if (!result.ok) { this.notify(`Backup restore failed: ${result.error || 'Unknown error'}`, 'error'); return; }
+    window.location.replace('/Server/public/admin.php');
+  }
+
+  formatBytes(value) {
+    const bytes = Number(value || 0);
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   notify(message, type = 'info') {
@@ -725,6 +768,7 @@ class AdminRouter {
       modules: new AdminModulesView(apiClient),
       dashboard: new AdminDashboardView(apiClient),
       updates: new AdminInfrastructureView(apiClient, 'updates'),
+      backups: new AdminInfrastructureView(apiClient, 'backups'),
       infrastructure: new AdminInfrastructureView(apiClient, 'infrastructure'),
       connections: new AdminInfrastructureView(apiClient, 'connections'),
       server: new AdminInfrastructureView(apiClient, 'server'),
@@ -775,6 +819,7 @@ class AdminRouter {
       dashboard: 'Dashboard',
       modules: 'Module Administration',
       updates: 'Updates',
+      backups: 'Backups & Restore',
       infrastructure: 'Backup / Infrastructure',
       connections: 'Connections',
       server: 'Server',
@@ -785,7 +830,7 @@ class AdminRouter {
   }
 
   async logout() {
-    if (!confirm('Logout now?')) return;
+    if (!AdminCommon.confirmAction('Logout now?')) return;
     await this.api.logout();
     window.location.replace('/Server/public/admin.php');
   }

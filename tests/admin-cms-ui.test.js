@@ -48,3 +48,48 @@ test('admin CMS CSS provides desktop sidebar and iPad drawer behavior', () => {
   assert.match(css, /\.admin-table-container\s*\{[^}]*overflow-x:\s*auto/s);
   assert.match(css, /min-height:\s*44px/);
 });
+
+test('every navigation destination has a router view', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+  for (const id of require('../Web-App/public/admin/navigation.js').flatten().map((item) => item.id)) {
+    assert.match(source, new RegExp(`\\b${id}:`), `missing router view: ${id}`);
+  }
+});
+
+test('backup mutations use protected admin API routes', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+  assert.match(source, /post\('\/api\/admin\/backups'/);
+  assert.doesNotMatch(source, /post\('\/api\/backups'/);
+});
+
+test('shared admin safeguards provide explicit confirmation and recoverable states', () => {
+  const { AdminCommon } = require('../Web-App/public/admin/common.js');
+  const previousWindow = global.window;
+  let prompt = '';
+  global.window = { confirm: (message) => { prompt = message; return true; } };
+  try {
+    assert.equal(AdminCommon.confirmAction('Replace managed data?'), true);
+    assert.equal(prompt, 'Replace managed data?');
+    const container = { innerHTML: '', querySelector: () => null };
+    AdminCommon.renderState(container, { type: 'forbidden' });
+    assert.match(container.innerHTML, /role="alert"/);
+    assert.match(container.innerHTML, /Permission required/);
+  } finally {
+    global.window = previousWindow;
+  }
+});
+
+test('destructive admin actions use the shared explicit confirmation', () => {
+  for (const file of ['users-view.js', 'roles-view.js', 'modules-view.js', 'index.js']) {
+    const source = fs.readFileSync(path.join(__dirname, `../Web-App/public/admin/${file}`), 'utf8');
+    assert.doesNotMatch(source, /\bconfirm\(/, file);
+    assert.match(source, /AdminCommon\.confirmAction/, file);
+  }
+});
+
+test('admin shell exposes a persistent light and dark theme control', () => {
+  const AdminShell = require('../Web-App/public/admin/shell.js');
+  const html = AdminShell.render({ groups: [], userLabel: 'Developer' });
+  assert.match(html, /data-admin-theme/);
+  assert.match(html, /Switch to dark mode/);
+});

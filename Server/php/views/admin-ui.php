@@ -89,45 +89,5 @@
     <script defer src="/Web-App/public/admin/shell.js"></script>
     <script defer src="/Web-App/public/admin/index.js"></script>
     <script defer src="/Web-App/public/admin-init.js"></script>
-    <script>
-      (function () {
-        const body = document.body;
-        const toggleButton = document.getElementById('themeToggleBtn');
-        const storageKey = 'neutral-admin-theme';
-        const applyTheme = (themeId) => {
-          const nextTheme = themeId === 'dark' ? 'dark' : 'light';
-          body.setAttribute('data-theme', nextTheme);
-          if (toggleButton) {
-            toggleButton.textContent = nextTheme === 'dark' ? 'Light' : 'Dark';
-            toggleButton.setAttribute('aria-label', nextTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-          }
-          try {
-            window.localStorage.setItem(storageKey, nextTheme);
-          } catch (error) {
-            // Ignore storage failures gracefully.
-          }
-          if (window.ThemeEngine && typeof window.ThemeEngine.activateTheme === 'function') {
-            const targetTheme = window.ThemeEngine.getTheme && window.ThemeEngine.getTheme(nextTheme);
-            if (targetTheme) {
-              window.ThemeEngine.activateTheme(nextTheme);
-            }
-          }
-        };
-
-        try {
-          const storedTheme = window.localStorage.getItem(storageKey);
-          applyTheme(storedTheme === 'dark' ? 'dark' : 'light');
-        } catch (error) {
-          applyTheme('light');
-        }
-
-        if (toggleButton) {
-          toggleButton.addEventListener('click', () => {
-            const currentTheme = body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-          });
-        }
-      })();
-    </script>
   </body>
 </html>

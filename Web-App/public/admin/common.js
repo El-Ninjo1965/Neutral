@@ -14,6 +14,28 @@ const escapeHtmlCommon = (value) => String(value ?? '')
   .replace(/'/g, '&#039;');
 
 const AdminCommon = {
+  confirmAction(message) {
+    return typeof window !== 'undefined' && typeof window.confirm === 'function'
+      ? window.confirm(message)
+      : false;
+  },
+
+  renderState(container, state = {}) {
+    const states = {
+      loading: ['status', 'Loading…'],
+      forbidden: ['alert', 'Permission required. Your account cannot access this area.'],
+      unavailable: ['status', 'Not available on this hosting environment.'],
+      error: ['alert', state.message || 'The request failed. Please try again.']
+    };
+    const [role, message] = states[state.type] || states.error;
+    const retry = typeof state.onRetry === 'function'
+      ? '<button type="button" class="btn btn-secondary" data-admin-retry>Retry</button>'
+      : '';
+    container.innerHTML = `<div class="admin-state admin-state-${escapeHtmlCommon(state.type || 'error')}" role="${role}"><p>${escapeHtmlCommon(message)}</p>${retry}</div>`;
+    const retryButton = container.querySelector && container.querySelector('[data-admin-retry]');
+    if (retryButton) retryButton.addEventListener('click', state.onRetry);
+  },
+
   unwrapData(result, key = null, fallback = null) {
     if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
       return fallback;

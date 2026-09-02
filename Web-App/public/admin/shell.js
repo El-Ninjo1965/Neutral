@@ -42,7 +42,7 @@ class AdminShell {
           <header class="admin-cms-header">
             <button id="admin-menu-toggle" class="admin-menu-toggle" type="button" aria-controls="admin-cms-sidebar" aria-expanded="false">Menu</button>
             <div class="admin-cms-heading"><span id="admin-breadcrumb">Overview</span><h1 id="admin-page-title" tabindex="-1">Dashboard</h1></div>
-            <div class="admin-cms-tools"><span class="admin-user-info">${AdminShell.escapeHtml(userLabel)}</span><button type="button" class="btn btn-sm btn-secondary" data-admin-logout>Logout</button></div>
+            <div class="admin-cms-tools"><span class="admin-user-info">${AdminShell.escapeHtml(userLabel)}</span><button type="button" class="btn btn-sm btn-secondary" data-admin-theme aria-label="Switch to dark mode">Dark</button><button type="button" class="btn btn-sm btn-secondary" data-admin-logout>Logout</button></div>
           </header>
           <div id="admin-view-status" class="sr-only" role="status" aria-live="polite"></div>
           <main class="admin-main" id="admin-main"></main>
@@ -55,6 +55,7 @@ class AdminShell {
     this.container.innerHTML = AdminShell.render({ groups: this.groups, userLabel: this.userLabel });
     this.container.addEventListener('click', this.boundClick);
     document.addEventListener('keydown', this.boundKeydown);
+    this.applyTheme(this.storedTheme());
     return this;
   }
 
@@ -72,7 +73,28 @@ class AdminShell {
       return;
     }
     if (event.target.closest('[data-admin-close]')) this.closeDrawer();
+    if (event.target.closest('[data-admin-theme]')) this.toggleTheme();
     if (event.target.closest('[data-admin-logout]')) this.onLogout();
+  }
+
+  storedTheme() {
+    try { return window.localStorage.getItem('neutral-admin-theme') === 'dark' ? 'dark' : 'light'; }
+    catch { return 'light'; }
+  }
+
+  applyTheme(theme) {
+    const nextTheme = theme === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', nextTheme);
+    const button = this.container.querySelector('[data-admin-theme]');
+    if (button) {
+      button.textContent = nextTheme === 'dark' ? 'Light' : 'Dark';
+      button.setAttribute('aria-label', nextTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    try { window.localStorage.setItem('neutral-admin-theme', nextTheme); } catch { /* Storage can be unavailable. */ }
+  }
+
+  toggleTheme() {
+    this.applyTheme(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   }
 
   handleKeydown(event) {

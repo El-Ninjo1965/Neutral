@@ -263,7 +263,7 @@ class AdminUsersView {
   }
 
   async deleteUser(userId) {
-    if (!confirm('Delete this user? This action cannot be undone.')) {
+    if (!AdminCommon.confirmAction('Delete this user? This action cannot be undone.')) {
       return;
     }
     const result = await this.api.deleteUser(userId);

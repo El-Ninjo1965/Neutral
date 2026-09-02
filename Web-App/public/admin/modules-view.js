@@ -320,7 +320,7 @@ class AdminModulesView {
   }
 
   async uninstall(moduleId) {
-    if (!confirm(`Uninstall module "${moduleId}" and remove its registered state, settings namespace and declared permissions?`)) {
+    if (!AdminCommon.confirmAction(`Uninstall module "${moduleId}" and remove its registered state, settings namespace and declared permissions?`)) {
       return;
     }
     const result = await this.api.uninstallModule(moduleId);

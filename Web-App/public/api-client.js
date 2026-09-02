@@ -91,7 +91,11 @@ class ApiClient {
       config.headers['x-csrf-token'] = csrf;
     }
 
-    if (options.body && typeof options.body === 'object') {
+    const isBinaryBody = typeof Blob !== 'undefined' && options.body instanceof Blob;
+    if (isBinaryBody) {
+      config.body = options.body;
+      delete config.headers['Content-Type'];
+    } else if (options.body && typeof options.body === 'object') {
       config.body = JSON.stringify(options.body);
     } else if (options.body) {
       config.body = options.body;
@@ -180,6 +184,26 @@ class ApiClient {
   // DELETE request
   async delete(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: 'DELETE' });
+  }
+
+  async download(endpoint) {
+    const url = this.baseUrl ? this.baseUrl + endpoint : resolveNeutralApiUrl(endpoint);
+    const csrf = this.csrfToken || this.getCookie('neutral_csrf');
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { ...this.defaultHeaders, ...(csrf ? { 'x-csrf-token': csrf } : {}) }
+      });
+      if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });
+      return { ok: true, status: response.status, data: await response.blob() };
+    } catch (error) {
+      return { ok: false, status: error.status || 0, error: error.message };
+    }
+  }
+
+  async upload(endpoint, file) {
+    return this.request(endpoint, { method: 'POST', body: file });
   }
 
   // User endpoints

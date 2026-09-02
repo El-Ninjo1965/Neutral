@@ -195,7 +195,7 @@ class AdminRolesView {
   }
 
   async deleteRole(roleId) {
-    if (!confirm('Delete this role?')) {
+    if (!AdminCommon.confirmAction('Delete this role?')) {
       return;
     }
     const result = await this.api.deleteRole(roleId);
