@@ -10,7 +10,7 @@ const getConfiguredApiBase = () => {
     ? window.NeutralConfig.apiBase
     : '';
   const metaBase = document.querySelector('meta[name="neutral-api-base"]')?.content || '';
-  const configured = (runtimeBase || metaBase || '/api').trim();
+  const configured = (runtimeBase || metaBase || '/api/v1').trim();
   return `/${configured.replace(/^\/+|\/+$/g, '')}`;
 };
 

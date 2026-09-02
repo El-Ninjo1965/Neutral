@@ -19,6 +19,34 @@ test('API client returns a controlled timeout instead of blocking indefinitely',
   }
 });
 
+test('API client uses the canonical v1 base while accepting legacy endpoint strings', async () => {
+  const previousFetch = global.fetch;
+  const previousDocument = global.document;
+  const previousWindow = global.window;
+  let requestedUrl = null;
+  global.window = {};
+  global.document = { cookie: '', querySelector: () => null };
+  global.fetch = async (url) => {
+    requestedUrl = url;
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ ok: true, data: {} })
+    };
+  };
+  try {
+    const client = new ApiClient();
+    const result = await client.get('/api/status');
+    assert.equal(result.ok, true);
+    assert.equal(requestedUrl, '/api/v1/status');
+  } finally {
+    global.fetch = previousFetch;
+    global.document = previousDocument;
+    global.window = previousWindow;
+  }
+});
+
 test('admin login uses the authoritative login response without a duplicate me roundtrip', () => {
   const fs = require('node:fs');
   const path = require('node:path');

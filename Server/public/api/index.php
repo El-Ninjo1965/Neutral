@@ -40,6 +40,15 @@ $requestUriPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '
 $segments = $requestUriPath === '' ? [] : explode('/', $requestUriPath);
 $apiIndex = array_search('api', $segments, true);
 $apiSegments = $apiIndex === false ? $segments : array_slice($segments, $apiIndex + 1);
+$requestedApiVersion = null;
+if ($apiSegments !== [] && preg_match('/^v([0-9]+)$/i', (string) $apiSegments[0], $versionMatch) === 1) {
+    $requestedApiVersion = (int) $versionMatch[1];
+    array_shift($apiSegments);
+}
+header('X-Neutral-API-Version: 1');
+if ($requestedApiVersion !== null && $requestedApiVersion !== 1) {
+    JsonResponse::error('Unsupported API version.', 404, ['supportedVersions' => [1]]);
+}
 $route = strtolower(implode('/', $apiSegments));
 
 /**

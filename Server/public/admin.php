@@ -89,7 +89,7 @@ function render_auth_required_page(): void
       loginButton.disabled = true;
       setMessage('Signing in...', 'info');
       try {
-        const response = await fetch('api/auth/login', {
+        const response = await fetch('api/v1/auth/login', {
           method: 'POST',
           credentials: 'same-origin',
           headers: {

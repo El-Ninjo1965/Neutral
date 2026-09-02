@@ -258,7 +258,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.equal(result.statusCode, 401);
     assert.match(result.body, /Authentication required/i);
     assert.match(result.body, /id="loginBtn"/);
-    assert.match(result.body, /api\/auth\/login/);
+    assert.match(result.body, /api\/v1\/auth\/login/);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 
@@ -316,6 +316,20 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
 
     const me = await request('/api/auth/me', { port: serverPort });
     assert.equal(me.statusCode, 401);
+  });
+
+  test('Fall E2: API v1 is canonical while the unversioned route remains compatible', async () => {
+    const versioned = await request('/api/v1/status', { port: routedSetupPort });
+    assert.equal(versioned.statusCode, 200, versioned.body);
+    assert.equal(versioned.headers['x-neutral-api-version'], '1');
+    assert.match(versioned.body, /"ok"\s*:\s*true/);
+
+    const legacy = await request('/api/status', { port: routedSetupPort });
+    assert.equal(legacy.statusCode, 200, legacy.body);
+    assert.equal(legacy.headers['x-neutral-api-version'], '1');
+
+    const unsupported = await request('/api/v2/status', { port: routedSetupPort });
+    assert.equal(unsupported.statusCode, 404, unsupported.body);
   });
 
   test('Fall F: public status omits runtime paths and database identifiers', async () => {
