@@ -332,6 +332,16 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.equal(unsupported.statusCode, 404, unsupported.body);
   });
 
+  test('Fall E3: PHP logout requires a session and validates CSRF before mutation', () => {
+    const source = fs.readFileSync(path.join(webrootDir, 'api', 'index.php'), 'utf8');
+    const logoutStart = source.indexOf("if ($route === 'auth/logout'");
+    const meStart = source.indexOf("if ($route === 'auth/me'", logoutStart);
+    const logoutHandler = source.slice(logoutStart, meStart);
+    assert.match(logoutHandler, /if \(!\$identity \|\|/);
+    assert.match(logoutHandler, /Security::assertValidCsrfToken/);
+    assert.ok(logoutHandler.indexOf('assertValidCsrfToken') < logoutHandler.indexOf('$authManager->logout()'));
+  });
+
   test('Fall F: public status omits runtime paths and database identifiers', async () => {
     const result = await request('/api/status', { port: serverPort });
     assert.equal(result.statusCode, 200, result.body);

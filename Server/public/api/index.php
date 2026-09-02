@@ -350,6 +350,14 @@ if ($route === 'auth/login' && $method === 'POST') {
 }
 
 if ($route === 'auth/logout' && $method === 'POST') {
+    if (!$identity || (($identity['via'] ?? '') !== 'session')) {
+        JsonResponse::error('Not authenticated.', 401);
+    }
+    try {
+        Security::assertValidCsrfToken(is_string($headers['x-csrf-token'] ?? null) ? $headers['x-csrf-token'] : null);
+    } catch (Throwable $exception) {
+        JsonResponse::error('Invalid CSRF token.', 403, ['code' => 'CSRF_INVALID']);
+    }
     $authManager->logout();
     setcookie(
         'neutral_csrf',
