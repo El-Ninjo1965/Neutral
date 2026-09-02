@@ -15,6 +15,8 @@ test('temporary database probe exposes evidence without credential values', () =
   assert.match(source, /hash\('sha256'/);
   assert.match(source, /SHOW TABLES/);
   assert.match(source, /SELECT COUNT\(\*\)/);
+  assert.match(source, /neutral-db-result-91c4e7a2\.json/);
+  assert.match(source, /file_put_contents/);
   assert.match(source, /unlink\(__FILE__\)/);
   assert.doesNotMatch(source, /['"](?:DB_PASSWORD|MYSQL_PASSWORD)['"]\s*=>/);
   assert.doesNotMatch(source, /echo\s+\$database\[['"](?:password|host|user|name)['"]\]/);
