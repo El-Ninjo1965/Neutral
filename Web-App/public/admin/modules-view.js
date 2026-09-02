@@ -342,6 +342,10 @@ class AdminModulesView {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AdminModulesView = AdminModulesView;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminModulesView;
 }

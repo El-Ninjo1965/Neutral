@@ -103,6 +103,10 @@ class AdminAuditView {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AdminAuditView = AdminAuditView;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminAuditView;
 }

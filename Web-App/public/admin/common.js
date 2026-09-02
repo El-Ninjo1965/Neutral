@@ -198,7 +198,10 @@ const AdminCommon = {
   }
 };
 
-// Export for browser
+if (typeof window !== 'undefined') {
+  window.AdminCommon = AdminCommon;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AdminCommon, escapeHtml: escapeHtmlCommon };
 }

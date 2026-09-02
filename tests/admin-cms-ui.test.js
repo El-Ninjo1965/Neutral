@@ -4,6 +4,25 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
+
+test('admin dependencies publish the browser globals required by admin-init', () => {
+  const dependencies = [
+    ['common.js', 'AdminCommon', 'object'],
+    ['users-view.js', 'AdminUsersView', 'function'],
+    ['roles-view.js', 'AdminRolesView', 'function'],
+    ['settings-view.js', 'AdminSettingsView', 'function'],
+    ['audit-view.js', 'AdminAuditView', 'function'],
+    ['modules-view.js', 'AdminModulesView', 'function']
+  ];
+
+  for (const [file, globalName, expectedType] of dependencies) {
+    const context = vm.createContext({ window: {} });
+    const source = fs.readFileSync(path.join(__dirname, `../Web-App/public/admin/${file}`), 'utf8');
+    vm.runInContext(source, context, { filename: file });
+    assert.equal(typeof context.window[globalName], expectedType, `${file} must publish window.${globalName}`);
+  }
+});
 
 test('admin navigation groups every supported management destination exactly once', () => {
   const AdminNavigation = require('../Web-App/public/admin/navigation.js');

@@ -196,7 +196,10 @@ class AdminSettingsView {
   }
 }
 
-// Export for browser
+if (typeof window !== 'undefined') {
+  window.AdminSettingsView = AdminSettingsView;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminSettingsView;
 }

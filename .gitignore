@@ -69,6 +69,9 @@ server/runtime/
 # Full repository sync is explicitly enabled for this project; runtime config files remain part of the repository state.
 config/*.json
 
+# Local Node/PHP test runtime data may contain sessions, CSRF tokens and password hashes.
+Server/config/*.json
+
 # Runtime Database Files
 # Schema, migrations and seed files remain tracked.
 # Only SQLite runtime sidecar files are ignored.

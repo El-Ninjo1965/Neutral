@@ -285,6 +285,10 @@ class AdminUsersView {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AdminUsersView = AdminUsersView;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminUsersView;
 }

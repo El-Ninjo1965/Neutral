@@ -217,6 +217,10 @@ class AdminRolesView {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AdminRolesView = AdminRolesView;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminRolesView;
 }
