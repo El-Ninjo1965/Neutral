@@ -273,16 +273,18 @@ test('app config exposes a single neutral app name', () => {
   assert.equal(typeof context.window.ConfigManager.get('bootstrap').developerPasswordHash, 'string');
 });
 
-test('user shell keeps shared navigation while admin shell stays single-column and sidebar-free', () => {
+test('user shell stays separate while admin shell exposes the CMS workspace', () => {
   const userHtml = fs.readFileSync(path.resolve(__dirname, '../Web-App/public/index.html'), 'utf8');
-  const adminPhp = fs.readFileSync(path.resolve(__dirname, '../Server/php/views/admin-ui.php'), 'utf8');
+  const AdminNavigation = require('../Web-App/public/admin/navigation.js');
+  const AdminShell = require('../Web-App/public/admin/shell.js');
+  const adminHtml = AdminShell.render({ groups: AdminNavigation.groups, userLabel: 'Developer' });
   const adminPhpEntry = fs.readFileSync(path.resolve(__dirname, '../Server/public/admin.php'), 'utf8');
 
   assert.match(userHtml, /id="userAppNav"/);
   assert.match(userHtml, /id="userAppActions"/);
-  assert.doesNotMatch(adminPhp, /shared-shell-sidebar|appModuleNav|userMenu/);
-  assert.match(adminPhp, /id="topbarTitle"/);
-  assert.match(adminPhp, /id="mainContent"/);
+  assert.match(adminHtml, /class="admin-cms-sidebar"/);
+  assert.match(adminHtml, /class="admin-cms-content"/);
+  assert.match(adminHtml, /id="admin-main"/);
   assert.match(adminPhpEntry, /admin.php|admin-ui/);
 });
 

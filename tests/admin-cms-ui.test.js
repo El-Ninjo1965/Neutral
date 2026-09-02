@@ -38,3 +38,13 @@ test('admin router delegates layout and navigation to AdminShell', () => {
   assert.match(source, /onNavigate:\s*\(viewId\)\s*=>\s*this\.showView\(viewId\)/);
   assert.doesNotMatch(source, /admin-top-nav/);
 });
+
+test('admin CMS CSS provides desktop sidebar and iPad drawer behavior', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../Web-App/public/style.css'), 'utf8');
+  assert.match(css, /\.admin-cms-layout\s*\{/);
+  assert.match(css, /grid-template-columns:\s*260px\s+minmax\(0,\s*1fr\)/);
+  assert.match(css, /@media\s*\(max-width:\s*980px\)/);
+  assert.match(css, /body\.admin-drawer-open\s+\.admin-cms-sidebar/);
+  assert.match(css, /\.admin-table-container\s*\{[^}]*overflow-x:\s*auto/s);
+  assert.match(css, /min-height:\s*44px/);
+});
