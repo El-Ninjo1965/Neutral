@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const projectRoot = path.resolve(__dirname, '..');
 const probePath = path.join(projectRoot, 'Server', 'public', 'neutral-db-inspect-91c4e7a2.php');
+const workflowPath = path.join(projectRoot, '.github', 'workflows', 'ftp-upload.yml');
 
 test('temporary database probe exposes evidence without credential values', () => {
   const source = fs.readFileSync(probePath, 'utf8');
@@ -20,4 +21,12 @@ test('temporary database probe exposes evidence without credential values', () =
   assert.match(source, /unlink\(__FILE__\)/);
   assert.doesNotMatch(source, /['"](?:DB_PASSWORD|MYSQL_PASSWORD)['"]\s*=>/);
   assert.doesNotMatch(source, /echo\s+\$database\[['"](?:password|host|user|name)['"]\]/);
+});
+
+test('temporary workflow evidence step prints only the sanitized database result', () => {
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+
+  assert.match(workflow, /neutral-db-result-91c4e7a2\.json/);
+  assert.match(workflow, /jq.*db_fingerprint/);
+  assert.doesNotMatch(workflow, /echo.*FTP_(?:PASSWORD|USER)/);
 });
