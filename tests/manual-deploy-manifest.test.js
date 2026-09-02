@@ -29,6 +29,17 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.equal(fs.existsSync(path.join(stagingRoot, 'Server', 'node')), false);
   });
 
+  test('shared-host root routes the DirectoryIndex assets to their deployed files', () => {
+    const projectRoot = path.resolve(__dirname, '..');
+    const routing = fs.readFileSync(path.join(projectRoot, '.htaccess'), 'utf8');
+    assert.match(routing, /\^core\/\(\.\*\)\$/);
+    assert.match(routing, /Web-App\/core\/\$1/);
+    assert.match(routing, /\^style\\\.css\$/);
+    assert.match(routing, /Web-App\/public\/style\.css/);
+    assert.match(routing, /\^user-app\\\.js\$/);
+    assert.match(routing, /Web-App\/public\/user-app\.js/);
+  });
+
   test('new file is uploaded', () => {
     const previous = {
       'index.html': { hash: 'old-index', size: 10 },
