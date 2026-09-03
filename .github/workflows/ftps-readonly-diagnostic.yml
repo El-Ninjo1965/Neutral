@@ -30,6 +30,9 @@ jobs:
           API_STATUS="$(curl -sS -L --max-time 20 -o "$API_BODY" -w '%{http_code}' 'https://www.turbolikes.com/api/v1/system/info')"
           SERVER_STATUS="$(curl -sS -L --max-time 20 -o "$SERVER_BODY" -w '%{http_code}' 'https://www.turbolikes.com/Server/php/bootstrap.php')"
 
+          printf '{"root_status":%s,"admin_status":%s,"user_app_status":%s,"api_status":%s,"server_internal_status":%s}\n' \
+            "$ROOT_STATUS" "$ADMIN_STATUS" "$USER_APP_STATUS" "$API_STATUS" "$SERVER_STATUS"
+
           test "$ROOT_STATUS" = '200'
           test "$ADMIN_STATUS" = '401'
           test "$USER_APP_STATUS" = '200'
@@ -47,5 +50,4 @@ jobs:
           if grep -Eq '\.value\.trim\(\)[[:space:]]*\|\|[[:space:]]*["'"']Developer["'"']' "$USER_APP_BODY"; then exit 1; fi
           node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$API_BODY"
 
-          printf '{"root_status":%s,"admin_status":%s,"user_app_status":%s,"api_status":%s,"server_internal_status":%s,"login_identifiers_empty":true}\n' \
-            "$ROOT_STATUS" "$ADMIN_STATUS" "$USER_APP_STATUS" "$API_STATUS" "$SERVER_STATUS"
+          printf '{"login_identifiers_empty":true}\n'
