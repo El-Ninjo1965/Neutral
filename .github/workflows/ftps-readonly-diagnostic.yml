@@ -1,0 +1,54 @@
+name: FTPS Read-only Diagnostic
+
+on:
+  push:
+    branches:
+      - codex/ftps-readonly-diagnostic
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    env:
+      FTP_HOST: server.cpprotect5.de
+      FTP_PORT: '21'
+      FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+
+    steps:
+      - name: FTPS-Client bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Explizites FTPS rein lesend prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT_FILE="$(mktemp)"
+
+          {
+            printf '%s\n' 'set cmd:fail-exit yes'
+            printf '%s\n' 'set ssl:verify-certificate yes'
+            printf '%s\n' 'set ssl:check-hostname yes'
+            printf '%s\n' 'set ftp:ssl-force yes'
+            printf '%s\n' 'set ftp:ssl-protect-data yes'
+            printf 'open -u "%s","%s" "ftp://%s:%s"\n' "$FTP_USER" "$FTP_PASSWORD" "$FTP_HOST" "$FTP_PORT"
+            printf '%s\n' 'pwd'
+            printf '%s\n' 'cls -1a'
+            printf '%s\n' 'bye'
+          } | lftp >"$RESULT_FILE"
+
+          ENTRY_COUNT="$(grep -vc '^ftp://' "$RESULT_FILE" || true)"
+          MARKER_COUNT=0
+          for entry in .htaccess Web-App Server; do
+            if grep -Fxq "$entry" "$RESULT_FILE"; then
+              MARKER_COUNT=$((MARKER_COUNT + 1))
+            fi
+          done
+
+          printf '{"server_reachable":true,"tls_success":true,"auth_accepted":true,"start_path_readable":true,"virtual_start_path":"/","visible_entry_count":%s,"public_html_markers":"%s/3"}\n' "$ENTRY_COUNT" "$MARKER_COUNT"
