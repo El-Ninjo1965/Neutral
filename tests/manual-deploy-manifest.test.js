@@ -263,6 +263,12 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.match(script, /set ssl:verify-certificate true/);
   });
 
+  test('GitHub deployment cannot override mandatory hostname verification through a secret', () => {
+    const workflow = fs.readFileSync(path.resolve(__dirname, '../.github/workflows/ftp-upload.yml'), 'utf8');
+    assert.match(workflow, /^\s*FTP_SSL_CHECK_HOSTNAME:\s*['"]?true['"]?\s*$/m);
+    assert.doesNotMatch(workflow, /FTP_SSL_CHECK_HOSTNAME:\s*\$\{\{\s*secrets\./);
+  });
+
   test('deployment manifests are bound to one irreversible target fingerprint', (t) => {
     assert.equal(typeof deploymentTargetFingerprint, 'function');
     assert.equal(typeof selectPreviousDeploymentFiles, 'function');
