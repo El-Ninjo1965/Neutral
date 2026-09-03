@@ -282,12 +282,15 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
 
   test('GitHub deployment runs the complete Node and PHP suite before package build and upload', () => {
     const workflow = fs.readFileSync(path.resolve(__dirname, '../.github/workflows/ftp-upload.yml'), 'utf8');
+    const installIndex = workflow.indexOf('npm ci');
     const testIndex = workflow.indexOf('npm test');
     const packageIndex = workflow.indexOf('npm run package:production');
     const uploadIndex = workflow.indexOf('node scripts/manual-ftps-deploy.js');
 
     assert.match(workflow, /php\s+-v/);
+    assert.ok(installIndex >= 0, 'npm ci must be present');
     assert.ok(testIndex >= 0, 'npm test must be present');
+    assert.ok(installIndex < testIndex, 'dependencies must be installed before tests');
     assert.ok(testIndex < packageIndex, 'tests must run before package build');
     assert.ok(packageIndex < uploadIndex, 'package build must run before upload');
   });
