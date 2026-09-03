@@ -280,7 +280,7 @@
         <div class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
-            <input id="userLoginUsername" type="text" value="Developer" autocomplete="username" />
+            <input id="userLoginUsername" type="text" autocomplete="username" />
           </div>
           <div class="form-field">
             <label for="userLoginPassword">Password</label>
@@ -289,14 +289,14 @@
           <div class="user-login-actions">
             <button type="button" id="userLoginSubmit" class="primary">Login</button>
           </div>
-          <div id="userLoginStatus" class="message info">Developer setup is available once locally in this preview.</div>
+          <div id="userLoginStatus" class="message info">Sign in with your configured account.</div>
         </div>
       </section>
     `;
 
     const submit = document.getElementById('userLoginSubmit');
     submit.addEventListener('click', async () => {
-      const username = document.getElementById('userLoginUsername').value.trim() || 'Developer';
+      const username = document.getElementById('userLoginUsername').value.trim();
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
 

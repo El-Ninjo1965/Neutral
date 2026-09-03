@@ -24,6 +24,27 @@ test('admin dependencies publish the browser globals required by admin-init', ()
   }
 });
 
+test('login forms never prefill account identifiers', () => {
+  const projectRoot = path.resolve(__dirname, '..');
+  const userApp = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
+  const adminEntries = [
+    fs.readFileSync(path.join(projectRoot, 'Server/public/admin.php'), 'utf8'),
+    fs.readFileSync(path.join(projectRoot, 'Server/php/views/admin-ui.php'), 'utf8')
+  ];
+
+  const userInput = userApp.match(/<input id="userLoginUsername"[^>]*>/);
+  assert.ok(userInput, 'public login username input must exist');
+  assert.doesNotMatch(userInput[0], /\svalue=/i);
+  assert.doesNotMatch(userApp, /\.value\.trim\(\)\s*\|\|\s*['"]Developer['"]/);
+  assert.doesNotMatch(userApp, /Developer setup is available/);
+
+  for (const adminEntry of adminEntries) {
+    const adminInput = adminEntry.match(/<input id="loginUsername"[^>]*>/);
+    assert.ok(adminInput, 'admin login username input must exist');
+    assert.doesNotMatch(adminInput[0], /\svalue=/i);
+  }
+});
+
 test('admin navigation groups every supported management destination exactly once', () => {
   const AdminNavigation = require('../Web-App/public/admin/navigation.js');
   assert.deepEqual(AdminNavigation.groups.map((group) => group.id), [

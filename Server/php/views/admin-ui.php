@@ -24,7 +24,7 @@
         <div class="form-grid">
           <div class="form-field">
             <label for="loginUsername">Username</label>
-            <input id="loginUsername" type="text" value="admin" />
+            <input id="loginUsername" type="text" autocomplete="username" />
           </div>
           <div class="form-field">
             <label for="loginPassword">Password</label>

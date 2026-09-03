@@ -47,7 +47,7 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
       <div class="form-grid" style="margin-top:12px;">
         <div class="form-field">
           <label for="loginUsername">Username</label>
-          <input id="loginUsername" type="text" value="admin" autocomplete="username">
+          <input id="loginUsername" type="text" autocomplete="username">
         </div>
         <div class="form-field">
           <label for="loginPassword">Password</label>
