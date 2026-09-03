@@ -25,7 +25,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - komplette leere Testinstallation in einem neuen physischen Document-Root und einer neuen Datenbank durchführen: Paket übertragen, `.env` hostlokal anlegen, Setup/Migration/Seed ausführen, Betreiber anmelden und Setup danach gesperrt nachweisen,
 - denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` einschließlich API-, Asset-, SPA-, Login-, Session- und CSRF-Smoke-Tests ausführen,
 - denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren,
-- FTP-Hostname beziehungsweise Serverzertifikat in der geschützten Hosting-/GitHub-Actions-Konfiguration so korrigieren, dass die Identitäten übereinstimmen, und den ausdrücklich konfigurierten FTPS-Workflow danach erfolgreich prüfen; die Hostnamenprüfung bleibt zwingend und finales CodeQL ist bereits bestanden.
+- den produktiven GitHub-Workflow vom nicht zertifikatsgültigen Alias auf den read-only bestätigten Host `server.cpprotect5.de` umstellen und das verifizierte Full-Stack-Paket in das ausdrücklich konfigurierte Ziel deployen; danach müssen `Web-App/`, `Server/`, Remoteinventar und HTTP-Smokes bestätigt werden. Die Hostnamenprüfung bleibt zwingend und finales CodeQL ist bereits bestanden.
 
 **Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
 

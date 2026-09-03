@@ -101,6 +101,16 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
 
+### 2026-09-03 – Zertifikatsgültigen FTPS-Host rein lesend bestätigen
+
+- **Aufgabe:** Den zum Hostingserver gehörenden zertifikatsgültigen FTPS-Host ermitteln und mit den bereits geschützten GitHub-Zugangsdaten ausschließlich lesend prüfen.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **Ermittlung:** `ftp.turbolikes.com` und der Reverse-DNS-Name `server.cpprotect5.de` zeigen auf dieselbe Server-IP; ein öffentlich registriertes Zertifikat existiert für `server.cpprotect5.de`. `localhost` wurde ausgeschlossen, weil es im GitHub-Runner nicht den Hostingserver bezeichnet.
+- **Sicherheitsgrenze:** Separater Diagnosebranch `codex/ftps-readonly-diagnostic`; explizites FTPS auf Port 21 mit Zertifikats- und Hostnamenprüfung. Das Passwort wurde ausschließlich aus dem vorhandenen GitHub-Secret per stdin an lftp übergeben. Erlaubt waren nur `pwd` und `cls`; Upload-, Lösch- und Änderungsbefehle waren durch einen vorab rot/grün geprüften statischen Test ausgeschlossen.
+- **Nachweis:** Läufe `33800561888` und `33800747981` bestanden. Server erreichbar, TLS erfolgreich, Authentifizierung akzeptiert, virtueller Startpfad `/` lesbar. 64 Einträge waren sichtbar; `.htaccess` vorhanden, `Web-App/` und `Server/` nicht vorhanden.
+- **Ergebnis:** `server.cpprotect5.de` ist für diesen Zugang der funktionierende explizite FTPS-Hostname. Der sichtbare Root entspricht plausibel dem bisherigen `public_html`, enthält aber noch nicht die neue portable Full-Stack-Verzeichnisstruktur. Es wurde nichts hochgeladen, verändert oder gelöscht und kein Secret ausgegeben.
+- **Offen:** Produktiven Workflow auf den zertifikatsgültigen Host umstellen und das verifizierte Paket erst danach kontrolliert in das ausdrücklich konfigurierte Ziel deployen; anschließend Remoteinventar und HTTP-Smokes prüfen.
+
 ### 2026-09-03 – Portable Basis nach GitHub `main` integrieren
 
 - **Aufgabe:** Den lokal geprüften Portabilitätsstand in das verbindliche Repository übernehmen und die ausgelösten GitHub-Prüfungen wahrheitsgemäß bewerten.

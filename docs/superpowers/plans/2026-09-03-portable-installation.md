@@ -148,3 +148,5 @@ git diff --check
 
 - [x] **Step 6: Unabhängiges Review auf Spezifikationsabdeckung, Traversal, Symlinkgrenzen, Secretlecks, destruktive Dateiarbeit, Root-Kompatibilität und Unterpfade durchführen; Befunde beheben.**
 - [x] **Step 7: Abschlussstand nach GitHub `main` übertragen; CodeQL und FTPS prüfen.** Finaler Codecommit `6b59ec68`; CodeQL-Lauf `33716675598` bestanden. Der finale FTPS-Lauf `33716676051` wurde nach erfolgreichem Paketbau vor Authentifizierung und Upload sicher blockiert, weil Zertifikatsname und konfigurierter FTP-Hostname nicht übereinstimmen. Produktiver Unterpfad-/Datenbanktest bleibt bis zur sicher korrigierten Hosting-/Zielkonfiguration offen.
+
+  Read-only-Nachtrag: Der zertifikatsgültige Host `server.cpprotect5.de` wurde in Lauf `33800747981` mit explizitem FTPS auf Port 21 erfolgreich bis einschließlich Authentifizierung, `pwd` und Verzeichnislesbarkeit geprüft. Der virtuelle Root `/` enthält `.htaccess`, aber noch nicht `Web-App/` und `Server/`; kein Upload oder Remoteeingriff wurde ausgeführt.

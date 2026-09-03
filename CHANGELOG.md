@@ -4,6 +4,10 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 
 ## 2026-09-03 – Portable Installationsbasis lokal abgeschlossen
 
+- zertifikatsgültigen Hostingnamen `server.cpprotect5.de` über Reverse-DNS, identische Ziel-IP und einen separaten expliziten FTPS-Read-only-Lauf bestätigt; Lauf `33800747981` akzeptierte TLS und Authentifizierung und las den virtuellen Startpfad `/`,
+- vorhandenen Serverroot ohne Inhaltsausgabe klassifiziert: 64 sichtbare Einträge und `.htaccess`, jedoch keine Ordner `Web-App/` oder `Server/`; damit ist die alte Deploymentstruktur und der noch fehlende portable Upload belegt,
+- Diagnose durch **Codex (ChatGPT Work / GitHub-Connector)** ohne Upload, Änderung, Löschung oder Secret-Ausgabe durchgeführt,
+
 - öffentlicher Basispfad für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad zentral in PHP und Browser umgesetzt; direkt abschließendes API-Rewrite, konfigurationsbasiertes PHP-Routing und paketiertes `<base href>` halten auch tiefe SPA-Routen unter demselben Vertrag,
 - reproduzierbares Produktionspaket mit Produzenten-/Formatkennung, `sourceDirty`, exakter Allowlist, wertfreier `.env.example`, sortiertem Manifest und `SHA256SUMS` sowie gemeinsamem, maskierendem Secret-Scanner einschließlich verschlüsselter Private Keys eingeführt; fremde oder unvollständig verifizierte Ausgaben werden nicht ersetzt,
 - FTPS-Deployment verlangt ein ausdrückliches Ziel, erzwingt Zertifikats-/Hostnamenprüfung, bindet verwaltete Löschungen per SHA-256-Fingerprint an Ziel und Paketformat, löscht keine historischen HTML-Dateien pauschal, überträgt das Paket ohne `--only-newer` vollständig und reicht das lftp-Skript nur über stdin weiter,
