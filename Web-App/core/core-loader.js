@@ -317,7 +317,7 @@
         async discoverExternalModules(basePath = null) {
             const defaultBasePath = typeof process !== 'undefined' && process.versions && process.versions.node
                 ? 'Web-App/app/modules'
-                : '../app/modules';
+                : window.NeutralPublicPath.join('Web-App/app/modules');
             const rootPath = (typeof basePath === 'string' && basePath.trim()) ? basePath.trim() : defaultBasePath;
             const discovered = [];
             const seenModuleKeys = new Set();
@@ -375,7 +375,7 @@
                 return discovered;
             }
 
-            const apiCatalog = await readModuleCatalog('/api/modules');
+            const apiCatalog = await readModuleCatalog(window.NeutralPublicPath.api('modules'));
             const externalCatalog = Array.isArray(window.ExternalModuleCatalog)
                 ? window.ExternalModuleCatalog
                 : [];

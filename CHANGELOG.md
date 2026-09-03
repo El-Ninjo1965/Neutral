@@ -2,6 +2,20 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-03 – Portable Installationsbasis lokal abgeschlossen
+
+- öffentlicher Basispfad für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad zentral in PHP und Browser umgesetzt; direkt abschließendes API-Rewrite, konfigurationsbasiertes PHP-Routing und paketiertes `<base href>` halten auch tiefe SPA-Routen unter demselben Vertrag,
+- reproduzierbares Produktionspaket mit Produzenten-/Formatkennung, `sourceDirty`, exakter Allowlist, wertfreier `.env.example`, sortiertem Manifest und `SHA256SUMS` sowie gemeinsamem, maskierendem Secret-Scanner einschließlich verschlüsselter Private Keys eingeführt; fremde oder unvollständig verifizierte Ausgaben werden nicht ersetzt,
+- FTPS-Deployment verlangt ein ausdrückliches Ziel, erzwingt Zertifikats-/Hostnamenprüfung, bindet verwaltete Löschungen per SHA-256-Fingerprint an Ziel und Paketformat, löscht keine historischen HTML-Dateien pauschal, überträgt das Paket ohne `--only-newer` vollständig und reicht das lftp-Skript nur über stdin weiter,
+- lokaler App-Bootstrap für validierte Appmetadaten, optionale GPS-Auswahl und optionales `git init` ohne Remote ergänzt,
+- paketbasierter Preflight prüft Hashes, Inventar, Symlink-/Traversalgrenzen, beide Resolver-Einstiege, exakte Meta-/`base`-Markierungen sowie eine rohe, whitespacefreie, case-insensitive `https://`-Basis mit nichtleerer Authority, bevor WHATWG-, Credential-, Query-, Fragment- und exakte Basispfadprüfungen folgen; Statuswerte sind ausschließlich `PASS`, `BLOCKED` und `NICHT_GEPRUEFT`,
+- fehlende lokale PHP-Binary und externes Rewrite werden nicht als bestanden ausgegeben; Paket-/Inventar-/Hash-/Basispfad- und Secretfehler blockieren mit maskierten Ausgaben,
+- alle finalen Reviewbefunde test-first reproduziert; die abschließende PHP-ausgeschlossene Gesamtsuite mit 239 bestandenen, zwei erwarteten PHP-Skips und 0 Fehlern verifiziert; keine Server-, DB-, FTP-, GitHub- oder sonstige externe Operation ausgeführt,
+- den einzigen Restbefund der fokussierten Nachprüfung durch **Codex (ChatGPT Work)** geschlossen: auch Adminformulare, Connection-/Provider-Normalisierung und Setupzustände beziehen öffentliche API-Defaults nun aus `NeutralPublicPath`; der erweiterte Regressionstest und die unveränderte Gesamtsuite bestehen,
+- Web-App- und Serveranleitung beschreiben denselben verbindlichen Full-Stack-Paketweg; die Web-App-Anleitung behandelt dessen Browseranteil und erfindet kein separates Client-only-Artefakt,
+- PHP-/Apache-/Live-/Datenbank-/neues-Repository-, CodeQL- und FTPS-Nachweise bleiben ausdrücklich offen,
+- ausgeführt und dokumentiert durch **Codex (ChatGPT Work)**.
+
 ## 2026-09-02 – Portable Installationsarchitektur freigegeben
 
 - die portable Installationsbasis als eigenständiges erstes Core-1.0-Arbeitspaket spezifiziert,

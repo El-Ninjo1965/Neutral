@@ -7,6 +7,7 @@ final class AppConfig
 {
     /** @var array<string, string> */
     private array $env;
+    private PublicPath $publicPath;
 
     /**
      * @param array<string, string> $env
@@ -14,6 +15,7 @@ final class AppConfig
     public function __construct(array $env)
     {
         $this->env = $env;
+        $this->publicPath = new PublicPath($env['NEUTRAL_BASE_PATH'] ?? '');
     }
 
     /**
@@ -36,11 +38,25 @@ final class AppConfig
 
     public function apiBase(): string
     {
-        $value = trim($this->env['API_BASE'] ?? $this->env['NEUTRAL_API_BASE'] ?? $this->env['APP_API_BASE'] ?? '/api');
-        if ($value === '') {
-            return '/api';
-        }
-        return str_starts_with($value, '/') ? $value : '/' . $value;
+        return $this->publicPath->apiBase();
+    }
+
+    public function basePath(): string
+    {
+        return $this->publicPath->basePath();
+    }
+
+    public function publicUrl(string $path): string
+    {
+        return $this->publicPath->publicUrl($path);
+    }
+
+    /**
+     * @return array{version:?int,route:string}
+     */
+    public function apiRequestRoute(string $requestUri): array
+    {
+        return $this->publicPath->apiRequestRoute($requestUri);
     }
 
     public function environment(): string

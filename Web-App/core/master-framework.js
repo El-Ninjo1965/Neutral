@@ -12,6 +12,13 @@
     return trimmed || fallback;
   };
 
+  const resolvePublicApiBase = () => {
+    if (root.NeutralPublicPath && typeof root.NeutralPublicPath.api === 'function') {
+      return root.NeutralPublicPath.api('');
+    }
+    return normalizeString(root.NeutralConfig && root.NeutralConfig.apiBase, '');
+  };
+
   const isPlainObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 
   const normalizeSetupStatus = (value, fallback = 'NOT_CONFIGURED') => {
@@ -1074,7 +1081,7 @@
       const connectionId = normalizeString(connectionDefinition.connectionId || connectionDefinition.id, 'default-connection');
       const appId = normalizeString(connectionDefinition.appId || connectionDefinition.app, 'default-app');
       const serverUrl = normalizeString(connectionDefinition.serverUrl || connectionDefinition.url || connectionDefinition.serverAddress, ((typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'http://localhost'));
-      const apiBase = normalizeString(connectionDefinition.apiBase || connectionDefinition.basePath || '/api', '/api');
+      const apiBase = normalizeString(connectionDefinition.apiBase || connectionDefinition.basePath, resolvePublicApiBase());
       const storageType = this.normalizeStorageType(connectionDefinition.storageType || connectionDefinition.type || connectionDefinition.databaseType || connectionDefinition.connectionType || 'file', 'file');
       const databaseType = this.normalizeStorageType(connectionDefinition.databaseType || connectionDefinition.sqlType || ((storageType === 'sql' || storageType === 'sqlite' || storageType === 'mysql' || storageType === 'postgresql') ? storageType : ''), '');
       const databaseName = normalizeString(connectionDefinition.databaseName || connectionDefinition.name || connectionDefinition.database || '', '');
@@ -1251,7 +1258,7 @@
         host: normalizeString(providerDefinition.host || providerDefinition.hostname || '', ''),
         region: normalizeString(providerDefinition.region || '', ''),
         path: normalizeString(providerDefinition.path || providerDefinition.rootPath || '', ''),
-        apiBase: normalizeString(providerDefinition.apiBase || providerDefinition.basePath || '/api', '/api'),
+        apiBase: normalizeString(providerDefinition.apiBase || providerDefinition.basePath, resolvePublicApiBase()),
         authType: normalizeString(providerDefinition.authType || 'none', 'none'),
         username: normalizeString(providerDefinition.username || '', ''),
         password: normalizeString(providerDefinition.password || '', ''),
@@ -2087,7 +2094,7 @@
         const normalizedPort = port === 80 || port === 443 ? '' : `:${port}`;
         return `http://${effectiveHost}${normalizedPort}`;
       })();
-      const apiBase = normalizeString(env.API_BASE || config.apiBase || '/api', '/api');
+      const apiBase = normalizeString(env.API_BASE || config.apiBase, resolvePublicApiBase());
       const database = this.getDatabaseConfig ? this.getDatabaseConfig() : {};
 
       return {
@@ -2144,7 +2151,7 @@
           responseTimeMs: null,
           message: 'Server not configured.',
           url: '',
-          apiBase: '/api'
+          apiBase: resolvePublicApiBase()
         },
         databaseState: {
           configured: false,

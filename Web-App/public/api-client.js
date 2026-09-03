@@ -5,23 +5,28 @@
  * Centralized fetch wrapper with auth headers, error handling, and JSON parsing
  */
 
-const getConfiguredApiBase = () => {
-  const runtimeBase = window.NeutralConfig && typeof window.NeutralConfig.apiBase === 'string'
-    ? window.NeutralConfig.apiBase
-    : '';
-  const metaBase = document.querySelector('meta[name="neutral-api-base"]')?.content || '';
-  const configured = (runtimeBase || metaBase || '/api/v1').trim();
-  return `/${configured.replace(/^\/+|\/+$/g, '')}`;
-};
-
 const resolveNeutralApiUrl = (endpoint) => {
   const value = String(endpoint || '');
   if (/^https?:\/\//i.test(value)) return value;
-  const apiBase = getConfiguredApiBase();
-  const normalizedEndpoint = value.startsWith('/api/')
-    ? value.slice(4)
-    : value === '/api' ? '' : value;
-  return `${apiBase}${normalizedEndpoint.startsWith('/') || !normalizedEndpoint ? normalizedEndpoint : `/${normalizedEndpoint}`}`;
+  const queryIndex = value.indexOf('?');
+  const endpointPath = queryIndex === -1 ? value : value.slice(0, queryIndex);
+  const query = queryIndex === -1 ? '' : value.slice(queryIndex);
+  const publicPath = typeof window !== 'undefined' && window.NeutralPublicPath
+    ? window.NeutralPublicPath
+    : (globalThis.NeutralPublicPath || (typeof module !== 'undefined' && module.exports
+      ? require('./public-path.js')
+      : null));
+  if (!publicPath || typeof publicPath.api !== 'function') {
+    throw new Error('NeutralPublicPath is required before ApiClient.');
+  }
+  const normalizedEndpoint = endpointPath.startsWith('/api/v1/')
+    ? endpointPath.slice(8)
+    : endpointPath === '/api/v1'
+      ? ''
+      : endpointPath.startsWith('/api/')
+    ? endpointPath.slice(4)
+    : endpointPath === '/api' ? '' : endpointPath;
+  return `${publicPath.api(normalizedEndpoint)}${query}`;
 };
 
 class ApiClient {

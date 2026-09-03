@@ -10,6 +10,13 @@
     return trimmed || fallback;
   };
 
+  const resolvePublicApiBase = () => {
+    if (typeof globalThis !== 'undefined' && globalThis.NeutralPublicPath && typeof globalThis.NeutralPublicPath.api === 'function') {
+      return globalThis.NeutralPublicPath.api('');
+    }
+    return normalizeString(typeof globalThis !== 'undefined' && globalThis.NeutralConfig && globalThis.NeutralConfig.apiBase, '');
+  };
+
   const isPlainObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 
   const normalizeProviderType = (value, fallback = 'local') => {
@@ -55,7 +62,7 @@
       host: normalizeString(providerDefinition.host || providerDefinition.hostname || '', ''),
       region: normalizeString(providerDefinition.region || '', ''),
       path: normalizeString(providerDefinition.path || providerDefinition.rootPath || '', ''),
-      apiBase: normalizeString(providerDefinition.apiBase || providerDefinition.basePath || '/api', '/api'),
+      apiBase: normalizeString(providerDefinition.apiBase || providerDefinition.basePath, resolvePublicApiBase()),
       authType: normalizeString(providerDefinition.authType || 'none', 'none'),
       username: normalizeString(providerDefinition.username || '', ''),
       password: normalizeString(providerDefinition.password || '', ''),

@@ -2,7 +2,7 @@
 
 **Status:** TECHNISCHER IST-/ZIELVERTRAG
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-03
 **Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
 
 ## Statuslegende
@@ -53,7 +53,7 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 ## 2. Web-App
 
-**IST:** `Web-App/public/index.html` stellt die Shell bereit. `Web-App/public/user-app.js` rendert sie sofort und startet Core, IndexedDB und Discovery danach im Hintergrund. `Web-App/public/api-client.js` kapselt JSON-Fetch und löst die zentrale, über `NeutralConfig` oder das Meta-Element `neutral-api-base` konfigurierbare API-Basis auf.
+**IST:** `Web-App/public/index.html` stellt die Shell bereit. `Web-App/public/user-app.js` rendert sie sofort und startet Core, IndexedDB und Discovery danach im Hintergrund. `Web-App/public/public-path.js` normalisiert den öffentlichen Installationspräfix aus `NeutralConfig.basePath` beziehungsweise dem Meta-Element `neutral-base-path`; `api-client.js`, Assets, Admin und Setup konsumieren denselben Resolver. Ein zum normalisierten Basispfad passendes `<base href>` hält Assets auch auf tiefen SPA-Routen unter derselben Installation. Die einzige ausgelieferte Runtimekonfiguration enthält `basePath` und das daraus abgeleitete `apiBase`, keine Environment- oder Dateisystemwerte; der Resolver verwendet `basePath` als Eingabe.
 
 **GEPLANT:** sofort sichtbare mobile Grundoberfläche vor langsamer Initialisierung; klare Schichten für Shell, Core und Erweiterungs-UI; messbare Browserkompatibilität.
 
@@ -84,6 +84,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** Das Shared-Hosting-Staging behält `Web-App/` und `Server/` als getrennte Komponenten unter dem Deploymentroot. Die Root-`.htaccess` bildet die öffentlichen Pfade auf diese Struktur ab und sperrt PHP-Core, Runtime und Dotfiles. `Server/node/` ist nicht Bestandteil des Produktions-Stagings.
 
+**IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
+
 **IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
 
 **GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.
@@ -96,7 +98,7 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 ## 6. API und Datenfluss
 
-**IST:** Der Browser verwendet `ApiClient` und relative `/api/...`-Pfade. Same-Origin-Cookies tragen die Session; bei Schreibmethoden wird `neutral_csrf` als `x-csrf-token` gesendet. Der PHP-Router validiert Identität, Berechtigungen und CSRF, ruft Services auf und antwortet über `JsonResponse`.
+**IST:** Der Browser verwendet `ApiClient`; öffentliche API-URLs werden aus dem normalisierten Basispfad und `/api/v1` gebildet. Same-Origin-Cookies tragen die Session; bei Schreibmethoden wird `neutral_csrf` als `x-csrf-token` gesendet. Der PHP-Router validiert Identität, Berechtigungen und CSRF, ruft Services auf und antwortet über `JsonResponse`.
 
 ```text
 UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → MariaDB/MySQL
@@ -130,7 +132,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 
 ## 9. Konfiguration
 
-**IST:** Clientkonfiguration über ConfigManager und Runtimeobjekte. Serverkonfiguration über `.env`, `EnvLoader` und `AppConfig`; `.env` bleibt hostlokal. API- und Installationspfade werden aus dem aktiven Kontext abgeleitet.
+**IST:** Clientkonfiguration über ConfigManager und Runtimeobjekte. Serverkonfiguration über `.env`, `EnvLoader` und `AppConfig`; `.env` bleibt hostlokal. Die versionierte `.env.example` enthält nur leere hostabhängige/secretartige Werte und sichere öffentliche Defaults. `NEUTRAL_BASE_PATH` wird server- und browserseitig identisch validiert; ungültige Werte brechen ab und fallen nicht still auf Root zurück.
 
 **GEPLANT:** validiertes, versioniertes Konfigurationsschema und Adapterauswahl für Hostingwechsel.
 
@@ -144,7 +146,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 
 - Browser: Web APIs, globale Lade-Reihenfolge der Skripte, optional Fetch/IndexedDB/Geolocation.
 - PHP: PHP 8.x, PDO und `pdo_mysql`, Sessions, JSON, Dateisystemzugriff für Logs/Setupzustand.
-- Entwicklung/Test: Node.js und npm; `argon2` für die Node-Referenzruntime.
+- Entwicklung/Test: Node.js und npm; `argon2` für die Node-Referenzruntime sowie Paketbau, Bootstrap und Offline-Preflight.
 - Produktion: Node ist nicht erforderlich.
 
 ## 12. Erweiterungspunkte
@@ -182,3 +184,11 @@ Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell. `neutral:
 7. Adminrouter startet eventgetrieben erst nach bestätigter Identität.
 
 Zeitbudgets auf realer Mobilhardware bleiben zwei ausdrücklich offene P8-Gerätetests.
+
+## Portable Installation – IST/TEILWEISE
+
+**IST:** `scripts/lib/portable-install.js` ist der gemeinsame Kern für Allowlist-Inventar, Pfadnormalisierung, SHA-256, Secretprüfung und verifizierte Pakete. `build-production-package.js` erzeugt `dist/neutral-production/` über einen benachbarten temporären Baum und ersetzt nur einen über Produzent, Format, Metadaten, exakte Allowlist, Inventar und Hashes positiv verifizierten Altstand. Das Manifest hält mit `sourceDirty` konservativ fest, ob der Git-Arbeitsbaum beim Build sauber war. Das Paket enthält Root-`.htaccess`, `Web-App/`, `Server/php/`, `Server/public/`, `.env.example`, `manifest.json` und `SHA256SUMS`; Node-Server, Tests, Dokumentation, Git-, Runtime-, Backup-, Log- und Secretdateien sind ausgeschlossen.
+
+**IST:** `create-neutral-app.js` erstellt aus einer sauberen versionierten Quelle einen lokalen Projektbaum in einem leeren Ziel, setzt öffentliche Appmetadaten, nimmt GPS nur explizit auf und initialisiert Git nur auf Wunsch ohne Remote. `cpanel-preflight.js` verifiziert ein vorhandenes Paket, den exakten HTTPS-Root/-Basispfad, Einstiegspunkte und Secretfreiheit. Alle JSON-Statuswerte sind `PASS`, `BLOCKED` oder `NICHT_GEPRUEFT`; lokale Blocker enden ungleich null.
+
+**TEILWEISE:** Der Offline-Preflight führt keine Server-, Datenbank-, Upload- oder Portoperation aus. Fehlende lokale PHP-Binary und externe Apache-/LiteSpeed-Rewritefähigkeit bleiben `NICHT_GEPRUEFT`, wodurch der Gesamtstatus nicht `PASS` sein kann. Neuer physischer DocumentRoot, echter URL-Unterpfad, leere Datenbank, Setup/Migration/Betreiber, Live-Smoke-Tests, neues Repository sowie CodeQL/FTPS des Abschlusscommits sind noch extern nachzuweisen.

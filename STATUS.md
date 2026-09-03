@@ -1,8 +1,8 @@
 # NEUTRAL – Status
 
 **Status:** NACHGEWIESENER IST-STAND  
-**Geprüft:** 2026-09-02
-**Referenz:** aktueller `main`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Geprüft:** 2026-09-03
+**Referenz:** Implementierungszweig `codex/portable-installation`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -10,7 +10,9 @@ Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie veränder
 
 Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der Modul-Lifecycle sind substanziell vorhanden. Die offenen Kernarbeiten sind endlich und konkret: universelle Modul-Servererweiterung, Modulmigrationen, Limits, sichere Drittanbieterprovider, Portabilitätsabnahme und vollständige Produktionsprüfung.
 
-Die portable Installationsarchitektur für Domain-Root, eigenen physischen Document-Root und URL-Unterpfad ist in `docs/superpowers/specs/2026-09-02-portable-installation-design.md` spezifiziert. Implementierung und Live-Abnahme sind weiterhin offen.
+Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
+
+Die lokale Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorrektur wurde durch **Codex (ChatGPT Work)** ausgeführt und dokumentiert. Sie schließt keinen der weiterhin offenen PHP-, Apache-, Live-, Datenbank-, FTPS-, CodeQL- oder Repositorynachweise ein.
 
 ## Funktionsmatrix
 
@@ -33,9 +35,10 @@ Die portable Installationsarchitektur für Domain-Root, eigenen physischen Docum
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | TEILWEISE | FTPS-Workflow erfolgreich; produktive MySQL-Neuinstallation mit korrekter Datenbankidentität, 16 aktuellen Tabellen, 2 Migrationen und Status `ACTIVE` nachgewiesen; vollständige Login-/API-Abnahme offen |
-| Neuinstallation/neues Repository | TEILWEISE | Root-Deployment überträgt `.htaccess`, `Web-App/`, `Server/php/` und `Server/public/`; versioniertes Installationspaket, neutraler Environment-Bootstrap und reproduzierter Neu-Repository-Ablauf fehlen |
-| Installation unter URL-Unterpfad | FEHLT | physisches Deploymentziel ist konfigurierbar, aber root-absolute Client-/Admin-/API-Pfade verhindern derzeit eine belastbare Freigabe für URL-Präfixe wie `/meine-app/` |
+| Shared-Hosting-Deployment | TEILWEISE | bisheriger FTPS-Workflow erfolgreich; aktueller Code erzwingt ausdrückliches Ziel und Hostnamenprüfung, bindet Löschzustand per SHA-256-Fingerprint, überträgt vollständig und reicht lftp-Secrets nur über stdin; der portable Abschlusscommit ist noch nicht extern ausgeführt |
+| Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
+| Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
+| Installation unter URL-Unterpfad | TEILWEISE | PHP-/Browserresolver, direktes API-Rewrite, paketiertes `<base href>`, Paket/Preflight und tiefe `/meine-app`-SPA-Fixtures sind lokal getestet; echter Apache-/PHP-/DB-End-to-End-Lauf unter einem URL-Unterpfad fehlt |
 | Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
 | PWA/Store-Verpackung | GEPLANT | bewusst nach Core 1.0 verschoben |
 | Optionale Node-Erweiterung | GEPLANT | Node-Referenzcode existiert, ist keine Produktionsvoraussetzung |
@@ -48,19 +51,12 @@ Am 2026-09-02 reparierte Codex (ChatGPT Work / GitHub-Connector) mit Commit `156
 
 Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter Datenbankidentität und exaktem Alt-Tabellensatz zurückgesetzt und mit dem aktuellen Installer neu aufgebaut. Ein separater read-only Nachweis bestätigte anschließend Verbindung, Status `ACTIVE`, 16 vom aktuellen Schema erwartete Tabellen einschließlich `login_attempts` und 2 angewendete Migrationen. Alle temporären Prüf- und Ergebnisdateien wurden per FTPS entfernt; erneute Löschversuche bestätigten für sämtliche älteren Markerdateien `No such file or directory`. Die noch offene Produktionsabnahme umfasst authentifizierten Login, Moduloperationen, Backup/Restore und Umzug.
 
-## Testzustand am 2026-09-02
+## Testzustand am 2026-09-03
 
-Die lokale Referenzumgebung aus [`DEVELOPMENT.md`](DEVELOPMENT.md) führt die gesamte Suite einschließlich Node-, PHP- und `argon2`-Pfaden erfolgreich aus:
+Die aktuelle Cloud besitzt keine PHP-Binary. Nach gezielten RED/GREEN-Runden für Routing/Basispfad, Paketidentität/Secretprüfung, FTPS-Zielbindung und Dokumentationsverträge erfasste die finale PHP-ausgeschlossene Gesamtsuite 241 Tests: 239 bestanden, zwei erwartete PHP-Skips, 0 Fehler. Die fokussierte Nachprüfung fand einen verbliebenen öffentlichen `/api`-Default in weiteren Admin-/Providerpfaden; **Codex (ChatGPT Work)** schloss ihn testgetrieben, danach bestand dieselbe Gesamtsuite erneut unverändert. Ein fehlendes `php` wird vom CLI wahrheitsgemäß als `NICHT_GEPRUEFT` ausgegeben; PHP-Produktion wird daraus nicht abgeleitet.
 
-- 150 Tests wurden vollständig ausgeführt,
-- 150 Tests bestanden,
-- 0 Tests schlugen fehl,
-- 0 Tests wurden abgebrochen.
-
-Die zuvor reproduzierten Fehler wurden auf fünf plattformabhängige Ursachen zurückgeführt und behoben: synthetische PHP-Sessions unter PHP-Strict-Mode, absolute Windows-Modulpfade, statische URL-Auflösung unter Windows, native PHP-Environment-Pfade und case-sensitive Architekturprüfung.
-
-`npm run setup:preflight` läuft erfolgreich durch. Allowlist und Deployment-Dry-Run sind grün. Lokale DB-/FTP-Bereitschaft bleibt absichtlich `false`, solange produktive Secrets ausschließlich außerhalb des Repositorys verwaltet werden; die GitHub-FTPS-Ausführung wurde bereits separat erfolgreich nachgewiesen.
+Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne expliziten HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. Dieser Änderungssatz hat weder Server, Datenbank, FTPS noch GitHub Actions angesprochen.
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist die vollständige Live-Sicherheits- und API-Abnahme sowie der reproduzierbare Neuinstallationsweg für ein neues Repository, einen neuen physischen Document-Root und einen optionalen URL-Unterpfad. Erst wenn Installationsbasis, Paket, Environment-Bootstrap und leere End-to-End-Neuinstallation nachgewiesen sind, folgen die verbleibenden Modul-/Providerverträge und die finale Core-1.0-Abnahme gemäß `TODO.md`.
+Der nächste Meilenstein ist die externe Portabilitätsabnahme: neues Repository, neuer physischer DocumentRoot, echter URL-Unterpfad, PHP-/Apache-Anforderungen, leere Datenbank, Setup/Migration/Betreiberanlage, Setup-Sperre und vollständige HTTP-Smoke-Tests. Danach folgen die verbleibenden Modul-/Providerverträge und die finale Core-1.0-Abnahme gemäß `TODO.md`.

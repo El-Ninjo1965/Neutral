@@ -10,6 +10,7 @@
         ? 'setup:overview'
         : 'dashboard';
   const state = { activeView: defaultView, activeSettingsModuleId: null };
+  const defaultApiBase = () => window.NeutralPublicPath.api('');
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -161,10 +162,10 @@
     }
 
     if (hasRole(user, 'developer') || hasRole(user, 'admin') || hasPermission(user, 'system:view')) {
-      return 'admin.php';
+      return window.NeutralPublicPath.admin();
     }
 
-    return 'index.html';
+    return window.NeutralPublicPath.join('');
   };
 
   const getVisibleModules = () => {
@@ -309,7 +310,7 @@
 
     appModuleNav.innerHTML = primaryItems.map((item) => `
       <button type="button" class="nav-item ${state.activeView === item.id ? 'active' : ''}" data-app-nav="${escapeHtml(item.id)}">${escapeHtml(item.label)}</button>
-    `).join('') + '<a class="nav-item" href="index.html">Open app</a>';
+    `).join('') + `<a class="nav-item" href="${escapeHtml(window.NeutralPublicPath.join(''))}">Open app</a>`;
 
     appModuleNav.querySelectorAll('[data-app-nav]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -334,16 +335,6 @@
     }
     const origin = resolveRuntimeOrigin();
     return origin.replace(/\/+$/, '');
-  };
-
-  const resolveRuntimeApiClientBase = () => {
-    const origin = resolveRuntimeOrigin().replace(/\/+$/, '');
-    const pathname = typeof window !== 'undefined' && window.location && typeof window.location.pathname === 'string'
-      ? window.location.pathname
-      : '/';
-    const basePath = pathname.replace(/\/[^/]*$/, '');
-    const normalizedBasePath = basePath === '/' ? '' : basePath.replace(/\/+$/, '');
-    return `${origin}${normalizedBasePath}`;
   };
 
   const fetchJson = async (url, fallback = { ok: false }, options = {}) => {
@@ -532,9 +523,9 @@
             const form = document.querySelector('[data-setup-form]');
             const payload = {
               serverUrl: (form && form.querySelector('[name="serverUrl"]')) ? form.querySelector('[name="serverUrl"]').value : (document.getElementById('serverUrlInput') ? document.getElementById('serverUrlInput').value : ''),
-              apiBase: (form && form.querySelector('[name="apiBase"]')) ? form.querySelector('[name="apiBase"]').value : (document.getElementById('serverApiBaseInput') ? document.getElementById('serverApiBaseInput').value : '/api')
+              apiBase: (form && form.querySelector('[name="apiBase"]')) ? form.querySelector('[name="apiBase"]').value : (document.getElementById('serverApiBaseInput') ? document.getElementById('serverApiBaseInput').value : defaultApiBase())
             };
-            const result = await postJson('/api/server/test', payload, { ok: false, result: { status: 'ERROR', message: 'Server test failed.' } });
+            const result = await postJson(window.NeutralPublicPath.api('server/test'), payload, { ok: false, result: { status: 'ERROR', message: 'Server test failed.' } });
             if (statusTarget) {
               statusTarget.textContent = result && result.result && result.result.message ? result.result.message : 'Server test failed.';
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
@@ -552,7 +543,7 @@
               password: (form && form.querySelector('[name="databasePassword"]')) ? form.querySelector('[name="databasePassword"]').value : '',
               url: (form && form.querySelector('[name="databaseUrl"]')) ? form.querySelector('[name="databaseUrl"]').value : (document.getElementById('dbUrlInput') ? document.getElementById('dbUrlInput').value : '')
             };
-            const result = await postJson('/api/database/test', payload, { ok: false, status: 'NOT_CONFIGURED', database: { message: 'Database not configured.' } });
+            const result = await postJson(window.NeutralPublicPath.api('database/test'), payload, { ok: false, status: 'NOT_CONFIGURED', database: { message: 'Database not configured.' } });
             if (statusTarget) {
               statusTarget.textContent = result && result.database && result.database.message ? result.database.message : 'Database test unavailable.';
               statusTarget.className = result && result.ok ? 'message success' : 'message warning';
@@ -567,7 +558,7 @@
               connectionId: payload.connectionId || payload.name || 'default-storage',
               appId: payload.appId || 'neutral-app',
               serverUrl: payload.serverUrl || payload.url || '',
-              apiBase: payload.apiBase || '/api',
+              apiBase: payload.apiBase || defaultApiBase(),
               storageType: payload.storageType || payload.type || 'file',
               connectionType: payload.storageType || payload.type || 'file',
               databaseType: payload.databaseType || payload.storageType || 'file',
@@ -624,7 +615,7 @@
                 connections: [finalPayload]
               }));
             }
-            const result = await postJson('/api/connections', finalPayload, { ok: false, connection: null, message: 'Connection save failed.' });
+            const result = await postJson(window.NeutralPublicPath.api('connections'), finalPayload, { ok: false, connection: null, message: 'Connection save failed.' });
             if (statusTarget) {
               statusTarget.textContent = result && result.ok ? 'Connection saved.' : (result && result.message ? result.message : 'Connection save failed.');
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
@@ -813,7 +804,7 @@
               userId: document.getElementById('deviceUserIdInput') ? document.getElementById('deviceUserIdInput').value : '',
               lastContactAt: document.getElementById('deviceContactInput') ? document.getElementById('deviceContactInput').value : ''
             };
-            const result = await postJson('/api/devices', payload, { ok: false, device: null });
+            const result = await postJson(window.NeutralPublicPath.api('devices'), payload, { ok: false, device: null });
             if (statusTarget) {
               statusTarget.textContent = result && result.ok ? 'Device saved.' : (result && result.message ? result.message : 'Device save failed.');
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
@@ -829,7 +820,7 @@
               userId: document.getElementById('licenseUserIdInput') ? document.getElementById('licenseUserIdInput').value : '',
               deviceId: document.getElementById('licenseDeviceIdInput') ? document.getElementById('licenseDeviceIdInput').value : ''
             };
-            const result = await postJson('/api/licenses', payload, { ok: false, license: null });
+            const result = await postJson(window.NeutralPublicPath.api('licenses'), payload, { ok: false, license: null });
             if (statusTarget) {
               statusTarget.textContent = result && result.ok ? 'License saved.' : (result && result.message ? result.message : 'License save failed.');
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
@@ -958,7 +949,7 @@
               availableVersion: document.getElementById('updateAvailableVersionInput') ? document.getElementById('updateAvailableVersionInput').value : '',
               source: document.getElementById('updateSourceInput') ? document.getElementById('updateSourceInput').value : 'local'
             };
-            const result = await postJson('/api/updates/check', payload, { ok: false, updates: {} });
+            const result = await postJson(window.NeutralPublicPath.api('updates/check'), payload, { ok: false, updates: {} });
             if (statusTarget) {
               statusTarget.textContent = result && result.updates && result.updates.message ? result.updates.message : 'Update check failed.';
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
@@ -997,7 +988,7 @@
             const form = button.closest('form');
             if (!form) return;
             const serverUrl = form.querySelector('[name="serverUrl"]') ? form.querySelector('[name="serverUrl"]').value : '';
-            const apiBase = form.querySelector('[name="apiBase"]') ? form.querySelector('[name="apiBase"]').value : '/api';
+            const apiBase = form.querySelector('[name="apiBase"]') ? form.querySelector('[name="apiBase"]').value : defaultApiBase();
             const databaseType = form.querySelector('[name="databaseType"]') ? form.querySelector('[name="databaseType"]').value : 'indexeddb';
             const databaseHost = form.querySelector('[name="databaseHost"]') ? form.querySelector('[name="databaseHost"]').value : '';
             const databasePortValue = form.querySelector('[name="databasePort"]') ? form.querySelector('[name="databasePort"]').value : '';
@@ -1046,7 +1037,7 @@
             if (runtimeDbSource !== 'env' && databasePassword) {
               payload.databaseState.password = databasePassword;
             }
-            const result = await postJson('/api/setup', payload, { ok: false, setup: {} });
+            const result = await postJson(window.NeutralPublicPath.api('setup'), payload, { ok: false, setup: {} });
             if (window.ConfigManager && typeof window.ConfigManager.setPath === 'function') {
               window.ConfigManager.setPath('app.name', payload.appName);
               if (typeof window.ConfigManager.persist === 'function') {
@@ -1063,7 +1054,7 @@
           }
 
           if (action === 'setup-activate') {
-            const result = await postJson('/api/setup/activate', {
+            const result = await postJson(window.NeutralPublicPath.api('setup/activate'), {
               currentStep: 'runtime',
               message: 'Installation activated.'
             }, { ok: false, setup: {} });
@@ -1072,7 +1063,7 @@
               statusTarget.className = result && result.ok ? 'message success' : 'message error';
             }
             if (result && result.ok) {
-              setTimeout(() => { window.location.replace('admin.php'); }, 500);
+              setTimeout(() => { window.location.replace(window.NeutralPublicPath.admin()); }, 500);
             }
           }
         } catch (error) {
@@ -1163,8 +1154,8 @@
 
   const getServerStatus = async () => {
     const [healthResult, statusResult] = await Promise.all([
-      fetchJson('/health', { ok: true, status: 'unknown' }),
-      fetchJson('/api/status', { ok: true, runtime: {}, framework: {} })
+      fetchJson(window.NeutralPublicPath.join('health'), { ok: true, status: 'unknown' }),
+      fetchJson(window.NeutralPublicPath.api('status'), { ok: true, runtime: {}, framework: {} })
     ]);
     return {
       health: healthResult && healthResult.status ? healthResult.status : 'unknown',
@@ -2407,7 +2398,7 @@
     const page = document.getElementById('mainContent');
     if (!page) return;
 
-    const result = await fetchJson('/api/devices', { ok: true, devices: [] });
+    const result = await fetchJson(window.NeutralPublicPath.api('devices'), { ok: true, devices: [] });
     const devices = Array.isArray(result.devices) ? result.devices : [];
     const statusText = result.ok
       ? (devices.length ? 'Device registry loaded from the framework runtime.' : 'No devices registered yet.')
@@ -2456,7 +2447,7 @@
     const page = document.getElementById('mainContent');
     if (!page) return;
 
-    const result = await fetchJson('/api/licenses', { ok: true, licenses: [] });
+    const result = await fetchJson(window.NeutralPublicPath.api('licenses'), { ok: true, licenses: [] });
     const licenses = Array.isArray(result.licenses) ? result.licenses : [];
     const statusText = result.ok
       ? (licenses.length ? 'License registry loaded from the framework runtime.' : 'No licenses registered yet.')
@@ -2506,8 +2497,8 @@
     if (!page) return;
 
     const [updatesResult, statusResult] = await Promise.all([
-      fetchJson('/api/updates', { ok: true, updates: {} }),
-      fetchJson('/api/status', { ok: true, framework: { framework: {} } })
+      fetchJson(window.NeutralPublicPath.api('updates'), { ok: true, updates: {} }),
+      fetchJson(window.NeutralPublicPath.api('status'), { ok: true, framework: { framework: {} } })
     ]);
     const updates = updatesResult && updatesResult.updates ? updatesResult.updates : {};
     const frameworkVersion = statusResult && statusResult.framework && statusResult.framework.framework ? statusResult.framework.framework.version : getFrameworkVersion();
@@ -2579,7 +2570,7 @@
     const page = document.getElementById('mainContent');
     if (!page) return;
 
-    const setupResult = await fetchJson('/api/setup/status', { ok: true, status: 'NOT_CONFIGURED', setup: {} });
+    const setupResult = await fetchJson(window.NeutralPublicPath.api('setup/status'), { ok: true, status: 'NOT_CONFIGURED', setup: {} });
     const settingsCatalog = window.AdminModule && typeof window.AdminModule.getSettingsCatalog === 'function'
       ? window.AdminModule.getSettingsCatalog()
       : { ok: true, data: { framework: [], modules: [] } };
@@ -2609,7 +2600,7 @@
             <div class="form-field"><label>App ID</label><input type="text" name="appId" value="${escapeHtml(setup.appId || 'neutral-app')}" /></div>
             <div class="form-field"><label>App name</label><input type="text" name="appName" value="${escapeHtml(setup.appName || getConfiguredAppName())}" /></div>
             <div class="form-field"><label>Server URL</label><input type="text" name="serverUrl" value="${escapeHtml(configuration.serverUrl || resolveRuntimeServerUrl())}" /></div>
-            <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || '/api')}" /></div>
+            <div class="form-field"><label>API base</label><input type="text" name="apiBase" value="${escapeHtml(configuration.apiBase || defaultApiBase())}" /></div>
             <div class="form-field"><label>Database type</label><input type="text" name="databaseType" value="${escapeHtml((configuration.database && configuration.database.type) || 'indexeddb')}" /></div>
             <div class="form-field"><label>Database name</label><input type="text" name="databaseName" value="${escapeHtml((configuration.database && configuration.database.name) || 'CoreDB')}" /></div>
             <div class="action-list">
@@ -2651,7 +2642,7 @@
     const page = document.getElementById('mainContent');
     if (!page) return;
 
-    const setupResult = await fetchJson('/api/setup/status', { ok: true, status: 'NOT_CONFIGURED', setup: {} });
+    const setupResult = await fetchJson(window.NeutralPublicPath.api('setup/status'), { ok: true, status: 'NOT_CONFIGURED', setup: {} });
     const setup = setupResult.setup || {};
     const configuration = setup.configuration || {};
     const installation = setup.installation || {};
@@ -2660,7 +2651,7 @@
     const discoveredAppId = setup.appId || configuration.appId || 'neutral-app';
     const discoveredAppName = setup.appName || configuration.appName || getConfiguredAppName();
     const discoveredServerUrl = configuration.serverUrl || (setup.serverState && setup.serverState.url) || resolveRuntimeServerUrl();
-    const discoveredApiBase = configuration.apiBase || (setup.serverState && setup.serverState.apiBase) || '/api';
+    const discoveredApiBase = configuration.apiBase || (setup.serverState && setup.serverState.apiBase) || defaultApiBase();
 
     page.innerHTML = `
       <div class="card">
@@ -2816,7 +2807,7 @@
     if (pageType !== 'admin' && canViewAdmin(currentUser)) {
       if (adminSection) adminSection.classList.remove('hidden');
       if (adminMenu) {
-        adminMenu.innerHTML = '<button type="button" class="nav-item" data-view="admin:dashboard" data-href="admin.php">Administration</button>';
+        adminMenu.innerHTML = `<button type="button" class="nav-item" data-view="admin:dashboard" data-href="${escapeHtml(window.NeutralPublicPath.admin())}">Administration</button>`;
       }
     } else if (adminSection) {
       adminSection.classList.add('hidden');
@@ -3017,7 +3008,7 @@
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient(resolveRuntimeApiClientBase())
+          ? new window.ApiClient()
           : null;
         const usernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('loginPassword');
@@ -3071,7 +3062,7 @@
         }
 
         const target = resolveRoleRoute(user);
-        if (target && target !== window.location.pathname.replace(/^\//, '')) {
+        if (target && target !== window.location.pathname) {
           window.location.replace(target);
           return;
         }
@@ -3087,7 +3078,7 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
         const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient(resolveRuntimeApiClientBase())
+          ? new window.ApiClient()
           : null;
         if (serverApiClient) {
           await serverApiClient.logout();
@@ -3097,7 +3088,7 @@
         } else if (window.CoreAuth && typeof window.CoreAuth.logout === 'function') {
           await window.CoreAuth.logout();
         }
-        const target = pageType === 'admin' ? '/Server/public/admin.php' : 'index.html';
+        const target = pageType === 'admin' ? window.NeutralPublicPath.admin() : window.NeutralPublicPath.join('');
         window.location.replace(target);
       });
     }
@@ -3138,7 +3129,7 @@
     if (isServerAuthPage) {
       clearServerIdentity();
       const sessionApiClient = typeof window.ApiClient === 'function'
-        ? new window.ApiClient(resolveRuntimeApiClientBase())
+        ? new window.ApiClient()
         : null;
       if (sessionApiClient) {
         const sessionResult = await sessionApiClient.me();
@@ -3155,7 +3146,7 @@
     }
     const currentUser = getCurrentUser();
     const targetPage = resolveRoleRoute(currentUser);
-    const currentPath = window.location.pathname.replace(/^\//, '');
+    const currentPath = window.location.pathname;
 
     if (pageType === 'admin' || pageType === 'developer') {
       const pageAllowed = pageType === 'admin'
@@ -3165,7 +3156,7 @@
         window.location.replace(targetPage);
         return;
       }
-      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath && targetPage !== 'admin.php') {
+      if (currentUser && pageAllowed && targetPage && targetPage !== currentPath && targetPage !== window.NeutralPublicPath.admin()) {
         window.location.replace(targetPage);
         return;
       }

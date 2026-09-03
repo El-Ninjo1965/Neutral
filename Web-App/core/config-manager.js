@@ -60,10 +60,7 @@
          * Lädt Standard-Konfigurationen
          */
         loadDefaultConfigs() {
-            const runtimeOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
-                ? window.location.origin
-                : 'http://localhost';
-            const runtimeApiBaseUrl = `${runtimeOrigin.replace(/\/+$/, '')}/api`;
+            const runtimeApiBaseUrl = window.NeutralPublicPath.api('');
 
             // Application Config
             this.set('app', {

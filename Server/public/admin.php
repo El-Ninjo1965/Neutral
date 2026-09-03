@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/php/bootstrap.php';
 
+use Neutral\Core\AppConfig;
 use Neutral\Core\Security;
 
 /**
@@ -25,7 +26,7 @@ function normalize_roles_from_identity($roles): array
     return array_values(array_unique($normalized));
 }
 
-function render_auth_required_page(): void
+function render_auth_required_page(AppConfig $config, string $publicConfigJson): void
 {
     http_response_code(401);
     header('Content-Type: text/html; charset=utf-8');
@@ -36,7 +37,7 @@ function render_auth_required_page(): void
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Authentication required</title>
-  <link rel="stylesheet" href="/Web-App/public/style.css">
+  <link rel="stylesheet" href="<?= htmlspecialchars($config->publicUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
   <div class="auth-shell">
@@ -58,10 +59,12 @@ function render_auth_required_page(): void
         <div id="authMessage" class="message info">Sign in with your configured administrator account.</div>
       </div>
       <div class="action-list">
-        <a class="nav-item" href="/Web-App/public/index.html">Return to platform</a>
+        <a class="nav-item" href="<?= htmlspecialchars($config->publicUrl(''), ENT_QUOTES, 'UTF-8') ?>">Return to platform</a>
       </div>
     </div>
   </div>
+  <script>window.NeutralConfig = <?= $publicConfigJson ?>;</script>
+  <script src="<?= htmlspecialchars($config->publicUrl('Web-App/public/public-path.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
   (function () {
     const loginButton = document.getElementById('loginBtn');
@@ -89,7 +92,7 @@ function render_auth_required_page(): void
       loginButton.disabled = true;
       setMessage('Signing in...', 'info');
       try {
-        const response = await fetch('api/v1/auth/login', {
+        const response = await fetch(window.NeutralPublicPath.api('auth/login'), {
           method: 'POST',
           credentials: 'same-origin',
           headers: {
@@ -105,7 +108,7 @@ function render_auth_required_page(): void
           setMessage(message, 'error');
           return;
         }
-        window.location.replace('admin.php');
+        window.location.replace(window.NeutralPublicPath.admin());
       } catch (_error) {
         setMessage('Authentication request failed.', 'error');
       } finally {
@@ -127,7 +130,7 @@ function render_auth_required_page(): void
 <?php
 }
 
-function render_access_denied_page(): void
+function render_access_denied_page(AppConfig $config): void
 {
     http_response_code(403);
     header('Content-Type: text/html; charset=utf-8');
@@ -138,7 +141,7 @@ function render_access_denied_page(): void
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access denied</title>
-  <link rel="stylesheet" href="/Web-App/public/style.css">
+  <link rel="stylesheet" href="<?= htmlspecialchars($config->publicUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
   <div class="auth-shell">
@@ -146,7 +149,7 @@ function render_access_denied_page(): void
       <h2>Access denied</h2>
       <p class="subtle">Administrative access requires an authorized role.</p>
       <div class="action-list">
-        <a class="nav-item" href="/Web-App/public/index.html">Return to platform</a>
+        <a class="nav-item" href="<?= htmlspecialchars($config->publicUrl(''), ENT_QUOTES, 'UTF-8') ?>">Return to platform</a>
       </div>
     </div>
   </div>
@@ -156,6 +159,17 @@ function render_access_denied_page(): void
 }
 
 $runtime = neutral_bootstrap();
+$publicConfig = [
+    'basePath' => $runtime->config()->basePath(),
+    'apiBase' => $runtime->config()->apiBase(),
+];
+$publicConfigJson = json_encode(
+    $publicConfig,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+);
+if ($publicConfigJson === false) {
+    throw new RuntimeException('Public browser configuration could not be encoded.');
+}
 $cookieName = trim((string) ($runtime->config()->env()['AUTH_SESSION_COOKIE_NAME'] ?? 'neutral_session'));
 Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_session');
 
@@ -165,7 +179,7 @@ header('X-Robots-Tag: noindex, nofollow');
 
 $identity = $_SESSION['auth_identity'] ?? null;
 if (!is_array($identity)) {
-    render_auth_required_page();
+    render_auth_required_page($runtime->config(), $publicConfigJson);
     exit;
 }
 
@@ -185,19 +199,19 @@ if ($expiresAt !== false && $expiresAt > 0 && $expiresAt < time()) {
         );
     }
     session_destroy();
-    render_auth_required_page();
+    render_auth_required_page($runtime->config(), $publicConfigJson);
     exit;
 }
 
 $status = strtolower(trim((string) ($identity['status'] ?? 'active')));
 if ($status !== '' && $status !== 'active') {
-    render_auth_required_page();
+    render_auth_required_page($runtime->config(), $publicConfigJson);
     exit;
 }
 
 $roles = normalize_roles_from_identity($identity['roles'] ?? []);
 if (!in_array('admin', $roles, true)) {
-    render_access_denied_page();
+    render_access_denied_page($runtime->config());
     exit;
 }
 

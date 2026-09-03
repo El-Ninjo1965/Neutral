@@ -373,7 +373,7 @@ class AdminInfrastructureView {
               <label>Type<select name="connectionType"><option value="file">File</option><option value="database">Database</option><option value="api">API</option></select></label>
               <label>Storage Type<select name="storageType"><option value="file">File</option><option value="mysql">MySQL</option><option value="sqlite">SQLite</option></select></label>
               <label>Server URL<input name="serverUrl" value="${this.escape(primaryConnection.serverUrl || '')}" placeholder="https://api.example.com" /></label>
-              <label>API Base<input name="apiBase" value="${this.escape(primaryConnection.apiBase || '/api')}" /></label>
+              <label>API Base<input name="apiBase" value="${this.escape(primaryConnection.apiBase || window.NeutralPublicPath.api(''))}" /></label>
               <label>Host<input name="host" value="${this.escape(primaryConnection.host || '')}" /></label>
               <label>Port<input type="number" name="port" value="${this.escape(primaryConnection.port || '')}" /></label>
               <label>Database<input name="databaseName" value="${this.escape(primaryConnection.databaseName || '')}" /></label>
@@ -403,7 +403,7 @@ class AdminInfrastructureView {
           connectionType: formData.get('connectionType') || 'file',
           storageType: formData.get('storageType') || 'file',
           serverUrl: formData.get('serverUrl') || '',
-          apiBase: formData.get('apiBase') || '/api',
+          apiBase: formData.get('apiBase') || window.NeutralPublicPath.api(''),
           host: formData.get('host') || '',
           port: formData.get('port') || '',
           databaseName: formData.get('databaseName') || '',
@@ -444,7 +444,7 @@ class AdminInfrastructureView {
               <div><dt>Status</dt><dd>${server.status || 'unknown'}</dd></div>
               <div><dt>Reachable</dt><dd>${server.reachable === undefined ? '—' : server.reachable ? 'yes' : 'no'}</dd></div>
               <div><dt>Target</dt><dd>${currentUrl}</dd></div>
-              <div><dt>API Base</dt><dd>${server.apiBase || setup.serverState?.apiBase || '/api'}</dd></div>
+              <div><dt>API Base</dt><dd>${server.apiBase || setup.serverState?.apiBase || window.NeutralPublicPath.api('')}</dd></div>
             </dl>
           </div>
           <div class="card panel-box">
@@ -457,7 +457,7 @@ class AdminInfrastructureView {
           <form id="server-form" class="admin-form compact-form">
             <div class="form-grid">
               <label>Server URL<input name="serverUrl" value="${this.escape(currentUrl)}" /></label>
-              <label>API Base<input name="apiBase" value="${this.escape(server.apiBase || setup.serverState?.apiBase || '/api')}" /></label>
+              <label>API Base<input name="apiBase" value="${this.escape(server.apiBase || setup.serverState?.apiBase || window.NeutralPublicPath.api(''))}" /></label>
             </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Test server</button>
@@ -474,7 +474,7 @@ class AdminInfrastructureView {
         const formData = new FormData(form);
         const payload = {
           serverUrl: formData.get('serverUrl') || currentUrl,
-          apiBase: formData.get('apiBase') || '/api'
+          apiBase: formData.get('apiBase') || window.NeutralPublicPath.api('')
         };
         const result = await this.api.post('/api/server/test', payload);
         const response = result.ok && result.data && result.data.result ? result.data.result : result.data || {};
@@ -662,7 +662,7 @@ class AdminInfrastructureView {
     if (!confirmed) return;
     const result = await this.api.post(`/api/admin/backups/${backupId}/restore`, {});
     if (!result.ok) { this.notify(`Backup restore failed: ${result.error || 'Unknown error'}`, 'error'); return; }
-    window.location.replace('/admin.php');
+    window.location.replace(window.NeutralPublicPath.admin());
   }
 
   formatBytes(value) {
@@ -832,7 +832,7 @@ class AdminRouter {
   async logout() {
     if (!AdminCommon.confirmAction('Logout now?')) return;
     await this.api.logout();
-    window.location.replace('/admin.php');
+    window.location.replace(window.NeutralPublicPath.admin());
   }
 }
 

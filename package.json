@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node scripts/neutral-start.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "app:create": "node scripts/create-neutral-app.js",
+    "package:production": "node scripts/build-production-package.js",
     "deploy:manual": "node scripts/manual-ftps-deploy.js",
     "setup:preflight": "node scripts/cpanel-preflight.js"
   },

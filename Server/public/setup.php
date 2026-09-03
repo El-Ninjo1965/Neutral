@@ -428,7 +428,7 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
         <h2>Step 1 – Install</h2>
         <?php if (!$installationDetected): ?>
           <p class="muted">No installation detected. Run installation to create schema and core data.</p>
-          <form method="post" action="setup.php">
+          <form method="post" action="<?= htmlspecialchars($runtime->config()->publicUrl('setup.php'), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>" />
             <input type="hidden" name="install_now" value="1" />
             <button type="submit" <?= $readyToInstall ? '' : 'disabled' ?>>Install now</button>
@@ -491,7 +491,7 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
               </div>
             </div>
 
-            <form method="post" action="setup.php">
+            <form method="post" action="<?= htmlspecialchars($runtime->config()->publicUrl('setup.php'), ENT_QUOTES, 'UTF-8') ?>">
               <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>" />
               <input type="hidden" name="configure_users" value="1" />
               <div class="form-grid">
@@ -529,7 +529,7 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
               </div>
               <div class="action-row">
                 <button type="submit">Apply user provisioning</button>
-                <a class="btn" href="admin.php">Open admin</a>
+                <a class="btn" href="<?= htmlspecialchars($runtime->config()->publicUrl('admin.php'), ENT_QUOTES, 'UTF-8') ?>">Open admin</a>
               </div>
             </form>
           <?php endif; ?>
@@ -541,7 +541,7 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
             This reset deletes Neutral application state from the database (users, roles, permissions, sessions, module state, setup state, audit/release/backup state and migration markers).
             Environment/deploy files are not changed.
           </div>
-          <form method="post" action="setup.php">
+          <form method="post" action="<?= htmlspecialchars($runtime->config()->publicUrl('setup.php'), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>" />
             <input type="hidden" name="reset_now" value="1" />
             <div class="form-field">

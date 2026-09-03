@@ -1,6 +1,6 @@
 # NEUTRAL – Web-App installieren
 
-Diese Anleitung installiert ausschließlich den statischen Browserclient. Sie installiert weder PHP-Core noch Datenbank.
+Diese Anleitung beschreibt den Web-App-Anteil innerhalb des gemeinsamen Full-Stack-Produktionspakets. Der verbindliche Produktionsweg baut und überträgt genau ein verifiziertes Paket mit `Web-App/`, `Server/php/` und `Server/public/`; es gibt dafür keine alternative Client-only-Artefaktart. Die ergänzenden Server-, Datenbank- und Setupschritte stehen in [`Install-README-Server.md`](Install-README-Server.md).
 
 ## 1. Voraussetzungen
 
@@ -24,15 +24,36 @@ Die Deployment-Allowlist in `scripts/manual-ftps-deploy.js` ist maßgeblich, wen
 
 ## 3. Konfiguration
 
-1. Keine `.env`-Datei in den Browser-Document-Root kopieren.
-2. API-Basis relativ zur Installation oder über die vorhandene Clientkonfiguration setzen. Keine Produktionsabhängigkeit zu `localhost`, privaten Hosts oder Port 3000 einführen.
-3. Der Browserclient erwartet API-Pfade der Form `/api/...` relativ zur konfigurierten Basis.
-4. Beim vorgesehenen Root-Deployment liefert die Root-`.htaccess` `/` aus `Web-App/public/index.html` aus und leitet `/api` zum PHP-Router; die Verzeichnisstruktur darf nicht abgeflacht werden.
-5. Same-Origin ist der einfachste unterstützte Produktionsbetrieb, weil Sessions mit `credentials: same-origin` gesendet werden. Cross-Origin benötigt einen bewusst implementierten CORS-/Cookievertrag und ist derzeit nicht Standard.
+1. Keine `.env`-Datei oder Secrets in Browserdateien kopieren. Die serverseitige `.env` bleibt hostlokal und wird von der öffentlichen PHP-Laufzeit geschützt.
+2. `NEUTRAL_BASE_PATH` ist `""` für Domain-Root und eigenen physischen DocumentRoot oder beispielsweise `/meine-app` für einen URL-Unterpfad. Er enthält keinen Host und keinen abschließenden Slash.
+3. `Web-App/public/public-path.js` liest ausschließlich den konfigurierten `basePath` aus `NeutralConfig.basePath` beziehungsweise dem Meta-Element `neutral-base-path` und löst Assets, API, Admin und Setup zentral auf. Die API-Basis wird daraus abgeleitet; der Resolver liest kein separates `apiBase` als Eingabe. Produktiver Clientcode verwendet keine fest verdrahteten Domain-Root-Pfade.
+4. Die statische Startdatei trägt denselben Basispfad im Meta-Element `neutral-base-path` und im Element `<base href>`. Die Quelle verwendet `<base href="/">`; der Paketbau setzt für Root ebenfalls `/` und für einen Unterpfad beispielsweise `/meine-app/`, ohne die Quelle zu verändern. Dadurch bleiben auch tiefe SPA-Routen wie `/meine-app/orders/42` auf derselben Installationsbasis. Der Basispfad wird niemals aus der aktuellen Browser-URL abgeleitet.
+5. Die Root-`.htaccess` arbeitet relativ zu ihrem Installationsverzeichnis und leitet Root beziehungsweise URL-Unterpfad auf Browser- und PHP-Einstiege; die Paketstruktur darf nicht abgeflacht werden.
+6. Same-Origin ist der unterstützte Standard, weil Sessions mit `credentials: same-origin` gesendet werden. Cross-Origin benötigt einen bewusst implementierten CORS-/Cookievertrag und ist derzeit nicht Standard.
 
-**Aktuelle Einschränkung:** Der produktiv geprüfte Stand gilt für eine Installation im Domain-Root. Ein neuer physischer Serverordner kann separat als Document-Root konfiguriert werden; davon zu unterscheiden ist ein URL-Unterpfad. Mehrere öffentliche Pfade beginnen noch absolut mit `/Web-App`, `/api`, `/admin.php` oder `/setup.php`. Eine URL-Installation unter beispielsweise `/meine-app/` ist deshalb noch nicht freigegeben und muss zuerst über eine zentrale Installationsbasis umgesetzt und getestet werden.
+Der physische DocumentRoot ist keine URL-Konfiguration: Eine Domain oder Subdomain kann auf einen beliebigen Paketordner zeigen und verwendet trotzdem den leeren Basispfad. Nur wenn die öffentliche Adresse tatsächlich beispielsweise mit `/meine-app/` beginnt, wird `/meine-app` gebaut und hostlokal konfiguriert. Root und Unterpfad sind durch lokale Fixtures abgedeckt; die produktive Unterpfadabnahme bleibt offen.
 
 ## 4. Lokaler Start
+
+### Neue App lokal erzeugen
+
+Aus einem sauberen Neutral-Checkout erzeugt der Bootstrap einen eigenständigen Projektbaum in einem noch nicht vorhandenen oder leeren Zielordner. Änderungen an bereits versionierten Dateien werden vor jeder Kopierarbeit abgelehnt; unversionierte Dateien werden nicht kopiert:
+
+```bash
+npm run app:create -- --target=../sample-app --app-id=sample-app --app-name="Sample App"
+```
+
+Die App-ID muss aus kleingeschriebenen Buchstaben und Ziffern mit einzelnen Bindestrichen als Trenner bestehen. Der Anzeigename muss 1–80 Zeichen lang, frei von Steuerzeichen und frei von secretförmigen Werten wie Zugangs- oder Private-Key-Mustern sein. Er wird in `.env.example` verlustfrei mit äußeren einfachen Anführungszeichen serialisiert. Das GPS-Referenzmodul ist standardmäßig nicht enthalten; `--include-gps` übernimmt es samt Katalogeintrag. `--init-git` führt ausschließlich ein lokales `git init` aus und richtet keinen Remote ein.
+
+Das Werkzeug kopiert die versionierten Projektquellen einschließlich der Quelltests über einen benachbarten temporären Ordner und veröffentlicht das Ergebnis erst nach erfolgreicher Metadaten- und Secretprüfung. Ausgeschlossen bleiben Git-Metadaten, Abhängigkeiten, Build- und Runtime-Daten, hostlokale Environment-/Deploymentdateien, Testartefakte sowie Worktrees. Die wertfreien Vorlagen `.env.example` und `.env.ftp.deploy.example` bleiben im neuen Projekt erhalten; der Produktionspaketbau übernimmt weiterhin ausschließlich `.env.example`. Ein nichtleerer Zielordner und auch ein vorhandener oder defekter Zielsymlink werden nicht verändert. Ohne GPS wird zusätzlich nur der GPS-Pflichttest aus dem kopierten FTPS-Workflow entfernt.
+
+Die kopierten Quelltests erzeugen für Bootstrap-Prüfungen selbst ein sauberes temporäres Git-Fixture; `--init-git` ist dafür nicht erforderlich. Ohne lokale PHP-Laufzeit kann die bekannte portable Teilsuite wie folgt ausgeführt werden:
+
+```bash
+node --test --test-concurrency=1 $(rg --files tests | rg '\.test\.js$' | rg -v '(admin-php-entry|php-backup|php-login-rate-limit|portability-config)')
+```
+
+Nach dem Lauf die ausgegebene Checkliste abarbeiten: Dateien prüfen und das gewünschte Repository separat anlegen, Secrets ausschließlich in einer hostlokalen `.env` setzen, physischen Zielordner festlegen, Datenbank mit eigenen Zugangsdaten einrichten und die Abnahme durchführen. Der Bootstrap ruft keine GitHub-API auf und erzeugt keine Zugangsdaten.
 
 Für einen reinen statischen Sichttest einen lokalen HTTP-Server im Repository verwenden; Dateien nicht direkt über `file://` öffnen, da Fetch, Module und Browserrechte sonst abweichen können. Der Repositorybefehl `npm start` startet die Node-Entwicklungsruntime und ist kein Produktionsnachweis.
 
@@ -45,14 +66,14 @@ npm start
 
 Danach die vom Prozess ausgegebene URL verwenden. Zugangsdaten bleiben ausschließlich in der lokalen `.env`.
 
-## 5. Statisches Deployment
+## 5. Web-App-Anteil im Full-Stack-Deployment
 
 1. Repository in sauberem Commit auschecken.
-2. Den vollständigen Ordner `Web-App/` mit `public/`, `core/`, `app/` und den notwendigen App-/Modulmanifesten bereitstellen.
-3. Keine `.env`, Serverruntime, Logs, Tests, `node_modules` oder Git-Metadaten hochladen.
-4. Die innere `Web-App/`-Struktur unverändert erhalten.
-5. HTTPS aktivieren.
-6. API-Basis und Same-Origin-Routing prüfen.
+2. Für Root `npm run package:production -- --base-path=` oder für einen Unterpfad beispielsweise `npm run package:production -- --base-path=/meine-app` ausführen.
+3. Das Paket vor dem Upload mit passender öffentlicher HTTPS-Basis prüfen, etwa `npm run setup:preflight -- --package=dist/neutral-production --public-url=https://example.test/meine-app/ --base-path=/meine-app`.
+4. Nur das verifizierte gemeinsame Paket bereitstellen. Sein Web-App-Anteil enthält den vollständigen Ordner `Web-App/` mit `public/`, `core/`, `app/` und App-/Modulmanifesten; die getrennten produktiven PHP-Bereiche gehören verbindlich zum selben Paket. `.env`, Node-Runtime, Logs, Tests, `node_modules` und Git-Metadaten fehlen.
+5. Die innere Paketstruktur unverändert erhalten, die wertfreie `.env.example` nicht als befüllte öffentliche Clientkonfiguration verwenden und Secrets ausschließlich hostlokal setzen.
+6. HTTPS, exakten Basispfad und Same-Origin-Routing für den Web-App-Anteil prüfen und anschließend die Server-, Datenbank-, Setup- und Sperrschritte aus der Serveranleitung ausführen. Lokales `PASS` für Paket und Pfade ersetzt weder Apache-Rewrite- noch PHP-/Datenbanknachweis im Zielhosting.
 
 Vorhandenes Werkzeug:
 
@@ -81,13 +102,14 @@ npm test
 
 Zusätzlich im Browser prüfen:
 
-1. Grundoberfläche erscheint ohne unnötiges Warten auf API/DB/Module.
-2. DevTools zeigt keine fehlenden JS/CSS-/Manifestdateien.
-3. API-Status ist unter der konfigurierten HTTPS-Basis erreichbar.
-4. Login → `auth/me` → Logout funktioniert mit Serversession.
-5. Offlineumschaltung zeigt kontrollierten Zustand; keine lokalen Änderungen dürfen als synchronisiert behauptet werden.
-6. IndexedDB wird ohne Fehler geöffnet.
-7. GPS fragt nur nach Nutzeraktion/Berechtigung und bleibt bei Ablehnung kontrollierbar.
+1. Grundoberfläche erscheint unter `<Basis>/` ohne unnötiges Warten auf API/DB/Module; ein SPA-Pfad fällt auf dieselbe Shell zurück.
+2. DevTools zeigt keine fehlenden JS/CSS-/Manifestdateien; alle URLs bleiben unter dem konfigurierten Basispfad.
+3. API-Status ist unter `<Basis>/api/status` erreichbar.
+4. `<Basis>/admin.php`, Login → `auth/me` → Logout und ein abgewiesener CSRF-Schreibrequest funktionieren mit Serversession.
+5. `<Basis>/setup.php` und Setup-API liefern nach Aktivierung ohne autorisierte Recoveryfreigabe HTTP 404.
+6. Offlineumschaltung zeigt kontrollierten Zustand; keine lokalen Änderungen dürfen als synchronisiert behauptet werden.
+7. IndexedDB wird ohne Fehler geöffnet.
+8. GPS fragt nur nach Nutzeraktion/Berechtigung und bleibt bei Ablehnung kontrollierbar.
 
 ## 8. Typische Fehler
 

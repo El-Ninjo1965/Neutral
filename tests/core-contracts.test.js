@@ -124,6 +124,33 @@ test('module config is isolated by module id and rejects secret-shaped values', 
   assert.throws(() => browser.ConfigManager.setModule('gps', { apiToken: 'unsafe' }), /must not contain secrets/);
 });
 
+test('browser configuration and admin settings derive their API defaults from the public-path resolver', () => {
+  const calls = [];
+  const browser = {
+    window: null,
+    location: { origin: 'https://example.test' },
+    NeutralPublicPath: {
+      api(pathValue) {
+        calls.push(pathValue);
+        return '/meine-app/api/v1';
+      }
+    }
+  };
+  browser.window = browser;
+  const context = vm.createContext(browser);
+  load(context, 'config-manager.js');
+  load(context, 'core-admin.js');
+
+  browser.ConfigManager.init();
+  const apiSection = browser.AdminModule.getFrameworkSettingsSections()
+    .find((section) => section.id === 'api');
+  const baseUrl = apiSection.settings.find((setting) => setting.key === 'baseUrl');
+
+  assert.equal(browser.ConfigManager.get('api').baseUrl, '/meine-app/api/v1');
+  assert.equal(baseUrl.defaultValue, '/meine-app/api/v1');
+  assert.deepEqual(calls, ['', '']);
+});
+
 test('database schema upgrade creates missing stores without replacing existing stores', () => {
   const created = [];
   const existing = new Set(['users', 'settings']);

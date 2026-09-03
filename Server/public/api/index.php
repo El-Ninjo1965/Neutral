@@ -36,20 +36,13 @@ $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->proje
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
 
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
-$requestUriPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
-$segments = $requestUriPath === '' ? [] : explode('/', $requestUriPath);
-$apiIndex = array_search('api', $segments, true);
-$apiSegments = $apiIndex === false ? $segments : array_slice($segments, $apiIndex + 1);
-$requestedApiVersion = null;
-if ($apiSegments !== [] && preg_match('/^v([0-9]+)$/i', (string) $apiSegments[0], $versionMatch) === 1) {
-    $requestedApiVersion = (int) $versionMatch[1];
-    array_shift($apiSegments);
-}
+$apiRequest = $config->apiRequestRoute((string) ($_SERVER['REQUEST_URI'] ?? ''));
+$requestedApiVersion = $apiRequest['version'];
 header('X-Neutral-API-Version: 1');
 if ($requestedApiVersion !== null && $requestedApiVersion !== 1) {
     JsonResponse::error('Unsupported API version.', 404, ['supportedVersions' => [1]]);
 }
-$route = strtolower(implode('/', $apiSegments));
+$route = $apiRequest['route'];
 
 /**
  * @return array<string, string>

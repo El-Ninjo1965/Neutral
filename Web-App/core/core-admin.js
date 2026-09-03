@@ -10,18 +10,6 @@
 (() => {
     'use strict';
 
-    const getRuntimeOrigin = () => {
-        if (typeof window !== 'undefined' && window.location) {
-            if (window.location.origin && window.location.origin !== 'null') {
-                return window.location.origin;
-            }
-            if (window.location.protocol && window.location.hostname) {
-                return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
-            }
-        }
-        return 'http://localhost';
-    };
-
     const cloneValue = (value) => {
         if (Array.isArray(value)) {
             return value.map((entry) => cloneValue(entry));
@@ -55,7 +43,7 @@
             title: 'API',
             description: 'Connectivity behaviour for online services.',
             settings: [
-                { key: 'baseUrl', path: 'api.baseUrl', label: 'Base URL', type: 'text', defaultValue: `${getRuntimeOrigin().replace(/\/+$/, '')}/api` },
+                { key: 'baseUrl', path: 'api.baseUrl', label: 'Base URL', type: 'text', defaultValue: window.NeutralPublicPath.api('') },
                 { key: 'timeout', path: 'api.timeout', label: 'Request timeout (ms)', type: 'number', defaultValue: 30000, min: 1000, step: 500 },
                 { key: 'retries', path: 'api.retries', label: 'Retry count', type: 'number', defaultValue: 3, min: 0, step: 1 },
                 { key: 'retryDelay', path: 'api.retryDelay', label: 'Retry delay (ms)', type: 'number', defaultValue: 1000, min: 0, step: 100 }

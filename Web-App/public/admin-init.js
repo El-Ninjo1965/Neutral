@@ -10,12 +10,6 @@
     window.AdminShell, window.AdminRouter
   ].every(Boolean);
 
-  const resolveBase = () => {
-    const pathname = window.location && typeof window.location.pathname === 'string' ? window.location.pathname : '/';
-    const basePath = pathname.replace(/\/[^/]*$/, '');
-    return basePath === '/' ? '' : basePath.replace(/\/+$/, '');
-  };
-
   const initialize = () => {
     if (document.body.dataset.page !== 'admin') return Promise.resolve(false);
     if (initialization) return initialization;
@@ -23,7 +17,7 @@
       const appShell = document.getElementById('appShell');
       if (!appShell || appShell.classList.contains('hidden') || !dependenciesReady()) return false;
 
-      const apiClient = new window.ApiClient(resolveBase());
+      const apiClient = new window.ApiClient();
       apiClient.setAuthRole('admin');
       let container = document.getElementById('adminPanel');
       if (!container) {

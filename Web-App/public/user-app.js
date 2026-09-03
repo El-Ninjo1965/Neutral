@@ -218,7 +218,7 @@
 
     actions.innerHTML = `
       <span class="user-app-session-badge">${escapeHtml(currentUser.displayName || currentUser.username || 'User')}</span>
-      ${canOpenAdmin() ? '<a class="user-app-link" href="admin.php">Admin</a>' : ''}
+      ${canOpenAdmin() ? `<a class="user-app-link" href="${escapeHtml(window.NeutralPublicPath.admin())}">Admin</a>` : ''}
       ${settingsButton}
       <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
     `;

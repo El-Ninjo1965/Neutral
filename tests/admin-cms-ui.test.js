@@ -61,8 +61,75 @@ test('admin router delegates layout and navigation to AdminShell', () => {
 
 test('admin logout returns to the deployed root entry', () => {
   const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
-  assert.match(source, /location\.replace\('\/admin\.php'\)/);
+  assert.match(source, /location\.replace\(window\.NeutralPublicPath\.admin\(\)\)/);
   assert.doesNotMatch(source, /location\.replace\('\/Server\/public\/admin\.php'\)/);
+});
+
+test('public consumers use the central resolver instead of root-absolute public URLs', () => {
+  const projectRoot = path.resolve(__dirname, '..');
+  const sourceFiles = [
+    'Web-App/public/user-app.js',
+    'Web-App/public/admin-init.js',
+    'Web-App/public/admin/index.js',
+    'Web-App/public/master-ui.js',
+    'Web-App/core/core-loader.js',
+    'Server/public/admin.php',
+    'Server/public/setup.php',
+    'Server/php/views/admin-ui.php'
+  ];
+
+  for (const relativePath of sourceFiles) {
+    const source = fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+    assert.doesNotMatch(
+      source,
+      /["'`]\/(?:Web-App|Server\/public|admin\.php|setup\.php)(?:\/|["'`])/,
+      relativePath
+    );
+  }
+
+  for (const relativePath of ['Web-App/public/master-ui.js', 'Web-App/core/core-loader.js', 'Server/public/admin.php']) {
+    const source = fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+    assert.doesNotMatch(source, /(?:fetchJson|postJson|readModuleCatalog|fetch)\(\s*["'`]\/api(?:\/|["'`])/, relativePath);
+  }
+
+  for (const relativePath of [
+    'Web-App/core/config-manager.js',
+    'Web-App/core/core-admin.js',
+    'Web-App/core/master-framework.js',
+    'Web-App/core/provider-manager.js',
+    'Web-App/public/admin/index.js',
+    'Web-App/public/master-ui.js'
+  ]) {
+    const source = fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+    assert.match(source, /NeutralPublicPath\.api\(\s*['"]{2}\s*\)/, relativePath);
+    assert.doesNotMatch(source, /(?:\|\||:)\s*['"]\/api['"]/, relativePath);
+    assert.doesNotMatch(source, /\$\{(?:getRuntimeOrigin|runtimeOrigin)[^}]*\}\/api/, relativePath);
+  }
+});
+
+test('entries load the resolver before consumers and PHP injects only safe public config', () => {
+  const projectRoot = path.resolve(__dirname, '..');
+  const indexHtml = fs.readFileSync(path.join(projectRoot, 'Web-App/public/index.html'), 'utf8');
+  const adminEntry = fs.readFileSync(path.join(projectRoot, 'Server/public/admin.php'), 'utf8');
+  const adminView = fs.readFileSync(path.join(projectRoot, 'Server/php/views/admin-ui.php'), 'utf8');
+
+  assert.match(indexHtml, /<meta name="neutral-base-path" content=""\s*\/?>/);
+  assert.ok(indexHtml.indexOf('public-path.js') < indexHtml.indexOf('core-loader.js'));
+  assert.ok(indexHtml.indexOf('public-path.js') < indexHtml.indexOf('user-app.js'));
+  const publicConfig = adminEntry.match(/\$publicConfig\s*=\s*\[([\s\S]*?)\];/);
+  assert.ok(publicConfig, 'admin entry must define the public browser configuration');
+  assert.deepEqual(
+    [...publicConfig[1].matchAll(/'([^']+)'\s*=>/g)].map((match) => match[1]),
+    ['basePath', 'apiBase']
+  );
+  assert.match(adminEntry, /'basePath'\s*=>\s*\$runtime->config\(\)->basePath\(\)/);
+  assert.match(adminEntry, /'apiBase'\s*=>\s*\$runtime->config\(\)->apiBase\(\)/);
+  for (const flag of ['JSON_HEX_TAG', 'JSON_HEX_AMP', 'JSON_HEX_APOS', 'JSON_HEX_QUOT']) {
+    assert.match(adminEntry, new RegExp(flag));
+  }
+  assert.doesNotMatch(adminEntry, /NeutralConfig[\s\S]{0,200}->env\(/);
+  assert.ok(adminView.indexOf('window.NeutralConfig') < adminView.indexOf('public-path.js'));
+  assert.ok(adminView.indexOf('public-path.js') < adminView.indexOf('api-client.js'));
 });
 
 test('admin CMS CSS provides desktop sidebar and iPad drawer behavior', () => {

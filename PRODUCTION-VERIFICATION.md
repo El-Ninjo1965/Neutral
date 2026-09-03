@@ -1,6 +1,6 @@
 # NEUTRAL – Produktionsnachweis Shared Hosting
 
-**Stand:** 2026-09-02  
+**Stand:** 2026-09-03
 **Ziel:** `https://www.turbolikes.com/`  
 **Plattform:** PHP/MySQL auf Shared Hosting; Node.js ist keine Produktionsvoraussetzung.
 
@@ -9,6 +9,7 @@
 | Bereich | Ergebnis | Nachweis |
 |---|---|---|
 | Deployment | BESTANDEN | GitHub Actions `FTPS Deploy` bis zum Webspace erfolgreich |
+| Portables Deployment-Hardening | CODE UND TEST BESTANDEN | Explizites Ziel, zwingende Hostnamenprüfung, zielgebundener SHA-256-Manifestfingerprint, vollständiger Transfer ohne `--only-newer` und lftp-Skript über stdin sind lokal getestet; der Abschlusscommit wurde noch nicht extern ausgeführt. |
 | HTTPS und Startseite | BESTANDEN | Öffentliche Seite über HTTPS geladen und vollständig gerendert |
 | Root-Assets | BESTANDEN | `core`, `style.css` und `user-app.js` werden durch Root-Rewrite aus der Repositorystruktur ausgeliefert |
 | Datenbank | BESTANDEN | Produktionsidentität bestätigt, Verbindung aktiv, 16 erwartete Tabellen und 2 Migrationen |
@@ -18,7 +19,11 @@
 | API-Version | BESTANDEN | `/api/v1` ist kanonisch; Legacy `/api` bleibt kompatibel; unbekannte Versionen werden abgewiesen |
 | Logout-CSRF | CODE UND TEST BESTANDEN | Logout verlangt Sitzung und gültigen CSRF-Token; fehlender/falscher Token ergibt 403 |
 | Dateischutz | CODE UND TEST BESTANDEN | Root-Rewrite verweigert versteckte Dateien sowie `Server/php` und `Server/runtime`; Verzeichnislisten sind deaktiviert |
-| Secretprüfung | TEILWEISE | Keine echten Passwörter, Schlüssel oder Zertifikatsdateien sind versioniert; die Deploy-Beispieldatei enthält jedoch umgebungsspezifische Server-/Kontometadaten und deaktiviert die Hostnamenprüfung. Neutralisierung bleibt offen. |
+| Secretprüfung | CODE UND TEST BESTANDEN | Wertfreie Runtime-/FTPS-Vorlagen, Paket- und Bootstrap-Scanner einschließlich verschlüsselter Private Keys sowie maskierte Preflight-Fehler sind lokal getestet; hostlokale Produktionswerte bleiben außerhalb von Repository und Browser. |
+| Öffentlicher Basispfad | CODE UND TEST BESTANDEN | PHP- und Browserresolver, direktes API-Rewrite, Root-/`/meine-app`- sowie tiefe SPA-Fixtures und ein paketiertes `<base href>` decken Client, Admin, API, Assets und Setup ohne feste Domain-Root-Pfade ab. |
+| Produktionspaket | CODE UND TEST BESTANDEN | Der gemeinsame `portable-install`-Kern erzeugt Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, sortiertes Manifest und `SHA256SUMS`; fremde Ausgabe, Manipulation, Fremdinventar, Traversal und Symlinks werden blockiert. |
+| Paket-Preflight | CODE UND TEST BESTANDEN | Exakte credential-/query-/fragmentfreie HTTPS-Basis, Manifestbasispfad, beide Resolver-Einstiege, Meta-/`base`-Markierungen, Inventar, Hashes und Secretfreiheit werden lokal geprüft. Fehlendes PHP und externes Rewrite bleiben `NICHT_GEPRUEFT`. |
+| Lokaler App-Bootstrap | CODE UND TEST BESTANDEN | App-ID/-Name, optionale GPS-Auswahl, wertfreie Vorlagen, saubere Quelle, leeres Ziel und optionales lokales `git init` sind getestet; kein Remote wird angelegt. |
 
 ## Bewusste Shared-Hosting-Grenzen
 
@@ -32,4 +37,13 @@
 
 Ein echter produktiver Login und anschließender Logout muss einmal im Browser mit dem geheimen Betreiberkennwort durchgeführt werden. Dabei sind Sessioncookie, CSRF-Cookie und Sitzungsende zu bestätigen. Zugangsdaten werden dafür weder in Git noch in dieses Protokoll übernommen. Bis zu diesem Schritt ist der Authentifizierungsfluss durch automatisierte Tests, aber nicht mit einem echten Betreiberkennwort im Produktionsbrowser nachgewiesen.
 
-Zusätzlich offen sind die reale responsive iPad-/Safari-Abnahme und die Neuinstallationsnachweise in einem neuen physischen Document-Root sowie unter einem URL-Unterpfad. Der bestehende FTPS-Lauf überträgt die getrennten Produktionsbereiche gemeinsam; root-absolute öffentliche Pfade blockieren jedoch URL-Präfixe wie `/meine-app/`. Diese Variante darf erst nach Einführung einer zentralen Installationsbasis und einem leeren End-to-End-Test als bestanden gelten.
+Zusätzlich offen sind die reale responsive iPad-/Safari-Abnahme und die Neuinstallationsnachweise in einem neuen physischen DocumentRoot sowie unter einem URL-Unterpfad. Die zentrale Installationsbasis und der lokale Preflight sind vorhanden, wurden in diesem Änderungssatz aber weder hochgeladen noch gegen einen fremden Apache-/PHP-Host ausgeführt. Deshalb bleiben folgende Nachweise ausdrücklich offen:
+
+- PHP 8.x samt PDO/`pdo_mysql`, JSON, Session und OpenSSL in der neuen Zielumgebung,
+- Apache-/LiteSpeed-Rewrite für Root, API, Assets, Admin, Setup und SPA-Fallback,
+- leere Datenbank, Migrationen, Betreiberanlage und anschließende Setup-Sperre,
+- Login, Session, CSRF, API-, Asset- und SPA-Smoke-Tests im echten URL-Unterpfad,
+- Reproduktion aus einem neu angelegten Repository,
+- CodeQL und FTPS für den neuen portablen Abschlusscommit.
+
+`NICHT_GEPRUEFT` im lokalen JSON-Preflight ist für diese externen Fähigkeiten keine Freigabe und wird nie zu einem Gesamt-`PASS` hochgestuft.

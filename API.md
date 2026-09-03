@@ -7,7 +7,7 @@
 
 ## 1. Geltungsbereich
 
-Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Der kanonische Produktionspräfix ist `/api/v1`; der bisherige Präfix `/api` bleibt vorerst kompatibel. Beim Shared-Hosting-Root-Deployment leitet die Root-`.htaccess` `/api` nach `Server/public/api/`; dort leitet `Server/public/api/.htaccess` Unterpfade an den Router. `Web-App/public/api-client.js` liest die Basis aus `window.NeutralConfig.apiBase` oder dem Meta-Element `neutral-api-base`; beide verwenden standardmäßig `/api/v1`.
+Die Produktionsoberfläche ist der PHP-Router `Server/public/api/index.php`, erreichbar unter der zentral konfigurierten API-Basis. Der kanonische Produktionspräfix ist `/api/v1`; der bisherige Präfix `/api` bleibt vorerst kompatibel. Beim Shared-Hosting-Deployment leitet die Root-`.htaccess` alle öffentlichen `/api`-Pfade direkt und abschließend an diesen Router; Request-URI und Query bleiben für dessen kanonische Auswertung erhalten. `Web-App/public/api-client.js` nutzt `NeutralPublicPath`; der Resolver liest `basePath` aus `window.NeutralConfig` beziehungsweise `neutral-base-path` und leitet daraus `<Basis>/api/v1` ab.
 
 `Server/node/bootstrap/server.js` bietet zusätzlich eine Node-Referenz- und Test-API. Sie ist tatsächlich vorhanden, aber keine Voraussetzung der Shared-Hosting-Produktion und nicht automatisch vertraglich identisch mit PHP.
 

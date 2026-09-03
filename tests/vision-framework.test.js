@@ -4,6 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+function decodeHtmlText(value) {
+  const entities = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+  return value.replace(/&(amp|lt|gt|quot|#39);/g, (entity, name) => entities[name]);
+}
+
 const loadScript = (context, scriptPath) => {
   const source = fs.readFileSync(scriptPath, 'utf8');
   vm.runInContext(source, context, { filename: scriptPath });
@@ -260,15 +265,22 @@ test('developer setup persists a hashed local password for login and admin acces
   assert.ok(reloadedContext.window.CoreAuth.getCurrentUser().roles.includes('developer'));
 });
 
-test('app config exposes a single neutral app name', () => {
-  const windowStub = { window: null, ConfigManager: null };
+test('app config exposes the active public app name', () => {
+  const windowStub = {
+    window: null,
+    ConfigManager: null,
+    NeutralPublicPath: { api() { return '/api/v1'; } }
+  };
   windowStub.window = windowStub;
   const context = vm.createContext(windowStub);
   loadScript(context, path.resolve(__dirname, '../Web-App/core/config-manager.js'));
   context.window.ConfigManager.init();
 
   const appName = context.window.ConfigManager.get('app').name;
-  assert.equal(appName, 'Neutral Platform');
+  const publicIndex = fs.readFileSync(path.resolve(__dirname, '../Web-App/public/index.html'), 'utf8');
+  const publicTitle = publicIndex.match(/<title data-app-title>([^<]*)<\/title>/);
+  assert.ok(publicTitle);
+  assert.equal(appName, decodeHtmlText(publicTitle[1]));
   assert.equal(context.window.ConfigManager.get('bootstrap').developerUsername, 'Developer');
   assert.equal(typeof context.window.ConfigManager.get('bootstrap').developerPasswordHash, 'string');
 });

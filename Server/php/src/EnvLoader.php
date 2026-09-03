@@ -37,7 +37,7 @@ final class EnvLoader
             }
 
             $rawValue = trim(substr($trimmed, $separatorIndex + 1));
-            $cleanValue = stripslashes($rawValue);
+            $cleanValue = $rawValue;
             if (
                 strlen($cleanValue) >= 2 &&
                 (

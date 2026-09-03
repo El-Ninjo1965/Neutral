@@ -7,6 +7,18 @@ const vm = require('node:vm');
 
 const Framework = require('../Web-App/core/master-framework');
 const ServerBootstrap = require('../Server/node/bootstrap/server');
+const projectRoot = path.resolve(__dirname, '..');
+const gpsReferenceAvailable = fs.existsSync(path.join(projectRoot, 'Web-App/app/modules/gps/module.json'));
+
+const readCurrentAppManifest = () => {
+  const appsRoot = path.join(projectRoot, 'Web-App/apps');
+  const manifests = fs.readdirSync(appsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(appsRoot, entry.name, 'app-info.json'))
+    .filter((manifestPath) => fs.existsSync(manifestPath));
+  assert.equal(manifests.length, 1);
+  return JSON.parse(fs.readFileSync(manifests[0], 'utf8'));
+};
 
 const cleanupRuntimeState = () => {
   Framework.setupState = null;
@@ -102,6 +114,9 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
     },
     CoreAudit: {
       record() {}
+    },
+    NeutralPublicPath: {
+      api() { return '/api/v1'; }
     },
     CoreStorage: (() => {
       const storage = new Map();
@@ -229,28 +244,23 @@ test('prefers the active app in the app listing and keeps the neutral app as the
 
 test('loads the current app from the Web-App app manifest', () => {
   const runtime = Framework;
-  const appRoot = path.resolve(__dirname, '../Web-App/apps/neutral-app');
-  const manifestPath = path.join(appRoot, 'app-info.json');
-  assert.equal(fs.existsSync(manifestPath), true);
-
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  assert.equal(manifest.id, 'neutral-app');
-  assert.equal(manifest.name, 'Neutral App');
+  const manifest = readCurrentAppManifest();
 
   const app = runtime.registerApp({
-    appId: 'neutral-app',
-    name: 'Neutral App',
-    version: '1.0.0',
+    appId: manifest.id,
+    name: manifest.name,
+    version: manifest.version || '1.0.0',
     active: true,
-    modules: ['dashboard', 'gps'],
+    modules: manifest.modules || [],
     config: { mode: 'local', source: 'app-info.json' }
   });
 
-  assert.equal(app.appId, 'neutral-app');
+  assert.equal(app.appId, manifest.id);
+  assert.equal(app.name, manifest.name);
   assert.equal(app.config.source, 'app-info.json');
 });
 
-test('exposes the discovered GPS module through the admin module API', async () => {
+test('exposes the discovered GPS module through the admin module API', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   const server = ServerBootstrap.createServer({ modulesDir: path.resolve(__dirname, '../Web-App/app/modules') });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 
@@ -354,7 +364,7 @@ test('preserves discovered module lifecycle state instead of forcing inactive in
   assert.equal(gps.active, true);
 });
 
-test('installing a module through the admin facade keeps it inactive until activation', () => {
+test('installing a module through the admin facade keeps it inactive until activation', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext();
@@ -372,7 +382,7 @@ test('installing a module through the admin facade keeps it inactive until activ
   assert.equal(gps.active, false);
 });
 
-test('discovers module-declared permissions and standalone metadata from the gps manifest', async () => {
+test('discovers module-declared permissions and standalone metadata from the gps manifest', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext();
@@ -967,7 +977,7 @@ test('supports admin devices, licenses, and updates', () => {
 
 });
 
-test('loads and cycles the gps module lifecycle without duplicate watchers', async () => {
+test('loads and cycles the gps module lifecycle without duplicate watchers', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox, geolocationState } = createGpsModuleContext();
@@ -1031,7 +1041,7 @@ test('loads and cycles the gps module lifecycle without duplicate watchers', asy
   assert.equal(rediscoveredGps.active, false);
 });
 
-test('marks gps permission denied without starting a watcher', async () => {
+test('marks gps permission denied without starting a watcher', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox, geolocationState } = createGpsModuleContext({ permissionState: 'denied' });
@@ -1047,7 +1057,7 @@ test('marks gps permission denied without starting a watcher', async () => {
   assert.equal(geolocationState.watchCalls, 0);
 });
 
-test('blocks gps usage when the current user lacks the module usage permission', async () => {
+test('blocks gps usage when the current user lacks the module usage permission', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext({
@@ -1072,7 +1082,7 @@ test('blocks gps usage when the current user lacks the module usage permission',
   await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
 });
 
-test('registers module-provided admin settings and applies them to gps runtime options', async () => {
+test('registers module-provided admin settings and applies them to gps runtime options', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox, geolocationState } = createGpsModuleContext();
@@ -1135,6 +1145,7 @@ test('updates an existing user role and status through the user and admin facade
     CoreAudit: { record() {} },
     CoreAccess: null,
     ConfigManager: null,
+    NeutralPublicPath: { api() { return '/api/v1'; } },
     FrameworkModuleCatalog: []
   };
   const sandbox = vm.createContext(context);
@@ -1388,6 +1399,7 @@ test('bootstraps the developer user even when other users already exist', async 
     CoreAudit: { record() {} },
     CoreAccess: null,
     ConfigManager: null,
+    NeutralPublicPath: { api() { return '/api/v1'; } },
     FrameworkModuleCatalog: []
   };
   const sandbox = vm.createContext(context);

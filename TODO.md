@@ -2,7 +2,7 @@
 
 **Status:** AUSFÜHRUNGSREIHENFOLGE
 
-**Geprüft:** 2026-09-02
+**Geprüft:** 2026-09-03
 **Ziel:** [`CORE-1.0.md`](CORE-1.0.md)
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
@@ -12,23 +12,20 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - authentifizierten Login-/Logout-Durchlauf einschließlich produktiver Session- und CSRF-Cookies einmal mit Betreiberzugang abnehmen,
 - PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
 - responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
-- alle Admin-Hauptansichten und deren serverseitige Rechte mit dem Betreiberkonto produktiv abnehmen,
-- die umgebungsspezifische FTPS-Beispielkonfiguration neutralisieren und TLS-Hostnameprüfung als sicheren Standard dokumentieren.
+- alle Admin-Hauptansichten und deren serverseitige Rechte mit dem Betreiberkonto produktiv abnehmen.
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
 ## 2. Reproduzierbare Neuinstallation in neuem Repository und physischem Serverziel
 
-- physischen neuen Zielordner als eigenen Document-Root und eine Installation unter einem URL-Unterpfad wie `/meine-app/` getrennt unterstützen und testen,
-- verbindlichen URL-Basispfad einführen, damit Client, Admin, API und Assets sowohl im Domain-Root als auch unter einem frei gewählten URL-Unterpfad funktionieren,
-- root-absolute Pfade wie `/Web-App/...`, `/api/v1`, `/admin.php` und `/setup.php` durch eine zentral konfigurierte, getestete Installationsbasis ersetzen,
-- einen Produktionspaket-Befehl erstellen, der ausschließlich Root-`.htaccess`, den vollständigen Ordner `Web-App/`, `Server/php/` und `Server/public/` mit Manifest und Prüfsummen ausgibt,
-- eine wertfreie `.env.example` beziehungsweise einen sicheren Konfigurationsassistenten für App-, Datenbank-, Backup- und Bootstrapwerte bereitstellen, ohne Secrets in Repository oder Browserclient zu schreiben,
-- einen Bootstrap-Ablauf für ein neues Repository dokumentieren und testen: App-ID/-Name setzen, optionale Referenzmodule auswählen, GitHub-FTPS-Secrets und Zielordner konfigurieren,
-- Preflight und Deployment so erweitern, dass ein leerer Zielordner, falsche Basis-URLs, fehlende Rewriteunterstützung, unvollständige PHP-Erweiterungen und versehentliche Node-/Secretdateien vor Upload erkannt werden,
+**Arbeitsstand:** Bei der lokalen Task-6-Umsetzung durch **Codex (ChatGPT Work / GitHub-Connector)** blieben die folgenden externen Abnahmen ausdrücklich offen:
+
+- einen neuen physischen Zielordner als eigenen HTTPS-DocumentRoot live installieren und getrennt von einem URL-Unterpfad abnehmen,
+- PHP 8.x samt erforderlichen Erweiterungen sowie Apache-/LiteSpeed-Rewrite im neuen Zielhosting nachweisen; lokale `NICHT_GEPRUEFT`-Ergebnisse nicht als Freigabe behandeln,
 - komplette leere Testinstallation in einem neuen physischen Document-Root und einer neuen Datenbank durchführen: Paket übertragen, `.env` hostlokal anlegen, Setup/Migration/Seed ausführen, Betreiber anmelden und Setup danach gesperrt nachweisen,
-- denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` ausführen,
-- denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren.
+- denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` einschließlich API-, Asset-, SPA-, Login-, Session- und CSRF-Smoke-Tests ausführen,
+- denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren,
+- den portablen Abschlusscommit durch CodeQL und den ausdrücklich konfigurierten FTPS-Workflow prüfen.
 
 **Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
 

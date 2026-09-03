@@ -15,40 +15,31 @@ jobs:
       FTP_USER: ${{ secrets.FTP_USER }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_PORT: ${{ secrets.FTP_PORT || 21 }}
-      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR || '/' }}
+      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR }}
       FTP_SSL_CHECK_HOSTNAME: ${{ secrets.FTP_SSL_CHECK_HOSTNAME || 'true' }}
+      NEUTRAL_BASE_PATH: ${{ vars.NEUTRAL_BASE_PATH || '' }}
 
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
 
-      - name: Produktions-Staging aufbauen
+      - name: Verifiziertes Produktionspaket bauen
         shell: bash
         run: |
           set -euo pipefail
 
-          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
-          rm -rf "$STAGING_DIR"
-          mkdir -p "$STAGING_DIR"
-
-          copy_dir() {
-            local source_path="$1"
-            local target_path="$STAGING_DIR/$1"
-            mkdir -p "$target_path"
-            cp -a "$source_path"/. "$target_path"/
-          }
-
-          # Production consists only of the browser Web-App and PHP server.
-          # The Node adapter remains development/test-only and is not deployed.
-          copy_dir Web-App
-          copy_dir Server/php
-          copy_dir Server/public
-          cp .htaccess "$STAGING_DIR/.htaccess"
+          STAGING_DIR="$GITHUB_WORKSPACE/dist/neutral-production"
+          npm run package:production -- \
+            --base-path="$NEUTRAL_BASE_PATH" \
+            --output="$STAGING_DIR"
 
           test -f "$STAGING_DIR/Web-App/public/index.html"
           test -f "$STAGING_DIR/Web-App/app/modules/gps/module.json"
           test -f "$STAGING_DIR/Server/public/api/index.php"
           test -f "$STAGING_DIR/Server/php/bootstrap.php"
+          test -f "$STAGING_DIR/.env.example"
+          test -f "$STAGING_DIR/manifest.json"
+          test -f "$STAGING_DIR/SHA256SUMS"
           echo "Staging tree:"
           find "$STAGING_DIR" -type f | sort
 
@@ -67,20 +58,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          STAGING_DIR="${RUNNER_TEMP}/neutral-ftps-staging"
-
-          lftp <<EOF
-          set cmd:fail-exit true
-          set ftp:ssl-force true
-          set ftp:ssl-protect-data true
-          set ssl:check-hostname $FTP_SSL_CHECK_HOSTNAME
-          set ssl:verify-certificate true
-          set net:timeout 30
-          set net:max-retries 1
-          open -u "$FTP_USER","$FTP_PASSWORD" -p "$FTP_PORT" "$FTP_HOST"
-          mirror -R --only-newer --verbose \
-            --exclude-glob .env \
-            "$STAGING_DIR" "$FTP_TARGET_DIR"
-          put "$STAGING_DIR/.htaccess" -o "$FTP_TARGET_DIR/.htaccess"
-          bye
-          EOF
+          FTP_SERVER="$FTP_HOST" \
+          FTP_USERNAME="$FTP_USER" \
+          FTP_PROTOCOL="ftps" \
+          node scripts/manual-ftps-deploy.js

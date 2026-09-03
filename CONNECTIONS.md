@@ -165,6 +165,8 @@ In dieser Reihenfolge prüfen:
 5. fehlgeschlagenen Lauf erst nach Ursachenklärung erneut starten;
 6. nach erfolgreichem Lauf die erwartete öffentliche URL per HTTPS prüfen.
 
+`FTP_TARGET_DIR` muss ausdrücklich gesetzt sein; auch das Rootziel `/` wird niemals automatisch angenommen. `FTP_SSL_CHECK_HOSTNAME` muss `true` bleiben, weil `false` vom Deploymentwerkzeug abgelehnt wird. Ein Wechsel von Protokoll, Server, Port, Benutzer, Ziel oder Paketformat übernimmt wegen des gebundenen lokalen Deploymentmanifests keine früheren Löschkandidaten.
+
 ### Workflow wartet auf Genehmigung
 
 Status mit `gh run list` und `gh run view` belegen. Nur Läufe mit `queued`, `in_progress`, `waiting` oder einer angezeigten Environment-Freigabe benötigen weitere Aufmerksamkeit. Abgeschlossene fehlgeschlagene Läufe blockieren neue Arbeit nicht.
