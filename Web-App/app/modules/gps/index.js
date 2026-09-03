@@ -114,7 +114,21 @@
         if (!hasAuthContext()) {
             return true;
         }
-        if (!user || !permission) {
+        if (!permission) {
+            return false;
+        }
+
+        if (!user) {
+            const clientAccess = GpsModule.clientAccess;
+            if (!clientAccess || clientAccess.mode !== 'anonymous') {
+                return false;
+            }
+            if (access.visibilityPermissions.includes(permission)) {
+                return clientAccess.canView === true;
+            }
+            if (access.usagePermissions.includes(permission)) {
+                return clientAccess.canUse === true;
+            }
             return false;
         }
 
@@ -520,6 +534,7 @@
 
     GpsModule.renderUserInterface = (container) => {
         if (!container) return;
+        let autoRefreshAttempted = false;
         const render = (message = '', isError = false) => {
             const state = GpsModule.getRuntimeState();
             const position = state.lastPosition || GpsModule.getLastPosition();
@@ -542,6 +557,26 @@
             container.querySelector('[data-gps-action="stop"]').addEventListener('click', () => { GpsModule.stopTracking(); render('Tracking stopped.'); });
         };
         render();
+        Promise.resolve(refreshPermissionState()).then((state) => {
+            if (autoRefreshAttempted || state !== 'granted' || !canUseModule()) {
+                return;
+            }
+            const runtimeState = GpsModule.getRuntimeState();
+            if (runtimeState.status !== 'enabled' || !runtimeState.active) {
+                return;
+            }
+            autoRefreshAttempted = true;
+            return GpsModule.getCurrentPosition()
+                .then(() => render('Location updated automatically.'))
+                .catch((error) => {
+                    const message = error && error.code === 'PERMISSION_DENIED'
+                        ? 'Location permission was denied.'
+                        : error && error.code === 'TIMEOUT'
+                            ? 'Location request timed out.'
+                            : 'Automatic location update was unavailable.';
+                    render(message, true);
+                });
+        }).catch(() => {});
     };
 
     window.GpsModule = GpsModule;

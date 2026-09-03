@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENES FUNKTIONSINVENTAR
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-03
 **Autorität:** beschreibt den Ist-Code; Anforderungen stehen in [`CORE-1.0.md`](CORE-1.0.md).
 
 Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante Funktionen. Detailmethoden bleiben im Quellcode maßgeblich.
@@ -26,7 +26,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | `DatabaseManager` | IndexedDB-Konfiguration und CRUD; `Web-App/core/database-manager.js` | `init`, `getStatus`, `save/get/insert/update/delete/clear/findByIndex/getAll`, `transaction` | Store, Schlüssel/Daten → Promise | IndexedDB; Event `database:initialized` | Promise-Rejection und Status `ERROR` | VORHANDEN |
 | `ServiceManager` | benannte Service-Registry; `Web-App/core/service-manager.js` | `register`, `unregister`, `get`, `has`, `getAll`, `clear` | Name/Service → Service/Boolean | keine | ungültiger Name, Duplikat oder fehlender Service wirft | VORHANDEN |
 | `CoreErrorHandler` | zentrale Browserfehler; `Web-App/core/core-error-handler.js` | `handle`, globale Handlerinitialisierung | Error + Kontext → Protokolleintrag | ErrorLog/CoreEventRing | verhindert keine beliebigen Folgefehler | VORHANDEN |
-| `CoreLoader` | Core-/Manifest-/Skript-Laden; `Web-App/core/core-loader.js` | `initialize`, `loadModuleManifest`, `loadModuleFromManifest`, `discoverExternalModules` | Pfade/Manifest → Promise/Modul | Fetch oder Node-fs, globale Module | fehlende/ungültige Dateien liefern null/leer oder werden protokolliert | VORHANDEN |
+| `CoreLoader` | Core-/Manifest-/Skript-Laden und anonymer Offline-Modulkatalog; `Web-App/core/core-loader.js` | `initialize`, `loadModuleManifest`, `loadModuleFromManifest`, `discoverExternalModules` | Pfade/Manifest → Promise/Modul | Fetch oder Node-fs, globale Module, lokaler anonymer Katalogcache | fehlende/ungültige Dateien liefern null/leer; nur validierte anonyme Kataloge dienen als Offlinefallback | VORHANDEN |
 | `ModuleInterface` | Manifestnormalisierung; `Web-App/core/module-interface.js` | `validateManifest`, Lifecycle-Helfer | Manifest → normalisiertes Manifest | keine | ungültige Pflichtfelder führen zu Fehler/null gemäß Methode | VORHANDEN |
 | `ModuleRegistry` | Modulregister und Discovery; `Web-App/core/module-registry.js` | `register`, `unregister`, `get`, `getAll`, `getByApp`, `discover` | Modul/ID → Modul/Liste | ModuleInterface, CoreLoader, `window` Entry | Duplikat/ungültige ID wirft; fehlender Entry wird übersprungen | VORHANDEN |
 | `ModuleManager` | Client-Modul-Lifecycle; `Web-App/core/module-manager.js` | `discoverModules`, `register`, `install`, `initialize`, `enable/activate`, `disable/deactivate`, `update`, `uninstall` | Modul-ID → Modul/Boolean | Registry, MasterFramework, Core Events | fehlendes Modul/Dependency wirft | VORHANDEN |
@@ -49,7 +49,7 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 | `Phase4RoleService` / `Phase4PermissionService` | RBAC und Permissionkatalog | Rollen-CRUD, `replacePermissions`, `ensure`, `deleteByScope` | Definitionen → Rollen/Rechte | PDO | Systemrollen geschützt; ungültige Keys werden abgelehnt | VORHANDEN |
 | `Phase6SettingsService` | DB-Settings und Modulnamespace | `getAll`, `update`, `removeModuleSettings` | Settings → Settings | PDO | DB-/Validierungsfehler | VORHANDEN |
 | `Phase6AuditService` | Audit schreiben/lesen | `log`, `list` | Aktion/Filter → Liste | PDO | DB-Fehler | VORHANDEN |
-| `Phase7ModuleRuntime` | Server-Discovery und Lifecycle | `discover`, `listForAdmin`, `listForClient`, `install`, `activate`, `deactivate`, `uninstall` | ID/Identity → Modul | Manifestdateien, PDO, Permissions | unbekannte/ungültige Module werfen; Transaktionen schützen Änderungen | VORHANDEN |
+| `Phase7ModuleRuntime` | Server-Discovery, Lifecycle und bereinigter Clientzugriff | `discover`, `listForAdmin`, `listForClient`, `install`, `activate`, `deactivate`, `uninstall` | ID/Identity → Modul | Manifestdateien, PDO, Permissions | unbekannte/ungültige Module werfen; inaktive/nicht sichtbare Module fehlen im Clientkatalog; Transaktionen schützen Änderungen | VORHANDEN |
 | `JsonResponse` | einheitliche JSON-Antwort | `success`, `error`, `send` | Payload/Status → HTTP-Antwort | PHP HTTP | beendet Ausführung (`never`) | VORHANDEN |
 
 ## Fehlende universelle Core-Funktionen
@@ -84,6 +84,8 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 ### Facadenauflösung und Modulzustände
 
 `Core.getFacade(name)` liefert nur Facaden des versionierten Public-Katalogs. Der `ModuleManager` garantiert: Discovery aktiviert nicht; `install` endet `INACTIVE`; `activate` endet `ACTIVE`; `deactivate` endet `INACTIVE`; `update` emittiert `module:updated`; `uninstall` deaktiviert aktive Module vor Cleanup/Entfernung und emittiert `module:uninstalled`.
+
+Ein bereits serverseitig aktives Modul wird nach der Client-Discovery initialisiert und genau einmal über `enable()` beziehungsweise `activate()` in seinen tatsächlichen Laufzeitzustand versetzt. `clientAccess.mode/canView/canUse` wird durch Loader, Interface und Registry erhalten. Die User-Shell filtert anonyme Navigation und direkte Aufrufe fail-closed anhand dieser Entscheidung; lokale Einstellungen dürfen die Serverfreigabe nur weiter einschränken.
 
 | `CorePerformance` | datensparsame Startphasen; `Web-App/core/core-performance.js` | `mark`, `has`, `get`, `snapshot` | Phasenname → monotone Zeitmarke | Browser Performance API mit Date-Fallback | doppelte Marken verändern den Erstwert nicht | VORHANDEN |
 

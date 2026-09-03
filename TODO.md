@@ -7,7 +7,13 @@
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
-## 1. Installation und Produktionssicherheit
+## 1. Anonymer Offline-Modulzugriff und GPS-Referenz
+
+- [ ] den lokal fertiggestellten Stand vollständig verifizieren, nach GitHub `main` integrieren, CodeQL und Deployment prüfen sowie öffentlichen/anonymen Modulkatalog, geschützte Adminansicht und GPS-UI anschließend rein lesend live abnehmen; mangels PHP-Binary lokal ausgelassene PHP-Prozesstests im geeigneten Ziel nachholen.
+
+**Abnahme:** Ein aktives Modul mit Viewer-Sichtrecht erscheint ohne Login; Nutzung benötigt zusätzlich Viewer-Nutzungsrecht. GPS zeigt lokale Daten sofort, aktualisiert bei bereits erteilter Geräteberechtigung automatisch und bleibt nach bestätigter Erstladung offline lokal nutzbar. Inaktive oder nicht freigegebene Module bleiben verborgen.
+
+## 2. Installation und Produktionssicherheit
 
 - produktiven Logout samt Sitzungsende sowie einen negativen CSRF-Fall einmal mit Betreiberzugang abnehmen; der produktive Login, die fortbestehende Sitzung und sämtliche 15 Admin-Hauptansichten sind bereits rein lesend bestätigt,
 - PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
@@ -16,7 +22,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
-## 2. Reproduzierbare Neuinstallation in neuem Repository und physischem Serverziel
+## 3. Reproduzierbare Neuinstallation in neuem Repository und physischem Serverziel
 
 **Arbeitsstand:** Bei der lokalen Task-6-Umsetzung durch **Codex (ChatGPT Work / GitHub-Connector)** blieben die folgenden externen Abnahmen ausdrücklich offen:
 
@@ -29,7 +35,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
 
-## 3. Modulvertrag vervollständigen
+## 4. Modulvertrag vervollständigen
 
 - allgemeine PHP-Routen- und Service-Registrierung je Modul,
 - versionierte Modul-SQL-Migrationen mit Fehler- und Rollbackstrategie,
@@ -39,7 +45,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** GPS und ein zweites fachlich unabhängiges Referenzmodul bestehen denselben Lifecycle- und Sicherheitstest.
 
-## 4. Sichere Provider und Administration
+## 5. Sichere Provider und Administration
 
 - serverseitigen Provideradaptervertrag definieren,
 - Secrets geschützt speichern und ausschließlich serverseitig verwenden,
@@ -48,7 +54,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Wechsel zwischen zwei Testprovidern ohne Clientänderung oder Secret-Leak.
 
-## 5. Portabilität und Core-1.0-Abnahme
+## 6. Portabilität und Core-1.0-Abnahme
 
 - Backup, Restore, Update und Rollback reproduzierbar machen,
 - Serverumzug auf eine leere kompatible Umgebung testen,

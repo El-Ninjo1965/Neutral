@@ -2,6 +2,18 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-03 – Anonymen Offline-Modulzugriff und GPS-Startverhalten lokal abgeschlossen
+
+- öffentliche Modulentscheidung serverseitig auf aktive, anhand der gespeicherten `viewer`-Modulrechte sichtbare Module begrenzt und nur als bereinigte Browserflags `canView`/`canUse` ausgeliefert; keine anonyme Admin- oder Serverberechtigung eingeführt,
+- echten API-Umschlag im Loader verarbeitet, ausschließlich bestätigte anonyme Kataloge installationsbezogen gespeichert und Offlinezugriff ohne gültigen anonymen Cache fail-closed gehalten,
+- `clientAccess` durch Loader, Interface und Registry erhalten; öffentliche Navigation, Direktaufrufe und lokale Sichtbarkeit ohne permissiven Fallback abgesichert sowie anonyme Settings eindeutig als „Local settings“ gekennzeichnet,
+- persistiert aktive Module nach Discovery in den tatsächlichen Client-Lifecycle überführt; GPS zeigt den letzten lokalen Standort sofort, aktualisiert bei bereits erteilter Berechtigung höchstens einmal pro Mount und löst keinen automatischen Erst-Prompt aus,
+- Adminhinweis erläutert, dass `viewer`-Sicht- und Nutzungsrecht den öffentlichen Modulzugriff steuern, ohne Serverrechte zu erteilen,
+- abschließende Spezifikationsprüfung deckte zusätzlich öffentlich mitgelieferte Permissiondefinitionen, Datenbank- und Managementmetadaten auf; test-first entfernt, sodass der Clientkatalog nur Sicht-/Nutzungsdefinitionen behält,
+- fokussierte RED/GREEN-Nachweise sowie die PHP-ausgeschlossene Gesamtsuite mit 261 Tests, 258 bestanden, drei erwarteten PHP-Skips und 0 Fehlern bestanden,
+- sauberes Produktionspaket mit 93 Dateien gebaut; Manifest, Inventar, Größen, SHA-256, Einstiegspunkte, exakte HTTPS-Basis und Secretfreiheit bestanden. PHP-Binary und echtes Rewrite blieben wahrheitsgemäß `NICHT_GEPRUEFT`,
+- implementiert und dokumentiert durch **Codex (ChatGPT Work)**; GitHub-, CodeQL-, Deployment- und Live-Nachweise dieses Stands sind noch offen.
+
 ## 2026-09-03 – Produktiven Admin-Funktionstest und neutrale Loginfelder abgeschlossen
 
 - echten Betreiberlogin sicher im geschützten Browserdialog ausgeführt und die fortbestehende Sitzung über alle 15 Admin-Hauptansichten ausschließlich lesend bestätigt; keine alte Dashboardansicht, sichtbare Anwendungsfehlermeldung, Warnbox oder hängende Ladeanzeige festgestellt,

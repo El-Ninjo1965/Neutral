@@ -101,6 +101,17 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
 
+### 2026-09-03 – Anonymen Offline-Modulzugriff und GPS-Referenz lokal abschließen
+
+- **Aufgabe:** Die Offline-First-Vision für aktive, im Admin über `viewer` freigegebene Module ohne Login umsetzen und das GPS-Referenzverhalten beim Öffnen korrigieren.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work)**.
+- **Servergrenze:** Der öffentliche Modulkatalog bildet ausschließlich gespeicherte Viewer-Modulrechte auf bereinigte Sicht-/Nutzungsflags ab. Inaktive oder nicht freigegebene Module fehlen; die Entscheidung erteilt keine Server-, Admin- oder Datenbankrechte.
+- **Client und Offline:** Loader, Interface und Registry erhalten den Zugriffskontext. Nur validierte anonyme Kataloge werden installationsbezogen zwischengespeichert; authentifizierte Antworten und ungültige Daten werden nicht als anonymer Fallback verwendet. Usernavigation und Direktaufrufe bleiben fail-closed, lokale Einstellungen dürfen nur weiter einschränken.
+- **GPS/Lifecycle:** Ein persistiert aktives Modul wird nach Discovery initialisiert und aktiviert. GPS rendert vorhandene lokale Daten sofort und aktualisiert bei bereits erteilter Browserberechtigung genau einmal pro Mount; ein erstmaliger Prompt bleibt an eine Nutzergeste gebunden.
+- **Test-first:** Vier getrennte RED/GREEN-Pakete decken PHP-Clientzugriff, Offlinekatalog, User-Shell und GPS/Lifecycle ab. Die Spezifikationsprüfung fand anschließend noch unerwünschte Permissiondefinitions-, Datenbank- und Managementmetadaten im Clientkatalog; ein weiterer RED/GREEN-Test reduzierte die Antwort auf Sicht-/Nutzungsdefinitionen. Die fokussierte Abschlussrunde bestand mit 48 Tests, einem erwarteten PHP-Skip und 0 Fehlern; die PHP-ausgeschlossene Gesamtsuite mit 261 Tests, 258 bestanden, drei erwarteten PHP-Skips und 0 Fehlern.
+- **Paket/Git:** Aus sauberem Commit wurde ein 93-Dateien-Produktionspaket gebaut. Manifest, Inventar, Größen, SHA-256, Einstiegspunkte, exakte HTTPS-Basis und Secretfreiheit bestanden; `git diff --check` ist leer. PHP-Binary und Ziel-Rewrite bleiben `NICHT_GEPRUEFT`.
+- **Offen:** GitHub/CodeQL, Deployment und rein lesende Live-Smokes; PHP-Prozesstest in einer Umgebung mit PHP nachholen.
+
 ### 2026-09-03 – Zertifikatsgültigen FTPS-Host rein lesend bestätigen
 
 - **Aufgabe:** Den zum Hostingserver gehörenden zertifikatsgültigen FTPS-Host ermitteln und mit den bereits geschützten GitHub-Zugangsdaten ausschließlich lesend prüfen.

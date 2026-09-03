@@ -390,10 +390,20 @@ if ($route === 'modules' && $method === 'GET') {
             && trim((string) ($databaseConfig['name'] ?? '')) !== ''
             && trim((string) ($databaseConfig['user'] ?? '')) !== ''
         );
+    $clientIdentity = $identity;
+    if ($clientIdentity === null && $databaseConfigured) {
+        $clientIdentity = [
+            'anonymous' => true,
+            'permissions' => $roleService->permissionsForRoles(['viewer']),
+        ];
+    }
     JsonResponse::success([
-        'modules' => $databaseConfigured
-            ? $moduleRuntime->listForClient($identity)
-            : $moduleRuntime->discover(),
+        'modules' => $databaseConfigured && $clientIdentity !== null
+            ? $moduleRuntime->listForClient($clientIdentity)
+            : [],
+        'accessContext' => [
+            'mode' => $identity ? 'authenticated' : 'anonymous',
+        ],
     ]);
 }
 

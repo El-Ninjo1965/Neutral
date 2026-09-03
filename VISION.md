@@ -2,7 +2,7 @@
 
 **Status:** LANGFRISTIGES ZIELBILD
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-03
 **Einordnung:** Umfang und Abnahme der ersten stabilen Version stehen in [`CORE-1.0.md`](CORE-1.0.md). Der aktuelle Stand steht in [`STATUS.md`](STATUS.md).
 
 ## 1. Identität und Zweck
@@ -95,6 +95,8 @@ Die Zielarchitektur umfasst:
 
 Lokale Änderungen dürfen nicht stillschweigend verloren gehen. Der Benutzer muss relevante Sync- und Konfliktzustände erkennen können. Authentifizierungs-, Rechte- und Datenschutzregeln gelten auch für lokal gespeicherte Daten.
 
+Für die öffentliche, nicht angemeldete Nutzung bildet der Server ausschließlich die im Adminbereich für die Systemrolle `viewer` vergebenen Modulrechte auf einen bereinigten Clientkontext ab. Sichtbarkeit und lokale Nutzung bleiben getrennt; daraus entstehen niemals Admin-, Datenbank- oder sonstige Serverrechte. Ein erfolgreich geladener anonymer Modulkatalog darf lokal als Offlinefallback gespeichert werden. Authentifizierte Kataloge dürfen nicht als anonymer Fallback dienen; ohne bestätigten anonymen Katalog bleibt die Modulnavigation geschlossen.
+
 ## 6. Mobile-First
 
 Primäre Zielgeräte sind Android-Telefone, iPhone, iPad und Tablets. Desktop-Unterstützung bleibt vorgesehen, ist zunächst jedoch nachrangig.
@@ -154,6 +156,8 @@ GPS ist keine Kernfunktion und keine fachliche Ausrichtung von NEUTRAL. GPS ist 
 - API- und Datenbankintegration
 
 Erkenntnisse werden nur dann in den Core übernommen, wenn sie universell abstrahiert sind. GPS-spezifische Daten, UI und Regeln bleiben im GPS-Modul.
+
+Der aktuelle Referenzvertrag zeigt eine vorhandene lokale Position sofort. Eine neue Positionsabfrage erfolgt beim Öffnen genau einmal automatisch, wenn die Browserberechtigung bereits erteilt ist; ein erstmaliger Berechtigungsdialog wird weiterhin nur durch eine ausdrückliche Benutzeraktion ausgelöst.
 
 ## 11. Qualitätsziel
 

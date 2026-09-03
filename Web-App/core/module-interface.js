@@ -85,6 +85,23 @@
         };
     };
 
+    const normalizeClientAccess = (value) => {
+        if (!value || typeof value !== 'object') {
+            return null;
+        }
+        if (!['anonymous', 'authenticated'].includes(value.mode)) {
+            return null;
+        }
+        if (typeof value.canView !== 'boolean' || typeof value.canUse !== 'boolean') {
+            return null;
+        }
+        return {
+            mode: value.mode,
+            canView: value.canView,
+            canUse: value.canUse
+        };
+    };
+
     const normalizeStandaloneDefinition = (value) => {
         if (!value || typeof value !== 'object') {
             return null;
@@ -204,6 +221,12 @@
                     ? manifest.requirements.filter(Boolean).map(String)
                     : [],
                 access: normalizeAccessDefinition(manifest.access, permissionDefinitions),
+                clientAccess: normalizeClientAccess(manifest.clientAccess),
+                registered: manifest.registered === true,
+                status: typeof manifest.status === 'string' ? manifest.status : null,
+                lifecycleState: typeof manifest.lifecycleState === 'string' ? manifest.lifecycleState : null,
+                active: manifest.active === true,
+                enabled: manifest.enabled === true,
                 standalone: normalizeStandaloneDefinition(manifest.standalone),
                 database: normalizeDatabaseDefinition(manifest.database),
                 admin: manifest.admin && typeof manifest.admin === 'object'
@@ -231,6 +254,7 @@
                 permissionDefinitions: [...manifest.permissionDefinitions],
                 capabilities: [...manifest.capabilities],
                 access: manifest.access,
+                clientAccess: manifest.clientAccess,
                 standalone: manifest.standalone,
                 database: manifest.database,
                 admin: manifest.admin,

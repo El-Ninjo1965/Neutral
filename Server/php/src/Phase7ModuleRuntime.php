@@ -76,8 +76,9 @@ final class Phase7ModuleRuntime
             fn (array $module): bool => $this->shouldExposeToClient($module, $identity)
         ));
 
-        return array_map(function (array $module): array {
+        return array_map(function (array $module) use ($identity): array {
             $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+            $clientAccess = $this->resolveClientAccess($module, $identity);
 
             return [
                 'id' => (string) ($module['id'] ?? ''),
@@ -88,13 +89,10 @@ final class Phase7ModuleRuntime
                 'type' => (string) ($module['type'] ?? 'module'),
                 'entry' => $module['entry'] ?? null,
                 'globalName' => $module['globalName'] ?? null,
-                'permissions' => is_array($module['permissions'] ?? null) ? $module['permissions'] : [],
-                'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
                 'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
                 'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
-                'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
+                'access' => $this->sanitizeClientAccessDefinition($module),
                 'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
-                'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
                 'modulePath' => $module['modulePath'] ?? null,
                 'discovered' => (bool) ($module['discovered'] ?? false),
                 'registered' => (bool) ($module['registered'] ?? false),
@@ -102,6 +100,7 @@ final class Phase7ModuleRuntime
                 'lifecycleState' => (string) ($module['lifecycleState'] ?? 'DISCOVERED'),
                 'active' => (bool) ($module['active'] ?? false),
                 'enabled' => (bool) ($module['enabled'] ?? false),
+                'clientAccess' => $clientAccess,
                 'public' => isset($module['public']) ? (bool) $module['public'] : ((bool) ($manifest['public'] ?? false)),
                 'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
@@ -1007,32 +1006,73 @@ final class Phase7ModuleRuntime
      */
     private function shouldExposeToClient(array $module, ?array $identity): bool
     {
-        $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+        $clientAccess = $this->resolveClientAccess($module, $identity);
+        return $clientAccess['canView'];
+    }
+
+    /**
+     * Resolves browser-only module visibility and use. This result never grants
+     * permission to a server endpoint.
+     *
+     * @param array<string,mixed> $module
+     * @param array<string,mixed>|null $identity
+     * @return array{mode:string,canView:bool,canUse:bool}
+     */
+    private function resolveClientAccess(array $module, ?array $identity): array
+    {
         $access = is_array($module['access'] ?? null) ? $module['access'] : [];
         $visibilityPermissions = is_array($access['visibilityPermissions'] ?? null) && $access['visibilityPermissions'] !== []
             ? array_values(array_unique(array_map('strval', $access['visibilityPermissions'])))
-            : (is_array($module['permissions'] ?? null) ? array_values(array_unique(array_map('strval', $module['permissions']))) : []);
-        $isPublic = (($module['public'] ?? $manifest['public'] ?? false) === true)
-            || (($module['isPublic'] ?? $manifest['isPublic'] ?? false) === true)
-            || (($module['loginRequired'] ?? $manifest['loginRequired'] ?? true) === false)
-            || (($module['requiresLogin'] ?? $manifest['requiresLogin'] ?? true) === false);
-
-        if ($identity === null) {
-            return $visibilityPermissions === [] ? $isPublic : false;
-        }
-
-        if ($visibilityPermissions === []) {
-            return true;
-        }
-
+            : [];
+        $usagePermissions = is_array($access['usagePermissions'] ?? null) && $access['usagePermissions'] !== []
+            ? array_values(array_unique(array_map('strval', $access['usagePermissions'])))
+            : [];
+        $mode = (($identity['anonymous'] ?? false) === true) ? 'anonymous' : 'authenticated';
+        $active = (($module['active'] ?? false) === true)
+            || (($module['enabled'] ?? false) === true)
+            || in_array(strtolower((string) ($module['status'] ?? '')), ['active', 'enabled'], true)
+            || strtoupper((string) ($module['lifecycleState'] ?? '')) === 'ACTIVE';
         $permissions = is_array($identity['permissions'] ?? null) ? $identity['permissions'] : [];
-        foreach ($visibilityPermissions as $permission) {
-            if (in_array($permission, $permissions, true) || in_array('admin.write', $permissions, true)) {
-                return true;
-            }
-        }
+        $hasPermission = static fn (string $permission): bool => in_array($permission, $permissions, true)
+            || ($mode === 'authenticated' && in_array('admin.write', $permissions, true));
+        $canView = $active
+            && $visibilityPermissions !== []
+            && count(array_filter($visibilityPermissions, $hasPermission)) > 0;
+        $canUse = $canView
+            && ($usagePermissions === [] || count(array_filter($usagePermissions, $hasPermission)) > 0);
 
-        return false;
+        return [
+            'mode' => $mode,
+            'canView' => $canView,
+            'canUse' => $canUse,
+        ];
+    }
+
+    /**
+     * Keeps only the permission metadata needed for local client visibility and
+     * use. Management and administration definitions stay on admin endpoints.
+     *
+     * @param array<string,mixed> $module
+     * @return array{visibilityPermissions:list<string>,usagePermissions:list<string>}
+     */
+    private function sanitizeClientAccessDefinition(array $module): array
+    {
+        $access = is_array($module['access'] ?? null) ? $module['access'] : [];
+        $normalize = static function ($permissions): array {
+            if (!is_array($permissions)) {
+                return [];
+            }
+
+            return array_values(array_unique(array_filter(
+                array_map(static fn ($permission): string => trim((string) $permission), $permissions),
+                static fn (string $permission): bool => $permission !== ''
+            )));
+        };
+
+        return [
+            'visibilityPermissions' => $normalize($access['visibilityPermissions'] ?? []),
+            'usagePermissions' => $normalize($access['usagePermissions'] ?? []),
+        ];
     }
 
     private function modulePermissionScope(string $moduleId): string

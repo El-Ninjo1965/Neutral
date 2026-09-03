@@ -128,6 +128,7 @@ class AdminModulesView {
         <div>
           <h3>Role assignments</h3>
           <p class="small-muted">Assign only this module&apos;s declared permissions. Existing core permissions on each role stay untouched.</p>
+          <p class="small-muted">For access without login, the Viewer role needs both the module visibility permission and its usage permission. This mapping never grants anonymous admin or server rights.</p>
         </div>
         <div class="module-permission-grid">
           ${roles.map((role) => `

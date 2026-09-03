@@ -185,10 +185,25 @@
                         this.unregister(registered.id);
                     }
 
-                    this.register({
+                    const runtimeModule = this.register({
                         ...existing,
                         ...nextDefinition,
                     });
+                    if (isActive) {
+                        if (typeof runtimeModule.initialize === 'function') {
+                            await runtimeModule.initialize();
+                        }
+                        if (typeof runtimeModule.enable === 'function') {
+                            await runtimeModule.enable();
+                        } else if (typeof runtimeModule.activate === 'function') {
+                            await runtimeModule.activate();
+                        }
+                        runtimeModule.status = 'enabled';
+                        runtimeModule.lifecycleState = 'ACTIVE';
+                        runtimeModule.registered = true;
+                        runtimeModule.active = true;
+                        runtimeModule.enabled = true;
+                    }
                 } catch (error) {
                     if (window.CoreErrorHandler) {
                         window.CoreErrorHandler.handle(error, {

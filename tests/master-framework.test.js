@@ -50,10 +50,11 @@ const loadScriptIntoContext = (context, filePath) => {
   vm.runInContext(source, context, { filename: filePath });
 };
 
-const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {}) => {
+const createGpsModuleContext = ({ permissionState = 'granted', currentUser, authContext = currentUser !== undefined } = {}) => {
   const geolocationState = {
     permissionState,
     watchCalls: 0,
+    currentPositionCalls: 0,
     activeWatches: new Map(),
     lastWatchOptions: null,
     lastCurrentPositionOptions: null,
@@ -89,6 +90,7 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
           geolocationState.activeWatches.delete(watchId);
         },
         getCurrentPosition(success, error, options) {
+          geolocationState.currentPositionCalls += 1;
           geolocationState.lastCurrentPositionOptions = options || null;
           if (geolocationState.nextCurrentPositionError) {
             const currentError = geolocationState.nextCurrentPositionError;
@@ -158,9 +160,9 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
     CoreContext: {},
     CoreState: {},
     CoreLifecycle: {},
-    CoreAuth: currentUser ? {
+    CoreAuth: authContext ? {
       getCurrentUser() {
-        return currentUser;
+        return currentUser || null;
       }
     } : {},
     CoreAccess: currentUser ? {
@@ -189,6 +191,27 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser } = {
   }
 
   return { sandbox, geolocationState };
+};
+
+const createGpsContainer = () => {
+  const listeners = new Map();
+  return {
+    html: '',
+    listeners,
+    set innerHTML(value) {
+      this.html = String(value);
+    },
+    get innerHTML() {
+      return this.html;
+    },
+    querySelector(selector) {
+      return {
+        addEventListener(event, handler) {
+          listeners.set(`${selector}:${event}`, handler);
+        }
+      };
+    }
+  };
 };
 
 test('registers and activates apps', () => {
@@ -319,6 +342,7 @@ test('exposes the discovered GPS module through the admin module API', { skip: g
 });
 
 test('preserves discovered module lifecycle state instead of forcing inactive install state', async () => {
+  let enableCalls = 0;
   const context = {
     window: null,
     document: { readyState: 'complete', addEventListener() {} },
@@ -343,6 +367,7 @@ test('preserves discovered module lifecycle state instead of forcing inactive in
           registered: true,
           active: true,
           enabled: true,
+          enable() { enableCalls += 1; this.active = true; this.status = 'enabled'; },
           manifest: { id: 'gps', name: 'GPS', type: 'module' }
         }];
       }
@@ -362,6 +387,7 @@ test('preserves discovered module lifecycle state instead of forcing inactive in
   assert.equal(gps.lifecycleState, 'ACTIVE');
   assert.equal(gps.registered, true);
   assert.equal(gps.active, true);
+  assert.equal(enableCalls, 1);
 });
 
 test('installing a module through the admin facade keeps it inactive until activation', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
@@ -1080,6 +1106,67 @@ test('blocks gps usage when the current user lacks the module usage permission',
   assert.equal(startResult.ok, false);
   assert.equal(startResult.code, 'INSUFFICIENT_PERMISSIONS');
   await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
+});
+
+test('anonymous gps usage follows the server-provided client access decision', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({ currentUser: null, authContext: true });
+  const gps = sandbox.GpsModule;
+  gps.install();
+  gps.enable();
+
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: false };
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
+
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+});
+
+test('gps renders cached position immediately and refreshes once when permission is already granted', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  sandbox.CoreStorage.set('gps:lastPosition', {
+    latitude: 1.25,
+    longitude: 2.5,
+    accuracy: 99,
+    timestamp: '2026-09-03T00:00:00.000Z'
+  });
+  const container = createGpsContainer();
+
+  gps.renderUserInterface(container);
+  assert.match(container.innerHTML, /1\.25/);
+  assert.match(container.innerHTML, /2\.5/);
+
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(geolocationState.currentPositionCalls, 1);
+  assert.match(container.innerHTML, /52\.52/);
+  assert.match(container.innerHTML, /Location updated automatically/);
+});
+
+test('gps never triggers the first browser permission prompt automatically', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  const container = createGpsContainer();
+
+  gps.renderUserInterface(container);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(geolocationState.currentPositionCalls, 0);
+  assert.match(container.innerHTML, /Get Current Position/);
 });
 
 test('registers module-provided admin settings and applies them to gps runtime options', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {

@@ -140,43 +140,17 @@
   };
 
   const getVisibleModules = () => {
-    const modules = getModules();
-    const currentUser = getCurrentUser();
     const preferences = readUserPreferences();
-    const visibleSet = Array.isArray(preferences.visibleModuleIds)
-      ? new Set(preferences.visibleModuleIds)
-      : null;
-
-    return modules.filter((module) => {
-      if (!module || !module.id) {
-        return false;
-      }
-
-      const visibilityPermissions = Array.isArray(module.access?.visibilityPermissions) && module.access.visibilityPermissions.length
-        ? module.access.visibilityPermissions
-        : (Array.isArray(module.permissions) ? module.permissions : []);
-
-      if (!currentUser) {
-        const isPublic = module.public === true || module.isPublic === true || module.loginRequired === false || module.requiresLogin === false || module.public !== false;
-        if (!isPublic) {
-          return false;
-        }
-      }
-
-      if (visibleSet && !visibleSet.has(module.id)) {
-        return false;
-      }
-
-      if (currentUser && visibilityPermissions.length) {
-        const allowed = visibilityPermissions.some((permission) => Array.isArray(currentUser.permissions) && currentUser.permissions.includes(permission));
-        if (!allowed) {
-          return false;
-        }
-      }
-
-      return true;
+    return window.NeutralUserModuleAccess.visibleModules(getModules(), {
+      currentUser: getCurrentUser(),
+      visibleModuleIds: preferences.visibleModuleIds
     });
   };
+
+  const getAvailableModulesForUser = () => window.NeutralUserModuleAccess.visibleModules(getModules(), {
+    currentUser: getCurrentUser(),
+    visibleModuleIds: null
+  });
 
   const canOpenAdmin = () => {
     const currentUser = getCurrentUser();
@@ -195,7 +169,8 @@
   const renderActions = () => {
     if (!actions) return;
     const currentUser = getCurrentUser();
-    const settingsButton = '<button id="userSettingsButton" class="user-app-link" type="button" aria-label="User settings">⚙ Settings</button>';
+    const settingsLabel = currentUser ? 'Settings' : 'Local settings';
+    const settingsButton = `<button id="userSettingsButton" class="user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
 
     if (!currentUser) {
       actions.innerHTML = `${settingsButton}<button id="userLoginButton" class="user-app-action" type="button">Login</button>`;
@@ -321,7 +296,8 @@
   };
 
   const renderUserSettings = () => {
-    const modules = getModules();
+    const currentUser = getCurrentUser();
+    const modules = getAvailableModulesForUser();
     const preferences = readUserPreferences();
     const hasExplicitVisibility = Array.isArray(preferences.visibleModuleIds);
     const moduleVisibility = hasExplicitVisibility
@@ -333,8 +309,8 @@
         <button class="user-app-back" type="button" id="userSettingsBackButton">Back</button>
         <div class="user-app-section-heading">
           <div>
-            <span class="user-app-eyebrow">Profile</span>
-            <h1>Settings</h1>
+            <span class="user-app-eyebrow">${currentUser ? 'Profile' : 'Local workspace'}</span>
+            <h1>${currentUser ? 'Settings' : 'Local settings'}</h1>
           </div>
           <span class="user-app-count">${modules.length}</span>
         </div>
@@ -425,7 +401,7 @@
     const resetButton = document.getElementById('userSettingsResetButton');
     if (resetButton) {
       resetButton.addEventListener('click', () => {
-        const moduleIds = getModules().map((module) => module.id);
+        const moduleIds = getAvailableModulesForUser().map((module) => module.id);
         saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy });
         state.activeView = 'home';
         state.activeModuleId = null;
@@ -435,7 +411,11 @@
   };
 
   const renderModule = (moduleId) => {
-    const module = getVisibleModules().find((entry) => entry.id === moduleId) || getModules().find((entry) => entry.id === moduleId);
+    const preferences = readUserPreferences();
+    const module = window.NeutralUserModuleAccess.findVisibleModule(getModules(), moduleId, {
+      currentUser: getCurrentUser(),
+      visibleModuleIds: preferences.visibleModuleIds
+    });
     if (!module) {
       state.activeView = 'home';
       state.activeModuleId = null;

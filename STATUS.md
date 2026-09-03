@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** GitHub `main`, Codecommit `d31c870e83922ac518f127d8eccdecc42d5ea62f`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** lokaler Branch `codex/portable-installation` nach GitHub `main`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -14,6 +14,8 @@ Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoo
 
 Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und produktivem FTPS-Deployment wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL und der korrigierte produktive Deploymentlauf sind bestanden. Der geschützte Zielbestand wurde anschließend ausschließlich lesend bestätigt. Die vollständige PHP-/Apache-/Datenbank-Neuinstallation in einem neuen Ziel sowie die URL-Unterpfadabnahme bleiben offen.
 
+Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work)** test-first lokal umgesetzt: Der öffentliche PHP-Katalog bildet aktive Module anhand der gespeicherten `viewer`-Sicht-/Nutzungsrechte auf bereinigtes `clientAccess` ab. Nur anonyme Kataloge werden als Offlinefallback gespeichert; Navigation und Direktaufrufe bleiben fail-closed. Das GPS-Referenzmodul zeigt lokale Daten sofort und aktualisiert bei bereits erteilter Browserberechtigung einmal automatisch. GitHub-, CodeQL-, Deployment- und Live-Nachweise dieses Stands sind noch offen.
+
 ## Funktionsmatrix
 
 | Bereich | Status | Nachweis / offene Lücke |
@@ -23,6 +25,7 @@ Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und p
 | Modul-Discovery und Client-Lifecycle | VORHANDEN | `module-manager.js`, `module-interface.js`, Lifecycle-Tests |
 | PHP-Modulregistrierung und Zustände | VORHANDEN | `Phase7ModuleRuntime.php`, Admin-API |
 | Modulrechte nach Rollen | VORHANDEN | Modulmanifest, RBAC, Admin-Modulansicht, GPS-Referenz |
+| Anonymer Modulzugriff | LOKAL VORHANDEN | aktive Module gemäß `viewer`-Sicht-/Nutzungsrechten, bereinigtes `clientAccess`, fail-closed UI- und Offlinekatalogtests; Live-Nachweis offen |
 | Mengenlimits/Entitlements | FEHLT | kein allgemeines serverseitiges Limitmodell nachgewiesen |
 | Allgemeine PHP-Routen je Modul | FEHLT | Module benötigen derzeit Änderungen am zentralen Router |
 | Modul-SQL-Migration und Rollback | TEILWEISE | Tabellen/`module_migrations` existieren; allgemeiner Runner fehlt |
@@ -34,7 +37,7 @@ Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und p
 | PHP-Login-Drosselung | TEILWEISE | `LoginRateLimiter` und persistenter PDO-Store einschließlich Fail-closed-Pfad sind getestet; produktiver Lockout-/Retry-Nachweis fehlt |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
-| Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
+| Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus und anonymer Modulkatalogfallback vorhanden; Sync-Queue und Konfliktengine fehlen |
 | Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung; Lauf `33802485499` deployte erfolgreich in das geschützte Ziel. Read-only-Lauf `33803384719` bestätigte dort `.htaccess`, `Web-App/` und `Server/` ohne Änderung oder Secret-Ausgabe |
 | Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
 | Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |

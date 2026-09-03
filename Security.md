@@ -44,6 +44,8 @@
 
 **VORHANDEN:** Tabellen und PHP-Services für Rollen, Permissions, Benutzerrollen und Rollenpermissions. API-Endpunkte prüfen konkrete Permissionkeys. Systemrollen sind gegen allgemeines Löschen/Ändern geschützt; Modulppermissions besitzen Scope und deklarierte Standardrollen.
 
+**VORHANDEN:** Für den öffentlichen Modulkatalog werden die gespeicherten Modulrechte der Systemrolle `viewer` in eine anonyme, auf `canView` und `canUse` reduzierte Browserentscheidung abgebildet. Die Rolle selbst, effektive Permissionlisten sowie Verwaltungsrechte werden nicht an den anonymen Client übertragen. Diese Abbildung gilt ausschließlich für lokale Modulsichtbarkeit/-nutzung und autorisiert keinen Serverendpunkt.
+
 **TEILWEISE:** Rechtebezeichnungen und Endpointmatrix müssen bei jeder API-Änderung synchron dokumentiert und getestet werden.
 
 ## 7. CSRF
@@ -75,6 +77,8 @@
 ## 11. Lokale Speicherung
 
 **TEILWEISE:** IndexedDB und localStorage speichern Clientzustand. Sie sind nicht automatisch verschlüsselt. Sessiongeheimnisse, Passwörter und serverseitige Autorität dürfen dort nicht dauerhaft abgelegt werden. Für personenbezogene Offline-Daten fehlen noch allgemeine Verschlüsselungs-, Lösch- und Exportverträge.
+
+Der Offline-Modulkatalog enthält nur öffentliche Modulmetadaten und bereinigte anonyme Zugriffsflags. Nur Antworten mit bestätigtem anonymem Kontext werden gespeichert; authentifizierte oder strukturell ungültige Kataloge werden nie als anonymer Fallback verwendet. Ohne gültigen Cache bleibt der Zugriff geschlossen.
 
 ## 12. Datenschutz
 

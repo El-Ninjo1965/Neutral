@@ -137,6 +137,7 @@
                     permissionDefinitions: [...module.permissionDefinitions],
                     capabilities: [...module.capabilities],
                     access: module.access,
+                    clientAccess: module.clientAccess || null,
                     standalone: module.standalone,
                     database: module.database,
                     admin: module.admin
@@ -216,6 +217,7 @@
                 entry: module.source || module.modulePath,
                 globalName: module.globalName || module.manifest?.globalName || module.name || module.id,
                 access: module.access || module.manifest?.access || null,
+                clientAccess: module.clientAccess || module.manifest?.clientAccess || null,
                 standalone: module.standalone || module.manifest?.standalone || null,
                 database: module.database || module.manifest?.database || null
             }))];
@@ -265,6 +267,7 @@
                         ? [...implementation.capabilities]
                         : [...manifest.capabilities],
                     access: implementation.access || manifest.access || null,
+                    clientAccess: manifest.clientAccess || implementation.clientAccess || null,
                     standalone: implementation.standalone || manifest.standalone || null,
                     database: implementation.database || manifest.database || null,
                     status: implementation.status || manifest.status || 'inactive',

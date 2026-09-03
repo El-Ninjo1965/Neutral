@@ -2,7 +2,7 @@
 
 **Status:** DETAILVERTRAG
 
-**Geprüft:** 2026-09-02
+**Geprüft:** 2026-09-03
 **Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
 
 ## 1. Geltungsbereich
@@ -22,7 +22,7 @@ Antworten der PHP-API verwenden grundsätzlich JSON-Umschläge von `JsonResponse
 - **Versionierung:** **VORHANDEN** – `/api/v1` ist kanonisch, `/api` bleibt abwärtskompatibel; Antworten senden `X-Neutral-API-Version: 1`, unbekannte explizite Versionen wie `/api/v2` ergeben 404.
 - **Timeout:** **VORHANDEN** – `ApiClient` beendet Requests kontrolliert über `AbortController`; `tests/api-timeout.test.js` prüft den Fehlerpfad.
 - **Retry:** **FEHLT** – keine allgemeine Retry-/Backoff-Policy. Schreibrequests dürfen nicht blind wiederholt werden.
-- **Offline:** **TEILWEISE** – Client erhält strukturierte Netzwerkfehler; persistentes Queueing fehlt.
+- **Offline:** **TEILWEISE** – Client erhält strukturierte Netzwerkfehler; ein validierter anonymer Modulkatalog wird installationsbezogen zwischengespeichert. Persistentes Schreibqueueing fehlt.
 
 ## 3. PHP-Endpunkte
 
@@ -36,7 +36,7 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabe
 | POST | `/api/auth/login` | Benutzer authentifizieren, Session starten | öffentlich, Credentials erforderlich | `username`, `password` | öffentliche Identität, CSRF/Sessionkontext | 400/401; `users`, `user_roles`, `roles`, `permissions`, `sessions` | VORHANDEN |
 | POST | `/api/auth/logout` | aktive Session beenden | Session; CSRF | – | Logoutbestätigung | 401/403; `sessions` | VORHANDEN |
 | GET | `/api/auth/me` | aktuelle Identität und effektive Rechte | Session | – | User/Rollen/Permissions | 401; Session/RBAC-Tabellen | VORHANDEN |
-| GET | `/api/modules` | für Identität sichtbarer Modulkatalog | optional; Sichtbarkeit per Manifestpermission | – | Module mit Lifecycle | 500; `modules`, `module_state`, Permissions | VORHANDEN |
+| GET | `/api/modules` | für Identität sichtbarer Modulkatalog | optional; ohne Session nur aktive Module gemäß gespeicherten `viewer`-Sichtrechten | – | `{modules, accessContext}`; je Modul bereinigtes `clientAccess` mit Modus/Sichtbarkeit/Nutzung | 500; `modules`, `module_state`, Rollenpermissions | VORHANDEN |
 | GET | `/api/admin/sessions` | Sessions auflisten | `sessions.view` | Filter – | öffentliche Sessiondaten | 401/403; `sessions` | VORHANDEN |
 | GET | `/api/admin/permissions` | Permissionkatalog | `roles.view` oder Adminberechtigung | – | Permissions | 401/403; `permissions` | VORHANDEN |
 | GET | `/api/admin/users` | Benutzer suchen/listen | `users.view` | Queryfilter | Benutzerliste | 401/403; `users`, Rollen | VORHANDEN |
@@ -84,6 +84,8 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabe
 ## 5. Erweiterungsregel
 
 Neue Endpunkte benötigen vor Implementierung: dokumentierten Vertrag, Auth-/Permissionentscheidung, Requestvalidierung, Fehlercodes, Datenbank-/Transaktionskonzept, Datenschutzprüfung, Tests und Eintrag in diesem Dokument. Module können derzeit nicht selbstständig produktive PHP-Routen registrieren (**FEHLT/GEPLANT**).
+
+Der anonyme Zugriff auf `/api/modules` überträgt keine Viewer-Identität und keine effektive Permissionliste. Die Viewer-Zuordnung steuert nur den öffentlichen Modulkatalog. Jede serverseitige Modulaktion benötigt weiterhin eine eigene authentifizierte Autorisierungsentscheidung.
 
 ## Client-Timeout – P3 IST
 

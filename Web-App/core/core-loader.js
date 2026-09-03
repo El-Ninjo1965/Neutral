@@ -49,6 +49,65 @@
         }
     ]);
 
+    const ANONYMOUS_CATALOG_CACHE_PREFIX = 'neutral.module-catalog.anonymous.v1:';
+
+    const anonymousCatalogCacheKey = () => {
+        const basePath = window.NeutralPublicPath && typeof window.NeutralPublicPath.base === 'function'
+            ? window.NeutralPublicPath.base()
+            : '';
+        return `${ANONYMOUS_CATALOG_CACHE_PREFIX}${encodeURIComponent(String(basePath || '/'))}`;
+    };
+
+    const normalizeCatalogEntries = (modules, mode) => {
+        if (!Array.isArray(modules) || !['anonymous', 'authenticated'].includes(mode)) {
+            return [];
+        }
+
+        return modules.filter((entry) => {
+            if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || !entry.id.trim()) {
+                return false;
+            }
+            const access = entry.clientAccess;
+            return !!access
+                && typeof access === 'object'
+                && access.mode === mode
+                && typeof access.canView === 'boolean'
+                && typeof access.canUse === 'boolean'
+                && access.canView === true;
+        });
+    };
+
+    const readAnonymousCatalogCache = () => {
+        if (typeof localStorage === 'undefined') {
+            return [];
+        }
+        try {
+            const raw = localStorage.getItem(anonymousCatalogCacheKey());
+            const cached = raw ? JSON.parse(raw) : null;
+            if (!cached || cached.schemaVersion !== 1 || cached.mode !== 'anonymous') {
+                return [];
+            }
+            return normalizeCatalogEntries(cached.modules, 'anonymous');
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const writeAnonymousCatalogCache = (modules) => {
+        if (typeof localStorage === 'undefined') {
+            return;
+        }
+        try {
+            localStorage.setItem(anonymousCatalogCacheKey(), JSON.stringify({
+                schemaVersion: 1,
+                mode: 'anonymous',
+                modules
+            }));
+        } catch (error) {
+            // Restricted storage must not prevent online module discovery.
+        }
+    };
+
     const getCurrentAppRoot = () => {
         if (typeof window === 'undefined' || !window.location || !window.location.pathname) {
             return '/';
@@ -173,26 +232,34 @@
 
     const readModuleCatalog = async (catalogPath) => {
         if (typeof fetch !== 'function') {
-            return [];
+            return readAnonymousCatalogCache();
         }
 
         try {
             const response = await fetch(catalogPath, { cache: 'no-store' });
 
             if (!response.ok) {
-                return [];
+                return readAnonymousCatalogCache();
             }
 
             const payload = await response.json();
-            const modules = Array.isArray(payload)
-                ? payload
-                : Array.isArray(payload.modules)
-                    ? payload.modules
-                    : [];
+            const envelope = payload && payload.data && typeof payload.data === 'object'
+                ? payload.data
+                : payload;
+            const mode = envelope && envelope.accessContext && typeof envelope.accessContext.mode === 'string'
+                ? envelope.accessContext.mode
+                : '';
+            const sourceModules = envelope && envelope.modules;
+            const modules = normalizeCatalogEntries(sourceModules, mode);
+            const catalogIsValid = Array.isArray(sourceModules) && modules.length === sourceModules.length;
 
-            return modules.filter((entry) => entry && typeof entry === 'object');
+            if (mode === 'anonymous' && catalogIsValid) {
+                writeAnonymousCatalogCache(modules);
+            }
+
+            return catalogIsValid ? modules : [];
         } catch (error) {
-            return [];
+            return readAnonymousCatalogCache();
         }
     };
 
@@ -301,6 +368,20 @@
                 return null;
             }
 
+            if (normalizedManifest.clientAccess) {
+                implementation.clientAccess = { ...normalizedManifest.clientAccess };
+            }
+            for (const property of ['registered', 'active', 'enabled']) {
+                if (typeof normalizedManifest[property] === 'boolean') {
+                    implementation[property] = normalizedManifest[property];
+                }
+            }
+            for (const property of ['status', 'lifecycleState']) {
+                if (typeof normalizedManifest[property] === 'string' && normalizedManifest[property]) {
+                    implementation[property] = normalizedManifest[property];
+                }
+            }
+
             return {
                 ...implementation,
                 id: implementation.id || normalizedManifest.id,
@@ -310,7 +391,13 @@
                 globalName: implementation.globalName || normalizedManifest.globalName || null,
                 manifest: normalizedManifest,
                 modulePath: moduleRootPath,
-                source: entryPath
+                source: entryPath,
+                clientAccess: normalizedManifest.clientAccess,
+                registered: normalizedManifest.registered,
+                status: normalizedManifest.status || implementation.status,
+                lifecycleState: normalizedManifest.lifecycleState,
+                active: normalizedManifest.active === true,
+                enabled: normalizedManifest.enabled === true
             };
         },
 

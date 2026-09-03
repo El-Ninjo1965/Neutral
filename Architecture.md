@@ -82,6 +82,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** `Server/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `Server/public/api/index.php` ist der zentrale PHP-API-Router. `Server/public/admin.php` schützt die Adminoberfläche serverseitig. `Server/public/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
 
+**IST:** Der öffentliche Modulpfad bildet ausschließlich die gespeicherten `viewer`-Modulrechte auf einen anonymen, bereinigten `clientAccess`-Kontext ab. Nur aktive und sichtbare Module gelangen in den Katalog; diese Cliententscheidung erweitert keine Serverberechtigung.
+
 **IST:** Das Shared-Hosting-Staging behält `Web-App/` und `Server/` als getrennte Komponenten unter dem Deploymentroot. Die Root-`.htaccess` bildet die öffentlichen Pfade auf diese Struktur ab und sperrt PHP-Core, Runtime und Dotfiles. `Server/node/` ist nicht Bestandteil des Produktions-Stagings.
 
 **IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
@@ -152,6 +154,8 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 ## 12. Erweiterungspunkte
 
 **IST:** Modulmanifest, globaler Entry Point, Loader/Registry/Manager, Modul-Lifecycle, Manifest-Permissions, Capabilities, Adminsettings, lokaler Storagezugriff über Core, Events und Services. PHP entdeckt Manifestdateien und persistiert Modulzustände.
+
+**IST:** Loader, Interface und Registry erhalten den serverseitigen Clientzugriffskontext. Nur ein validierter anonymer Katalog wird installationsbezogen offline gespeichert. Die User-Shell filtert Navigation und Direktaufrufe fail-closed; lokale Benutzereinstellungen können Sichtbarkeit reduzieren, aber keine Freigabe erzeugen. Persistiert aktive Module werden nach Discovery tatsächlich initialisiert und aktiviert.
 
 **TEILWEISE:** Modul-Datenbanktabellen können deklariert und bei sicher deklarierter Deinstallation entfernt werden; eine allgemeine Modul-Migrationsausführung ist noch nicht vollständig als öffentlicher Vertrag umgesetzt.
 

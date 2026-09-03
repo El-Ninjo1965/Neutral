@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHER AKTUELLER MODULVERTRAG
 
-**Geprüft:** 2026-09-01
+**Geprüft:** 2026-09-03
 **Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md); noch fehlende Core-1.0-Modulfähigkeiten stehen in [`STATUS.md`](STATUS.md).
 
 Diese Anleitung beschreibt den aktuellen Modulvertrag. Sie fordert kein neues Modul. Status **FEHLT/GEPLANT** bezeichnet nicht vorhandene Fähigkeiten, die nicht erfunden oder durch direkte Core-Manipulation umgangen werden dürfen.
@@ -97,6 +97,8 @@ Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` 
 - Serverseitige Daten/Actions benötigen zwingend serverseitige Permission- und CSRF-Prüfung.
 - Defaultrollen sind Installationsdefaults, keine unveränderliche Autorisierung.
 - Browser-Geheimnisse, DB-Zugangsdaten und Admin-Tokens sind verboten.
+- Der öffentliche PHP-Modulkatalog verwendet für Besucher ohne Login ausschließlich die gespeicherten Modulrechte der Systemrolle `viewer`. Nur aktive Module mit Sichtrecht werden ausgeliefert; `clientAccess.canUse` benötigt zusätzlich das Nutzungsrecht.
+- `clientAccess` ist eine bereinigte Browserentscheidung und niemals ein Ersatz für Session-, Permission- oder CSRF-Prüfung an Serverendpunkten.
 
 ## 9. Capabilities
 
@@ -190,6 +192,10 @@ Adminsettings im Manifest verwenden Pfade unter `moduleSettings.<module-id>` und
 Ein Modul muss Onlineabhängigkeit explizit deklarieren und lokale Zustände (`lokal`, `ausstehend`, `synchronisiert`, `Konflikt`, `Fehler`) sichtbar behandeln. Die universelle Sync-Queue, Retry-/Backoff-, Idempotenz- und Konfliktengine ist derzeit **FEHLT/GEPLANT**. Bis sie existiert, darf ein Modul nicht behaupten, generische Synchronisation sei garantiert.
 
 GPS validiert lokale Speicherung und Offlineverhalten, besitzt aber aktuell keine serverseitigen Tabellen und keinen vollständigen Syncvertrag.
+
+Der Loader speichert ausschließlich einen strukturell validierten anonymen Modulkatalog unter einem installationsbezogenen lokalen Schlüssel. Bei Netzwerkfehlern darf nur dieser anonyme Katalog wiederverwendet werden. Authentifizierte Antworten und fehlerhafte Kataloge werden nicht als anonymer Offlinezustand gespeichert. Ohne gültigen Cache bleibt die anonyme Modulliste leer.
+
+Ein Modul mit Geräteberechtigung darf bei bereits erteiltem Browserstatus kontrolliert aktualisieren. Es darf beim bloßen Rendern keinen erstmaligen Berechtigungsdialog auslösen. Das GPS-Referenzmodul zeigt zunächst den letzten lokalen Wert und fragt höchstens einmal pro Mount automatisch ab, wenn der Status bereits `granted` ist.
 
 ## 20. Test- und Abnahmeregel
 
