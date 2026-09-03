@@ -40,7 +40,7 @@ jobs:
           case "$SERVER_STATUS" in 403|404) ;; *) exit 1 ;; esac
           printf '%s\n' 'checkpoint=statuses_ok'
 
-          grep -Fq '<title>Neutral Platform</title>' "$ROOT_BODY"
+          grep -Eq '<title([^>]*)?>Neutral Platform</title>' "$ROOT_BODY"
           if grep -Fqi 'FRAMEWORK DASHBOARD' "$ROOT_BODY"; then exit 1; fi
           printf '%s\n' 'checkpoint=root_content_ok'
 
