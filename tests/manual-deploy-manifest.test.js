@@ -91,6 +91,8 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.match(routing, /Web-App\/public\/style\.css/);
     assert.match(routing, /\^user-app\\\.js\$/);
     assert.match(routing, /Web-App\/public\/user-app\.js/);
+    assert.match(routing, /\^user-module-access\\\.js\$/);
+    assert.match(routing, /Web-App\/public\/user-module-access\.js/);
     assert.match(routing, /\^public-path\\\.js\$/);
     assert.match(routing, /Web-App\/public\/public-path\.js/);
     assert.doesNotMatch(routing, /^\s*RewriteBase\b/m);
