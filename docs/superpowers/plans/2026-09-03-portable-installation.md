@@ -147,4 +147,4 @@ git diff --check
 ```
 
 - [x] **Step 6: Unabhängiges Review auf Spezifikationsabdeckung, Traversal, Symlinkgrenzen, Secretlecks, destruktive Dateiarbeit, Root-Kompatibilität und Unterpfade durchführen; Befunde beheben.**
-- [ ] **Step 7: Abschlusscommit `docs: complete portable installation foundation` pushen; CodeQL und FTPS prüfen.** Produktiver Unterpfad-/Datenbanktest nur mit sicher vorhandener Ziel-/Secretkonfiguration; sonst bleibt exakt dieser externe Nachweis offen.
+- [x] **Step 7: Abschlussstand nach GitHub `main` übertragen; CodeQL und FTPS prüfen.** Connector-Commit `a800c960`; CodeQL-Lauf `33716219316` bestanden. FTPS-Lauf `33716219697` wurde vor dem Upload sicher blockiert, weil die vorhandene Actions-Konfiguration `FTP_SSL_CHECK_HOSTNAME=true` noch nicht erfüllt. Produktiver Unterpfad-/Datenbanktest bleibt bis zu sicher vorhandener Ziel-/Secretkonfiguration offen.

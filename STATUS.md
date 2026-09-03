@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** Implementierungszweig `codex/portable-installation`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** GitHub `main`, Commit `a800c960a7be04c37b09fc8f3bb6eede7517e5a9`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -12,7 +12,7 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 
 Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
 
-Die lokale Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorrektur wurde durch **Codex (ChatGPT Work)** ausgeführt und dokumentiert. Sie schließt keinen der weiterhin offenen PHP-, Apache-, Live-, Datenbank-, FTPS-, CodeQL- oder Repositorynachweise ein.
+Die Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorrektur und GitHub-Integration wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL für den Abschlusscommit ist bestanden. PHP-, Apache-, Live-, Datenbank- und FTPS-Nachweise bleiben offen; der FTPS-Lauf wurde vor dem Upload sicher von der zwingenden Hostnamenprüfung blockiert.
 
 ## Funktionsmatrix
 
@@ -35,7 +35,7 @@ Die lokale Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorre
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | TEILWEISE | bisheriger FTPS-Workflow erfolgreich; aktueller Code erzwingt ausdrückliches Ziel und Hostnamenprüfung, bindet Löschzustand per SHA-256-Fingerprint, überträgt vollständig und reicht lftp-Secrets nur über stdin; der portable Abschlusscommit ist noch nicht extern ausgeführt |
+| Shared-Hosting-Deployment | TEILWEISE | aktueller Code erzwingt ausdrückliches Ziel und Hostnamenprüfung, bindet Löschzustand per SHA-256-Fingerprint, überträgt vollständig und reicht lftp-Secrets nur über stdin; Lauf `33716219697` wurde wegen nicht aktivierter Hostnamenprüfung vor dem Upload blockiert, daher ist der portable Abschlussstand noch nicht ausgerollt |
 | Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
 | Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
 | Installation unter URL-Unterpfad | TEILWEISE | PHP-/Browserresolver, direktes API-Rewrite, paketiertes `<base href>`, Paket/Preflight und tiefe `/meine-app`-SPA-Fixtures sind lokal getestet; echter Apache-/PHP-/DB-End-to-End-Lauf unter einem URL-Unterpfad fehlt |
@@ -55,7 +55,7 @@ Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter
 
 Die aktuelle Cloud besitzt keine PHP-Binary. Nach gezielten RED/GREEN-Runden für Routing/Basispfad, Paketidentität/Secretprüfung, FTPS-Zielbindung und Dokumentationsverträge erfasste die finale PHP-ausgeschlossene Gesamtsuite 241 Tests: 239 bestanden, zwei erwartete PHP-Skips, 0 Fehler. Die fokussierte Nachprüfung fand einen verbliebenen öffentlichen `/api`-Default in weiteren Admin-/Providerpfaden; **Codex (ChatGPT Work)** schloss ihn testgetrieben, danach bestand dieselbe Gesamtsuite erneut unverändert. Ein fehlendes `php` wird vom CLI wahrheitsgemäß als `NICHT_GEPRUEFT` ausgegeben; PHP-Produktion wird daraus nicht abgeleitet.
 
-Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne expliziten HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. Dieser Änderungssatz hat weder Server, Datenbank, FTPS noch GitHub Actions angesprochen.
+Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne expliziten HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. GitHub-CodeQL-Lauf `33716219316` ist bestanden; FTPS-Lauf `33716219697` endete vor dem Upload sicher mit Fehler, weil die vorhandene Actions-Konfiguration `FTP_SSL_CHECK_HOSTNAME=true` noch nicht erfüllt.
 
 ## Nächster Abschlussmeilenstein
 

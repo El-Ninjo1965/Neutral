@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHE ARBEITSREGELN
 
-**Geprüft:** 2026-09-02
+**Geprüft:** 2026-09-03
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
 ## 1. Zweck
@@ -100,6 +100,15 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 ## 10. Fortlaufendes Arbeitsprotokoll
 
 Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
+
+### 2026-09-03 – Portable Basis nach GitHub `main` integrieren
+
+- **Aufgabe:** Den lokal geprüften Portabilitätsstand in das verbindliche Repository übernehmen und die ausgelösten GitHub-Prüfungen wahrheitsgemäß bewerten.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **GitHub:** Der Connector bestätigte Konto `El-Ninjo1965`, Repository `El-Ninjo1965/Neutral` und Pushberechtigung. Da der lokale HTTPS-Git-Client keine eigene Anmeldung besaß, wurden 59 geänderte Blobs und der vollständige 178-Dateien-Baum über den Connector als Commit `a800c960a7be04c37b09fc8f3bb6eede7517e5a9` fast-forward nach `main` geschrieben.
+- **Nachweis:** CodeQL-Lauf `33716219316` (`Push on main`) endete erfolgreich. FTPS-Lauf `33716219697` baute das verifizierte Paket, wurde aber vor einem Upload durch die neue Pflichtprüfung blockiert, weil `FTP_SSL_CHECK_HOSTNAME` in der vorhandenen Actions-Konfiguration nicht `true` ist.
+- **Ergebnis:** CodeQL ist bestanden. Der portable Stand wurde nicht auf den Server ausgerollt; es wird kein FTPS-Erfolg behauptet und weder Secret noch Sicherheitsprüfung wurde verändert.
+- **Offen:** GitHub-Secret/Variable `FTP_SSL_CHECK_HOSTNAME=true` sicher setzen und den FTPS-Lauf anschließend erneut prüfen; danach Live-PHP-/Apache-Smokes aus `TODO.md` durchführen.
 
 ### 2026-09-03 – Finale portable Whole-Branch-Reviewkorrektur
 

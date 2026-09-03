@@ -13,7 +13,8 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 - alle finalen Reviewbefunde test-first reproduziert; die abschließende PHP-ausgeschlossene Gesamtsuite mit 239 bestandenen, zwei erwarteten PHP-Skips und 0 Fehlern verifiziert; keine Server-, DB-, FTP-, GitHub- oder sonstige externe Operation ausgeführt,
 - den einzigen Restbefund der fokussierten Nachprüfung durch **Codex (ChatGPT Work)** geschlossen: auch Adminformulare, Connection-/Provider-Normalisierung und Setupzustände beziehen öffentliche API-Defaults nun aus `NeutralPublicPath`; der erweiterte Regressionstest und die unveränderte Gesamtsuite bestehen,
 - Web-App- und Serveranleitung beschreiben denselben verbindlichen Full-Stack-Paketweg; die Web-App-Anleitung behandelt dessen Browseranteil und erfindet kein separates Client-only-Artefakt,
-- PHP-/Apache-/Live-/Datenbank-/neues-Repository-, CodeQL- und FTPS-Nachweise bleiben ausdrücklich offen,
+- GitHub-`main` über den Connector auf Commit `a800c960a7be04c37b09fc8f3bb6eede7517e5a9` aktualisiert und CodeQL-Lauf `33716219316` erfolgreich abgeschlossen; FTPS-Lauf `33716219697` wurde wegen nicht aktivierter zwingender Hostnamenprüfung vor dem Upload sicher blockiert,
+- PHP-/Apache-/Live-/Datenbank-/neues-Repository- und erfolgreicher FTPS-Nachweis bleiben ausdrücklich offen,
 - ausgeführt und dokumentiert durch **Codex (ChatGPT Work)**.
 
 ## 2026-09-02 – Portable Installationsarchitektur freigegeben
