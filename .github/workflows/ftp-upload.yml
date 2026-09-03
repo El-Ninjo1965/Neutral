@@ -15,7 +15,7 @@ jobs:
       FTP_USER: ${{ secrets.FTP_USER }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_PORT: '21'
-      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR }}
+      FTP_TARGET_DIR: '/'
       FTP_SSL_CHECK_HOSTNAME: 'true'
       NEUTRAL_BASE_PATH: ${{ vars.NEUTRAL_BASE_PATH || '' }}
 
