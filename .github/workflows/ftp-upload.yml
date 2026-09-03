@@ -23,6 +23,18 @@ jobs:
       - name: Repository auschecken
         uses: actions/checkout@v4
 
+      - name: Vollständige Node- und PHP-Tests ausführen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! command -v php >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y php-cli
+          fi
+          php -v
+          npm test
+
       - name: Verifiziertes Produktionspaket bauen
         shell: bash
         run: |

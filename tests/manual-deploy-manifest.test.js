@@ -280,6 +280,18 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.doesNotMatch(workflow, /FTP_PORT:\s*\$\{\{\s*secrets\./);
   });
 
+  test('GitHub deployment runs the complete Node and PHP suite before package build and upload', () => {
+    const workflow = fs.readFileSync(path.resolve(__dirname, '../.github/workflows/ftp-upload.yml'), 'utf8');
+    const testIndex = workflow.indexOf('npm test');
+    const packageIndex = workflow.indexOf('npm run package:production');
+    const uploadIndex = workflow.indexOf('node scripts/manual-ftps-deploy.js');
+
+    assert.match(workflow, /php\s+-v/);
+    assert.ok(testIndex >= 0, 'npm test must be present');
+    assert.ok(testIndex < packageIndex, 'tests must run before package build');
+    assert.ok(packageIndex < uploadIndex, 'package build must run before upload');
+  });
+
   test('deployment manifests are bound to one irreversible target fingerprint', (t) => {
     assert.equal(typeof deploymentTargetFingerprint, 'function');
     assert.equal(typeof selectPreviousDeploymentFiles, 'function');
