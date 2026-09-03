@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** GitHub `main`, Codecommit `6b59ec68f980517fbbd49a5e8604a45b5acc1cdc`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** GitHub `main`, Codecommit `20583c251a9f6f5e069a6c089c01f99618aa2196`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -12,7 +12,7 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 
 Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
 
-Die Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorrektur und GitHub-Integration wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL für den finalen Codecommit ist bestanden. PHP-, Apache-, Live-, Datenbank- und FTPS-Nachweise bleiben offen; der finale FTPS-Lauf wurde vor Authentifizierung und Upload sicher wegen einer Abweichung zwischen Zertifikatsname und konfiguriertem FTP-Hostnamen blockiert.
+Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und produktivem FTPS-Deployment wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL und der korrigierte produktive Deploymentlauf sind bestanden. Der geschützte Zielbestand wurde anschließend ausschließlich lesend bestätigt. Die vollständige PHP-/Apache-/Datenbank-Neuinstallation in einem neuen Ziel sowie die URL-Unterpfadabnahme bleiben offen.
 
 ## Funktionsmatrix
 
@@ -35,7 +35,7 @@ Die Task-6-Umsetzung einschließlich der finalen Whole-Branch-Reviewkorrektur un
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | TEILWEISE | `server.cpprotect5.de`: explizites FTPS auf Port 21, TLS, Authentifizierung und lesbarer virtueller Root durch Lauf `33800747981` bestätigt; `.htaccess` sichtbar, aber `Web-App/` und `Server/` fehlen noch. Der Produktionsworkflow verwendet bis zur Umstellung weiterhin den nicht zertifikatsgültigen Host und der portable Stand ist nicht ausgerollt |
+| Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung; Lauf `33802485499` deployte erfolgreich in das geschützte Ziel. Read-only-Lauf `33803384719` bestätigte dort `.htaccess`, `Web-App/` und `Server/` ohne Änderung oder Secret-Ausgabe |
 | Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
 | Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
 | Installation unter URL-Unterpfad | TEILWEISE | PHP-/Browserresolver, direktes API-Rewrite, paketiertes `<base href>`, Paket/Preflight und tiefe `/meine-app`-SPA-Fixtures sind lokal getestet; echter Apache-/PHP-/DB-End-to-End-Lauf unter einem URL-Unterpfad fehlt |
@@ -55,9 +55,11 @@ Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter
 
 Die aktuelle Cloud besitzt keine PHP-Binary. Nach gezielten RED/GREEN-Runden für Routing/Basispfad, Paketidentität/Secretprüfung, FTPS-Zielbindung und Dokumentationsverträge erfasste die finale PHP-ausgeschlossene Gesamtsuite 241 Tests: 239 bestanden, zwei erwartete PHP-Skips, 0 Fehler. Die fokussierte Nachprüfung fand einen verbliebenen öffentlichen `/api`-Default in weiteren Admin-/Providerpfaden; **Codex (ChatGPT Work)** schloss ihn testgetrieben, danach bestand dieselbe Gesamtsuite erneut unverändert. Ein fehlendes `php` wird vom CLI wahrheitsgemäß als `NICHT_GEPRUEFT` ausgegeben; PHP-Produktion wird daraus nicht abgeleitet.
 
-Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne expliziten HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. Finaler GitHub-CodeQL-Lauf `33716675598` ist bestanden; FTPS-Lauf `33716676051` endete vor Authentifizierung und Upload sicher mit Fehler, weil Zertifikatsname und konfigurierter FTP-Hostname nicht übereinstimmen.
+Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne vollständigen HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. Nach der früheren sicheren Zertifikatsblockade wurde der produktive Host test-first auf `server.cpprotect5.de` festgelegt. CodeQL-Lauf `33802485847` und korrigierter FTPS-Lauf `33802485499` sind bestanden.
 
-Ein anschließender separater Read-only-Nachweis über den zertifikatsgültigen Host `server.cpprotect5.de` bestand mit Lauf `33800747981`: Server erreichbar, TLS erfolgreich, Authentifizierung akzeptiert und virtueller Startpfad `/` lesbar. Von der erwarteten portablen Rootstruktur ist nur `.htaccess` sichtbar; `Web-App/` und `Server/` fehlen, wodurch der noch nicht erfolgte neue Deploymentstand bestätigt wird.
+Ein separater Read-only-Nachweis über den zertifikatsgültigen Host bestand abschließend mit Lauf `33803384719`: Server erreichbar, TLS erfolgreich, Authentifizierung akzeptiert, geschütztes Ziel lesbar und alle drei Marker `.htaccess`, `Web-App/` und `Server/` vorhanden. Der Betreiber-Screenshot aus dem cPanel-Dateimanager bestätigt dieselbe Struktur im geöffneten `public_html`. Eine kurzzeitige Codex-Fehlannahme, der virtuelle FTP-Pfad `/` sei dieses Ziel, führte zusätzlich zu Lauf `33802090900`; der Workflow wurde unmittelbar auf das geschützte Ziel-Secret zurückgestellt. Konto-Home-Einträge werden nicht ungeprüft gelöscht und sind in `TODO.md` zur kontrollierten Abgrenzung erfasst.
+
+Die öffentliche Browserprüfung zeigte nach dem korrigierten Deployment die moderne Seite „Neutral Platform“ mit Navigation und ohne „FRAMEWORK DASHBOARD“. `admin.php` zeigte ohne Sitzung die geschützte Anmeldeseite „Authentication required“ und ebenfalls keine alte Dashboardansicht. Ein vollständiger authentifizierter Schreib-/CSRF-Smoke-Test bleibt offen.
 
 ## Nächster Abschlussmeilenstein
 

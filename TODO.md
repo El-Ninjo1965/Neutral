@@ -13,6 +13,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
 - responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
 - alle Admin-Hauptansichten und deren serverseitige Rechte mit dem Betreiberkonto produktiv abnehmen.
+- die im Konto-Home sichtbaren zusätzlichen `Server`-/`Web-App`-Einträge gegen `public_html` abgrenzen; nur eindeutig dem kurzzeitigen Lauf `33802090900` zuordenbare Artefakte nach separater Freigabe sichern oder entfernen, keine pauschale Löschung,
 
 **Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
 
@@ -25,7 +26,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - komplette leere Testinstallation in einem neuen physischen Document-Root und einer neuen Datenbank durchführen: Paket übertragen, `.env` hostlokal anlegen, Setup/Migration/Seed ausführen, Betreiber anmelden und Setup danach gesperrt nachweisen,
 - denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` einschließlich API-, Asset-, SPA-, Login-, Session- und CSRF-Smoke-Tests ausführen,
 - denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren,
-- den produktiven GitHub-Workflow vom nicht zertifikatsgültigen Alias auf den read-only bestätigten Host `server.cpprotect5.de` umstellen und das verifizierte Full-Stack-Paket in das ausdrücklich konfigurierte Ziel deployen; danach müssen `Web-App/`, `Server/`, Remoteinventar und HTTP-Smokes bestätigt werden. Die Hostnamenprüfung bleibt zwingend und finales CodeQL ist bereits bestanden.
+- den bereits erfolgreich ausgerollten Full-Stack-Stand zusätzlich mit vollständigen HTTP-Smokes für Assets, API, Login, Session und CSRF abnehmen; Host, zwingende Hostnamenprüfung, geschütztes Ziel, `Web-App/`, `Server/` und Read-only-Remoteinventar sind durch die Läufe `33802485499` und `33803384719` bereits bestätigt.
 
 **Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
 

@@ -383,3 +383,16 @@ Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abges
 - **Ergebnis:** Neutral besitzt eine belastbare produktive Root-Grundlage, ist aber noch nicht als wiederverwendbarer Core 1.0 oder beliebig platzierbare Neuinstallation freigegeben. Die erforderliche Reihenfolge steht in `TODO.md`.
 - **Offene Punkte:** sämtliche nicht als bestanden ausgewiesenen Aufgaben in `TODO.md`; Core 1.0 darf erst bei ausschließlich `VORHANDEN`/`BESTANDEN` gemäß `CORE-1.0.md` final deklariert werden.
 - **Commit:** dieser nachfolgende Dokumentationscommit; die SHA ist über die Git-Historie eindeutig zugeordnet.
+
+### 2026-09-03 – Zertifikatsgültiges FTPS-Deployment in `public_html` abschließen
+
+- **Aufgabe:** Den zertifikatsgültigen FTP-Host produktiv verwenden, das portable Full-Stack-Paket in das vorhandene geschützte Ziel ausrollen und den Bestand unabhängig nur lesend prüfen.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **Test-first:** Ein neuer Workflowvertrag schlug zunächst gegen den geheimnisbasierten Alias fehl und bestand nach Festlegung von `server.cpprotect5.de`, Port 21 und zwingender Hostnamenprüfung. Nach einer falschen Zwischenannahme über FTP-`/` schlug der Zielvertrag erneut passend fehl und bestand erst nach Wiederherstellung von `secrets.FTP_TARGET_DIR`.
+- **Deployment:** Lauf `33801527270` übertrug das verifizierte Paket erfolgreich. Ein Betreiber-Screenshot aus cPanel zeigte im geöffneten `public_html` `Server`, `Web-App`, `.env.example`, `.htaccess`, `manifest.json` und `SHA256SUMS`.
+- **Korrektur:** Der zunächst nur auf den virtuellen FTP-Root gerichtete Diagnosejob konnte `public_html` nicht von Konto-Home unterscheiden. Die daraus abgeleitete Änderung auf Ziel `/` war falsch und löste Lauf `33802090900` aus. Codex stellte das geschützte Ziel sofort test-first wieder her; keine Konto-Home-Datei wurde ungeprüft gelöscht.
+- **Finale Verifikation:** Korrekturcommit `20583c251a9f6f5e069a6c089c01f99618aa2196`; FTPS-Lauf `33802485499` erfolgreich; CodeQL-Lauf `33802485847` erfolgreich. Der temporäre Read-only-Lauf `33803384719` prüfte das geschützte Ziel mit `cd`/`cls` und bestätigte Server, TLS, Authentifizierung, Lesbarkeit sowie `.htaccess`, `Web-App` und `Server` ohne Mutation.
+- **Lokale Regression:** Deployment-/Pakettests `52/52` und die explizit PHP-freie Gesamtauswahl `230/230` bestanden. Der vollständige ungefilterte Runner wurde zusätzlich ausgeführt und scheiterte ausschließlich an der in dieser Cloud fehlenden `php`-Binary; dieser Lauf wird nicht als bestanden gewertet.
+- **Live-Prüfung:** Die öffentliche Rootseite zeigte „Neutral Platform“ mit moderner Navigation. `admin.php` zeigte ohne Sitzung „Authentication required“. In beiden Ansichten war „FRAMEWORK DASHBOARD“ nicht vorhanden.
+- **Secretbehandlung:** FTP-Benutzer und Passwort blieben ausschließlich in GitHub Secrets; Zielwert und Zugangsdaten wurden weder ausgegeben noch in Dateien übernommen. Der Diagnosejob übergab Zugangsdaten nur per stdin an lftp und führte keine Upload-, Änderungs- oder Löschbefehle aus.
+- **Offene Punkte:** vollständige authentifizierte HTTP-/Session-/CSRF-Abnahme; neue Ziel-/Datenbank-/Unterpfadinstallation; kontrollierte Abgrenzung der im Konto-Home sichtbaren zusätzlichen `Server`-/`Web-App`-Einträge vor jeder möglichen Bereinigung.

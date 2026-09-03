@@ -2,6 +2,18 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-03 – Zertifikatsgültiges Produktionsdeployment abgeschlossen
+
+- produktiven Workflow test-first auf den zertifikatsgültigen FTPS-Host `server.cpprotect5.de` und Port 21 festgelegt; TLS-Zertifikats- und Hostnamenprüfung bleiben zwingend, Benutzer und Passwort ausschließlich GitHub Secrets,
+- erstes erfolgreiches Deployment mit Lauf `33801527270` in das vorhandene geschützte Ziel ausgeführt; Betreiber-Screenshot bestätigte im geöffneten `public_html` die Ordner `Web-App` und `Server` sowie aktuelle Paketmetadaten,
+- eine nach dem virtuellen FTP-Root-Nachweis getroffene falsche Codex-Annahme transparent korrigiert: Lauf `33802090900` zielte kurzzeitig auf Konto-Home `/`; anschließend wurde der Workflow test-first wieder auf `secrets.FTP_TARGET_DIR` zurückgestellt. Bestehende Konto-Home-Verzeichnisse wurden nicht gelöscht,
+- Korrekturcommit `20583c251a9f6f5e069a6c089c01f99618aa2196` auf `main` übertragen; FTPS-Lauf `33802485499` und CodeQL-Lauf `33802485847` bestanden,
+- abschließender separater Read-only-Lauf `33803384719` bestätigte Server, TLS, Authentifizierung, lesbares geschütztes Ziel und die drei Marker `.htaccess`, `Web-App` und `Server`; keine Upload-, Änderungs- oder Löschoperation im Diagnosejob,
+- öffentliche Browserprüfung bestätigte „Neutral Platform“, die geschützte Admin-Anmeldeseite und das Fehlen der alten Ansicht „FRAMEWORK DASHBOARD“,
+- fokussierte Deployment-/Paketprüfung mit 52/52 sowie abschließende PHP-freie Regression mit 230/230 bestanden; der ungekürzte lokale Testbefehl bleibt in dieser Cloud wegen fehlender PHP-Binary blockiert und wird nicht als grün ausgegeben,
+- Zugangsdaten, Secretwerte und vollständige Verbindungsstrings wurden weder protokolliert noch dokumentiert,
+- ausgeführt, korrigiert und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
+
 ## 2026-09-03 – Portable Installationsbasis lokal abgeschlossen
 
 - zertifikatsgültigen Hostingnamen `server.cpprotect5.de` über Reverse-DNS, identische Ziel-IP und einen separaten expliziten FTPS-Read-only-Lauf bestätigt; Lauf `33800747981` akzeptierte TLS und Authentifizierung und las den virtuellen Startpfad `/`,
