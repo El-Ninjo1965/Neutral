@@ -21,13 +21,13 @@ jobs:
           ROOT_BODY="$TEMP_DIR/root.html"
           ADMIN_BODY="$TEMP_DIR/admin.html"
           USER_APP_BODY="$TEMP_DIR/user-app.js"
-          API_BODY="$TEMP_DIR/system-info.json"
+          API_BODY="$TEMP_DIR/status.json"
           SERVER_BODY="$TEMP_DIR/server-internal.txt"
 
           ROOT_STATUS="$(curl -sS -L --max-time 20 -o "$ROOT_BODY" -w '%{http_code}' 'https://www.turbolikes.com/')"
           ADMIN_STATUS="$(curl -sS -L --max-time 20 -o "$ADMIN_BODY" -w '%{http_code}' 'https://www.turbolikes.com/admin.php')"
           USER_APP_STATUS="$(curl -sS -L --max-time 20 -o "$USER_APP_BODY" -w '%{http_code}' 'https://www.turbolikes.com/user-app.js')"
-          API_STATUS="$(curl -sS -L --max-time 20 -o "$API_BODY" -w '%{http_code}' 'https://www.turbolikes.com/api/v1/system/info')"
+          API_STATUS="$(curl -sS -L --max-time 20 -o "$API_BODY" -w '%{http_code}' 'https://www.turbolikes.com/api/v1/status')"
           SERVER_STATUS="$(curl -sS -L --max-time 20 -o "$SERVER_BODY" -w '%{http_code}' 'https://www.turbolikes.com/Server/php/bootstrap.php')"
 
           printf '{"root_status":%s,"admin_status":%s,"user_app_status":%s,"api_status":%s,"server_internal_status":%s}\n' \
