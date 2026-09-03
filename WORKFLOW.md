@@ -112,6 +112,8 @@ Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abges
 - **Ergebnis:** Die Spezifikation ist bereit für das Betreiberreview und anschließend für einen testgetriebenen Implementierungsplan.
 - **Offene Punkte:** alle Implementierungs- und Abnahmeschritte in `TODO.md`; die weiteren Core-1.0-Subsysteme erhalten nach diesem Paket eigene Spezifikationen.
 
+**Fortsetzung am 2026-09-03:** Der Betreiber hat die schriftliche Spezifikation ausdrücklich freigegeben. Codex (ChatGPT Work / GitHub-Connector) hat daraus den test-first Ausführungsplan `docs/superpowers/plans/2026-09-03-portable-installation.md` mit sechs einzeln prüf- und committierbaren Aufgaben abgeleitet. Die Umsetzung darf autonom fortgesetzt werden; Sicherheits- und Nachweisgrenzen der Spezifikation bleiben verbindlich.
+
 ### 2026-08-29 – Neuinstallation auf leerem Shared Hosting vorbereiten
 
 - **Aufgabe:** Aktuellen GitHub-main-Stand ohne Live-Deployment vollständig auf Web-App-, PHP-, Datenbank- und FTPS-Neuinstallierbarkeit prüfen.
