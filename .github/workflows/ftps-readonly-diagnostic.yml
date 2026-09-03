@@ -38,16 +38,21 @@ jobs:
           test "$USER_APP_STATUS" = '200'
           test "$API_STATUS" = '200'
           case "$SERVER_STATUS" in 403|404) ;; *) exit 1 ;; esac
+          printf '%s\n' 'checkpoint=statuses_ok'
 
           grep -Fq '<title>Neutral Platform</title>' "$ROOT_BODY"
           if grep -Fqi 'FRAMEWORK DASHBOARD' "$ROOT_BODY"; then exit 1; fi
+          printf '%s\n' 'checkpoint=root_content_ok'
 
           ADMIN_INPUT="$(grep -o '<input id="loginUsername"[^>]*>' "$ADMIN_BODY" | head -n 1)"
           test -n "$ADMIN_INPUT"
           if printf '%s' "$ADMIN_INPUT" | grep -Eqi '[[:space:]]value='; then exit 1; fi
+          printf '%s\n' 'checkpoint=admin_login_empty_ok'
 
           grep -Fq '<input id="userLoginUsername" type="text" autocomplete="username" />' "$USER_APP_BODY"
           if grep -Eq '\.value\.trim\(\)[[:space:]]*\|\|[[:space:]]*["'"']Developer["'"']' "$USER_APP_BODY"; then exit 1; fi
+          printf '%s\n' 'checkpoint=user_login_empty_ok'
           node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$API_BODY"
+          printf '%s\n' 'checkpoint=api_json_ok'
 
           printf '{"login_identifiers_empty":true}\n'
