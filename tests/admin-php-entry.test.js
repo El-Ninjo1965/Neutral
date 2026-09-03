@@ -258,7 +258,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.equal(result.statusCode, 401);
     assert.match(result.body, /Authentication required/i);
     assert.match(result.body, /id="loginBtn"/);
-    assert.match(result.body, /api\/v1\/auth\/login/);
+    assert.match(result.body, /NeutralPublicPath\.api\('auth\/login'\)/);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 

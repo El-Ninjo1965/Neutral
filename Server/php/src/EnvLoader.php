@@ -84,6 +84,15 @@ final class EnvLoader
             }
         }
 
+        $processEnvironment = getenv();
+        if (is_array($processEnvironment)) {
+            foreach ($processEnvironment as $key => $value) {
+                if (is_string($key) && is_scalar($value)) {
+                    $values[$key] = (string) $value;
+                }
+            }
+        }
+
         foreach ($_SERVER as $key => $value) {
             if (is_string($key) && str_starts_with($key, 'NEUTRAL_') && is_scalar($value)) {
                 $values[$key] = (string) $value;
