@@ -269,14 +269,13 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.doesNotMatch(workflow, /FTP_SSL_CHECK_HOSTNAME:\s*\$\{\{\s*secrets\./);
   });
 
-  test('GitHub deployment uses the certified production FTPS endpoint on port 21', () => {
+  test('GitHub deployment uses the certified FTPS endpoint and protected public_html target', () => {
     const workflow = fs.readFileSync(path.resolve(__dirname, '../.github/workflows/ftp-upload.yml'), 'utf8');
     assert.match(workflow, /^\s*FTP_HOST:\s*['"]?server\.cpprotect5\.de['"]?\s*$/m);
     assert.match(workflow, /^\s*FTP_PORT:\s*['"]?21['"]?\s*$/m);
-    assert.match(workflow, /^\s*FTP_TARGET_DIR:\s*['"]?\/['"]?\s*$/m);
+    assert.match(workflow, /^\s*FTP_TARGET_DIR:\s*\$\{\{\s*secrets\.FTP_TARGET_DIR\s*\}\}\s*$/m);
     assert.doesNotMatch(workflow, /FTP_HOST:\s*\$\{\{\s*secrets\./);
     assert.doesNotMatch(workflow, /FTP_PORT:\s*\$\{\{\s*secrets\./);
-    assert.doesNotMatch(workflow, /FTP_TARGET_DIR:\s*\$\{\{\s*secrets\./);
   });
 
   test('deployment manifests are bound to one irreversible target fingerprint', (t) => {
@@ -458,8 +457,7 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.match(workflow, /npm run package:production/);
     assert.match(workflow, /STAGING_DIR="\$GITHUB_WORKSPACE\/dist\/neutral-production"/);
     assert.match(workflow, /FTP_SERVER="\$FTP_HOST"[\s\S]*node scripts\/manual-ftps-deploy\.js/);
-    assert.match(workflow, /^\s*FTP_TARGET_DIR:\s*['"]\/['"]\s*$/m);
-    assert.doesNotMatch(workflow, /FTP_TARGET_DIR:\s*\$\{\{\s*secrets\./);
+    assert.match(workflow, /FTP_TARGET_DIR:\s*\$\{\{\s*secrets\.FTP_TARGET_DIR\s*\}\}/);
     assert.doesNotMatch(workflow, /FTP_TARGET_DIR:[^\n]*\|\|/);
     assert.doesNotMatch(workflow, /lftp\s+<<|open -u|mirror -R/);
     assert.doesNotMatch(workflow, /copy_dir Web-App|cp -a Web-App/);
