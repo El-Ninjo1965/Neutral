@@ -269,6 +269,14 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.doesNotMatch(workflow, /FTP_SSL_CHECK_HOSTNAME:\s*\$\{\{\s*secrets\./);
   });
 
+  test('GitHub deployment uses the certified production FTPS endpoint on port 21', () => {
+    const workflow = fs.readFileSync(path.resolve(__dirname, '../.github/workflows/ftp-upload.yml'), 'utf8');
+    assert.match(workflow, /^\s*FTP_HOST:\s*['"]?server\.cpprotect5\.de['"]?\s*$/m);
+    assert.match(workflow, /^\s*FTP_PORT:\s*['"]?21['"]?\s*$/m);
+    assert.doesNotMatch(workflow, /FTP_HOST:\s*\$\{\{\s*secrets\./);
+    assert.doesNotMatch(workflow, /FTP_PORT:\s*\$\{\{\s*secrets\./);
+  });
+
   test('deployment manifests are bound to one irreversible target fingerprint', (t) => {
     assert.equal(typeof deploymentTargetFingerprint, 'function');
     assert.equal(typeof selectPreviousDeploymentFiles, 'function');
