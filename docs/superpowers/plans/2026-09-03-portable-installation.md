@@ -147,4 +147,4 @@ git diff --check
 ```
 
 - [x] **Step 6: Unabhängiges Review auf Spezifikationsabdeckung, Traversal, Symlinkgrenzen, Secretlecks, destruktive Dateiarbeit, Root-Kompatibilität und Unterpfade durchführen; Befunde beheben.**
-- [x] **Step 7: Abschlussstand nach GitHub `main` übertragen; CodeQL und FTPS prüfen.** Connector-Commit `a800c960`; CodeQL-Lauf `33716219316` bestanden. FTPS-Lauf `33716219697` wurde vor dem Upload sicher blockiert, weil die vorhandene Actions-Konfiguration `FTP_SSL_CHECK_HOSTNAME=true` noch nicht erfüllt. Produktiver Unterpfad-/Datenbanktest bleibt bis zu sicher vorhandener Ziel-/Secretkonfiguration offen.
+- [x] **Step 7: Abschlussstand nach GitHub `main` übertragen; CodeQL und FTPS prüfen.** Finaler Codecommit `6b59ec68`; CodeQL-Lauf `33716675598` bestanden. Der finale FTPS-Lauf `33716676051` wurde nach erfolgreichem Paketbau vor Authentifizierung und Upload sicher blockiert, weil Zertifikatsname und konfigurierter FTP-Hostname nicht übereinstimmen. Produktiver Unterpfad-/Datenbanktest bleibt bis zur sicher korrigierten Hosting-/Zielkonfiguration offen.

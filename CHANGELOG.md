@@ -13,7 +13,9 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 - alle finalen Reviewbefunde test-first reproduziert; die abschließende PHP-ausgeschlossene Gesamtsuite mit 239 bestandenen, zwei erwarteten PHP-Skips und 0 Fehlern verifiziert; keine Server-, DB-, FTP-, GitHub- oder sonstige externe Operation ausgeführt,
 - den einzigen Restbefund der fokussierten Nachprüfung durch **Codex (ChatGPT Work)** geschlossen: auch Adminformulare, Connection-/Provider-Normalisierung und Setupzustände beziehen öffentliche API-Defaults nun aus `NeutralPublicPath`; der erweiterte Regressionstest und die unveränderte Gesamtsuite bestehen,
 - Web-App- und Serveranleitung beschreiben denselben verbindlichen Full-Stack-Paketweg; die Web-App-Anleitung behandelt dessen Browseranteil und erfindet kein separates Client-only-Artefakt,
-- GitHub-`main` über den Connector auf Commit `a800c960a7be04c37b09fc8f3bb6eede7517e5a9` aktualisiert und CodeQL-Lauf `33716219316` erfolgreich abgeschlossen; FTPS-Lauf `33716219697` wurde wegen nicht aktivierter zwingender Hostnamenprüfung vor dem Upload sicher blockiert,
+- GitHub-`main` über den Connector integriert; nach zwei test-first Deploymentkorrekturen ist `6b59ec68f980517fbbd49a5e8604a45b5acc1cdc` der finale Codecommit und CodeQL-Lauf `33716675598` erfolgreich,
+- Hostnamenprüfung im GitHub-Workflow unveränderlich auf `true` gesetzt und lftp-Skript weiterhin geheimnisfrei über den vom installierten Client unterstützten argumentfreien stdin-Aufruf übergeben,
+- finaler FTPS-Lauf `33716676051` baute das Paket und erreichte den Server, brach aber wegen nicht übereinstimmender Zertifikats-/Hostname-Identität vor Authentifizierung und Upload sicher ab; kein Deploymenterfolg wird behauptet,
 - PHP-/Apache-/Live-/Datenbank-/neues-Repository- und erfolgreicher FTPS-Nachweis bleiben ausdrücklich offen,
 - ausgeführt und dokumentiert durch **Codex (ChatGPT Work)**.
 
