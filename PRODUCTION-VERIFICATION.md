@@ -9,13 +9,14 @@
 | Bereich | Ergebnis | Nachweis |
 |---|---|---|
 | Deployment | BESTANDEN | GitHub Actions `FTPS Deploy` bis zum Webspace erfolgreich |
-| Portables Deployment-Hardening | CODE UND TEST BESTANDEN | Explizites Ziel, zwingende Hostnamenprüfung, zielgebundener SHA-256-Manifestfingerprint, vollständiger Transfer ohne `--only-newer` und lftp-Skript über stdin sind lokal getestet; der Abschlusscommit wurde noch nicht extern ausgeführt. |
+| Portables Deployment-Hardening | BESTANDEN | Explizites Ziel, zwingende Hostnamenprüfung, zielgebundener SHA-256-Manifestfingerprint, vollständiger Transfer ohne `--only-newer` und lftp-Skript über stdin sind getestet; der produktive FTPS-Lauf `33802485499` und der Read-only-Zielnachweis `33803384719` bestanden. |
 | HTTPS und Startseite | BESTANDEN | Öffentliche Seite über HTTPS geladen und vollständig gerendert |
 | Root-Assets | BESTANDEN | `core`, `style.css` und `user-app.js` werden durch Root-Rewrite aus der Repositorystruktur ausgeliefert |
 | Datenbank | BESTANDEN | Produktionsidentität bestätigt, Verbindung aktiv, 16 erwartete Tabellen und 2 Migrationen |
 | Setupzustand | BESTANDEN | `setup_status=ACTIVE`; die Neuinstallation wurde persistiert |
 | Admin ohne Sitzung | BESTANDEN | Öffentlicher Aufruf zeigt ausschließlich „Authentication required“ und das Anmeldeformular |
-| Admin-CMS nach Anmeldung | BESTANDEN | neue Shell und fünf Navigationsgruppen sichtbar; alte Ansicht „FRAMEWORK DASHBOARD“ abwesend; Users-/Dashboard-Navigation reagiert |
+| Admin-CMS nach Anmeldung | BESTANDEN | echter Betreiberlogin und fortbestehende Sitzung; alle 15 Hauptansichten rein lesend geöffnet; alte Ansicht „FRAMEWORK DASHBOARD“ abwesend |
+| Neutrale Loginfelder | BESTANDEN | Admin- und Benutzerlogin enthalten produktiv keine voreingestellte Kennung und keinen versteckten `Developer`-Fallback; Read-only-Lauf `33808897301` |
 | API-Version | BESTANDEN | `/api/v1` ist kanonisch; Legacy `/api` bleibt kompatibel; unbekannte Versionen werden abgewiesen |
 | Logout-CSRF | CODE UND TEST BESTANDEN | Logout verlangt Sitzung und gültigen CSRF-Token; fehlender/falscher Token ergibt 403 |
 | Dateischutz | CODE UND TEST BESTANDEN | Root-Rewrite verweigert versteckte Dateien sowie `Server/php` und `Server/runtime`; Verzeichnislisten sind deaktiviert |
@@ -35,7 +36,7 @@
 
 ## Noch einmalig mit Betreiberzugang abzunehmen
 
-Ein echter produktiver Login und anschließender Logout muss einmal im Browser mit dem geheimen Betreiberkennwort durchgeführt werden. Dabei sind Sessioncookie, CSRF-Cookie und Sitzungsende zu bestätigen. Zugangsdaten werden dafür weder in Git noch in dieses Protokoll übernommen. Bis zu diesem Schritt ist der Authentifizierungsfluss durch automatisierte Tests, aber nicht mit einem echten Betreiberkennwort im Produktionsbrowser nachgewiesen.
+Der echte produktive Login und die fortbestehende Sitzung über alle 15 Admin-Hauptansichten wurden am 2026-09-03 im Browser bestätigt. Der ausgelöste Logout konnte nach einem CDP-/Browser-Recovery-Timeout nicht mehr belastbar beobachtet werden. Deshalb bleiben ausschließlich das sichtbare Sitzungsende und ein negativer CSRF-Livefall offen. Zugangsdaten wurden weder in Git noch in dieses Protokoll übernommen. Die Login-Drosselung wurde bewusst nicht durch Fehlversuchsserien belastet, um Betreiberkonto und Quell-IP nicht zu sperren.
 
 Zusätzlich offen sind die reale responsive iPad-/Safari-Abnahme und die Neuinstallationsnachweise in einem neuen physischen DocumentRoot sowie unter einem URL-Unterpfad. Die zentrale Installationsbasis und der lokale Preflight sind vorhanden, wurden in diesem Änderungssatz aber weder hochgeladen noch gegen einen fremden Apache-/PHP-Host ausgeführt. Deshalb bleiben folgende Nachweise ausdrücklich offen:
 

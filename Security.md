@@ -2,7 +2,7 @@
 
 **Status:** DETAILVERTRAG
 
-**Geprüft:** 2026-09-02
+**Geprüft:** 2026-09-03
 **Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
 
 ## Statuslegende
@@ -15,6 +15,8 @@
 ## 1. Login
 
 **VORHANDEN:** `POST /api/auth/login` authentifiziert serverseitig gegen gespeicherte Passwort-Hashes. PHP verwendet `password_hash`/`password_verify`; die Node-Referenzruntime verwendet den Password-Hash-Service mit Argon2 bzw. unterstütztem Fallback. Fehlversuche liefern keine Passwortdaten.
+
+**VORHANDEN:** Benutzer- und Adminlogin zeigen keine voreingestellte Kontoidentität. Die Kennungen `admin` und `Developer` sowie ein clientseitiger `Developer`-Fallback wurden testgetrieben entfernt; produktive Read-only-Prüfung `33808897301` bestätigt leere Felder. Dadurch wird weder ein Standardkonto suggeriert noch eine Kennung unnötig offengelegt.
 
 **VORHANDEN/PRODUKTIONSABNAHME OFFEN:** PHP-Logins werden über `LoginRateLimiter` und den persistenten `PdoLoginAttemptStore` nach gehashter Kennung/IP sowie IP-weit gedrosselt. Positive, Sperr- und Fail-closed-Pfade sind automatisiert getestet; der echte produktive Lockout-/Retry-Ablauf muss noch ohne Offenlegung von Benutzer- oder IP-Daten abgenommen werden.
 

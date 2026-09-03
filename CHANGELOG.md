@@ -2,6 +2,16 @@
 
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
+## 2026-09-03 – Produktiven Admin-Funktionstest und neutrale Loginfelder abgeschlossen
+
+- echten Betreiberlogin sicher im geschützten Browserdialog ausgeführt und die fortbestehende Sitzung über alle 15 Admin-Hauptansichten ausschließlich lesend bestätigt; keine alte Dashboardansicht, sichtbare Anwendungsfehlermeldung, Warnbox oder hängende Ladeanzeige festgestellt,
+- 62 Konsolenmeldungen als einheitliche Browser-Extension-Metadatenfehler und nicht als Neutral-Anwendungsfehler klassifiziert,
+- voreingestellte Kennungen `admin` und `Developer` sowie den clientseitigen `Developer`-Fallback test-first entfernt; gezielter Regressionstest zunächst rot und danach mit allen 14 Admin-CMS-Tests grün,
+- Codecommit `d31c870e83922ac518f127d8eccdecc42d5ea62f` auf `main`, FTPS-Lauf `33807649560` und CodeQL-Lauf `33807649227` erfolgreich,
+- abschließender öffentlicher Read-only-Lauf `33808897301` bestätigt Root/Asset/Status-API mit HTTP 200, den unautorisierten Admin-Einstieg mit 401, interne PHP-Datei mit 403 und produktiv leere Login-Kennungsfelder,
+- Logout ausgelöst, wegen anschließendem CDP-/Browser-Recovery-Timeout jedoch nicht als erfolgreich gewertet; sichtbares Sitzungsende, negativer CSRF-Livefall, Login-Drosselung und reale responsive iPad-/Safari-Abnahme bleiben offen,
+- keine produktiven Schreib-, Lösch-, Datenbank- oder E-Mail-Operationen und keine Ausgabe von Zugangsdaten; ausgeführt und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
+
 ## 2026-09-03 – Zertifikatsgültiges Produktionsdeployment abgeschlossen
 
 - produktiven Workflow test-first auf den zertifikatsgültigen FTPS-Host `server.cpprotect5.de` und Port 21 festgelegt; TLS-Zertifikats- und Hostnamenprüfung bleiben zwingend, Benutzer und Passwort ausschließlich GitHub Secrets,

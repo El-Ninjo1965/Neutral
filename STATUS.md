@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** GitHub `main`, Codecommit `20583c251a9f6f5e069a6c089c01f99618aa2196`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** GitHub `main`, Codecommit `d31c870e83922ac518f127d8eccdecc42d5ea62f`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -28,8 +28,8 @@ Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und p
 | Modul-SQL-Migration und Rollback | TEILWEISE | Tabellen/`module_migrations` existieren; allgemeiner Runner fehlt |
 | Modulsettings | TEILWEISE | deklarative Felder und Namespace vorhanden; sichere Secrets/Provider fehlen |
 | Drittanbieter-Provideradapter | FEHLT | vorhandener Provider-Manager beschreibt primär Deployment und simuliert Operationen |
-| Login, Session, CSRF, RBAC | VORHANDEN | PHP-Router und Services; produktiver 401-Schutz des Admin-Einstiegs geprüft, vollständiger Login-/Schreibfluss bleibt offen |
-| Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und Fachansichten vorhanden; Browserstart nach Commit `156e6e9` produktiv durch Codex geprüft, alte Fallbackansicht nicht mehr sichtbar; reale responsive iPad-/Safari-Abnahme bleibt offen |
+| Login, Session, CSRF, RBAC | VORHANDEN | produktiver 401-Schutz, echter Betreiberlogin und fortbestehende Sitzung über alle 15 Hauptansichten bestätigt; Logout/Sitzungsende und negativer CSRF-Livefall bleiben offen |
+| Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und alle 15 Hauptansichten produktiv durch Codex geprüft, alte Fallbackansicht nicht sichtbar; reale responsive iPad-/Safari-Abnahme bleibt offen |
 | Setup-Sperre und öffentlicher Status | VORHANDEN | aktive Installation verbirgt Setup/UI/API; Statusantwort ist auf ungefährliche Betriebsdaten reduziert; Sicherheitstests vorhanden |
 | PHP-Login-Drosselung | TEILWEISE | `LoginRateLimiter` und persistenter PDO-Store einschließlich Fail-closed-Pfad sind getestet; produktiver Lockout-/Retry-Nachweis fehlt |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
@@ -59,7 +59,9 @@ Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte �
 
 Ein separater Read-only-Nachweis über den zertifikatsgültigen Host bestand abschließend mit Lauf `33803384719`: Server erreichbar, TLS erfolgreich, Authentifizierung akzeptiert, geschütztes Ziel lesbar und alle drei Marker `.htaccess`, `Web-App/` und `Server/` vorhanden. Der Betreiber-Screenshot aus dem cPanel-Dateimanager bestätigt dieselbe Struktur im geöffneten `public_html`. Eine kurzzeitige Codex-Fehlannahme, der virtuelle FTP-Pfad `/` sei dieses Ziel, führte zusätzlich zu Lauf `33802090900`; der Workflow wurde unmittelbar auf das geschützte Ziel-Secret zurückgestellt. Konto-Home-Einträge werden nicht ungeprüft gelöscht und sind in `TODO.md` zur kontrollierten Abgrenzung erfasst.
 
-Die öffentliche Browserprüfung zeigte nach dem korrigierten Deployment die moderne Seite „Neutral Platform“ mit Navigation und ohne „FRAMEWORK DASHBOARD“. `admin.php` zeigte ohne Sitzung die geschützte Anmeldeseite „Authentication required“ und ebenfalls keine alte Dashboardansicht. Ein vollständiger authentifizierter Schreib-/CSRF-Smoke-Test bleibt offen.
+Die abschließende Browserprüfung bestätigte die moderne Seite „Neutral Platform“, den geschützten Admin-Einstieg, den echten Betreiberlogin und die fortbestehende produktive Sitzung. Alle 15 Hauptansichten wurden ausschließlich lesend geöffnet; keine verlorene Authentifizierung, alte Dashboardansicht, sichtbare Anwendungsfehlermeldung, Warnbox oder hängende Ladeanzeige trat auf. Die 62 Browserkonsolenmeldungen stammten übereinstimmend aus einem Browser-Extension-Content-Script und nicht aus Neutral. Der Logout wurde angestoßen, sein Ergebnis ließ sich wegen eines anschließenden CDP-/Browser-Recovery-Timeouts nicht belastbar beobachten und bleibt daher offen.
+
+Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die voreingestellten Kennungen `admin` und `Developer` sowie den versteckten `Developer`-Fallback aus den Loginformularen. FTPS-Lauf `33807649560` und CodeQL-Lauf `33807649227` bestanden. Der abschließende öffentliche Read-only-Smoke `33808897301` bestätigte HTTP 200 für Root, User-Asset und Status-API, 401 für Admin ohne Sitzung, 403 für eine interne PHP-Datei sowie produktiv leere Login-Kennungsfelder.
 
 ## Nächster Abschlussmeilenstein
 
