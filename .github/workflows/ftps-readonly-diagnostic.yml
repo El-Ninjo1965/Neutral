@@ -49,7 +49,7 @@ jobs:
           HAS_WEB_APP=false
           HAS_SERVER=false
           if grep -Fxq '.htaccess' "$RESULT_FILE"; then HAS_HTACCESS=true; fi
-          if grep -Fxq 'Web-App' "$RESULT_FILE"; then HAS_WEB_APP=true; fi
-          if grep -Fxq 'Server' "$RESULT_FILE"; then HAS_SERVER=true; fi
+          if grep -Eq '^Web-App/?$' "$RESULT_FILE"; then HAS_WEB_APP=true; fi
+          if grep -Eq '^Server/?$' "$RESULT_FILE"; then HAS_SERVER=true; fi
 
           printf '{"server_reachable":true,"tls_success":true,"auth_accepted":true,"target_path_readable":true,"visible_entry_count":%s,"has_htaccess":%s,"has_web_app":%s,"has_server":%s}\n' "$ENTRY_COUNT" "$HAS_HTACCESS" "$HAS_WEB_APP" "$HAS_SERVER"
