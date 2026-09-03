@@ -1,4 +1,4 @@
-name: FTPS Read-only Diagnostic
+name: Production HTTP Read-only Smoke
 
 on:
   push:
@@ -9,47 +9,43 @@ permissions:
   contents: read
 
 jobs:
-  diagnostic:
+  smoke:
     runs-on: ubuntu-latest
-    env:
-      FTP_HOST: server.cpprotect5.de
-      FTP_PORT: '21'
-      FTP_USER: ${{ secrets.FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR }}
-
     steps:
-      - name: FTPS-Client bereitstellen
+      - name: Bestehende Produktion rein lesend prüfen
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y lftp
 
-      - name: Explizites FTPS rein lesend prüfen
-        shell: bash
-        run: |
-          set -euo pipefail
-          RESULT_FILE="$(mktemp)"
+          TEMP_DIR="$(mktemp -d)"
+          ROOT_BODY="$TEMP_DIR/root.html"
+          ADMIN_BODY="$TEMP_DIR/admin.html"
+          USER_APP_BODY="$TEMP_DIR/user-app.js"
+          API_BODY="$TEMP_DIR/system-info.json"
+          SERVER_BODY="$TEMP_DIR/server-internal.txt"
 
-          {
-            printf '%s\n' 'set cmd:fail-exit yes'
-            printf '%s\n' 'set ssl:verify-certificate yes'
-            printf '%s\n' 'set ssl:check-hostname yes'
-            printf '%s\n' 'set ftp:ssl-force yes'
-            printf '%s\n' 'set ftp:ssl-protect-data yes'
-            printf 'open -u "%s","%s" "ftp://%s:%s"\n' "$FTP_USER" "$FTP_PASSWORD" "$FTP_HOST" "$FTP_PORT"
-            printf 'cd "%s"\n' "$FTP_TARGET_DIR"
-            printf '%s\n' 'cls -1a'
-            printf '%s\n' 'bye'
-          } | lftp >"$RESULT_FILE"
+          ROOT_STATUS="$(curl -sS -L --max-time 20 -o "$ROOT_BODY" -w '%{http_code}' 'https://www.turbolikes.com/')"
+          ADMIN_STATUS="$(curl -sS -L --max-time 20 -o "$ADMIN_BODY" -w '%{http_code}' 'https://www.turbolikes.com/admin.php')"
+          USER_APP_STATUS="$(curl -sS -L --max-time 20 -o "$USER_APP_BODY" -w '%{http_code}' 'https://www.turbolikes.com/user-app.js')"
+          API_STATUS="$(curl -sS -L --max-time 20 -o "$API_BODY" -w '%{http_code}' 'https://www.turbolikes.com/api/v1/system/info')"
+          SERVER_STATUS="$(curl -sS -L --max-time 20 -o "$SERVER_BODY" -w '%{http_code}' 'https://www.turbolikes.com/Server/php/bootstrap.php')"
 
-          ENTRY_COUNT="$(grep -vc '^ftp://' "$RESULT_FILE" || true)"
-          HAS_HTACCESS=false
-          HAS_WEB_APP=false
-          HAS_SERVER=false
-          if grep -Fxq '.htaccess' "$RESULT_FILE"; then HAS_HTACCESS=true; fi
-          if grep -Eq '^Web-App/?$' "$RESULT_FILE"; then HAS_WEB_APP=true; fi
-          if grep -Eq '^Server/?$' "$RESULT_FILE"; then HAS_SERVER=true; fi
+          test "$ROOT_STATUS" = '200'
+          test "$ADMIN_STATUS" = '401'
+          test "$USER_APP_STATUS" = '200'
+          test "$API_STATUS" = '200'
+          case "$SERVER_STATUS" in 403|404) ;; *) exit 1 ;; esac
 
-          printf '{"server_reachable":true,"tls_success":true,"auth_accepted":true,"target_path_readable":true,"visible_entry_count":%s,"has_htaccess":%s,"has_web_app":%s,"has_server":%s}\n' "$ENTRY_COUNT" "$HAS_HTACCESS" "$HAS_WEB_APP" "$HAS_SERVER"
+          grep -Fq '<title>Neutral Platform</title>' "$ROOT_BODY"
+          if grep -Fqi 'FRAMEWORK DASHBOARD' "$ROOT_BODY"; then exit 1; fi
+
+          ADMIN_INPUT="$(grep -o '<input id="loginUsername"[^>]*>' "$ADMIN_BODY" | head -n 1)"
+          test -n "$ADMIN_INPUT"
+          if printf '%s' "$ADMIN_INPUT" | grep -Eqi '[[:space:]]value='; then exit 1; fi
+
+          grep -Fq '<input id="userLoginUsername" type="text" autocomplete="username" />' "$USER_APP_BODY"
+          if grep -Eq '\.value\.trim\(\)[[:space:]]*\|\|[[:space:]]*["'"']Developer["'"']' "$USER_APP_BODY"; then exit 1; fi
+          node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$API_BODY"
+
+          printf '{"root_status":%s,"admin_status":%s,"user_app_status":%s,"api_status":%s,"server_internal_status":%s,"login_identifiers_empty":true}\n' \
+            "$ROOT_STATUS" "$ADMIN_STATUS" "$USER_APP_STATUS" "$API_STATUS" "$SERVER_STATUS"
