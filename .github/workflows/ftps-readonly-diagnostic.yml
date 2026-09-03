@@ -53,8 +53,8 @@ jobs:
           USER_PREFILL=false
           USER_FALLBACK=false
           if grep -Fq '<input id="userLoginUsername" type="text" autocomplete="username" />' "$USER_APP_BODY"; then USER_EMPTY=true; fi
-          if grep -Eq 'userLoginUsername[^>]*value=["'"']Developer["'"']' "$USER_APP_BODY"; then USER_PREFILL=true; fi
-          if grep -Eq '\.value\.trim\(\)[[:space:]]*\|\|[[:space:]]*["'"']Developer["'"']' "$USER_APP_BODY"; then USER_FALLBACK=true; fi
+          if grep -Fq 'value="Developer"' "$USER_APP_BODY" || grep -Fq "value='Developer'" "$USER_APP_BODY"; then USER_PREFILL=true; fi
+          if grep -Fq ".value.trim() || 'Developer'" "$USER_APP_BODY" || grep -Fq '.value.trim() || "Developer"' "$USER_APP_BODY"; then USER_FALLBACK=true; fi
           printf '{"user_empty":%s,"user_prefill":%s,"user_fallback":%s}\n' "$USER_EMPTY" "$USER_PREFILL" "$USER_FALLBACK"
           test "$USER_EMPTY" = 'true'
           test "$USER_PREFILL" = 'false'
