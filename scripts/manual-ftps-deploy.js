@@ -397,7 +397,7 @@ async function runManualDeploy(stagingRoot, config, diff = { upload: [], update:
 
 function runLftpScript(commandScript, spawnProcess = spawn) {
   return new Promise((resolve, reject) => {
-    const child = spawnProcess('lftp', ['-f', '-'], {
+    const child = spawnProcess('lftp', [], {
       shell: false,
       stdio: ['pipe', 'inherit', 'inherit']
     });

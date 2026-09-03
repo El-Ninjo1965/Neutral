@@ -358,7 +358,7 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     await runLftpScript(script, spawnProcess);
 
     assert.equal(captured.command, 'lftp');
-    assert.deepStrictEqual(captured.args, ['-f', '-']);
+    assert.deepStrictEqual(captured.args, []);
     assert.deepStrictEqual(captured.options, {
       shell: false,
       stdio: ['pipe', 'inherit', 'inherit']
