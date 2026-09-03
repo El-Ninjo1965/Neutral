@@ -12,7 +12,11 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 - abschließende Spezifikationsprüfung deckte zusätzlich öffentlich mitgelieferte Permissiondefinitionen, Datenbank- und Managementmetadaten auf; test-first entfernt, sodass der Clientkatalog nur Sicht-/Nutzungsdefinitionen behält,
 - fokussierte RED/GREEN-Nachweise sowie die PHP-ausgeschlossene Gesamtsuite mit 261 Tests, 258 bestanden, drei erwarteten PHP-Skips und 0 Fehlern bestanden,
 - sauberes Produktionspaket mit 93 Dateien gebaut; Manifest, Inventar, Größen, SHA-256, Einstiegspunkte, exakte HTTPS-Basis und Secretfreiheit bestanden. PHP-Binary und echtes Rewrite blieben wahrheitsgemäß `NICHT_GEPRUEFT`,
-- über den bestätigten Connector für Konto `El-Ninjo1965` als Commit `a7af22953ec3af6accdf93c937025acfd69690c7` fast-forward nach GitHub `main` integriert; der Connector meldete für diesen und frühere bekannte Commits keine Workflowläufe, daher bleiben CodeQL-, Deployment- und Live-Nachweise offen,
+- über den bestätigten Connector für Konto `El-Ninjo1965` als Commit `a7af22953ec3af6accdf93c937025acfd69690c7` fast-forward nach GitHub `main` integriert,
+- Live-Smoke deckte eine fehlende Root-Rewrite-Regel für `user-module-access.js` auf; test-first mit Commit `32564288d62bdf0dd84c0939141d4775e6c9bb15` behoben und erfolgreich ausgerollt,
+- Deployment dauerhaft durch `npm ci`, PHP-CLI und die vollständige Testsuite vor Paketbau/Upload gesperrt. Die ersten beiden Gate-Läufe stoppten wegen zuvor verdeckter frischer-Runner-Probleme sicher vor dem Upload; Prozessvariablen werden nun PHP-portabel über `getenv()` geladen und der alte Loginpfad-Test folgt dem zentralen Resolver,
+- finaler Codecommit `f1b1522b48f5605a20219d0cc57fb9eb2115ebb2`, CodeQL-Lauf `33815089560` sowie FTPS-Lauf `33815089715` einschließlich vollständiger Node-/PHP-Suite und Paketbau bestanden,
+- finaler öffentlicher Read-only-Smoke: Root, Helper und Modulkatalog HTTP 200, Helper `text/javascript`, Admin ohne Sitzung 401; anonymer Katalog enthält ausschließlich aktives GPS mit `canView=true`, `canUse=true` und ohne Permissiondefinitions-, Datenbank-, Management- oder Adminmetadaten,
 - implementiert und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
 
 ## 2026-09-03 – Produktiven Admin-Funktionstest und neutrale Loginfelder abgeschlossen

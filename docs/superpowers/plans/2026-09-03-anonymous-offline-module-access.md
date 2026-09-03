@@ -116,5 +116,5 @@
 - [x] **Step 3: Build and verify the production package; run `git diff --check` and secret-pattern checks without printing secret values.**
 - [x] **Step 4: Review the specification line by line against code and tests; correct gaps test-first.**
 - [x] **Step 5: Commit `docs: record anonymous offline module contract`.**
-- [ ] **Step 6: Push/integrate to GitHub `main`, verify CodeQL and deploy only after successful checks.**
-- [ ] **Step 7: Run read-only public and authenticated smoke tests; do not claim unavailable PHP/device evidence.**
+- [x] **Step 6: Push/integrate to GitHub `main`, verify CodeQL and deploy only after successful checks.**
+- [x] **Step 7: Run read-only public module and protected-admin smoke tests; reuse the existing authenticated-admin evidence and do not claim an unavailable device-position test.**
