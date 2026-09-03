@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** lokaler Branch `codex/portable-installation` nach GitHub `main`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** GitHub `main`, Codecommit `a7af22953ec3af6accdf93c937025acfd69690c7`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -14,7 +14,7 @@ Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoo
 
 Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und produktivem FTPS-Deployment wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL und der korrigierte produktive Deploymentlauf sind bestanden. Der geschützte Zielbestand wurde anschließend ausschließlich lesend bestätigt. Die vollständige PHP-/Apache-/Datenbank-Neuinstallation in einem neuen Ziel sowie die URL-Unterpfadabnahme bleiben offen.
 
-Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work)** test-first lokal umgesetzt: Der öffentliche PHP-Katalog bildet aktive Module anhand der gespeicherten `viewer`-Sicht-/Nutzungsrechte auf bereinigtes `clientAccess` ab. Nur anonyme Kataloge werden als Offlinefallback gespeichert; Navigation und Direktaufrufe bleiben fail-closed. Das GPS-Referenzmodul zeigt lokale Daten sofort und aktualisiert bei bereits erteilter Browserberechtigung einmal automatisch. GitHub-, CodeQL-, Deployment- und Live-Nachweise dieses Stands sind noch offen.
+Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Connector)** test-first umgesetzt und mit Commit `a7af22953ec3af6accdf93c937025acfd69690c7` nach GitHub `main` integriert: Der öffentliche PHP-Katalog bildet aktive Module anhand der gespeicherten `viewer`-Sicht-/Nutzungsrechte auf bereinigtes `clientAccess` ab. Nur anonyme Kataloge werden als Offlinefallback gespeichert; Navigation und Direktaufrufe bleiben fail-closed. Das GPS-Referenzmodul zeigt lokale Daten sofort und aktualisiert bei bereits erteilter Browserberechtigung einmal automatisch. Der Connector lieferte für diesen und frühere Commits keine Workflowläufe; CodeQL-, Deployment- und Live-Nachweise dieses Stands bleiben deshalb offen.
 
 ## Funktionsmatrix
 
@@ -25,7 +25,7 @@ Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work)** test-first
 | Modul-Discovery und Client-Lifecycle | VORHANDEN | `module-manager.js`, `module-interface.js`, Lifecycle-Tests |
 | PHP-Modulregistrierung und Zustände | VORHANDEN | `Phase7ModuleRuntime.php`, Admin-API |
 | Modulrechte nach Rollen | VORHANDEN | Modulmanifest, RBAC, Admin-Modulansicht, GPS-Referenz |
-| Anonymer Modulzugriff | LOKAL VORHANDEN | aktive Module gemäß `viewer`-Sicht-/Nutzungsrechten, bereinigtes `clientAccess`, fail-closed UI- und Offlinekatalogtests; Live-Nachweis offen |
+| Anonymer Modulzugriff | CODE VORHANDEN | GitHub `main` `a7af229`; aktive Module gemäß `viewer`-Sicht-/Nutzungsrechten, bereinigtes `clientAccess`, fail-closed UI- und Offlinekatalogtests; Workflow-/Live-Nachweis offen |
 | Mengenlimits/Entitlements | FEHLT | kein allgemeines serverseitiges Limitmodell nachgewiesen |
 | Allgemeine PHP-Routen je Modul | FEHLT | Module benötigen derzeit Änderungen am zentralen Router |
 | Modul-SQL-Migration und Rollback | TEILWEISE | Tabellen/`module_migrations` existieren; allgemeiner Runner fehlt |

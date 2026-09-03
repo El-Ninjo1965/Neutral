@@ -12,7 +12,8 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 - abschließende Spezifikationsprüfung deckte zusätzlich öffentlich mitgelieferte Permissiondefinitionen, Datenbank- und Managementmetadaten auf; test-first entfernt, sodass der Clientkatalog nur Sicht-/Nutzungsdefinitionen behält,
 - fokussierte RED/GREEN-Nachweise sowie die PHP-ausgeschlossene Gesamtsuite mit 261 Tests, 258 bestanden, drei erwarteten PHP-Skips und 0 Fehlern bestanden,
 - sauberes Produktionspaket mit 93 Dateien gebaut; Manifest, Inventar, Größen, SHA-256, Einstiegspunkte, exakte HTTPS-Basis und Secretfreiheit bestanden. PHP-Binary und echtes Rewrite blieben wahrheitsgemäß `NICHT_GEPRUEFT`,
-- implementiert und dokumentiert durch **Codex (ChatGPT Work)**; GitHub-, CodeQL-, Deployment- und Live-Nachweise dieses Stands sind noch offen.
+- über den bestätigten Connector für Konto `El-Ninjo1965` als Commit `a7af22953ec3af6accdf93c937025acfd69690c7` fast-forward nach GitHub `main` integriert; der Connector meldete für diesen und frühere bekannte Commits keine Workflowläufe, daher bleiben CodeQL-, Deployment- und Live-Nachweise offen,
+- implementiert und dokumentiert durch **Codex (ChatGPT Work / GitHub-Connector)**.
 
 ## 2026-09-03 – Produktiven Admin-Funktionstest und neutrale Loginfelder abgeschlossen
 
