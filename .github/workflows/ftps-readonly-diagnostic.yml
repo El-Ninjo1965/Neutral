@@ -39,7 +39,8 @@ jobs:
             printf '%s\n' 'set ftp:ssl-force yes'
             printf '%s\n' 'set ftp:ssl-protect-data yes'
             printf 'open -u "%s","%s" "ftp://%s:%s"\n' "$FTP_USER" "$FTP_PASSWORD" "$FTP_HOST" "$FTP_PORT"
-            printf 'cls -1a "%s"\n' "$FTP_TARGET_DIR"
+            printf 'cd "%s"\n' "$FTP_TARGET_DIR"
+            printf '%s\n' 'cls -1a'
             printf '%s\n' 'bye'
           } | lftp >"$RESULT_FILE"
 
