@@ -2,7 +2,7 @@
 
 **Status:** TECHNISCHER IST-/ZIELVERTRAG
 
-**Geprüft:** 2026-09-04
+**Geprüft:** 2026-09-03
 **Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
 
 ## Statuslegende
@@ -49,7 +49,7 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 - Browser-Client vollständig unter `Web-App/`: `public/` enthält Shell und UI, `core/` den neutralen Client-Core, `app/` App-Shell und Erweiterungen sowie `apps/` die App-Metadaten.
 - Server vollständig unter `Server/`: `php/` enthält den PHP-Core, `public/` die PHP-Entrypoints/API und `node/` ausschließlich die Referenz-/Testlaufzeit.
 - Node ist keine Voraussetzung der Shared-Hosting-Produktion.
-- GPS ist die technische Client-/Gerätereferenzerweiterung unter `Web-App/app/modules/gps/`; `reference-notes` ist zusätzlich die fachlich unabhängige Server-/Modulvertragsreferenz und wird aus neuen Produktkopien entfernt.
+- GPS als einzige konkrete Referenzerweiterung unter `Web-App/app/modules/gps/`.
 
 ## 2. Web-App
 
@@ -105,14 +105,12 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 **IST:** Der Browser verwendet `ApiClient`; öffentliche API-URLs werden aus dem normalisierten Basispfad und `/api/v1` gebildet. Same-Origin-Cookies tragen die Session; bei Schreibmethoden wird `neutral_csrf` als `x-csrf-token` gesendet. Der PHP-Router validiert Identität, Berechtigungen und CSRF, ruft Services auf und antwortet über `JsonResponse`.
 
 ```text
-UI/Modul → ApiClient → HTTPS /api/v1 → PHP-Router → Service → PDO → MariaDB/MySQL
+UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → MariaDB/MySQL
 ```
 
-**IST:** Der API-Versionierungsvertrag ist vorhanden: `/api/v1` ist kanonisch, `/api` bleibt kompatibel, Antworten senden `X-Neutral-API-Version: 1` und unbekannte explizite Versionen werden abgewiesen. Ein zentraler kontrollierter Fetch-Timeout ist ebenfalls **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
+**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, explizite Versionierungsstrategie, Timeouts, Retry nur für sichere/idempotente Fälle und Offline-Queue.
 
-**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, Retry nur für nachweislich sichere/idempotente Fälle und Offline-Queue.
-
-**FEHLT/TEILWEISE:** Eine allgemeine sichere Retry-/Backoff-Policy fehlt; Schreib- und Authrequests werden nicht blind wiederholt.
+**FEHLT/TEILWEISE:** API-Version im URL-/Headervertrag und allgemeiner sicherer Retry fehlen. Ein zentraler kontrollierter Fetch-Timeout ist **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
 
 ## 7. Datenbank und lokale Speicherung
 
@@ -179,4 +177,24 @@ Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. E
 
 `CoreStartup.start()` ist die minimale READY-Phase und wartet nicht auf IndexedDB oder Module. `startBackground()` ist die deduplizierte Hintergrundkette für Storage, Clientfacaden und Discovery; ihre Phasen emittieren Status und bleiben bei Einzelproblemen diagnostizierbar. Nur storageabhängige Funktionen warten auf `startup:storage-ready` bzw. die Hintergrund-Promise.
 
-Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell
+Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell. `neutral:auth-ready` startet den Router genau einmal; es existiert kein DOM-Polling und kein pauschaler Startdelay. CoreStartup ist alleinige Discovery-Autorität. Adminviews dürfen nach bestätigter Identität laden, aber First Paint und Loginstatus nicht blockieren.
+
+### P3-Abnahmekriterien – IST
+
+1. Statische Shell ist ohne Serverantwort sichtbar.
+2. Minimal-Core enthält keine IndexedDB-, Authserver- oder Discovery-Wartekette.
+3. UI wird vor `startBackground()` interaktiv markiert.
+4. Storage, Authstatus, Discovery und Hintergrundabschluss besitzen getrennte Marken.
+5. CoreStartup besitzt genau eine Discovery-Aufrufstelle.
+6. API-Timeout lässt Auth-Shell sichtbar und erteilt keine Rechte.
+7. Adminrouter startet eventgetrieben erst nach bestätigter Identität.
+
+Zeitbudgets auf realer Mobilhardware bleiben zwei ausdrücklich offene P8-Gerätetests.
+
+## Portable Installation – IST/TEILWEISE
+
+**IST:** `scripts/lib/portable-install.js` ist der gemeinsame Kern für Allowlist-Inventar, Pfadnormalisierung, SHA-256, Secretprüfung und verifizierte Pakete. `build-production-package.js` erzeugt `dist/neutral-production/` über einen benachbarten temporären Baum und ersetzt nur einen über Produzent, Format, Metadaten, exakte Allowlist, Inventar und Hashes positiv verifizierten Altstand. Das Manifest hält mit `sourceDirty` konservativ fest, ob der Git-Arbeitsbaum beim Build sauber war. Das Paket enthält Root-`.htaccess`, `Web-App/`, `Server/php/`, `Server/public/`, `.env.example`, `manifest.json` und `SHA256SUMS`; Node-Server, Tests, Dokumentation, Git-, Runtime-, Backup-, Log- und Secretdateien sind ausgeschlossen.
+
+**IST:** `create-neutral-app.js` erstellt aus einer sauberen versionierten Quelle einen lokalen Projektbaum in einem leeren Ziel, setzt öffentliche Appmetadaten, nimmt GPS nur explizit auf und initialisiert Git nur auf Wunsch ohne Remote. `cpanel-preflight.js` verifiziert ein vorhandenes Paket, den exakten HTTPS-Root/-Basispfad, Einstiegspunkte und Secretfreiheit. Alle JSON-Statuswerte sind `PASS`, `BLOCKED` oder `NICHT_GEPRUEFT`; lokale Blocker enden ungleich null.
+
+**TEILWEISE:** Der Offline-Preflight führt keine Server-, Datenbank-, Upload- oder Portoperation aus. Fehlende lokale PHP-Binary und externe Apache-/LiteSpeed-Rewritefähigkeit bleiben `NICHT_GEPRUEFT`, wodurch der Gesamtstatus nicht `PASS` sein kann. Neuer physischer DocumentRoot, echter URL-Unterpfad, leere Datenbank, Setup/Migration/Betreiber, Live-Smoke-Tests, neues Repository sowie CodeQL/FTPS des Abschlusscommits sind noch extern nachzuweisen.
