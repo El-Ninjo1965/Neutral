@@ -2,7 +2,7 @@
 
 **Status:** TECHNISCHER IST-/ZIELVERTRAG
 
-**Geprüft:** 2026-09-03
+**Geprüft:** 2026-09-04
 **Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
 
 ## Statuslegende
@@ -49,7 +49,7 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 - Browser-Client vollständig unter `Web-App/`: `public/` enthält Shell und UI, `core/` den neutralen Client-Core, `app/` App-Shell und Erweiterungen sowie `apps/` die App-Metadaten.
 - Server vollständig unter `Server/`: `php/` enthält den PHP-Core, `public/` die PHP-Entrypoints/API und `node/` ausschließlich die Referenz-/Testlaufzeit.
 - Node ist keine Voraussetzung der Shared-Hosting-Produktion.
-- GPS als einzige konkrete Referenzerweiterung unter `Web-App/app/modules/gps/`.
+- Die konkrete Referenzmodulbasis besteht aus `GPS` als technischer Geräte-/Client-Referenz und `reference-notes` als zweitem fachlich unabhängigen Server-/Modulvertragsbeispiel unter `Web-App/app/modules/`; neue Produktkopien entfernen `reference-notes` als reine Vertragsreferenz automatisch.
 
 ## 2. Web-App
 
@@ -90,7 +90,7 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
 
-**IST:** Die PHP-Runtime ist für PHP 8.x, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
+**IST:** Die PHP-Runtime ist für PHP 8.1+, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
 
 **GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.
 
@@ -108,9 +108,11 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → MariaDB/MySQL
 ```
 
-**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, explizite Versionierungsstrategie, Timeouts, Retry nur für sichere/idempotente Fälle und Offline-Queue.
+**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, allgemeine Retry-/Backoff-Policy nur für sichere/idempotente Fälle und Offline-Queue.
 
-**FEHLT/TEILWEISE:** API-Version im URL-/Headervertrag und allgemeiner sicherer Retry fehlen. Ein zentraler kontrollierter Fetch-Timeout ist **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
+**IST:** API-Versionierung ist **VORHANDEN**: `/api/v1` ist kanonisch, `/api` bleibt kompatibel, Antworten senden `X-Neutral-API-Version: 1`, und unbekannte explizite Versionen wie `/api/v2` werden mit 404 abgewiesen. Ein zentraler kontrollierter Fetch-Timeout ist ebenfalls **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
+
+**FEHLT/TEILWEISE:** allgemeine sichere Retry-/Backoff-Policy bleibt weiterhin offen.
 
 ## 7. Datenbank und lokale Speicherung
 
@@ -149,7 +151,7 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 ## 11. Abhängigkeiten
 
 - Browser: Web APIs, globale Lade-Reihenfolge der Skripte, optional Fetch/IndexedDB/Geolocation.
-- PHP: PHP 8.x, PDO und `pdo_mysql`, Sessions, JSON, Dateisystemzugriff für Logs/Setupzustand.
+- PHP: PHP 8.1+, PDO und `pdo_mysql`, Sessions, JSON, Dateisystemzugriff für Logs/Setupzustand.
 - Entwicklung/Test: Node.js und npm; `argon2` für die Node-Referenzruntime sowie Paketbau, Bootstrap und Offline-Preflight.
 - Produktion: Node ist nicht erforderlich.
 

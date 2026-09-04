@@ -12,7 +12,7 @@ Core 1.0 ist fertig, wenn eine neue Produkt-App auf leerem kompatiblem Shared Ho
 
 ## Verbindliche Mindestplattform
 
-- PHP 8.x
+- PHP 8.1+
 - MySQL oder MariaDB über PDO
 - HTTPS
 - Apache/LiteSpeed-kompatibles Routing oder gleichwertige Hostkonfiguration

@@ -6,7 +6,7 @@ Diese Anleitung ergänzt den in [`Install-README-Web-App.md`](Install-README-Web
 
 - Linux Shared Hosting, z. B. cPanel
 - LiteSpeed oder Apache-kompatibler Rewritebetrieb
-- PHP 8.x
+- PHP 8.1+
 - PHP-Erweiterungen: PDO, `pdo_mysql`, JSON, Session, OpenSSL; zusätzlich übliche Core-Erweiterungen wie `mbstring` empfohlen, sofern Host/Anwendung sie verwendet
 - MariaDB oder MySQL mit InnoDB und utf8mb4
 - HTTPS-Zertifikat

@@ -1,7 +1,7 @@
 # NEUTRAL – Dokumentationsordnung
 
 **Status:** VERBINDLICH  
-**Geprüft:** 2026-09-02
+**Geprüft:** 2026-09-04
 
 Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand, nächste Schritte und abgeschlossene Änderungen stehen.
 
@@ -34,7 +34,7 @@ Ein lokaler Test, eine Simulation oder ein Node-Referenzpfad beweist nicht autom
 
 ## Plattformregel
 
-Neutral Core 1.0 muss produktiv mit PHP 8.x, MySQL/MariaDB, HTTPS und den üblichen Dateirechten eines Shared Hostings funktionieren. Node.js, Redis, WebSockets, permanente Worker und native Store-Werkzeuge sind optionale spätere Adapter und keine Voraussetzung für Core 1.0.
+Neutral Core 1.0 muss produktiv mit PHP 8.1+, MySQL/MariaDB, HTTPS und den üblichen Dateirechten eines Shared Hostings funktionieren. Node.js, Redis, WebSockets, permanente Worker und native Store-Werkzeuge sind optionale spätere Adapter und keine Voraussetzung für Core 1.0.
 
 ## Pflege bei jeder materiellen Änderung
 

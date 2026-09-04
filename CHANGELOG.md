@@ -1,5 +1,19 @@
 # NEUTRAL – Changelog
 
+## 2026-09-04 – PHP-Mindestversion und Dokumentationskonsistenz verifiziert
+
+- reale PHP-Mindestversion im produktiven Code auf `PHP 8.1+` bestätigt (`readonly`-Eigenschaften und Constructor Property Promotion in `Server/php/src/LoginRateLimiter.php` und `DatabaseBackupService.php`);
+- zentrale Dokumente auf die tatsächliche Mindestplattform `PHP 8.1+` mit MySQL/MariaDB und HTTPS präzisiert;
+- widersprüchliche Aussagen zu API-Versionierung, `GPS`/`reference-notes` und Übergabekriterien gegen Code und höhere Dokumentation abgeglichen.
+
+## 2026-09-04 – Dokumentationskonsistenz und Referenzmodularchitektur bereinigt
+
+- Architektur- und Dokumentationswidersprüche in `Architecture.md` anhand von Code, Tests und vertraglicher Dokumentation korrigiert,
+- `GPS` als technische Geräte-/Client-Referenz und `reference-notes` als zweites fachlich unabhängiges Server-/Modulvertragsbeispiel eindeutig getrennt,
+- `reference-notes` als reine Vertragsreferenz beschrieben und dessen Entfernung bei neuen Produktkopien mit dem Bootstrap-Vertrag bestätigt,
+- API-Versionierung und zentralen Timeout-Vertrag mit den tatsächlichen PHP-/Browserimplementierungen in Einklang gebracht,
+- betroffene Prüfdatumsangaben auf 2026-09-04 aktualisiert und `WORKFLOW.md` um den Nachweis der Dokumentationsprüfung ergänzt.
+
 ## 2026-09-04 – Dauerhaften Produktions-Smoke an das Deployment gebunden
 
 - bisherigen einmaligen HTTP-Nachweis als wiederholbaren, rein lesenden Node-Smoke umgesetzt,

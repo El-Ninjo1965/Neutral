@@ -15,7 +15,7 @@ Dieses Dokument enthält verbindliche Arbeitsregeln und ein fortlaufendes Arbeit
 - NEUTRAL ist ein neutrales Entwicklungsframework, keine konkrete Fachanwendung.
 - Web-App und Server bleiben getrennte Hauptkomponenten; Kommunikation erfolgt über dokumentierte HTTPS/API-Verträge.
 - Core nicht für einzelne Features umbauen. Universelle Erweiterungspunkte werden nur evidenzbasiert und dokumentiert ergänzt.
-- Shared Hosting mit PHP 8.x und MariaDB/MySQL ist die erste Produktionsbasis. Node.js darf Entwicklung und Tests unterstützen, ist aber keine Produktionsvoraussetzung.
+- Shared Hosting mit PHP 8.1+ und MariaDB/MySQL ist die erste Produktionsbasis. Node.js darf Entwicklung und Tests unterstützen, ist aber keine Produktionsvoraussetzung.
 - GPS ist technische Referenzerweiterung, keine Core- oder Produktidentität.
 
 ## 3. Verbindliche Vorbereitung vor jeder Änderung
@@ -27,6 +27,8 @@ In dieser Reihenfolge vollständig lesen bzw. prüfen:
 3. `TODO.md`
 4. relevante technische Dokumentation (`Architecture.md`, `Functions.md`, `API.md`, `Database.md`, `Security.md`, Installations- oder Moduldokumentation)
 5. tatsächlichen aktuellen Code, Tests, Git-Status und betroffene Konfiguration
+
+Vor jeder Arbeitsaufnahme muss ein Agent das aktuelle `WORKFLOW.md` lesen und die aktuelle Arbeitslage verstehen. Relevante Informationen dürfen nicht ausschließlich im Copilot-/Codex-/ChatGPT-Chat verbleiben. Ein zukünftiger Agent muss den Arbeitsstand anhand von Repository plus `WORKFLOW.md` nachvollziehen können, ohne frühere Chatlogs zu benötigen.
 
 Keine alte Annahme, Dokumentationsaussage oder frühere Diagnose ungeprüft übernehmen. Ist Dokumentation und Code widersprüchlich, wird der Ist-Zustand im Code ermittelt und die Abweichung dokumentiert; Zielentscheidungen folgen `VISION.md`.
 
@@ -96,8 +98,48 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - `ModuleCreation.md`: verbindlicher aktueller Erweiterungsvertrag.
 - `TODO.md`: nur tatsächliche Reihenfolge und nicht nachweislich erledigte Arbeit offen lassen.
 - `WORKFLOW.md`: jede materielle Änderung mit Aufgabe, ausführender/dokumentierender Instanz, Nachweisen, Ergebnis und offenen Punkten protokollieren.
+- Jede materielle Änderung muss im `WORKFLOW.md` dokumentiert werden, inklusive neuer Erkenntnisse, Ursachenanalysen, technischer Entscheidungen und Begründungen, relevanter verworfener Lösungswege, Risiken, technischer Schulden, bewusst nicht ausgeführter Änderungen, neu erkannter Folgearbeiten, eigener technischer Einschätzung und eigener Verbesserungsvorschläge.
+- Vorschläge sind eindeutig als `VORSCHLAG – noch nicht beschlossen/umgesetzt` zu kennzeichnen und werden dadurch nicht automatisch zu einer Anforderung oder TODO.
+- Eine spätere Agentensitzung muss den Stand aus Repository plus `WORKFLOW.md` rekonstruieren können. Chatprotokolle sind keine alleinige Autorität für Arbeitsstand, Entscheidungslogik oder Risiken.
+
+VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktische Überprüfung und Übergabe zu stark anwächst, ist die sinnvollste Fortsetzungsform eine dateiübergreifende Folge mit klarer Namenskonvention wie `WORKFLOW-YYYY-MM-DD.md` oder `WORKFLOW-<Thema>.md`, wobei die Hauptdatei die Kontinuität und die verknüpften Folgeblätter listet. Alte Einträge bleiben unverändert erhalten; keine frühere Historie wird gelöscht. Eine harte Zeichen- oder Zeilenbegrenzung ist derzeit keine belastbare Projektregel und wird erst nach einer konkreten Projektentscheidung eingeführt.
 
 ## 10. Fortlaufendes Arbeitsprotokoll
+
+### 2026-09-04 – Workflow-Übergabeprotokoll und Regelprüfung
+
+- **Aufgabe:** Prüfen, ob das bestehende `WORKFLOW.md` bereits als persistentes Übergabeprotokoll zwischen Copilot, ChatGPT/Lea, Codex und zukünftigen Agenten ausreicht; nur tatsächlich fehlende Regeln ergänzen, ohne redundante Parallelregeln einzuführen.
+- **Ausgangszustand:** Bereits vorhandene Regeln verlangen das vollständige Lesen von `VISION.md`, `WORKFLOW.md`, `TODO.md` und relevanter Dokumentation vor jeder Arbeit sowie die Dokumentation jeder materiellen Änderung im `WORKFLOW.md`; zusätzlich existiert eine fortlaufende Arbeitsprotokollstruktur und eine Dokumentationshierarchie in `DOCUMENTATION.md`. Vorhanden ist kein expliziter, verbindlicher Eintrag zu Rediscovery von Workflows durch spätere Agenten, keine eindeutige Pflicht zur Erfassung von Ursachen, Risiken, verworfenen Wegen und Vorschlägen sowie keine belastbare Fortsetzungsregel für ein zu lang werdendes `WORKFLOW.md`.
+- **Ausgeführt und dokumentiert durch:** **Copilot Agent / GitHub Codespace**.
+- **Bereits vorhandene Regeln:** `DOCUMENTATION.md` beschreibt die verbindliche Reihenfolge und die Pflicht, bei Änderungen betroffene Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und `WORKFLOW.md` gemeinsam aktuell zu halten. `WORKFLOW.md` bindet das Lesen von `VISION.md`/`WORKFLOW.md`/`TODO.md` vor jeder Änderung und die Dokumentation jeder materiellen Änderung. `WORKFLOW.md` definiert außerdem das fortlaufende Protokoll, den Statuskontext und die Git-/GitHub-Regeln.
+- **Tatsächlich fehlende Regeln:** Eine explizite Anforderung, dass relevante Informationen nicht nur im Chat landen dürfen und dass spätere Agenten den Stand aus Repository + `WORKFLOW.md` rekonstruieren müssen; eine Liste der im `WORKFLOW.md` zu dokumentierenden Informationsarten (Erkenntnisse, Ursachen, technische Entscheidungen, verworfene Wege, Risiken, Schulden, nicht ausgeführte Änderungen, Folgearbeiten, technische Einschätzung, Vorschläge); eine klare Vorgabe für `VORSCHLAG – noch nicht beschlossen/umgesetzt`; eine eindeutige, aber nicht willkürliche Fortsetzungs- bzw. Größenregel, falls das Protokoll unübersichtlich wird.
+- **Vorgenommene Ergänzungen:** `WORKFLOW.md` wurde so präzisiert, dass das Lesen des aktuellen `WORKFLOW.md` vor jeder Arbeitsaufnahme verbindlich ist und relevante Übergabeinformationen nicht ausschließlich im Chat verbleiben dürfen. `WORKFLOW.md` fordert nun zusätzlich die Erfassung von Erkenntnissen, Ursachen, Entscheidungen, verworfenen Wegen, Risiken, technischen Schulden, Folgearbeiten, technischen Einschätzungen und Vorschlägen; Vorschläge sind als `VORSCHLAG – noch nicht beschlossen/umgesetzt` zu kennzeichnen.
+- **Eigene Vorschläge:** `VORSCHLAG – noch nicht beschlossen/umgesetzt` für eine Fortsetzungsregel: `WORKFLOW.md` bleibt der zentrale Index; bei praktischer Überlastung wird ein dateigebundenes Folgeprotokoll verwendet (`WORKFLOW-YYYY-MM-DD.md` oder `WORKFLOW-<Thema>.md`), ohne alte Einträge zu löschen. Keine harte Zeichen-/Zeilenobergrenze wird ohne echte Projektentscheidung festgelegt.
+- **Offene Entscheidungen:** Die konkrete Form der Folgeprotokolle und die spätere Entscheidung über eventuelle feste Größen-/Zeilenlimits bleiben offen; keine bindende harte Grenze wurde eingeführt.
+- **Checks:** `git diff --check` und `git diff` wurden verifiziert; keine Codeänderung und kein Commit/Push wurden ausgeführt. Der Arbeitsbaum enthält bereits bestehende uncommittete Dokumentationsänderungen aus dem unmittelbar vorherigen Auftrag; sie wurden nicht zurückgesetzt oder überschrieben.
+- **Git-Status:** `main...origin/main` mit laufenden Dokumentationsänderungen im Arbeitsbaum; keine neuen produktiven Code-Änderungen in diesem Workflow-Task.
+
+### 2026-09-04 – PHP-Umgebung und Mindestversion im neuen Codespace
+
+- **Aufgabe:** Die aktive Codespace-PHP-Umgebung mit PHP >= 8.1 absichern, ohne den produktiven Code auf PHP 8.0 zurückzunehmen; den tatsächlichen Mindestbedarf im produktiven PHP-Code evidenzbasiert bestimmen und die Dokumentationslage prüfen.
+- **Ausgeführt und dokumentiert durch:** **Copilot Agent / GitHub Codespace**.
+- **Ausgangszustand:** Der Codespace nutzte aktuell `/home/codespace/.php/current/bin/php` mit PHP 8.0.30. Der produktive Code verwendet `readonly`-Eigenschaften und Constructor Property Promotion, die in PHP 8.1+ gültig sind. `LoginRateLimiter.php` war daher in der Codespace-Umgebung syntaktisch ungültig, obwohl der Code in einer passenden PHP-Version korrekt ist.
+- **Sichere Umgebungsmaßnahme:** In der laufenden Session ist die sichere, lokale Lösung `export PATH="/usr/local/php/current/bin:$PATH"` bzw. die direkte Nutzung von `/usr/local/php/current/bin/php`. Dieses System ist in `/usr/local/php` bereits als PHP 8.4.15 installiert und stabil. Ein globaler Repo-/Systemwechsel wurde nicht vorgenommen, um die Codespace-Umgebung für andere Projekte nicht unbeabsichtigt zu verändern.
+- **Verifizieren:** `php -v` liefert jetzt PHP 8.4.15, `which php` zeigt `/usr/local/php/current/bin/php`, und `php -l Server/php/src/LoginRateLimiter.php` meldet `No syntax errors detected` in der aktiven 8.4-Umgebung.
+- **Technische Mindestversion:** Der produktive PHP-Code verwendet `private readonly`-Eigenschaften und Constructor Property Promotion in `Server/php/src/LoginRateLimiter.php` und weiteren Serverklassen. Diese Sprachfeatures sind PHP 8.1+; dadurch ist die reale Mindestversion des bisherigen Codes `PHP 8.1+`, nicht nur generisch `PHP 8.x`.
+- **Dokumentationslage:** Die zentralen Dokumente nennen allgemein `PHP 8.x`, was als Grobgriff für die Plattform gilt, aber den tatsächlichen Codebedarf nicht exakt wiedergibt. Es ist kein direkter Widerspruch zu `PHP 8.x` im Sinne eines offenen 8er-Intervalls, aber eine ungenaue, fachlich unvollständige Dokumentation, da der Code ausdrücklich 8.1+-Features nutzt. Die genaue, evidenzbasierte Formulierung lautet: `PHP 8.1+` bzw. für Core-1.0: `PHP 8.1+ mit PDO/MySQL/MariaDB und HTTPS`.
+- **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Falls der Codespace oder die Entwicklungseinrichtung dauerhaft auf eine explizite PHP-Version festgelegt werden soll, wäre eine repo- oder workspacebasierte Devcontainer-/Codespace-Konfiguration geeignet. Sie wurde hier nicht erstellt, da keine Projektentscheidung für die dauerhafte Absicherung der Codespace-Umgebung vorliegt und der sichere laufende Fix in der aktuellen Session ausreicht.
+- **Ergebnis:** Der Codespace-Fehler ist ein Umgebungs-/Versionproblem, kein echter Codefehler im Produktcode selbst. Der Code ist in einer passenden PHP-Version (8.4.15) syntaktisch gültig. Die Dokumentsprache „PHP 8.x“ ist zu breit, aber nicht falsch als Obergriff; sie sollte für Genauigkeit künftig auf `PHP 8.1+` präzisiert werden.
+
+### 2026-09-04 – Dokumentationskonsistenzprüfung und Architekturkorrektur
+
+- **Aufgabe:** Verbindliche Repository-Dokumentation gegen aktuellen Code, Tests und den höher priorisierten Dokumentationsauftrag prüfen; nur nachweisbare Widersprüche korrigieren, ohne Feature- oder Core-Änderungen vorzunehmen.
+- **Ausgeführt und dokumentiert durch:** **Copilot Agent im neu erstellten GitHub Codespace**.
+- **Geprüfte Dokumente:** `VISION.md`, `WORKFLOW.md`, `DOCUMENTATION.md`, `CORE-1.0.md`, `TODO.md`, `STATUS.md`, `Architecture.md`, `Functions.md`, `API.md`, `ModuleCreation.md`, `CHANGELOG.md` sowie die relevanten Codepfade `Server/public/api/index.php`, `Web-App/public/api-client.js`, `scripts/create-neutral-app.js`, `Web-App/app/modules/index.json` und die zugehörigen Tests.
+- **Nachweise:** `git fetch origin`, `git status --short --branch`, `git rev-list --left-right --count HEAD...origin/main`, `grep`-Nachweise für `X-Neutral-API-Version: 1`, `/api/v1`, `reference-notes` und `viewer`/`clientAccess` sowie die modulübergreifende Bootstrap-Logik in `scripts/create-neutral-app.js`.
+- **Änderungen:** `Architecture.md` korrigiert die veraltete Aussage, dass nur `GPS` als Referenzerweiterung existiere, und ersetzt sie durch die tatsächliche Trennung: `GPS` ist die technische Client-/Geräte-Referenz, `reference-notes` das zweite fachlich unabhängige Server-/Modulvertragsbeispiel, das bei neuen Produktkopien als reine Vertragsreferenz entfernt wird. Zusätzlich wurde der API-Vertragsabschnitt auf den tatsächlichen Stand gebracht: `/api/v1` ist kanonisch, `/api` bleibt kompatibel, `X-Neutral-API-Version: 1` wird gesetzt und unbekannte explizite Versionen werden 404-abgewiesen; die allgemeine sichere Retry-/Backoff-Policy bleibt weiterhin offen. `DOCUMENTATION.md` und `VISION.md` erhielten das neue Prüfdatum 2026-09-04.
+- **Ergebnis:** Die dokumentierte Architektur stimmt mit dem im Repository implementierten Vertrag überein. Bereits in `STATUS.md` und `TODO.md` veröffentlichte offene Punkte wie allgemeine Retry-/Backoff, sichere Provider- und vollständige Neuinstallationsabnahme bleiben unverändert offen und werden nicht als vorhanden dargestellt.
+- **Offene Punkte:** Allgemeine sichere Retry-/Backoff-Policy, Provideradapter mit Server-Geheimnissen, vollständige Neuinstallation in neuem Repository/Serverziel und die letzte Core-1.0-Abnahme sind weiterhin `TODO.md` bzw. `STATUS.md` zugeordnet und wurden nicht als erledigt markiert.
 
 ### 2026-09-03 – Allgemeinen Modul-Serververtrag abschließen
 

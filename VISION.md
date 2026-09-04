@@ -2,7 +2,7 @@
 
 **Status:** LANGFRISTIGES ZIELBILD
 
-**Geprüft:** 2026-09-03
+**Geprüft:** 2026-09-04
 **Einordnung:** Umfang und Abnahme der ersten stabilen Version stehen in [`CORE-1.0.md`](CORE-1.0.md). Der aktuelle Stand steht in [`STATUS.md`](STATUS.md).
 
 ## 1. Identität und Zweck
@@ -124,14 +124,14 @@ Die Anwendung zeigt belastbare Lade-, Offline- und Fehlerzustände. Startzeit, F
 
 ## 8. Server-Minimalarchitektur und Portabilität
 
-Die verbindliche Mindestplattform für Core 1.0 ist PHP 8.x mit MySQL/MariaDB und HTTPS auf normalem Shared Hosting. Node.js, permanente Worker, Redis und WebSockets dürfen später als leistungsfähigere Adapter ergänzt werden, sind aber keine Voraussetzung für die Grundfunktion. Ein Infrastrukturwechsel soll den öffentlichen App-/API-Vertrag nicht unnötig verändern.
+Die verbindliche Mindestplattform für Core 1.0 ist PHP 8.1+ mit MySQL/MariaDB und HTTPS auf normalem Shared Hosting. Node.js, permanente Worker, Redis und WebSockets dürfen später als leistungsfähigere Adapter ergänzt werden, sind aber keine Voraussetzung für die Grundfunktion. Ein Infrastrukturwechsel soll den öffentlichen App-/API-Vertrag nicht unnötig verändern.
 
 Die erste Produktionsversion muss auf einfachem Shared Hosting lauffähig sein. Referenzumgebung:
 
 - Linux
 - cPanel
 - LiteSpeed oder kompatibler Apache-Betrieb
-- PHP 8.x
+- PHP 8.1+
 - MariaDB oder MySQL
 - HTTPS
 
