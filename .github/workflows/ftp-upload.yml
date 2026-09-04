@@ -138,12 +138,15 @@ jobs:
             const result = '${{ needs.deploy.result }}';
             const failedStage = '${{ needs.deploy.outputs.failed_stage }}' || 'unknown';
             const state = result === 'success' ? 'success' : 'failure';
+            const statusContext = state === 'success'
+              ? 'production/ftps-http'
+              : `production/ftps-http/${failedStage}`;
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
               state,
-              context: 'production/ftps-http',
+              context: statusContext,
               description: state === 'success'
                 ? 'FTPS deployment and read-only HTTP smoke passed'
                 : `Production pipeline failed at ${failedStage}`

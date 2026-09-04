@@ -61,6 +61,7 @@ test('FTPS workflow runs the permanent read-only HTTP smoke after deployment', (
   }
   assert.match(workflow, /failed_stage/);
   assert.match(workflow, /needs\.deploy\.outputs\.failed_stage/);
+  assert.match(workflow, /`production\/ftps-http\/\$\{failedStage\}`/);
 });
 
 test('production smoke covers public, protected, rewrite, viewer and module-contract boundaries', () => {
