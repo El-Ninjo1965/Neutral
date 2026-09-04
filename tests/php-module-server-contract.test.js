@@ -81,7 +81,7 @@ $base = [
   ],
   'database' => [
     'tables' => [['name' => 'reference_notes_items', 'destroyOnUninstall' => false]],
-    'migrations' => [['key' => '2026_09_03_0001', 'version' => '1.0.0']],
+    'migrations' => [['key' => '2026_09_03_0001_create_notes', 'version' => '1.0.0']],
   ],
   'limits' => [[
     'key' => 'reference-notes.items',
@@ -125,7 +125,7 @@ echo json_encode([
   assert.equal(payload.id, 'reference-notes');
   assert.equal(payload.route.path, 'items');
   assert.equal(payload.route.limit.key, 'reference-notes.items');
-  assert.deepEqual(payload.migration, { key: '2026_09_03_0001', version: '1.0.0' });
+  assert.deepEqual(payload.migration, { key: '2026_09_03_0001_create_notes', version: '1.0.0' });
   assert.deepEqual(payload.uninstall, { dataPolicy: 'retain' });
   assert.deepEqual(payload.rejected, {
     id: true,
