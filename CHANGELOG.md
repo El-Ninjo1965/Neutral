@@ -10,6 +10,7 @@
 - Titel und Modulverträge werden aus dem jeweiligen Projekt abgeleitet; neue App-Kopien erhalten eine verpflichtend neu zu setzende öffentliche Zielvariable und keine Neutral-spezifische GPS-Viewer-Vorgabe,
 - der abschließende Job veröffentlicht `production/ftps-http`; bei Fehlern hängt er nur die begrenzte Stufe `target`, `tests`, `package`, `client`, `upload` oder `smoke` an den Statuskontext an, damit der Push-Workflow ohne Log- oder Secretzugriff über den GitHub-Connector überprüfbar ist,
 - nach dem ersten belegten Abbruch in `tests` wurde die Diagnose test-first auf den bereinigten Testdateinamen begrenzt; Testausgaben, Laufzeitwerte und Secrets werden nicht in den Commitstatus übernommen,
+- der dadurch identifizierte Fehler in `app-bootstrap` stammte aus einer unvollständigen Auswahl der verschachtelten PHP-freien Kopientests; die Auswahl erkennt PHP-Prozessfälle nun am Inhalt und schließt sie vollständig aus, während die oberste GitHub-Suite diese Fälle weiterhin mit PHP ausführt,
 - test-first durch **Codex (ChatGPT Work / GitHub-Connector)** umgesetzt; lokale ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern; erster Lauf des neuen dauerhaften Gates wird mit dem Abschlusscommit ausgelöst.
 
 ## 2026-09-03 – Allgemeinen Modul-Serververtrag vervollständigt

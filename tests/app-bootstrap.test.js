@@ -92,11 +92,20 @@ function runBootstrap(target, options = {}) {
   return runBootstrapFrom(cleanSourceRoot, target, options);
 }
 
-function runCopiedNonPhpTests(target) {
-  const testFiles = fs.readdirSync(path.join(target, 'tests'))
+function copiedNonPhpTestFiles(target) {
+  return fs.readdirSync(path.join(target, 'tests'))
     .filter((name) => name.endsWith('.test.js'))
-    .filter((name) => !/(admin-php-entry|php-backup|php-login-rate-limit|portability-config)/.test(name))
+    .filter((name) => name !== 'portability-config.test.js')
+    .filter((name) => {
+      const source = fs.readFileSync(path.join(target, 'tests', name), 'utf8');
+      return !/spawn(?:Sync)?\(\s*['"]php['"]/i.test(source);
+    })
+    .sort()
     .map((name) => path.join('tests', name));
+}
+
+function runCopiedNonPhpTests(target) {
+  const testFiles = copiedNonPhpTestFiles(target);
   const childEnvironment = {
     ...process.env,
     NEUTRAL_SKIP_GENERATED_SUITE: '1',
@@ -110,6 +119,13 @@ function runCopiedNonPhpTests(target) {
     timeout: 120000
   });
 }
+
+test('copied non-PHP suite excludes every test that starts a PHP process', () => {
+  for (const relativePath of copiedNonPhpTestFiles(cleanSourceRoot)) {
+    const source = fs.readFileSync(path.join(cleanSourceRoot, relativePath), 'utf8');
+    assert.doesNotMatch(source, /spawn(?:Sync)?\(\s*['"]php['"]/i, relativePath);
+  }
+});
 
 function readEnvironment(filePath) {
   const result = new Map();
