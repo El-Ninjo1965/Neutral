@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-04
-**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag; der nachfolgende permanente Produktions-Smoke ist lokal geprüft und wird durch seinen Abschlusscommit erstmals als Teil des FTPS-Jobs ausgeführt
+**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag; Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige GitHub-/PHP-Tests, Paketbau, explizites FTPS-Deployment und den permanenten rein lesenden Produktions-Smoke
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -41,7 +41,7 @@ Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Conn
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
 | Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus und anonymer Modulkatalogfallback vorhanden; Sync-Queue und Konfliktengine fehlen |
-| Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung; Lauf `33802485499` deployte erfolgreich in das geschützte Ziel. Read-only-Lauf `33803384719` bestätigte dort `.htaccess`, `Web-App/` und `Server/` ohne Änderung oder Secret-Ausgabe |
+| Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung. Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige PHP-Tests, Paketbau, Upload und das permanente Post-Deployment-HTTP-Gate; älterer Read-only-Lauf `33803384719` bestätigte zudem Zielinventar ohne Änderung oder Secret-Ausgabe. |
 | Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
 | Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
 | Installation unter URL-Unterpfad | TEILWEISE | PHP-/Browserresolver, direktes API-Rewrite, paketiertes `<base href>`, Paket/Preflight und tiefe `/meine-app`-SPA-Fixtures sind lokal getestet; echter Apache-/PHP-/DB-End-to-End-Lauf unter einem URL-Unterpfad fehlt |
@@ -71,4 +71,4 @@ Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die vor
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist der nachweislich grüne FTPS-Lauf einschließlich des neuen permanenten HTTP-Smokes. Danach folgen die externe Portabilitätsabnahme, sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.
+Der nächste Meilenstein ist die externe Neuinstallations- und Portabilitätsabnahme in einem neuen physischen DocumentRoot und unter einem URL-Unterpfad. Danach folgen sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.

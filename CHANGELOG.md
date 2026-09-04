@@ -12,7 +12,7 @@
 - nach dem ersten belegten Abbruch in `tests` wurde die Diagnose test-first auf den bereinigten Testdateinamen begrenzt; Testausgaben, Laufzeitwerte und Secrets werden nicht in den Commitstatus übernommen,
 - der dadurch identifizierte Fehler in `app-bootstrap` stammte aus einer unvollständigen Auswahl der verschachtelten PHP-freien Kopientests; die Auswahl erkennt PHP-Prozessfälle nun am Inhalt und schließt sie vollständig aus, während die oberste GitHub-Suite diese Fälle weiterhin mit PHP ausführt,
 - der nächste PHP-Lauf identifizierte im Serververtrag einen verkürzten, fälschlich als gültig markierten Migrations-Testschlüssel; die Testfixture verwendet nun wie Produktivvertrag und Referenzmodul das vollständige Format `Datum_Laufnummer_Beschreibung`, ohne die Validierung aufzuweichen,
-- test-first durch **Codex (ChatGPT Work / GitHub-Connector)** umgesetzt; lokale ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern; erster Lauf des neuen dauerhaften Gates wird mit dem Abschlusscommit ausgelöst.
+- test-first durch **Codex (ChatGPT Work / GitHub-Connector)** umgesetzt; lokale ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern; Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand anschließend vollständige GitHub-/PHP-Tests, Paketbau, explizites FTPS und den permanenten Read-only-HTTP-Smoke (`production/ftps-http`).
 
 ## 2026-09-03 – Allgemeinen Modul-Serververtrag vervollständigt
 
