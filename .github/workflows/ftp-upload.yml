@@ -49,7 +49,22 @@ jobs:
           fi
           php -v
           npm ci
+          set +e
           npm test
+          TEST_EXIT=$?
+          set -e
+
+          FAILED_TEST='none'
+          if [ "$TEST_EXIT" -ne 0 ]; then
+            for TEST_FILE in tests/*.test.js; do
+              if ! node --test --test-concurrency=1 "$TEST_FILE" >/dev/null 2>&1; then
+                FAILED_TEST="$(basename "$TEST_FILE" .test.js)"
+                break
+              fi
+            done
+          fi
+          printf 'failed_test=%s\n' "$FAILED_TEST" >> "$GITHUB_OUTPUT"
+          exit "$TEST_EXIT"
 
       - name: Verifiziertes Produktionspaket bauen
         id: package
@@ -108,6 +123,7 @@ jobs:
         env:
           TARGET_OUTCOME: ${{ steps.target.outcome }}
           TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          TEST_FAILURE: ${{ steps.tests.outputs.failed_test }}
           PACKAGE_OUTCOME: ${{ steps.package.outcome }}
           CLIENT_OUTCOME: ${{ steps.client.outcome }}
           UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
@@ -122,6 +138,9 @@ jobs:
               break
             fi
           done
+          if [ "$FAILED_STAGE" = 'tests' ] && [[ "$TEST_FAILURE" =~ ^[a-z0-9-]+$ ]] && [ "$TEST_FAILURE" != 'none' ]; then
+            FAILED_STAGE="tests/$TEST_FAILURE"
+          fi
           printf 'failed_stage=%s\n' "$FAILED_STAGE" >> "$GITHUB_OUTPUT"
 
   report:
