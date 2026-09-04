@@ -1,5 +1,15 @@
 # NEUTRAL – Changelog
 
+## 2026-09-03 – Allgemeinen Modul-Serververtrag vervollständigt
+
+- strikten, versionierten Kompatibilitätsvertrag für Core `1.x`, API `v1` und PHP 8+ eingeführt,
+- geschützte modul-eigene PHP-Entries, Services und relative API-Routen über einen einzigen fachneutralen Dispatcher angebunden; Auth, Permission und CSRF bleiben serverautoritativ,
+- rollenspezifische quantitative Limits sowie SHA-256-gebundene, gesperrte SQL-Migrationen mit Kompensations- und sicherem Rollbackpfad umgesetzt,
+- Modulupdate nur im inaktiven Zustand und ohne Downgrade; Deinstallation nur inaktiv, standardmäßig mit Datenerhalt und destruktiv ausschließlich für validierte eigene Tabellen,
+- GPS auf den Vertrag gehoben und `reference-notes` als zweites unabhängiges, real ausführbares Vertragsreferenzmodul ergänzt; neue Produktkopien entfernen dieses reine Referenzmodul automatisch,
+- zwei unabhängige Reviewrunden vollständig eingearbeitet: fremde/destruktive Rollbackziele geschlossen, reversible Eigene-Tabellen-Migrationen erhalten, Downgrades an allen Lifecycle-Einstiegen gesperrt, Migrationshistorie bei `retain` erhalten, Servicefactory erst nach Autorisierung, Updatekompensation und Permission-Pruning, limitweite DB-Sperre, vollständiges GPS-Opt-out und crashfester Core-DDL-Retry,
+- test-first durch **Codex (ChatGPT Work)** umgesetzt; lokal 269/269 ausführbare Tests bestanden, acht PHP-Prozesstests mangels lokaler PHP-Binary übersprungen; GitHub-/PHP-/Produktionsnachweis folgt separat.
+
 Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
 
 ## 2026-09-03 – Anonymen Offline-Modulzugriff und GPS-Startverhalten lokal abgeschlossen

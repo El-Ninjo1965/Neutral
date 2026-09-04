@@ -46,6 +46,8 @@
 
 **VORHANDEN:** Für den öffentlichen Modulkatalog werden die gespeicherten Modulrechte der Systemrolle `viewer` in eine anonyme, auf `canView` und `canUse` reduzierte Browserentscheidung abgebildet. Die Rolle selbst, effektive Permissionlisten sowie Verwaltungsrechte werden nicht an den anonymen Client übertragen. Diese Abbildung gilt ausschließlich für lokale Modulsichtbarkeit/-nutzung und autorisiert keinen Serverendpunkt.
 
+**VORHANDEN:** Produktive Modulrouten werden zentral nur für registrierte aktive Module ausgeführt. Der Server prüft Authentifizierung, deklarierte Permission und Schreibmethoden-CSRF, bevor Entry oder Servicefactory ausgeführt werden; quantitative Limits umfassen Nutzungsmessung und Mutation unter einer DB-Sperre. Server-Entries müssen im geschützten Modulpfad liegen; Pfadflucht und Manifest-/Entry-Identitätsabweichung werden abgelehnt. Migrationen sind SHA-256-gebunden und dürfen in neueren Definitionen nicht fehlen; Installation, Aktivierung und Update lehnen Downgrades ab. Deinstallation erfordert einen inaktiven Zustand. Destruktive Gegenmigrationen dürfen ausschließlich deklarierte eigene Tabellen verändern und müssen am Ende jede davon explizit entfernen; `retain` erhält Daten und Migrationshistorie.
+
 **TEILWEISE:** Rechtebezeichnungen und Endpointmatrix müssen bei jeder API-Änderung synchron dokumentiert und getestet werden.
 
 ## 7. CSRF

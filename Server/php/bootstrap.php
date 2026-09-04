@@ -20,6 +20,11 @@ require_once __DIR__ . '/src/Phase4AuthRbac.php';
 require_once __DIR__ . '/src/SchemaMigrator.php';
 require_once __DIR__ . '/src/CoreDataSeeder.php';
 require_once __DIR__ . '/src/Phase6AdminStorage.php';
+require_once __DIR__ . '/src/ModuleContract.php';
+require_once __DIR__ . '/src/ModuleServerRegistry.php';
+require_once __DIR__ . '/src/ModuleHttpKernel.php';
+require_once __DIR__ . '/src/ModuleLimitGuard.php';
+require_once __DIR__ . '/src/ModuleMigrationRunner.php';
 require_once __DIR__ . '/src/Phase7ModuleRuntime.php';
 
 /**

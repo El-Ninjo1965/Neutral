@@ -2,13 +2,15 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-03
-**Referenz:** GitHub `main`, Codecommit `f1b1522b48f5605a20219d0cc57fb9eb2115ebb2`; vollständige Prüfung und Änderungen siehe `CHANGELOG.md`
+**Referenz:** Arbeitsbranch `codex/module-contract` nach `f1b1522b48f5605a20219d0cc57fb9eb2115ebb2`; GitHub-/Produktionsnachweis des Abschlusscommits steht noch aus
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
 ## Gesamturteil
 
-Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der Modul-Lifecycle sind substanziell vorhanden. Die offenen Kernarbeiten sind endlich und konkret: universelle Modul-Servererweiterung, Modulmigrationen, Limits, sichere Drittanbieterprovider, Portabilitätsabnahme und vollständige Produktionsprüfung.
+Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der vollständige allgemeine Modulvertrag sind vorhanden. Offen bleiben sichere Drittanbieterprovider, externe Portabilitätsabnahme und vollständige Produktionsprüfung.
+
+Der Modul-Serververtrag wurde durch **Codex (ChatGPT Work)** test-first vervollständigt: streng versionierte Kompatibilität, modul-eigene geschützte Services/Routen, serverseitige Rechte und Mengenlimits, SHA-256-gebundene Migrationen mit Fehlerkompensation, inaktive Updates ohne Downgrade sowie eine inaktivitätsgebundene Deinstallation mit sicherem `retain`-Standard. GPS und das fachlich unabhängige Referenzmodul `reference-notes` erfüllen denselben Vertrag; der App-Bootstrap entfernt das reine Vertragsreferenzmodul aus neuen Produkten. Lokal bestanden 269 von 269 ausführbaren Tests; acht PHP-Prozesstests wurden mangels lokaler PHP-Binary wahrheitsgemäß übersprungen. GitHub Actions, echtes PHP und Produktion sind für diesen Arbeitsstand noch nicht behauptet.
 
 Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
 
@@ -26,9 +28,10 @@ Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Conn
 | PHP-Modulregistrierung und Zustände | VORHANDEN | `Phase7ModuleRuntime.php`, Admin-API |
 | Modulrechte nach Rollen | VORHANDEN | Modulmanifest, RBAC, Admin-Modulansicht, GPS-Referenz |
 | Anonymer Modulzugriff | VORHANDEN | GitHub `main` `f1b1522`; vollständige Node-/PHP-Suite vor Deployment, anonymer Livekatalog mit aktivem GPS und `canView`/`canUse`, keine Adminmetadaten |
-| Mengenlimits/Entitlements | FEHLT | kein allgemeines serverseitiges Limitmodell nachgewiesen |
-| Allgemeine PHP-Routen je Modul | FEHLT | Module benötigen derzeit Änderungen am zentralen Router |
-| Modul-SQL-Migration und Rollback | TEILWEISE | Tabellen/`module_migrations` existieren; allgemeiner Runner fehlt |
+| Mengenlimits/Entitlements | VORHANDEN | `ModuleLimitGuard` erzwingt rollenspezifische Grenzwerte vor Modulmutationen; stärkste Serverrolle gilt |
+| Allgemeine PHP-Routen je Modul | VORHANDEN | `ModuleHttpKernel` und `ModuleServerRegistry` dispatchen deklarierte geschützte Modulrouten ohne fachliche Routerzweige |
+| Modul-SQL-Migration und Rollback | VORHANDEN | `ModuleMigrationRunner` prüft Reihenfolge, Deklaration und SHA-256, sperrt parallel und kompensiert fehlgeschlagene Batches |
+| Modulupdate und sichere Deinstallation | VORHANDEN | Update nur inaktiv und ohne Downgrade; Deinstallation nur inaktiv, standardmäßig Datenerhalt, destruktiv nur für validierte eigene Tabellen |
 | Modulsettings | TEILWEISE | deklarative Felder und Namespace vorhanden; sichere Secrets/Provider fehlen |
 | Drittanbieter-Provideradapter | FEHLT | vorhandener Provider-Manager beschreibt primär Deployment und simuliert Operationen |
 | Login, Session, CSRF, RBAC | VORHANDEN | produktiver 401-Schutz, echter Betreiberlogin und fortbestehende Sitzung über alle 15 Hauptansichten bestätigt; Logout/Sitzungsende und negativer CSRF-Livefall bleiben offen |
@@ -68,4 +71,4 @@ Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die vor
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist die externe Portabilitätsabnahme: neues Repository, neuer physischer DocumentRoot, echter URL-Unterpfad, PHP-/Apache-Anforderungen, leere Datenbank, Setup/Migration/Betreiberanlage, Setup-Sperre und vollständige HTTP-Smoke-Tests. Danach folgen die verbleibenden Modul-/Providerverträge und die finale Core-1.0-Abnahme gemäß `TODO.md`.
+Der nächste Meilenstein ist die GitHub-/PHP-/Produktionsprüfung dieses Modulvertrags. Danach folgen die externe Portabilitätsabnahme, sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.

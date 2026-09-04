@@ -99,6 +99,21 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 ## 10. Fortlaufendes Arbeitsprotokoll
 
+### 2026-09-03 – Allgemeinen Modul-Serververtrag abschließen
+
+- **Aufgabe:** Den Core bis zur fachneutralen Modulgrenze vollständig machen: zwei Referenzmodule, geschützte PHP-Services/Routen, Rechte/Limits, Migration/Update/Rollback und sichere Deinstallation.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work)**.
+- **Test-first:** Vier neue Vertragsgruppen wurden jeweils zunächst gegen fehlende Implementierungen fehlschlagend bestätigt und danach grün geführt. Sie prüfen Manifest/Registry/Kernel, Migrationsreihenfolge/Idempotenz/Checksum/Kompensation, Limits/Uninstall sowie den gemeinsamen GPS-/`reference-notes`-Akzeptanzvertrag.
+- **Änderung:** `ModuleContract`, `ModuleServerRegistry`, `ModuleHttpKernel`, `ModuleLimitGuard` und `ModuleMigrationRunner` ergänzt; `Phase7ModuleRuntime` um migrationsgebundene Installation/Aktivierung, inaktives downgradegeschütztes Update und sichere Deinstallation erweitert; Schema um SHA-256 und Modulversion ergänzt.
+- **Referenzen:** GPS verwendet denselben Vertrag ohne persistente Fachdaten. `reference-notes` liefert als unabhängiges Beispiel reale CRUD-Services, eigene Tabelle/Migration und quantitative Limits, wird aber vom Neu-App-Bootstrap als reine Vertragsreferenz entfernt.
+- **Lokale Validierung:** fokussierte Vertragssuite 10 bestanden/6 erwartete PHP-Skips; App-Bootstrap 16 bestanden/1 PHP-Skip; gesamte lokal ausführbare Auswahl 269/269 bestanden und acht PHP-Prozesstests mangels Binary übersprungen.
+- **Sicherheitsgrenze:** kein Secret gespeichert oder ausgegeben; kein Server/FTP/DB-Aufruf und keine Live-Mutation in der lokalen Implementierungsphase. GitHub Actions mit echter PHP-Binary und das bestehende geschützte FTPS-Deployment bleiben vor der Erfolgsbehauptung abzuwarten.
+- **Unabhängiges Review:** Ein erster Review meldete einen kritischen und sechs wichtige Befunde. Vor Integration wurden destruktive Gegenmigrationen auf exakt eigene Tabellen begrenzt, `retain` auf migrationshistorieerhaltende Tombstones umgestellt, Factories hinter Auth/Permission/CSRF verschoben, Updatefehler kompensiert, veraltete Rechte entfernt, Mengenlimits gegen Parallelzugriff gesperrt und der GPS-Server beim Opt-out entfernt. Auch der partielle Core-DDL-Retry verifiziert nun vorhandene Spalten.
+- **Re-Review:** Der zweite Durchgang bestätigte diese Korrekturen und fand noch Downgrade-Umgehungen über Aktivierung/Wiederinstallation sowie eine zu enge Destroy-Regel. Der gemeinsame Downgrade- und Vollständigkeitsschutz gilt nun in Installation, Aktivierung und Update; der SQL-Validator erlaubt übliche reversible DDL/DML ausschließlich auf eigenen Tabellen und verlangt weiterhin deren vollständige Entfernung. Unsichtbare `retain`-Tombstones erscheinen ohne Quelldateien nicht im Admin-Katalog.
+- **Final-Review-Korrektur:** Mehrfach-`ALTER` und gefährliche Partition-/Rename-Operationen werden durch eine positive Einzeloperationsliste abgewehrt. `install` akzeptiert nur neue oder tombstonierte Module; `activate` verlangt exakt die bereits installierte Version. Damit kann kein Versionswechsel den inaktiven, kompensierenden Updatepfad umgehen.
+- **Fail-closed-Ergänzung:** Fehlt bei einem registrierten Modul der persistierte `installed_version`-Marker, brechen Aktivierung und Update als inkonsistenter Recoveryzustand ab, statt die entdeckte Dateiversion mit sich selbst zu vergleichen.
+- **Commits:** Spezifikation/Plan und Implementierung sind auf `codex/module-contract` einzeln nachvollziehbar; Abschlusscommit und Workflowläufe werden nach erfolgreicher Integration ergänzt.
+
 Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abgeschlossene Änderungen werden zusätzlich kompakt in [`CHANGELOG.md`](CHANGELOG.md) erfasst; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md). Jeder neue Eintrag nennt ausdrücklich die ausführende und dokumentierende Instanz.
 
 ### 2026-09-03 – Anonymen Offline-Modulzugriff und GPS-Referenz lokal abschließen

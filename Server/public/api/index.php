@@ -15,6 +15,10 @@ use Neutral\Core\Phase4UserService;
 use Neutral\Core\Phase6AuditService;
 use Neutral\Core\Phase6SettingsService;
 use Neutral\Core\Phase7ModuleRuntime;
+use Neutral\Core\ModuleContract;
+use Neutral\Core\ModuleServerRegistry;
+use Neutral\Core\ModuleHttpKernel;
+use Neutral\Core\ModuleHttpException;
 use Neutral\Core\Security;
 use Neutral\Core\LoginRateLimiter;
 use Neutral\Core\PdoLoginAttemptStore;
@@ -34,6 +38,19 @@ $auditService = new Phase6AuditService($database, $store);
 $moduleRuntime = new Phase7ModuleRuntime($database, $runtime->projectRoot());
 $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/Server/runtime'), $database);
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
+$moduleServerRegistry = new ModuleServerRegistry(
+    $runtime->projectRoot(),
+    new ModuleContract(),
+    ['database' => $database, 'runtime' => $runtime]
+);
+$moduleHttpKernel = new ModuleHttpKernel(
+    $moduleServerRegistry,
+    static fn (string $moduleId): ?array => $moduleRuntime->getForAdmin($moduleId),
+    static fn (array $moduleIdentity, string $permission): bool => $authManager->hasPermission($moduleIdentity, $permission),
+    static function (?string $provided): void {
+        Security::assertValidCsrfToken($provided);
+    }
+);
 
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 $apiRequest = $config->apiRequestRoute((string) ($_SERVER['REQUEST_URI'] ?? ''));
@@ -407,6 +424,24 @@ if ($route === 'modules' && $method === 'GET') {
     ]);
 }
 
+if (str_starts_with($route, 'modules/')) {
+    try {
+        $moduleResult = $moduleHttpKernel->dispatch(
+            $route,
+            $method,
+            $identity,
+            $headers,
+            $method === 'GET' ? [] : parse_json_body(),
+            $_GET
+        );
+        if ($moduleResult !== null) {
+            JsonResponse::success($moduleResult['data'], $moduleResult['status']);
+        }
+    } catch (ModuleHttpException $exception) {
+        JsonResponse::error($exception->getMessage(), $exception->status(), ['code' => $exception->errorCode()]);
+    }
+}
+
 if ($route === 'admin/sessions' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'session.read', false, $headers);
     JsonResponse::success(['sessions' => $authManager->listSessions()]);
@@ -623,6 +658,9 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/install$#', $route, $matches) === 
         if ($exception->getMessage() === 'Module not discovered.') {
             JsonResponse::error('Module not discovered.', 404, ['moduleId' => $matches[1]]);
         }
+        if ($exception->getMessage() === 'Module is already registered; use update.') {
+            JsonResponse::error($exception->getMessage(), 409, ['moduleId' => $matches[1]]);
+        }
         throw $exception;
     }
     $auditService->log('module.install', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
@@ -643,6 +681,9 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/activate$#', $route, $matches) ===
     } catch (RuntimeException $exception) {
         if ($exception->getMessage() === 'Module not registered.') {
             JsonResponse::error('Module not registered.', 404, ['moduleId' => $matches[1]]);
+        }
+        if (in_array($exception->getMessage(), ['Module downgrade is not allowed.', 'Module update is required before activation.', 'Module installed version is unavailable.'], true)) {
+            JsonResponse::error($exception->getMessage(), 409, ['moduleId' => $matches[1]]);
         }
         throw $exception;
     }
@@ -670,6 +711,30 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/deactivate$#', $route, $matches) =
     $auditService->log('module.deactivate', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
         'status' => (string) ($module['status'] ?? 'inactive'),
         'lifecycleState' => (string) ($module['lifecycleState'] ?? 'INACTIVE'),
+    ]);
+    JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/update$#', $route, $matches) === 1 && $method === 'POST') {
+    $module = $moduleRuntime->getForAdmin($matches[1]);
+    if ($module === null) {
+        JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
+    }
+    require_any_permission_or_fail($identity, $authManager, array_values(array_unique(array_merge(['role.write'], module_access_permissions($module, 'adminPermissions')))), true, $headers);
+    try {
+        $module = $moduleRuntime->update($matches[1], actor_user_id($identity));
+    } catch (RuntimeException $exception) {
+        if (in_array($exception->getMessage(), ['Module not registered.', 'Module not discovered.'], true)) {
+            JsonResponse::error($exception->getMessage(), 404, ['moduleId' => $matches[1]]);
+        }
+        if (in_array($exception->getMessage(), ['Module must be inactive before update.', 'Module downgrade is not allowed.', 'Module installed version is unavailable.'], true)) {
+            JsonResponse::error($exception->getMessage(), 409, ['moduleId' => $matches[1]]);
+        }
+        throw $exception;
+    }
+    $auditService->log('module.update', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [
+        'version' => (string) ($module['installedVersion'] ?? $module['version'] ?? ''),
+        'status' => (string) ($module['status'] ?? 'inactive'),
     ]);
     JsonResponse::success(['module' => $module]);
 }

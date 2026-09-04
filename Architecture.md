@@ -84,6 +84,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** Der öffentliche Modulpfad bildet ausschließlich die gespeicherten `viewer`-Modulrechte auf einen anonymen, bereinigten `clientAccess`-Kontext ab. Nur aktive und sichtbare Module gelangen in den Katalog; diese Cliententscheidung erweitert keine Serverberechtigung.
 
+**IST:** Der produktive PHP-Modulserver ist fachneutral: `ModuleContract` validiert Kompatibilität und Eigentum, `ModuleServerRegistry` lädt ausschließlich geschützte Entries unter `Server/php/modules/<id>/`, `ModuleHttpKernel` dispatcht deklarierte Routen mit Auth/Permission/CSRF, `ModuleLimitGuard` erzwingt quantitative Rollenlimits und `ModuleMigrationRunner` verwaltet checksumgebundene Up-/Down-Migrationen. Modulupdates und Deinstallationen sind nur inaktiv zulässig.
+
 **IST:** Das Shared-Hosting-Staging behält `Web-App/` und `Server/` als getrennte Komponenten unter dem Deploymentroot. Die Root-`.htaccess` bildet die öffentlichen Pfade auf diese Struktur ab und sperrt PHP-Core, Runtime und Dotfiles. `Server/node/` ist nicht Bestandteil des Produktions-Stagings.
 
 **IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
@@ -157,9 +159,9 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 
 **IST:** Loader, Interface und Registry erhalten den serverseitigen Clientzugriffskontext. Nur ein validierter anonymer Katalog wird installationsbezogen offline gespeichert. Die User-Shell filtert Navigation und Direktaufrufe fail-closed; lokale Benutzereinstellungen können Sichtbarkeit reduzieren, aber keine Freigabe erzeugen. Persistiert aktive Module werden nach Discovery tatsächlich initialisiert und aktiviert.
 
-**TEILWEISE:** Modul-Datenbanktabellen können deklariert und bei sicher deklarierter Deinstallation entfernt werden; eine allgemeine Modul-Migrationsausführung ist noch nicht vollständig als öffentlicher Vertrag umgesetzt.
+**IST:** Modul-Datenbanktabellen, Migrationen, geschützte Services/Routen, Rechte, Mengenlimits und Deinstallationspolitik sind manifestbasiert. Der Core lädt Servercode nicht aus öffentlichen Pfaden und erlaubt destruktive Deinstallation nur für validierte modul-eigene Tabellen.
 
-**FEHLT:** produktive Modul-API-Registrierung, standardisierte Hooks, Modul-Sandboxing sowie vollständige Offline-/Sync-Verträge. Details stehen in `ModuleCreation.md`.
+**FEHLT:** standardisierte Hooks, Prozess-/Code-Sandboxing sowie vollständige Offline-/Sync-Verträge. Details stehen in `ModuleCreation.md`.
 
 ### Versionierter Client-Core-Vertrag – IST
 

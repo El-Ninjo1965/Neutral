@@ -363,16 +363,23 @@ function updateOperationalDefaults(stagingRoot, sourceAppId, sourceAppName, appI
 
 function configureGps(stagingRoot, appId, includeGps) {
   const gpsRoot = path.join(stagingRoot, 'Web-App/app/modules/gps');
+  const gpsServerRoot = path.join(stagingRoot, 'Server/php/modules/gps');
+  const referenceNotesRoot = path.join(stagingRoot, 'Web-App/app/modules/reference-notes');
+  const referenceNotesServerRoot = path.join(stagingRoot, 'Server/php/modules/reference-notes');
   const catalogPath = path.join(stagingRoot, 'Web-App/app/modules/index.json');
   const appInfoPath = path.join(stagingRoot, 'Web-App/apps', appId, 'app-info.json');
   const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
   const appInfo = JSON.parse(fs.readFileSync(appInfoPath, 'utf8'));
   if (!Array.isArray(catalog)) throw new Error('Module catalog must be an array');
+  fs.rmSync(referenceNotesRoot, { recursive: true, force: true });
+  fs.rmSync(referenceNotesServerRoot, { recursive: true, force: true });
+  const productCatalog = catalog.filter((module) => module && module.id !== 'reference-notes');
 
   if (!includeGps) {
     const gpsWasPresent = fs.existsSync(gpsRoot);
     fs.rmSync(gpsRoot, { recursive: true, force: true });
-    writeJson(catalogPath, catalog.filter((module) => module && module.id !== 'gps'));
+    fs.rmSync(gpsServerRoot, { recursive: true, force: true });
+    writeJson(catalogPath, productCatalog.filter((module) => module && module.id !== 'gps'));
     appInfo.modules = [];
     writeJson(appInfoPath, appInfo);
     const workflowPath = path.join(stagingRoot, '.github/workflows/ftp-upload.yml');
@@ -383,12 +390,12 @@ function configureGps(stagingRoot, appId, includeGps) {
     return;
   }
 
-  const gpsEntry = catalog.find((module) => module && module.id === 'gps');
+  const gpsEntry = productCatalog.find((module) => module && module.id === 'gps');
   if (!gpsEntry || !fs.existsSync(gpsRoot)) {
     throw new Error('GPS reference module is missing from the source checkout');
   }
   gpsEntry.appId = appId;
-  writeJson(catalogPath, catalog);
+  writeJson(catalogPath, productCatalog);
   appInfo.modules = ['gps'];
   writeJson(appInfoPath, appInfo);
 

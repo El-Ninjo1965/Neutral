@@ -81,7 +81,7 @@ Bei einer Neuinstallation prüft `PrerequisiteChecker` zunächst die Erreichbark
 
 **VORHANDEN:** Migration `2026_08_25_0001_core_schema` erzeugt die genannten Tabellen. `status()` vergleicht bekannte und angewendete Keys; `migrate()` wendet ausstehende Statements an und speichert SHA-1-Checksummen.
 
-**TEILWEISE:** Statements einer Migration werden nicht im aktuellen Code als eine explizite Gesamttransaktion umschlossen. Modul-Migrationsrecords existieren, ein allgemeiner sicherer SQL-Migrationsvertrag für Module ist noch nicht vollständig veröffentlicht.
+**VORHANDEN für Module:** `ModuleMigrationRunner` gleicht Manifest und Serverdefinition ab, prüft SHA-256-Checksummen, serialisiert Läufe über eine DB-Sperre und führt bei einem Fehler die im begonnenen Batch deklarierte Gegenmigration rückwärts aus. Bereits angewendete, nachträglich veränderte oder alte checksumlose Migrationen werden sicher abgelehnt. Modulupdate kompensiert neue Migrationen, falls die anschließende atomare Metadaten-/Permission-Aktualisierung scheitert; ein Downgrade ist nicht zulässig. `retain` tombstoniert die Registration ohne Cascade und erhält damit die Migrationshistorie. Der Core-Schema-Upgradepfad verifiziert nach einem partiellen DDL-Lauf bereits vorhandene Spalten, bevor er ihn fortsetzt.
 
 ## 9. Konfiguration
 
@@ -97,7 +97,6 @@ Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Date
 - **FEHLT:** vollständiger clientseitiger Sync-/Konfliktvertrag.
 - **FEHLT:** formale Clientmigrationen mit Tests für Versionssprünge.
 - **FEHLT:** dokumentierte Backup-/Restore- und Aufbewahrungspolitik für Produktion.
-- **FEHLT:** allgemeine Modul-Datenmigration mit Transaktions-/Rollbackvertrag.
 
 ## 12. Verbindliche Client-Verantwortlichkeiten
 

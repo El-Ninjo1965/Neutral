@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_01_0002';
+    public const SCHEMA_VERSION = '2026_09_03_0003';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -223,6 +223,11 @@ final class SchemaMigrator
              SELECT r.id, p.id FROM roles r JOIN permissions p ON p.permission_key IN ('backups.view','backups.manage') WHERE r.role_key = 'admin'",
         ];
 
+        $moduleContractStatements = [
+            "ALTER TABLE module_migrations ADD COLUMN checksum CHAR(64) NULL AFTER migration_key",
+            "ALTER TABLE module_migrations ADD COLUMN module_version VARCHAR(64) NULL AFTER checksum",
+        ];
+
         return [
             [
                 'key' => '2026_08_25_0001_core_schema',
@@ -233,6 +238,11 @@ final class SchemaMigrator
                 'key' => '2026_09_01_0002_login_throttle',
                 'checksum' => sha1(implode("\n", $loginThrottleStatements)),
                 'statements' => $loginThrottleStatements,
+            ],
+            [
+                'key' => '2026_09_03_0003_module_contract',
+                'checksum' => sha1(implode("\n", $moduleContractStatements)),
+                'statements' => $moduleContractStatements,
             ],
         ];
     }
@@ -292,7 +302,7 @@ final class SchemaMigrator
                 }
 
                 foreach ($migration['statements'] as $statement) {
-                    $pdo->exec($statement);
+                    $this->executeStatementIdempotently($pdo, $statement);
                 }
 
                 $insert = $pdo->prepare('INSERT INTO ' . self::MIGRATION_TABLE . ' (migration_key, checksum, applied_at) VALUES (:key, :checksum, CURRENT_TIMESTAMP)');
@@ -312,6 +322,36 @@ final class SchemaMigrator
         } finally {
             $release = $pdo->prepare('SELECT RELEASE_LOCK(:lock_name)');
             $release->execute([':lock_name' => $lockName]);
+        }
+    }
+
+    private function executeStatementIdempotently(PDO $pdo, string $statement): void
+    {
+        try {
+            $pdo->exec($statement);
+        } catch (\PDOException $exception) {
+            $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+            $isKnownAddColumn = preg_match('/^ALTER\s+TABLE\s+module_migrations\s+ADD\s+COLUMN\s+(checksum|module_version)\b/i', trim($statement), $matches) === 1;
+            if ($isKnownAddColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) {
+                $this->verifyExistingModuleMigrationColumn($pdo, strtolower($matches[1]));
+                return;
+            }
+            throw $exception;
+        }
+    }
+
+    private function verifyExistingModuleMigrationColumn(PDO $pdo, string $column): void
+    {
+        $expectedType = $column === 'checksum' ? 'char(64)' : 'varchar(64)';
+        $query = $pdo->query('SHOW COLUMNS FROM module_migrations LIKE ' . $pdo->quote($column));
+        $definition = $query === false ? false : $query->fetch(PDO::FETCH_ASSOC);
+        if (
+            !is_array($definition)
+            || strtolower((string) ($definition['Field'] ?? '')) !== $column
+            || strtolower((string) ($definition['Type'] ?? '')) !== $expectedType
+            || strtoupper((string) ($definition['Null'] ?? '')) !== 'YES'
+        ) {
+            throw new \RuntimeException('Existing module migration column is incompatible.');
         }
     }
 

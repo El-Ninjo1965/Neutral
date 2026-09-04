@@ -1,0 +1,106 @@
+{
+  "id": "reference-notes",
+  "name": "Reference Notes",
+  "displayName": "Reference Notes",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Minimal independent reference module for server routes, migrations, permissions and limits.",
+  "entry": "index.js",
+  "globalName": "ReferenceNotesModule",
+  "permissions": [
+    {
+      "key": "reference-notes.view",
+      "description": "Allows a user to view reference notes.",
+      "defaultRoles": ["admin", "developer", "user"]
+    },
+    {
+      "key": "reference-notes.use",
+      "description": "Allows a user to create and delete own reference notes.",
+      "defaultRoles": ["admin", "developer", "user"]
+    },
+    {
+      "key": "reference-notes.admin",
+      "description": "Allows a user to administer the reference module.",
+      "defaultRoles": ["admin", "developer"]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": ["reference-notes.view"],
+    "usagePermissions": ["reference-notes.use"],
+    "managementPermissions": ["reference-notes.admin"],
+    "adminPermissions": ["reference-notes.admin"]
+  },
+  "capabilities": ["notes", "server-storage", "reference-contract"],
+  "dependencies": [],
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.0.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/reference-notes/module.php",
+    "services": ["module.reference-notes.notes"],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "items",
+        "service": "module.reference-notes.notes",
+        "action": "list",
+        "permission": "reference-notes.view",
+        "csrf": false
+      },
+      {
+        "method": "POST",
+        "path": "items",
+        "service": "module.reference-notes.notes",
+        "action": "create",
+        "permission": "reference-notes.use",
+        "csrf": true,
+        "limit": {
+          "key": "reference-notes.items",
+          "cost": 1,
+          "usageAction": "count"
+        }
+      },
+      {
+        "method": "DELETE",
+        "path": "items",
+        "service": "module.reference-notes.notes",
+        "action": "delete",
+        "permission": "reference-notes.use",
+        "csrf": true
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      {
+        "name": "reference_notes_items",
+        "destroyOnUninstall": false,
+        "description": "User-owned records for the independent module contract reference."
+      }
+    ],
+    "migrations": [
+      {
+        "key": "2026_09_03_0001_create_notes",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "limits": [
+    {
+      "key": "reference-notes.items",
+      "default": 0,
+      "roles": {
+        "viewer": 0,
+        "user": 100,
+        "developer": 1000,
+        "admin": null
+      }
+    }
+  ],
+  "uninstall": {
+    "dataPolicy": "retain"
+  },
+  "appId": null
+}

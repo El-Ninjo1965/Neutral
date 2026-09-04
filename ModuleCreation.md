@@ -28,6 +28,13 @@ Web-App/app/modules/<module-id>/
 └── index.html        # optionaler Standalone-Test, nur wenn deklariert
 ```
 
+Für Serverfähigkeiten gehört genau ein geschützter Entry hinzu:
+
+```text
+Server/php/modules/<module-id>/
+└── module.php       # gibt ID, Version, Services und Migrationen zurück
+```
+
 `Web-App/app/modules/index.json` kann Clientkatalogeinträge enthalten. PHP `Phase7ModuleRuntime` scannt Modulmanifeste im Projektmodulpfad. Pfade müssen relativ zum aktiven Installationskontext bleiben.
 
 ## 3. Manifest
@@ -46,6 +53,13 @@ Nachweisbar unterstützte Felder:
 - `capabilities`: beschreibende Fähigkeiten
 - `standalone`: optionaler Testentry mit `requires`
 - `database.tables`: explizit deklarierte modul-eigene Tabellen
+- `database.migrations`: geordnete Objekte aus unveränderlichem `key` und SemVer-`version`
+- `compatibility`: unterstützte Core-Spanne, API-Major und minimale PHP-Version
+- `server.entry`: relativer geschützter PHP-Entry
+- `server.services`: eindeutige Service-IDs
+- `server.routes`: relative Route, Methode, Service/Action, Permission und optional `limit`
+- `limits`: benannte rollenspezifische ganzzahlige Grenzwerte; `null` bedeutet unbegrenzt
+- `uninstall.dataPolicy`: `retain` als Standard oder explizit `destroy`
 - `admin.settings`: Settingsmetadaten mit Pfad unter `moduleSettings.<id>`
 
 Unbekannte Felder sind kein automatisch unterstützter Vertrag. Manifest und Implementierung müssen dieselbe ID/Version verwenden.
@@ -78,11 +92,11 @@ Discovery darf keine DB-Änderung, Geräteberechtigung, Netzwerkanfrage oder UI-
 | Phase | Zulässige Arbeit |
 |---|---|
 | DISCOVERED | Metadaten lesen/anzeigen; keine Aktivierung |
-| INSTALL/REGISTER | Manifest/Permissions registrieren; Settingsdefaults vorbereiten; bleibt inaktiv |
+| INSTALL/REGISTER | nur neues oder `retain`-tombstoniertes Modul; Manifest/Permissions registrieren; bleibt inaktiv |
 | INACTIVE | keine Watcher oder fachliche Hintergrundarbeit |
-| ACTIVATE/ACTIVE | Dependencies/Rechte prüfen, Listener und UI kontrolliert starten |
+| ACTIVATE/ACTIVE | nur exakt und eindeutig installierte Version; fehlender Versionsmarker scheitert geschlossen; Dependencies/Rechte prüfen, Listener und UI kontrolliert starten |
 | DEACTIVATE | Watcher, Timer, Listener und Ressourcen freigeben; Daten erhalten |
-| UPDATE | **TEILWEISE** im Clientframework; serverseitiger allgemeiner Modulupdatevertrag fehlt |
+| UPDATE | nur INACTIVE; Kompatibilität/Migrationen prüfen; Downgrade ablehnen; Version danach persistieren |
 | UNINSTALL | Registrierung, modulbezogene Rechte/Settings entfernen; Daten nur nach expliziter sicherer Deklaration löschen |
 
 ## 7. Dependencies
@@ -102,7 +116,7 @@ Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` 
 
 ## 9. Capabilities
 
-`capabilities` sind aktuell deklarative Metadaten. Sie dürfen zur Erkennung genutzt werden, sind aber kein Rechteersatz und kein automatischer Servicevertrag. Semantische Versionierung/Capability-Aushandlung ist **FEHLT/GEPLANT**.
+`capabilities` sind deklarative Metadaten und kein Rechteersatz. Die Serverkompatibilität wird separat über `compatibility.core`, `compatibility.api` und `compatibility.php` geprüft; derzeit gilt Core `>=1.0.0 <2.0.0`, API-Major `1` und PHP 8+.
 
 ## 10. Erlaubte Core-Schnittstellen
 
@@ -151,7 +165,7 @@ Regeln:
 
 ## 13. Services
 
-Eigene Services werden mit einem Namen wie `module.<id>.<service>` als öffentlich oder intern registriert. Doppelte Namen werden abgelehnt; Deaktivierung/Deinstallation ruft `unregister` auf, das optional `dispose()` ausführt. Fremde Services nur über deren öffentliche Methoden verwenden. Serviceabhängigkeiten gehören ins Manifest bzw. müssen vor Aktivierung geprüft werden. Ein formales Service-Manifest ist **FEHLT**.
+Browserservices werden mit einem Namen wie `module.<id>.<service>` als öffentlich oder intern registriert. Serverseitig sind Services in `server.services` deklariert und werden vom gleich identifizierten `module.php` als Factories geliefert. Doppelte oder fehlende Services sowie Manifest-/Entry-ID- oder Versionsabweichungen werden abgelehnt. Fremde Services dürfen nur über dokumentierte öffentliche Verträge verwendet werden.
 
 ## 14. Storage und lokale Datenbank
 
@@ -166,13 +180,13 @@ Eigene dynamische IndexedDB-Stores pro Modul sind derzeit nicht als stabiler öf
 
 ## 15. Serverdatenbank und Migrationen
 
-Das Manifest kann `database.tables` deklarieren. Aktuell dient dies insbesondere sicherer Eigentums-/Deinstallationsprüfung. Ein Modul darf nur eigene Tabellen deklarieren. Drop bei Uninstall ist nur zulässig, wenn der Manifestvertrag dies ausdrücklich als sicher markiert und der Server es validiert.
+Das Manifest deklariert eigene Tabellen unter `database.tables`; Bindestriche der Modul-ID werden für den verlangten Tabellenpräfix zu Unterstrichen. Drop bei Uninstall ist nur bei `uninstall.dataPolicy=destroy` und ausschließlich für validierte eigene Tabellen zulässig. Ohne Angabe gilt `retain`.
 
-Allgemeine modul-eigene SQL-Migrationen, Rollback und Updateausführung sind **TEILWEISE/GEPLANT**. Keine SQL-Datei wird allein durch Ablage automatisch vertrauenswürdig oder ausgeführt.
+`database.migrations` und die Definitionen aus `module.php` müssen in Reihenfolge, Key und Version exakt übereinstimmen. Der Server bindet angewendete Migrationen an SHA-256, sperrt konkurrierende Läufe und kompensiert einen fehlgeschlagenen Batch über die zugehörigen `down`-Statements. Eine bereits angewendete Migration darf nie verändert oder aus einer neueren Definition entfernt werden. Bei `retain` bleiben Modulzeile und Migrationshistorie als inaktiver, nicht registrierter Tombstone erhalten, damit eine Neuinstallation keine Migration doppelt ausführt. Destruktives Uninstall akzeptiert nur einzeln analysierbare Gegenmigrationen, deren Mutationsziel eine deklarierte eigene Tabelle ist; am Ende muss jede eigene Tabelle explizit entfernt werden. Keine SQL-Datei wird allein durch Ablage vertrauenswürdig oder ausgeführt.
 
 ## 16. API und Serverkommunikation
 
-Module verwenden dokumentierte HTTPS-Endpunkte über `ApiClient`. Es gibt derzeit keine öffentliche API, mit der ein Modul selbstständig PHP-Routen registriert (**FEHLT**). Neue Serverendpunkte erfordern eine separate Core/API-Änderung mit Auth, Permission, CSRF, Validierung, Datenbankvertrag, Tests sowie Aktualisierung von `API.md` und `Security.md`.
+Module verwenden über `ApiClient` ihre deklarierten Endpunkte unter `/api/v1/modules/<module-id>/<route>`. Der zentrale Kernel prüft aktiven Registrierungszustand, Methode, Authentifizierung, Permission und CSRF für Schreibmethoden, bevor Server-Entry und Servicefactory ausgeführt werden. Quantitative Limits werden über eine modul-/limitbezogene DB-Sperre atomar um Nutzungsmessung und Mutation erzwungen. Der zentrale Router erhält keine fachlichen Modulzweige.
 
 Keine direkte DB-Verbindung aus dem Browser. Keine feste Produktionsdomain im Modul. Offlinefehler kontrolliert behandeln.
 
@@ -206,11 +220,12 @@ Mindestens prüfen:
 3. Install bleibt inaktiv.
 4. Aktivierung registriert Ressourcen genau einmal.
 5. Deaktivierung entfernt Watcher/Listener.
-6. Uninstall entfernt Registration/Permissions/Settings ohne fremde Daten.
-7. serverseitige Actions prüfen Session, Permission und CSRF.
-8. Offline-/Fehlerzustände verlieren keine lokalen Daten.
-9. Standalone-Test ist nur Entwicklungsoberfläche und keine zweite Produktionsautorität.
-10. `TODO.md`, `WORKFLOW.md`, `Functions.md`, `API.md`, `Database.md` und `Security.md` werden bei Vertragsänderung aktualisiert.
+6. Update ist nur inaktiv, migrationssicher und downgradegeschützt.
+7. Uninstall entfernt Registration/Permissions/Settings ohne fremde Daten; Standard ist Datenerhalt.
+8. serverseitige Actions prüfen Session, Permission, CSRF und deklarierte Limits.
+9. Offline-/Fehlerzustände verlieren keine lokalen Daten.
+10. Standalone-Test ist nur Entwicklungsoberfläche und keine zweite Produktionsautorität.
+11. `TODO.md`, `WORKFLOW.md`, `Functions.md`, `API.md`, `Database.md` und `Security.md` werden bei Vertragsänderung aktualisiert.
 
 ### Startperformance für Module
 

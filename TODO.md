@@ -29,17 +29,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
 
-## 3. Modulvertrag vervollständigen
-
-- allgemeine PHP-Routen- und Service-Registrierung je Modul,
-- versionierte Modul-SQL-Migrationen mit Fehler- und Rollbackstrategie,
-- serverseitig erzwungene Rechte und quantitative Limits,
-- sichere Deinstallation ohne Verlust fremder Daten,
-- Kompatibilitäts- und Versionsprüfung.
-
-**Abnahme:** GPS und ein zweites fachlich unabhängiges Referenzmodul bestehen denselben Lifecycle- und Sicherheitstest.
-
-## 4. Sichere Provider und Administration
+## 3. Sichere Provider und Administration
 
 - serverseitigen Provideradaptervertrag definieren,
 - Secrets geschützt speichern und ausschließlich serverseitig verwenden,
@@ -48,7 +38,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Abnahme:** Wechsel zwischen zwei Testprovidern ohne Clientänderung oder Secret-Leak.
 
-## 5. Portabilität und Core-1.0-Abnahme
+## 4. Portabilität und Core-1.0-Abnahme
 
 - Backup, Restore, Update und Rollback reproduzierbar machen,
 - Serverumzug auf eine leere kompatible Umgebung testen,

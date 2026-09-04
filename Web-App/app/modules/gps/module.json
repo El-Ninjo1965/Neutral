@@ -37,6 +37,25 @@
   },
   "capabilities": ["gps", "geolocation"],
   "dependencies": [],
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.0.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/gps/module.php",
+    "services": ["module.gps.status"],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.gps.status",
+        "action": "status",
+        "permission": "gps.view",
+        "csrf": false
+      }
+    ]
+  },
   "standalone": {
     "entry": "index.html",
     "label": "GPS standalone test",
@@ -48,7 +67,12 @@
     }
   },
   "database": {
-    "tables": []
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
   },
   "admin": {
     "title": "GPS settings",

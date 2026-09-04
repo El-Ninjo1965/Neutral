@@ -70,6 +70,8 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabe
 | GET | `/api/admin/providers`, `/api/providers` | konfigurierte Provider lesen | Adminvariante geschützt; öffentliche Variante gemäß Router | – | Providerliste | 403; Katalog/Runtime | VORHANDEN |
 | GET | `/api/admin/connections`, `/api/connections` | Verbindungen lesen | Adminvariante geschützt | – | sanitiserte Verbindungen | 403; Runtimekonfiguration | VORHANDEN |
 | GET | `/api/admin/system/inventory` | aggregiertes DB-Inventar für Portabilitätsprüfung | `backups.view` | – | Tabellenzahlen und Migrationszustand | 401/403/503; keine Zeileninhalte | VORHANDEN |
+| POST | `/api/admin/modules/{id}/update` | inaktives registriertes Modul auf entdeckte Version aktualisieren | `role.write` oder Modul-Adminrecht + CSRF | – | aktualisiertes Modul | 404 nicht vorhanden; 409 aktiv/Downgrade | VORHANDEN |
+| `GET/POST/PUT/PATCH/DELETE` | `/api/modules/{id}/{route}` | deklarierte Modulroute generisch ausführen | Route verlangt Auth + Modulrecht; Schreibwege zusätzlich CSRF | routenspezifisch | bereinigte Serviceantwort | 401/403/404/405/409/422 | VORHANDEN |
 | GET | `/api/admin/backups` | verschlüsselte Backupmetadaten lesen | `backups.view` | – | ID, Erstellzeit, Größe | 401/403/503 | VORHANDEN |
 | POST | `/api/admin/backups` | verschlüsseltes logisches Backup erzeugen | `backups.manage`, CSRF | – | Backup-ID und Metadaten | 401/403/503; verwaltete Coretabellen | VORHANDEN |
 | GET | `/api/admin/backups/{id}/download` | verschlüsseltes Backup laden | `backups.view` | – | Binärartefakt | 400/401/403/404 | VORHANDEN |
@@ -83,7 +85,7 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabe
 
 ## 5. Erweiterungsregel
 
-Neue Endpunkte benötigen vor Implementierung: dokumentierten Vertrag, Auth-/Permissionentscheidung, Requestvalidierung, Fehlercodes, Datenbank-/Transaktionskonzept, Datenschutzprüfung, Tests und Eintrag in diesem Dokument. Module können derzeit nicht selbstständig produktive PHP-Routen registrieren (**FEHLT/GEPLANT**).
+Neue Core-Endpunkte benötigen vor Implementierung: dokumentierten Vertrag, Auth-/Permissionentscheidung, Requestvalidierung, Fehlercodes, Datenbank-/Transaktionskonzept, Datenschutzprüfung, Tests und Eintrag in diesem Dokument. Module deklarieren ausschließlich relative Routen, Methoden, Service/Action, Permission und optional ein Mengenlimit im Manifest; `ModuleHttpKernel` bleibt der einzige produktive Dispatcher. Direkte fachliche Zweige im zentralen Router sind verboten.
 
 Der anonyme Zugriff auf `/api/modules` überträgt keine Viewer-Identität und keine effektive Permissionliste. Die Viewer-Zuordnung steuert nur den öffentlichen Modulkatalog. Jede serverseitige Modulaktion benötigt weiterhin eine eigene authentifizierte Autorisierungsentscheidung.
 

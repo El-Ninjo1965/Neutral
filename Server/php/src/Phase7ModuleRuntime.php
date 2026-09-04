@@ -9,11 +9,21 @@ final class Phase7ModuleRuntime
 {
     private Database $database;
     private string $projectRoot;
+    private ModuleServerRegistry $serverRegistry;
+    private ModuleMigrationRunner $migrationRunner;
+    private ModuleContract $moduleContract;
 
     public function __construct(Database $database, string $projectRoot)
     {
         $this->database = $database;
         $this->projectRoot = rtrim($projectRoot, "/\\");
+        $this->moduleContract = new ModuleContract();
+        $this->serverRegistry = new ModuleServerRegistry(
+            $this->projectRoot,
+            $this->moduleContract,
+            ['database' => $database]
+        );
+        $this->migrationRunner = new ModuleMigrationRunner($database);
     }
 
     /**
@@ -55,6 +65,9 @@ final class Phase7ModuleRuntime
         }
 
         foreach ($registered as $record) {
+            if (!(bool) ($record['isPresent'] ?? false)) {
+                continue;
+            }
             $modules[] = $this->mergeModuleState($this->normalizeStoredModule($record), $record);
         }
 
@@ -132,11 +145,19 @@ final class Phase7ModuleRuntime
             throw new \RuntimeException('Module not discovered.');
         }
 
-        $pdo = $this->database->connect();
-        $pdo->beginTransaction();
+        $pdo = null;
         try {
+            $pdo = $this->database->connect();
+            $pdo->beginTransaction();
             $existing = $this->fetchRegisteredModules($pdo);
             $existingRecord = $existing[(string) $discovered['id']] ?? null;
+            if ($existingRecord !== null) {
+                if ((bool) ($existingRecord['isPresent'] ?? false)) {
+                    throw new \RuntimeException('Module is already registered; use update.');
+                }
+                $installed = trim((string) ($existingRecord['installedVersion'] ?? ''));
+                $this->assertNoModuleDowngrade((string) $discovered['version'], $installed !== '' ? $installed : (string) ($existingRecord['version'] ?? ''));
+            }
 
             $moduleDbId = $this->upsertModuleRecord($pdo, $discovered);
 
@@ -146,11 +167,11 @@ final class Phase7ModuleRuntime
                 $this->ensureModuleStateExists($pdo, $moduleDbId, (string) $discovered['version'], $actorUserId);
             }
 
-            $this->syncModulePermissions($pdo, $discovered, $existingRecord === null);
+            $this->syncModulePermissions($pdo, $discovered, $existingRecord === null || !(bool) ($existingRecord['isPresent'] ?? false));
 
             $pdo->commit();
         } catch (\Throwable $exception) {
-            if ($pdo->inTransaction()) {
+            if ($pdo instanceof PDO && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             throw $exception;
@@ -160,6 +181,12 @@ final class Phase7ModuleRuntime
         if ($module === null) {
             throw new \RuntimeException('Installed module could not be loaded.');
         }
+        $definition = $this->serverRegistry->resolveForLifecycle($module);
+        $this->migrationRunner->migrate($module, $definition['migrations']);
+        $module = $this->getForAdmin((string) $discovered['id']);
+        if ($module === null) {
+            throw new \RuntimeException('Installed module could not be loaded after migration.');
+        }
         return $module;
     }
 
@@ -168,6 +195,20 @@ final class Phase7ModuleRuntime
      */
     public function activate(string $moduleId, ?int $actorUserId = null): array
     {
+        $module = $this->getForAdmin($moduleId);
+        if ($module === null || !(bool) ($module['registered'] ?? false)) {
+            throw new \RuntimeException('Module not registered.');
+        }
+        $installed = trim((string) ($module['installedVersion'] ?? ''));
+        if ($installed === '') {
+            throw new \RuntimeException('Module installed version is unavailable.');
+        }
+        $this->assertNoModuleDowngrade((string) ($module['version'] ?? ''), $installed);
+        if (version_compare((string) ($module['version'] ?? ''), $installed, '!=')) {
+            throw new \RuntimeException('Module update is required before activation.');
+        }
+        $definition = $this->serverRegistry->resolveForLifecycle($module);
+        $this->migrationRunner->migrate($module, $definition['migrations']);
         return $this->changeState($moduleId, 'active', 1, $actorUserId);
     }
 
@@ -182,9 +223,100 @@ final class Phase7ModuleRuntime
     /**
      * @return array<string,mixed>
      */
+    public function update(string $moduleId, ?int $actorUserId = null): array
+    {
+        $normalizedId = $this->normalizeModuleId($moduleId);
+        $current = $this->getForAdmin($normalizedId);
+        if ($current === null || !(bool) ($current['registered'] ?? false)) {
+            throw new \RuntimeException('Module not registered.');
+        }
+        if ((bool) ($current['active'] ?? false)) {
+            throw new \RuntimeException('Module must be inactive before update.');
+        }
+
+        $discovered = $this->findDiscoveredModule($normalizedId);
+        if ($discovered === null) {
+            throw new \RuntimeException('Module not discovered.');
+        }
+        $installedVersion = trim((string) ($current['installedVersion'] ?? ''));
+        if ($installedVersion === '') {
+            throw new \RuntimeException('Module installed version is unavailable.');
+        }
+        $this->assertNoModuleDowngrade((string) $discovered['version'], $installedVersion);
+
+        $candidate = array_replace($discovered, [
+            'databaseId' => (int) ($current['databaseId'] ?? 0),
+            'registered' => true,
+            'active' => false,
+            'enabled' => false,
+            'installedVersion' => $installedVersion,
+        ]);
+        $definition = $this->serverRegistry->resolveForLifecycle($candidate);
+        $migrationResult = $this->migrationRunner->migrate($candidate, $definition['migrations']);
+
+        $pdo = null;
+        try {
+            $pdo = $this->database->connect();
+            $pdo->beginTransaction();
+            $moduleDbId = $this->upsertModuleRecord($pdo, $discovered);
+            $this->syncModulePermissions($pdo, $discovered, false, true);
+            $state = $pdo->prepare('
+                UPDATE module_state
+                SET status = :status,
+                    is_enabled = 0,
+                    installed_version = :installed_version,
+                    last_error = NULL,
+                    changed_by = :changed_by,
+                    changed_at = CURRENT_TIMESTAMP
+                WHERE module_id = :module_id
+            ');
+            $state->execute([
+                ':status' => 'inactive',
+                ':installed_version' => (string) $discovered['version'],
+                ':changed_by' => $actorUserId,
+                ':module_id' => $moduleDbId,
+            ]);
+            $pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($pdo instanceof PDO && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $this->migrationRunner->compensate($candidate, $definition['migrations'], $migrationResult['applied'], $installedVersion);
+            throw $exception;
+        }
+
+        $updated = $this->getForAdmin($normalizedId);
+        if ($updated === null) {
+            throw new \RuntimeException('Updated module could not be loaded.');
+        }
+        return $updated;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public function uninstall(string $moduleId, ?int $actorUserId = null): array
     {
         $normalizedId = $this->normalizeModuleId($moduleId);
+        $module = $this->getForAdmin($normalizedId);
+        if ($module === null || !(bool) ($module['registered'] ?? false)) {
+            throw new \RuntimeException('Module not registered.');
+        }
+        if ((bool) ($module['active'] ?? false)) {
+            throw new \RuntimeException('Module must be inactive before uninstall.');
+        }
+        $definition = $this->serverRegistry->resolveForLifecycle($module);
+        $dataPolicy = (string) ($definition['contract']['uninstall']['dataPolicy'] ?? 'retain');
+        if ($dataPolicy === 'destroy') {
+            $this->assertDestroyOwnership($definition['contract']);
+            $tables = array_map(
+                static fn (array $table): string => (string) ($table['name'] ?? ''),
+                $definition['contract']['database']['tables']
+            );
+            ModuleMigrationRunner::assertOwnedRollback($normalizedId, $tables, $definition['migrations']);
+            $this->migrationRunner->rollback($module, $definition['migrations']);
+        }
+
         $pdo = $this->database->connect();
         $pdo->beginTransaction();
 
@@ -194,21 +326,22 @@ final class Phase7ModuleRuntime
             if ($record === null) {
                 throw new \RuntimeException('Module not registered.');
             }
-
-            $manifest = is_array($record['manifest'] ?? null) ? $record['manifest'] : [];
-            $module = $this->normalizeModuleManifest(array_replace($manifest, [
-                'id' => $normalizedId,
-                'name' => $record['name'] ?? $normalizedId,
-                'version' => $record['version'] ?? '1.0.0',
-                'modulePath' => $record['filesystemPath'] ?? null,
-            ]), false);
-
-            $this->dropOwnedTables($pdo, $module);
             $this->removeModuleSettings($pdo, $normalizedId, $actorUserId);
             $this->deleteModulePermissions($pdo, $normalizedId);
 
-            $statement = $pdo->prepare('DELETE FROM modules WHERE id = :id');
-            $statement->execute([':id' => (int) ($record['dbId'] ?? 0)]);
+            if ($dataPolicy === 'destroy') {
+                $statement = $pdo->prepare('DELETE FROM modules WHERE id = :id');
+                $statement->execute([':id' => (int) ($record['dbId'] ?? 0)]);
+            } else {
+                $statement = $pdo->prepare('UPDATE modules SET is_present = 0, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
+                $statement->execute([':id' => (int) ($record['dbId'] ?? 0)]);
+                $state = $pdo->prepare('UPDATE module_state SET status = :status, is_enabled = 0, changed_by = :changed_by, changed_at = CURRENT_TIMESTAMP WHERE module_id = :module_id');
+                $state->execute([
+                    ':status' => 'inactive',
+                    ':changed_by' => $actorUserId,
+                    ':module_id' => (int) ($record['dbId'] ?? 0),
+                ]);
+            }
 
             $pdo->commit();
         } catch (\Throwable $exception) {
@@ -253,6 +386,36 @@ final class Phase7ModuleRuntime
             'active' => false,
             'enabled' => false,
         ];
+    }
+
+    /** @param array<string,mixed> $contract */
+    private function assertDestroyOwnership(array $contract): void
+    {
+        $moduleId = $this->normalizeModuleId((string) ($contract['id'] ?? ''));
+        $prefix = str_replace('-', '_', $moduleId) . '_';
+        $database = is_array($contract['database'] ?? null) ? $contract['database'] : [];
+        $tables = is_array($database['tables'] ?? null) ? $database['tables'] : [];
+        foreach ($tables as $table) {
+            if (!is_array($table)) {
+                throw new \RuntimeException('Unsafe module table ownership declaration.');
+            }
+            $name = strtolower(trim((string) ($table['name'] ?? '')));
+            if (
+                ($table['destroyOnUninstall'] ?? false) !== true
+                || preg_match('/^[a-z][a-z0-9_]{1,63}$/', $name) !== 1
+                || !str_starts_with($name, $prefix)
+            ) {
+                throw new \RuntimeException('Unsafe module table ownership declaration.');
+            }
+        }
+    }
+
+    private function assertNoModuleDowngrade(string $candidateVersion, string $installedVersion): void
+    {
+        $installedVersion = trim($installedVersion);
+        if ($installedVersion !== '' && version_compare($candidateVersion, $installedVersion, '<')) {
+            throw new \RuntimeException('Module downgrade is not allowed.');
+        }
     }
 
     /**
@@ -338,6 +501,7 @@ final class Phase7ModuleRuntime
      */
     private function normalizeModuleManifest(array $manifest, bool $discovered): array
     {
+        $manifest = $this->moduleContract->normalize($manifest);
         $moduleId = $this->normalizeModuleId((string) ($manifest['id'] ?? ''));
         $displayName = trim((string) ($manifest['displayName'] ?? ''));
         if ($displayName === '') {
@@ -359,6 +523,10 @@ final class Phase7ModuleRuntime
             'permissionDefinitions' => $permissionDefinitions,
             'capabilities' => is_array($manifest['capabilities'] ?? null) ? array_values(array_filter(array_map('strval', $manifest['capabilities']))) : [],
             'dependencies' => is_array($manifest['dependencies'] ?? null) ? array_values(array_filter(array_map('strval', $manifest['dependencies']))) : [],
+            'compatibility' => $manifest['compatibility'],
+            'server' => $manifest['server'],
+            'limits' => $manifest['limits'],
+            'uninstall' => $manifest['uninstall'],
             'access' => $this->normalizeAccess($manifest['access'] ?? null, $permissionDefinitions),
             'standalone' => $this->normalizeStandalone($manifest['standalone'] ?? null),
             'database' => $this->normalizeDatabase($manifest['database'] ?? null),
@@ -515,7 +683,7 @@ final class Phase7ModuleRuntime
 
     /**
      * @param mixed $database
-     * @return array{tables:list<array{name:string,destroyOnUninstall:bool,description:string}>}
+     * @return array{tables:list<array{name:string,destroyOnUninstall:bool,description:string}>,migrations:list<array<string,mixed>>}
      */
     private function normalizeDatabase($database): array
     {
@@ -550,7 +718,8 @@ final class Phase7ModuleRuntime
             ];
         }
 
-        return ['tables' => $tables];
+        $migrations = is_array($source['migrations'] ?? null) ? array_values($source['migrations']) : [];
+        return ['tables' => $tables, 'migrations' => $migrations];
     }
 
     /**
@@ -626,11 +795,12 @@ final class Phase7ModuleRuntime
      */
     private function mergeModuleState(array $module, ?array $record): array
     {
-        $status = $record ? $this->normalizeStateStatus((string) ($record['status'] ?? 'inactive')) : 'discovered';
-        $isActive = $record ? ((bool) ($record['isEnabled'] ?? false) || $status === 'active') : false;
+        $isRegistered = $record !== null && (bool) ($record['isPresent'] ?? true);
+        $status = $isRegistered ? $this->normalizeStateStatus((string) ($record['status'] ?? 'inactive')) : 'discovered';
+        $isActive = $isRegistered && ((bool) ($record['isEnabled'] ?? false) || $status === 'active');
         $lifecycleState = $status === 'active'
             ? 'ACTIVE'
-            : ($record ? 'INACTIVE' : 'DISCOVERED');
+            : ($isRegistered ? 'INACTIVE' : 'DISCOVERED');
 
         return [
             'id' => (string) ($module['id'] ?? ''),
@@ -645,6 +815,10 @@ final class Phase7ModuleRuntime
             'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
             'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
             'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+            'compatibility' => is_array($module['compatibility'] ?? null) ? $module['compatibility'] : [],
+            'server' => is_array($module['server'] ?? null) ? $module['server'] : [],
+            'limits' => is_array($module['limits'] ?? null) ? $module['limits'] : [],
+            'uninstall' => is_array($module['uninstall'] ?? null) ? $module['uninstall'] : ['dataPolicy' => 'retain'],
             'access' => is_array($module['access'] ?? null) ? $module['access'] : [],
             'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
             'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
@@ -655,7 +829,7 @@ final class Phase7ModuleRuntime
             'loginRequired' => $module['loginRequired'] ?? null,
             'requiresLogin' => $module['requiresLogin'] ?? null,
             'discovered' => (bool) ($module['discovered'] ?? false),
-            'registered' => $record !== null,
+            'registered' => $isRegistered,
             'status' => $status,
             'lifecycleState' => $lifecycleState,
             'active' => $isActive,
@@ -787,9 +961,12 @@ final class Phase7ModuleRuntime
     /**
      * @param array<string,mixed> $module
      */
-    private function syncModulePermissions(PDO $pdo, array $module, bool $applyDefaultRoles): void
+    private function syncModulePermissions(PDO $pdo, array $module, bool $applyDefaultRoles, bool $pruneObsolete = false): void
     {
         $definitions = is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [];
+        if ($pruneObsolete) {
+            $this->pruneObsoleteModulePermissions($pdo, (string) ($module['id'] ?? ''), $definitions);
+        }
         if ($definitions === []) {
             return;
         }
@@ -904,34 +1081,31 @@ final class Phase7ModuleRuntime
         }
     }
 
+    /** @param list<array<string,mixed>> $definitions */
+    private function pruneObsoleteModulePermissions(PDO $pdo, string $moduleId, array $definitions): void
+    {
+        $keys = [];
+        foreach ($definitions as $definition) {
+            $key = is_array($definition) ? trim((string) ($definition['key'] ?? '')) : '';
+            if ($key !== '') {
+                $keys[] = $key;
+            }
+        }
+        $scope = $this->modulePermissionScope($moduleId);
+        if ($keys === []) {
+            $statement = $pdo->prepare('DELETE FROM permissions WHERE scope = ?');
+            $statement->execute([$scope]);
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($keys), '?'));
+        $statement = $pdo->prepare("DELETE FROM permissions WHERE scope = ? AND permission_key NOT IN ($placeholders)");
+        $statement->execute(array_merge([$scope], $keys));
+    }
+
     private function deleteModulePermissions(PDO $pdo, string $moduleId): void
     {
         $statement = $pdo->prepare('DELETE FROM permissions WHERE scope = :scope');
         $statement->execute([':scope' => $this->modulePermissionScope($moduleId)]);
-    }
-
-    /**
-     * @param array<string,mixed> $module
-     */
-    private function dropOwnedTables(PDO $pdo, array $module): void
-    {
-        $tables = is_array($module['database']['tables'] ?? null) ? $module['database']['tables'] : [];
-        foreach ($tables as $table) {
-            if (!is_array($table)) {
-                continue;
-            }
-            if (($table['destroyOnUninstall'] ?? false) !== true) {
-                continue;
-            }
-            $name = trim((string) ($table['name'] ?? ''));
-            if ($name === '') {
-                continue;
-            }
-            if (!preg_match('/^[A-Za-z0-9_]+$/', $name)) {
-                throw new \RuntimeException('Unsafe module table name in uninstall manifest: ' . $name);
-            }
-            $pdo->exec('DROP TABLE IF EXISTS `' . $name . '`');
-        }
     }
 
     private function removeModuleSettings(PDO $pdo, string $moduleId, ?int $actorUserId): void

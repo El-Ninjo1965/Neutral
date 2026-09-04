@@ -422,7 +422,8 @@ test('creates a complete secret-free project in an absent target without GPS', (
   assert.match(fs.readFileSync(path.join(target, 'Web-App/core/config-manager.js'), 'utf8'), /name: ["']Sample App["']/);
 
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(target, 'Web-App/app/modules/index.json'), 'utf8')), []);
-  assert.equal(fs.existsSync(path.join(target, 'Web-App/app/modules/gps')), false);
+    assert.equal(fs.existsSync(path.join(target, 'Web-App/app/modules/gps')), false);
+    assert.equal(fs.existsSync(path.join(target, 'Server/php/modules/gps')), false);
   if (sourceHasGps) assert.equal(sha256(sourceGpsManifest), sourceGpsHash, 'source GPS module must stay unchanged');
   const workflow = fs.readFileSync(path.join(target, '.github/workflows/ftp-upload.yml'), 'utf8');
   assert.doesNotMatch(workflow, /test -f .*Web-App\/app\/modules\/gps\/module\.json/);
