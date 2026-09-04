@@ -8,6 +8,7 @@
 - Ausgaben enthalten ausschließlich begrenzte HTTP-/Bool-Statuswerte; keine Antwortinhalte, Sitzungen oder Zugangsdaten,
 - Redirectziele werden auf HTTPS, erwarteten Origin und exakten Basispfad begrenzt; das öffentliche Paketmanifest muss zusätzlich denselben sauberen Git-Commit wie der Workflow ausweisen,
 - Titel und Modulverträge werden aus dem jeweiligen Projekt abgeleitet; neue App-Kopien erhalten eine verpflichtend neu zu setzende öffentliche Zielvariable und keine Neutral-spezifische GPS-Viewer-Vorgabe,
+- der abschließende Job veröffentlicht ausschließlich den Commitstatus `production/ftps-http`, damit Erfolg oder Fehler des Push-Workflows ohne Log- oder Secretzugriff über den GitHub-Connector feststellbar ist,
 - test-first durch **Codex (ChatGPT Work / GitHub-Connector)** umgesetzt; lokale ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern; erster Lauf des neuen dauerhaften Gates wird mit dem Abschlusscommit ausgelöst.
 
 ## 2026-09-03 – Allgemeinen Modul-Serververtrag vervollständigt

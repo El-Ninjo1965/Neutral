@@ -52,6 +52,10 @@ test('FTPS workflow runs the permanent read-only HTTP smoke after deployment', (
   assert.ok(workflow.indexOf('Produktionsziel prüfen') < workflow.indexOf('Produktionsbestand per FTPS hochladen'));
   assert.ok(workflow.indexOf('Produktionsbestand per FTPS hochladen') < workflow.indexOf('Produktionsstand rein lesend prüfen'));
   assert.ok(fs.existsSync(smokePath));
+  assert.match(workflow, /statuses:\s*write/);
+  assert.match(workflow, /needs:\s*deploy/);
+  assert.match(workflow, /createCommitStatus/);
+  assert.match(workflow, /production\/ftps-http/);
 });
 
 test('production smoke covers public, protected, rewrite, viewer and module-contract boundaries', () => {
