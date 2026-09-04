@@ -13,6 +13,8 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[cleanup-public-html]') }}
     runs-on: ubuntu-latest
+    outputs:
+      failed_stage: ${{ steps.diagnosis.outputs.failed_stage }}
     env:
       FTP_HOST: server.cpprotect5.de
       FTP_USER: ${{ secrets.FTP_USER }}
@@ -29,12 +31,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Produktionsziel prüfen
+        id: target
         shell: bash
         run: |
           set -euo pipefail
           node -e "require('./scripts/production-readonly-smoke').validateDeploymentTarget(process.env.NEUTRAL_PUBLIC_URL, process.env.NEUTRAL_BASE_PATH)"
 
       - name: Vollständige Node- und PHP-Tests ausführen
+        id: tests
         shell: bash
         run: |
           set -euo pipefail
@@ -48,6 +52,7 @@ jobs:
           npm test
 
       - name: Verifiziertes Produktionspaket bauen
+        id: package
         shell: bash
         run: |
           set -euo pipefail
@@ -68,6 +73,7 @@ jobs:
           find "$STAGING_DIR" -type f | sort
 
       - name: FTPS-Client bereitstellen
+        id: client
         shell: bash
         run: |
           set -euo pipefail
@@ -78,6 +84,7 @@ jobs:
           fi
 
       - name: Produktionsbestand per FTPS hochladen
+        id: upload
         shell: bash
         run: |
           set -euo pipefail
@@ -88,10 +95,34 @@ jobs:
           node scripts/manual-ftps-deploy.js
 
       - name: Produktionsstand rein lesend prüfen
+        id: smoke
         shell: bash
         run: |
           set -euo pipefail
           node scripts/production-readonly-smoke.js
+
+      - name: Fehlgeschlagene Stufe begrenzt erfassen
+        id: diagnosis
+        if: ${{ always() }}
+        shell: bash
+        env:
+          TARGET_OUTCOME: ${{ steps.target.outcome }}
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          PACKAGE_OUTCOME: ${{ steps.package.outcome }}
+          CLIENT_OUTCOME: ${{ steps.client.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+        run: |
+          set -euo pipefail
+          FAILED_STAGE='none'
+          for STAGE in target tests package client upload smoke; do
+            OUTCOME_VAR="${STAGE^^}_OUTCOME"
+            if [ "${!OUTCOME_VAR}" != 'success' ]; then
+              FAILED_STAGE="$STAGE"
+              break
+            fi
+          done
+          printf 'failed_stage=%s\n' "$FAILED_STAGE" >> "$GITHUB_OUTPUT"
 
   report:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[cleanup-public-html]')) }}
@@ -105,6 +136,7 @@ jobs:
         with:
           script: |
             const result = '${{ needs.deploy.result }}';
+            const failedStage = '${{ needs.deploy.outputs.failed_stage }}' || 'unknown';
             const state = result === 'success' ? 'success' : 'failure';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
@@ -114,5 +146,5 @@ jobs:
               context: 'production/ftps-http',
               description: state === 'success'
                 ? 'FTPS deployment and read-only HTTP smoke passed'
-                : 'FTPS deployment or read-only HTTP smoke failed'
+                : `Production pipeline failed at ${failedStage}`
             });

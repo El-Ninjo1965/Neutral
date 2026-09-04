@@ -56,6 +56,11 @@ test('FTPS workflow runs the permanent read-only HTTP smoke after deployment', (
   assert.match(workflow, /needs:\s*deploy/);
   assert.match(workflow, /createCommitStatus/);
   assert.match(workflow, /production\/ftps-http/);
+  for (const stage of ['target', 'tests', 'package', 'client', 'upload', 'smoke']) {
+    assert.match(workflow, new RegExp(`id: ${stage}`));
+  }
+  assert.match(workflow, /failed_stage/);
+  assert.match(workflow, /needs\.deploy\.outputs\.failed_stage/);
 });
 
 test('production smoke covers public, protected, rewrite, viewer and module-contract boundaries', () => {
