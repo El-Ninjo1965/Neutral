@@ -18,10 +18,18 @@ jobs:
       FTP_TARGET_DIR: ${{ secrets.FTP_TARGET_DIR }}
       FTP_SSL_CHECK_HOSTNAME: 'true'
       NEUTRAL_BASE_PATH: ${{ vars.NEUTRAL_BASE_PATH || '' }}
+      NEUTRAL_PUBLIC_URL: 'https://turbolikes.com/'
+      NEUTRAL_SMOKE_VIEWER_MODULES: 'gps'
 
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
+
+      - name: Produktionsziel prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "require('./scripts/production-readonly-smoke').validateDeploymentTarget(process.env.NEUTRAL_PUBLIC_URL, process.env.NEUTRAL_BASE_PATH)"
 
       - name: Vollständige Node- und PHP-Tests ausführen
         shell: bash
@@ -75,3 +83,9 @@ jobs:
           FTP_USERNAME="$FTP_USER" \
           FTP_PROTOCOL="ftps" \
           node scripts/manual-ftps-deploy.js
+
+      - name: Produktionsstand rein lesend prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/production-readonly-smoke.js

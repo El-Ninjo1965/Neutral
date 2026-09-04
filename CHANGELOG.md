@@ -1,5 +1,15 @@
 # NEUTRAL – Changelog
 
+## 2026-09-04 – Dauerhaften Produktions-Smoke an das Deployment gebunden
+
+- bisherigen einmaligen HTTP-Nachweis als wiederholbaren, rein lesenden Node-Smoke umgesetzt,
+- FTPS-Workflow führt den Smoke unmittelbar nach jedem erfolgreichen Upload aus,
+- geprüft werden HTTPS-Root, SPA-Rewrite, unautorisierter Adminschutz, Status-API, anonymer Modulkatalog, Viewer-GPS-Rechte, Schutz des internen PHP-Cores und der ausgelieferte `reference-notes`-Serververtrag,
+- Ausgaben enthalten ausschließlich begrenzte HTTP-/Bool-Statuswerte; keine Antwortinhalte, Sitzungen oder Zugangsdaten,
+- Redirectziele werden auf HTTPS, erwarteten Origin und exakten Basispfad begrenzt; das öffentliche Paketmanifest muss zusätzlich denselben sauberen Git-Commit wie der Workflow ausweisen,
+- Titel und Modulverträge werden aus dem jeweiligen Projekt abgeleitet; neue App-Kopien erhalten eine verpflichtend neu zu setzende öffentliche Zielvariable und keine Neutral-spezifische GPS-Viewer-Vorgabe,
+- test-first durch **Codex (ChatGPT Work / GitHub-Connector)** umgesetzt; lokale ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern; erster Lauf des neuen dauerhaften Gates wird mit dem Abschlusscommit ausgelöst.
+
 ## 2026-09-03 – Allgemeinen Modul-Serververtrag vervollständigt
 
 - strikten, versionierten Kompatibilitätsvertrag für Core `1.x`, API `v1` und PHP 8+ eingeführt,

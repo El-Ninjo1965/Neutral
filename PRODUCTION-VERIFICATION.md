@@ -1,7 +1,7 @@
 # NEUTRAL – Produktionsnachweis Shared Hosting
 
-**Stand:** 2026-09-03
-**Ziel:** `https://www.turbolikes.com/`  
+**Stand:** 2026-09-04
+**Ziel:** `https://turbolikes.com/` (kanonischer Origin; `www` leitet dorthin weiter)
 **Plattform:** PHP/MySQL auf Shared Hosting; Node.js ist keine Produktionsvoraussetzung.
 
 ## Bestätigter Minimalumfang
@@ -17,6 +17,7 @@
 | Admin ohne Sitzung | BESTANDEN | Öffentlicher Aufruf zeigt ausschließlich „Authentication required“ und das Anmeldeformular |
 | Admin-CMS nach Anmeldung | BESTANDEN | echter Betreiberlogin und fortbestehende Sitzung; alle 15 Hauptansichten rein lesend geöffnet; alte Ansicht „FRAMEWORK DASHBOARD“ abwesend |
 | Neutrale Loginfelder | BESTANDEN | Admin- und Benutzerlogin enthalten produktiv keine voreingestellte Kennung und keinen versteckten `Developer`-Fallback; Read-only-Lauf `33808897301` |
+| Permanenter Post-Deployment-Smoke | CODE UND TEST BESTANDEN | Der FTPS-Job prüft danach rein lesend Root, SPA-Rewrite, Adminschutz, Status- und Modul-API, Viewer-GPS, internen PHP-Schutz und den ausgelieferten Referenzmodulvertrag. Der erste produktive Lauf dieses dauerhaften Gates bleibt bis zum Actions-Nachweis offen. |
 | API-Version | BESTANDEN | `/api/v1` ist kanonisch; Legacy `/api` bleibt kompatibel; unbekannte Versionen werden abgewiesen |
 | Logout-CSRF | CODE UND TEST BESTANDEN | Logout verlangt Sitzung und gültigen CSRF-Token; fehlender/falscher Token ergibt 403 |
 | Dateischutz | CODE UND TEST BESTANDEN | Root-Rewrite verweigert versteckte Dateien sowie `Server/php` und `Server/runtime`; Verzeichnislisten sind deaktiviert |

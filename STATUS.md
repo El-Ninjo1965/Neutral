@@ -1,8 +1,8 @@
 # NEUTRAL – Status
 
 **Status:** NACHGEWIESENER IST-STAND  
-**Geprüft:** 2026-09-03
-**Referenz:** Arbeitsbranch `codex/module-contract` nach `f1b1522b48f5605a20219d0cc57fb9eb2115ebb2`; GitHub-/Produktionsnachweis des Abschlusscommits steht noch aus
+**Geprüft:** 2026-09-04
+**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag; der nachfolgende permanente Produktions-Smoke ist lokal geprüft und wird durch seinen Abschlusscommit erstmals als Teil des FTPS-Jobs ausgeführt
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -71,4 +71,4 @@ Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die vor
 
 ## Nächster Abschlussmeilenstein
 
-Der nächste Meilenstein ist die GitHub-/PHP-/Produktionsprüfung dieses Modulvertrags. Danach folgen die externe Portabilitätsabnahme, sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.
+Der nächste Meilenstein ist der nachweislich grüne FTPS-Lauf einschließlich des neuen permanenten HTTP-Smokes. Danach folgen die externe Portabilitätsabnahme, sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.

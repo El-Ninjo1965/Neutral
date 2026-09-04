@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHE ARBEITSREGELN
 
-**Geprüft:** 2026-09-03
+**Geprüft:** 2026-09-04
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
 ## 1. Zweck
@@ -435,3 +435,12 @@ Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abges
 - **Deployment/Nachweis:** Codecommit `d31c870e83922ac518f127d8eccdecc42d5ea62f`, FTPS-Lauf `33807649560` und CodeQL-Lauf `33807649227` sind erfolgreich. Der rein lesende HTTP-Smoke `33808897301` bestätigte Root `200`, Admin ohne Sitzung `401`, User-Asset `200`, Status-API `200`, interne PHP-Datei `403`, gültiges API-JSON und leere Login-Kennungsfelder.
 - **Grenzen:** Der Logout wurde ausgelöst, konnte nach einem CDP-/Browser-Recovery-Timeout jedoch nicht mehr sichtbar verifiziert werden. Negativer CSRF-Livefall und produktive Login-Drosselung wurden nicht mutierend beziehungsweise nicht durch Sperrversuche getestet. Reale responsive iPad-/Safari-Abnahme bleibt offen.
 - **Sicherheit:** Keine Zugangsdaten wurden in Browserausgaben, Logs, Repository oder Dokumentation übernommen. Die Funktionsprüfung führte keine Uploads, Löschungen, Datenbankänderungen, E-Mails oder sonstigen Servermutationen aus.
+
+### 2026-09-04 – Permanenten Post-Deployment-Smoke ergänzen
+
+- **Aufgabe:** Den bislang einmaligen HTTP-Nachweis dauerhaft an jedes erfolgreiche FTPS-Deployment binden und um den allgemeinen Modulvertrag erweitern.
+- **Ausgeführt und dokumentiert durch:** **Codex (ChatGPT Work / GitHub-Connector)**.
+- **Test-first:** Der neue Workflow-/Smoke-Vertrag schlug zunächst wegen fehlendem Schritt und fehlendem Skript mit 0/2 fehl. Nach der Minimalimplementierung bestanden die gezielten Vertrags- und Verhaltensfälle; nach Reviewkorrekturen bestand die lokal ausführbare Gesamtsuite mit 283 Tests, 275 bestanden, acht erwarteten PHP-Skips und 0 Fehlern.
+- **Änderung:** `scripts/production-readonly-smoke.js` prüft nach dem Upload ausschließlich per GET den öffentlichen Root, `/app/`-Rewrite, Adminschutz, Status-API, anonymen Modulkatalog, konfigurierte Viewer-Module, internen PHP-Schutz, das exakte öffentliche Commitmanifest und alle im jeweiligen Projekt enthaltenen Modulverträge. Redirects bleiben auf HTTPS, Origin und exakten Pfad begrenzt. Der FTPS-Workflow prüft die Ziel-URL vor dem Upload und ruft den Smoke unmittelbar danach auf; App-Kopien müssen ihre eigene öffentliche URL als Repositoryvariable setzen.
+- **Sicherheit:** Keine Anmeldung, Cookies, Schreibrequests, Uploads, Löschungen oder Datenbankänderungen. Erfolgsoutput enthält nur HTTP-/Bool-Statuswerte und keine Antwortinhalte oder Verbindungsdaten.
+- **Offen:** Der erste produktive Actions-Lauf des neuen dauerhaften Gates muss als vollständig grün belegt werden; erst danach wird dieser Punkt aus `TODO.md` entfernt.

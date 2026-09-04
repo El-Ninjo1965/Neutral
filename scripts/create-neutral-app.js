@@ -405,6 +405,22 @@ function configureGps(stagingRoot, appId, includeGps) {
   writeJson(gpsManifestPath, gpsManifest);
 }
 
+function neutralizeDeploymentSmoke(stagingRoot) {
+  const workflowPath = path.join(stagingRoot, '.github/workflows/ftp-upload.yml');
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  const publicUrl = /^\s*NEUTRAL_PUBLIC_URL:\s*.*$/m;
+  const viewerModules = /^\s*NEUTRAL_SMOKE_VIEWER_MODULES:\s*.*$/m;
+  if (!publicUrl.test(workflow) || !viewerModules.test(workflow)) {
+    throw new Error('Expected production smoke configuration is missing');
+  }
+  fs.writeFileSync(
+    workflowPath,
+    workflow
+      .replace(publicUrl, '      NEUTRAL_PUBLIC_URL: ${{ vars.NEUTRAL_PUBLIC_URL }}')
+      .replace(viewerModules, "      NEUTRAL_SMOKE_VIEWER_MODULES: ''")
+  );
+}
+
 function scanForSecrets(stagingRoot) {
   function walk(directory) {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -456,6 +472,7 @@ function createNeutralApp({ sourceRoot, target, appId, appName, includeGps = fal
     copyVersionedFiles(resolvedSourceRoot, stagingRoot, files);
     updateApplicationMetadata(stagingRoot, appId, appName);
     configureGps(stagingRoot, appId, includeGps);
+    neutralizeDeploymentSmoke(stagingRoot);
     scanForSecrets(stagingRoot);
     if (initGit) initializeGit(stagingRoot);
 

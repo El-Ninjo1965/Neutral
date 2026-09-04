@@ -427,6 +427,9 @@ test('creates a complete secret-free project in an absent target without GPS', (
   if (sourceHasGps) assert.equal(sha256(sourceGpsManifest), sourceGpsHash, 'source GPS module must stay unchanged');
   const workflow = fs.readFileSync(path.join(target, '.github/workflows/ftp-upload.yml'), 'utf8');
   assert.doesNotMatch(workflow, /test -f .*Web-App\/app\/modules\/gps\/module\.json/);
+  assert.match(workflow, /NEUTRAL_PUBLIC_URL:\s*\$\{\{ vars\.NEUTRAL_PUBLIC_URL \}\}/);
+  assert.match(workflow, /NEUTRAL_SMOKE_VIEWER_MODULES:\s*''/);
+  assert.doesNotMatch(workflow, /turbolikes\.com/);
 
   for (const excludedPath of [
     '.git', 'node_modules', 'dist', '.worktrees', '.superpowers', '.deploy-staging',
@@ -464,6 +467,8 @@ test('accepts an existing empty target and retains GPS only when requested', { s
   assert.deepEqual(appInfo.modules, ['gps']);
   const workflow = fs.readFileSync(path.join(target, '.github/workflows/ftp-upload.yml'), 'utf8');
   assert.match(workflow, /test -f .*Web-App\/app\/modules\/gps\/module\.json/);
+  assert.match(workflow, /NEUTRAL_PUBLIC_URL:\s*\$\{\{ vars\.NEUTRAL_PUBLIC_URL \}\}/);
+  assert.match(workflow, /NEUTRAL_SMOKE_VIEWER_MODULES:\s*''/);
 });
 
 test('generated project runs its copied non-PHP test suite without requiring its own Git index', {

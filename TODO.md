@@ -2,13 +2,14 @@
 
 **Status:** AUSFÜHRUNGSREIHENFOLGE
 
-**Geprüft:** 2026-09-03
+**Geprüft:** 2026-09-04
 **Ziel:** [`CORE-1.0.md`](CORE-1.0.md)
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
 ## 1. Installation und Produktionssicherheit
 
+- ersten GitHub-FTPS-Lauf mit dem permanenten Post-Deployment-Smoke als vollständig grün belegen; der Smoke selbst ist test-first implementiert und prüft ausschließlich lesend Root, Rewrite, Adminschutz, PHP-Status, Viewer-GPS, Modulkatalog, internen Dateischutz und den Referenzmodulvertrag,
 - produktiven Logout samt Sitzungsende sowie einen negativen CSRF-Fall einmal mit Betreiberzugang abnehmen; der produktive Login, die fortbestehende Sitzung und sämtliche 15 Admin-Hauptansichten sind bereits rein lesend bestätigt,
 - PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
 - responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
