@@ -1,5 +1,12 @@
 # NEUTRAL – Changelog
 
+## 2026-09-05 – GPS-Referenzmodul und plattformneutraler Gerätevertrag konsolidiert
+
+- `Web-App/app/modules/gps/index.js` auf den neutralen Gerätevertrag angehoben: kein automatischer Browser-Permissiondialog im `prompt`-Zustand, explizite Bestätigung mit `Ja/Nein`, kurze Fehlernachricht bei verweigertem Standort, kein unkontrollierter Repeat-Request beim Öffnen und ein `Position teilen`-Flow mit `navigator.share` sowie Copy-Fallback ohne iOS-/Android-Hardcodierung;
+- `ModuleCreation.md` um den verbindlichen mobilen „Mobile-First / Capability-Detection / Fallback / Permission / Native-Wrapper“-Vertrag ergänzt;
+- `Architecture.md` und `STATUS.md` auf den plattformneutralen GPS-/Gerätevertrag abgestimmt;
+- GPS-Regressionsprüfung mit Fokus auf Zustimmungspfad, Permission-Flow und Share-API ergänzt und erfolgreich verifiziert.
+
 ## 2026-09-05 – PHP-Mindestversionen konsistent und Testnachweis persistiert
 
 - aktive PHP-Mindestversionsangaben im produktiven Core auf `PHP 8.1+` vereinheitlicht (`PrerequisiteChecker`, modulare `compatibility.php`-Einträge und offene Installations-/Produktionsdokumentation);

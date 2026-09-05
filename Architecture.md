@@ -57,6 +57,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **GEPLANT:** sofort sichtbare mobile Grundoberfläche vor langsamer Initialisierung; klare Schichten für Shell, Core und Erweiterungs-UI; messbare Browserkompatibilität.
 
+**GEPLANT:** Gerätefunktionen müssen plattformneutral über Capability Detection und definierte Fallbacks genutzt werden. Das GPS-Modul dient als Referenz für mobile Web-Interaktionen auf iOS und Android, ohne hartcodierte Browser- oder Betriebssystemzweige.
+
 **FEHLT/TEILWEISE:** belastbare Startperformance-Budgets und eine dokumentierte Geräte-/Browser-Testmatrix; weitere direkte UI-Fetches sind noch nicht vollständig auf den zentralen Transportadapter konsolidiert.
 
 ## 3. Core

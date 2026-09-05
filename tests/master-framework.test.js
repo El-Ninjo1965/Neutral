@@ -1169,6 +1169,66 @@ test('gps never triggers the first browser permission prompt automatically', { s
   assert.match(container.innerHTML, /Get Current Position/);
 });
 
+test('gps asks for explicit user confirmation before requesting location in prompt state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const confirmation = gps.requestCurrentPositionWithConsent();
+  assert.equal(confirmation.ok, false);
+  assert.equal(confirmation.code, 'USER_CONFIRMATION_REQUIRED');
+  assert.equal(geolocationState.currentPositionCalls, 0);
+
+  const accepted = await gps.confirmLocationRequest(true);
+  assert.equal(accepted.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+
+  const declined = gps.confirmLocationRequest(false);
+  assert.equal(declined.ok, false);
+  assert.equal(declined.code, 'USER_DECLINED');
+});
+
+test('gps shares the current position using the native share API or a copy fallback without platform hardcoding', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({ currentUser: null, authContext: true });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  gps.lastPosition = { latitude: 52.52, longitude: 13.405, accuracy: 7.5, timestamp: '2026-09-05T12:00:00.000Z' };
+
+  let sharedTitle = null;
+  sandbox.navigator.share = async (payload) => {
+    sharedTitle = payload.title;
+    return true;
+  };
+  const shareResult = await gps.shareCurrentPosition();
+  assert.equal(shareResult.ok, true);
+  assert.equal(sharedTitle, 'Standort');
+
+  delete sandbox.navigator.share;
+  let copiedText = null;
+  sandbox.navigator.clipboard = {
+    async writeText(value) {
+      copiedText = value;
+    }
+  };
+  const fallback = await gps.shareCurrentPosition();
+  assert.equal(fallback.ok, true);
+  assert.match(copiedText, /52\.52/);
+  assert.match(copiedText, /13\.405/);
+
+  gps.lastPosition = null;
+  const missing = gps.shareCurrentPosition({ requirePosition: true });
+  assert.equal(missing.ok, false);
+  assert.equal(missing.code, 'NO_POSITION_AVAILABLE');
+});
+
 test('registers module-provided admin settings and applies them to gps runtime options', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 

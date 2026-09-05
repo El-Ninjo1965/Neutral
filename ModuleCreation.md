@@ -118,6 +118,17 @@ Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` 
 
 `capabilities` sind deklarative Metadaten und kein Rechteersatz. Die Serverkompatibilität wird separat über `compatibility.core`, `compatibility.api` und `compatibility.php` geprüft; derzeit gilt Core `>=1.0.0 <2.0.0`, API-Major `1` und PHP 8+.
 
+## 9a. Mobile-/Plattformvertrag für Gerätefunktionen
+
+Zukünftige Produktmodule müssen grundsätzlich für mobile Web-App-Nutzung auf iOS und Android geeignet sein. Der Standard ist Mobile-First und Touch-First; ein Modul darf nicht ohne zwingende technische Notwendigkeit auf ein einzelnes Betriebssystem oder einen einzelnen Browser eingegrenzt werden.
+
+- Mobiles Web-Design ist der Standard. Touch-Ziele, kleine Bildschirme, schwankende Netzverbindungen und Gerätefunktionen werden als Teil des normalen Entwurfsverhaltens behandelt.
+- Gerätefunktionen werden über Capability Detection, standardisierte Web-APIs oder dokumentierte Core-Facaden abgerufen. Eine harte iOS-/Android-Erkennung ist nur zulässig, wenn der technische Unterschied nachweislich und lokal begrenzt notwendig ist.
+- Ein Modul muss definierte Fallbacks für fehlende Gerätefähigkeiten besitzen, statt bei einem nicht vorhandenen Feature sofort zu scheitern.
+- Berechtigungen müssen im UI und im Modulfluss klar behandelt werden; Browser-Permissiondialoge dürfen nur in verständlichem, benutzergesteuertem Kontext ausgelöst werden.
+- Der öffentliche Modulvertrag soll bei späteren nativen Wrappern möglichst erhalten bleiben. Ein nativer Container darf intern adaptieren, aber der Modulkontrakt und die Nutzererfahrung müssen konsistent bleiben.
+- `GPS` dient als Referenzmodul für diesen plattformneutralen Gerätevertrag; ein Gerät-Feature muss im Core oder im Modul selbst durch dokumentierte Fallbacks und Progressive Enhancement abgesichert werden.
+
 ## 10. Erlaubte Core-Schnittstellen
 
 Maßgeblich ist Vertrag `window.Core.getContract()` in Version `1.0.0`; eine erlaubte Facade wird mit `window.Core.getFacade(name)` bezogen. Nur Namen in `publicFacades` sind Modul-APIs; `internalGlobals` sind trotz globaler Erreichbarkeit privat.

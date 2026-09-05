@@ -116,6 +116,19 @@ VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktisc
 - **Offene Punkte:** keine im aktuellen Abschlussauftrag; echte Live-/Host-Abnahmen bleiben explizit als `LIVE / BETREIBERABHÄNGIG` aufgeführt.
 - **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Für zukünftige Codespace-Sitzungen kann eine repo- oder workspacegestützte PHP-Pfadabsicherung über eine lokale Shell-Umgebung oder ein Devcontainer-Setup sinnvoll sein; sie wurde hier nicht umgesetzt, weil keine Projektentscheidung für eine dauerhafte Infrastrukturänderung vorliegt.
 
+### 2026-09-05 – GPS-Referenzmodul und plattformneutraler Gerätevertrag
+
+- **Aufgabe:** Das GPS-Referenzmodul auf den tatsächlichen Plattformvertrag für mobile Web-Apps heben: keine ungebetene Browser-Permissionabfrage, explizite Benutzerentscheidung bei `prompt`, definierte Short-Message bei `denied`, plattformneutrale Share-/Copy-Strategie und klare Anweisungen im Modulvertrag.
+- **Ausgangszustand:** Das bereits vorhandene GPS-Modul zeigte eine automatische Positionsermittlung bei aktiviertem Modul an, aber ohne explizite Benutzerentscheidung im `prompt`-Zustand. Es gab keine plattformneutrale `Position teilen`-Funktion und keine verbindliche Anweisung im Modulvertrag, dass mobile Modulfunktionen Capability Detection, Fallbacks und keine iOS-/Android-Hardcodierung verwenden müssen.
+- **Ausgeführt und dokumentiert durch:** **Copilot Agent / GitHub Codespace**.
+- **Architektur-/Modulvertragsentscheidung:** Die Geräte-API wird ausschließlich über standardisierte Web-APIs oder dokumentierte Core-Facaden genutzt. Ein Browser-/Betriebssystem-Feature wird mit Capability Detection geprüft; Fallbacks bleiben im Modul selbst. `GPS` ist die technische Referenz für plattformneutrale Gerätefunktionen, nicht für eine Browser- oder OS-spezifische Sonderlösung.
+- **GPS-UX-Vertrag:** Bei bereits gewährter Berechtigung wird die aktuelle Position beim Öffnen genau einmal automatisch abgefragt; bei `prompt`/`unknown` wird erst ein Neutraldialog `Aktuelle Position ermitteln?` mit `Ja` / `Nein` gezeigt. `Nein` unterbricht den Ablauf; `Ja` startet nur danach eine echte Positionsabfrage. Verweigert oder nicht verfügbar liefert das Modul die kurze Nachricht `Standort nicht verfügbar. Bitte Standortzugriff aktivieren.`. Nach einer gültigen Position bleibt das manuelle Aktualisieren möglich; automatische Abfrage läuft nicht unkontrolliert mehrfach pro Mount.
+- **Geänderte Dateien:** `Web-App/app/modules/gps/index.js`, `ModuleCreation.md`, `Architecture.md`, `STATUS.md`, `CHANGELOG.md`, `WORKFLOW.md`.
+- **Tests und exakte Ergebnisse:** `node --test --test-concurrency=1 tests/master-framework.test.js` wurde mit 37/37 Tests und 0 Fehlern erfolgreich ausgeführt. Die Prüfung umfasst den `prompt`-Pfad, den Positiven Pfad, den `denied`-Pfad, die automatische Erfassung bei bereits erteilter Berechtigung und die Share-/Fallback-Logik.
+- **Relevante Browsergrenzen:** Die genaue Unterscheidung einer globalen Geräteeinstellung („GPS- oder Location-Schalter aus“) ist über Browser-APIs nicht zuverlässig differenzierbar; das Modul formuliert daher nur die nutzbaren Statuswerte und keine technisch überhöhte Eigenschaftsbehauptung.
+- **Eigene Vorschläge:** `VORSCHLAG – noch nicht beschlossen/umgesetzt` für eine künftige zentrale Gerätcapability-Fassade im Core, die Browser-Features konsistent und wiederverwendbar kapselt, ohne den Modulvertrag oder die Produktmodule an ein einzelnes Betriebssystem zu binden.
+- **Verbleibende Live-/Gerätetests:** echte iPad-Safari- und Android-Chrome-Prüfungen auf realem Gerät bleiben als Live-/Betreiberabhängig offen; in der Codespace-Umgebung wurden die Browser- und Permission-Logiken durch die Modultests ausgewertet.
+
 ## 10. Fortlaufendes Arbeitsprotokoll
 
 ### 2026-09-04 – Workflow-Übergabeprotokoll und Regelprüfung
