@@ -223,6 +223,8 @@ Der Loader speichert ausschließlich einen strukturell validierten anonymen Modu
 
 Ein Modul mit Geräteberechtigung darf bei bereits erteiltem Browserstatus kontrolliert aktualisieren. Es darf beim bloßen Rendern keinen erstmaligen Berechtigungsdialog auslösen. Das GPS-Referenzmodul zeigt zunächst den letzten lokalen Wert und fragt höchstens einmal pro Mount automatisch ab, wenn der Status bereits `granted` ist.
 
+Der allgemeine Offline-Vertrag des Cores: Nach einem erfolgreichen Online-Start stellt der Core-Service-Worker (`Web-App/public/service-worker.js`) die App-Shell, alle Core-Skripte, öffentliche CSS/JS-Assets und einmal erfolgreich geladene Modul-Entry-Skripte (`Web-App/app/modules/<id>/index.js`) versioniert im Cache Storage bereit. Ein Modul kann seinen Browser-Entry daher nach erfolgreichem ersten Laden auch offline erneut laden lassen. Nicht gecacht werden niemals: Nicht-GET-Requests, `/api/`-Antworten, Auth-/Session-, Admin- und Setup-Endpunkte sowie jede personalisierte oder sicherheitskritische Serverantwort. Module müssen deklarieren bzw. im Manifest-/Beschreibungstext dokumentieren, welche ihrer Funktionen offline arbeiten und welche zwingend Netzwerk benötigen; netzwerkabhängige Funktionen melden lokal `Offline – diese Funktion benötigt eine Verbindung.`, ohne die App zu blockieren.
+
 ## 20. Test- und Abnahmeregel
 
 Mindestens prüfen:

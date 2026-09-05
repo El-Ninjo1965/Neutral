@@ -566,6 +566,15 @@
     });
   }
 
+  // Offline-first: register the service worker in secure contexts only. The
+  // worker precaches the app shell so warm starts and offline restarts work
+  // after one successful online visit. Registration never blocks first paint.
+  if (window.isSecureContext && navigator.serviceWorker && typeof navigator.serviceWorker.register === 'function') {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {
+      // A failed registration must never break the online experience.
+    });
+  }
+
   // First paint and basic navigation do not wait for IndexedDB, auth, network or module discovery.
   if (window.CorePerformance) window.CorePerformance.mark('shell-visible');
   renderApp();

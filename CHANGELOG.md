@@ -1,5 +1,15 @@
 # NEUTRAL – Changelog
 
+## 2026-09-05 – Offline-First-Service-Worker, HTTPS-Erzwingung und Warmstart-Diagnose
+
+- Neuer Core-Service-Worker `Web-App/public/service-worker.js`: versionierter App-Shell-Cache (`neutral-shell-v<Deploy-Stamp>`), Precache von HTML/CSS/Core-Skripten, Navigation network-first mit Shell-Fallback, statische Assets cache-first mit Hintergrund-Refresh, einmal geladene Modul-Entries offline nutzbar, kontrollierte Entfernung alter Cacheversionen, strikte Sicherheitsgrenze (kein Caching von Nicht-GET, `/api/`, Auth/Admin/Setup);
+- Registrierung in `Web-App/public/user-app.js` ausschließlich unter Secure Context, ohne First-Paint-Blockade;
+- Root-`.htaccess`: permanente 301-HTTPS-Erzwingung (Pfad/Query erhalten), `service-worker.js`-Rewrite am Scope-Root, `no-cache` für den Service Worker, `Cache-Control: public, max-age=86400` für übrige JS/CSS-Assets;
+- `scripts/production-readonly-smoke.js` weist die HTTPS-Live-Anforderung getrennt vom Code-Deployment aus (`httpsProbe`-Evidenz, `httpsEnforced`), statt fehlende HTTPS-Umleitung als vollen Erfolg zu melden;
+- temporäre lokale Diagnosebereiche `Startup-Diagnose (temporär)` (Core-Performance-Marken) und `GPS-Diagnose (temporär)` (koordinatenfrei) für die reale Gerätemessung; beide nach erfolgreicher Diagnose wieder zu entfernen;
+- Warmstart: Discovery hydriert local-first aus dem anonymen Katalogcache und rekonziliert remote im Hintergrund;
+- `ModuleCreation.md` um den allgemeinen Offline-Vertrag für Module ergänzt; `Architecture.md` um den Service-Worker-/Offline-First-Abschnitt erweitert.
+
 ## 2026-09-05 – GPS-Benutzer-UI und persönliche Auto-Position ergänzt
 
 - `Web-App/app/modules/gps/index.js` auf den realen Benutzerfluss korrigiert: einfache `GPS`-Übersicht, `Aktuelle Position` im normalen UI, echtes Modal/Popup bei noch offener Standortentscheidung, kein roher `Permission: prompt/granted/denied` im Standard-UI, `Position beim Öffnen automatisch ermitteln` als persistinges `moduleSettings.gps.autoRequestOnOpen`, und `Position teilen` mit validem Share-/Copy-Fallback ohne iOS-/Android-Hardcodierung;

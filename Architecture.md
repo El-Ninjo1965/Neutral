@@ -195,6 +195,10 @@ Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell. `neutral:
 
 Zeitbudgets auf realer Mobilhardware bleiben zwei ausdrücklich offene P8-Gerätetests.
 
+## Offline-First / Service Worker – IST (code-seitig), LIVE-Abnahme offen
+
+Nach mindestens einem erfolgreichen Online-Start registriert die User-Shell unter Secure Context den Core-Service-Worker `Web-App/public/service-worker.js`. Dieser cached unter dem versionierten Namen `neutral-shell-v<Deploy-Stamp>` die App-Shell (HTML), `style.css`, alle Core-Skripte und die öffentlichen User-Skripte. Strategien: Navigation network-first mit Fallback auf die gecachte Shell (kein Festklemmen alter HTML-Versionen), statische Core-/Modul-Assets cache-first mit Hintergrund-Refresh, einmal erfolgreich geladene Modul-Entry-Skripte bleiben offline nutzbar. Sicherheitsgrenze: Nur GET; `/api/`, Auth-/Session-, Admin- und Setup-Endpunkte werden niemals aus dem Cache beantwortet. Beim `activate` werden alle älteren `neutral-shell-v*`-Caches entfernt, sodass kein Mischzustand aus altem Core und neuen Modulen entsteht. Der Service Worker selbst wird per `.htaccess` mit `no-cache` ausgeliefert und über eine Root-Rewrite-Regel am Scope-Root bereitgestellt. Der anonyme Modulkatalog bleibt zusätzlich local-first über localStorage hydriert. Reale Chrome-/iPadOS-Abnahme bleibt wegen der HTTPS-/Hosting-Abhängigkeit (Secure Context) offen.
+
 ## Portable Installation – IST/TEILWEISE
 
 **IST:** `scripts/lib/portable-install.js` ist der gemeinsame Kern für Allowlist-Inventar, Pfadnormalisierung, SHA-256, Secretprüfung und verifizierte Pakete. `build-production-package.js` erzeugt `dist/neutral-production/` über einen benachbarten temporären Baum und ersetzt nur einen über Produzent, Format, Metadaten, exakte Allowlist, Inventar und Hashes positiv verifizierten Altstand. Das Manifest hält mit `sourceDirty` konservativ fest, ob der Git-Arbeitsbaum beim Build sauber war. Das Paket enthält Root-`.htaccess`, `Web-App/`, `Server/php/`, `Server/public/`, `.env.example`, `manifest.json` und `SHA256SUMS`; Node-Server, Tests, Dokumentation, Git-, Runtime-, Backup-, Log- und Secretdateien sind ausgeschlossen.

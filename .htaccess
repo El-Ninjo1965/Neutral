@@ -24,6 +24,7 @@ RewriteRule ^style\.css$ Web-App/public/style.css [L]
 RewriteRule ^user-app\.js$ Web-App/public/user-app.js [L]
 RewriteRule ^user-module-access\.js$ Web-App/public/user-module-access.js [L]
 RewriteRule ^public-path\.js$ Web-App/public/public-path.js [L]
+RewriteRule ^service-worker\.js$ Web-App/public/service-worker.js [L]
 RewriteRule ^api(?:/.*)?$ Server/public/api/index.php [END,QSA]
 RewriteRule ^admin\.php$ Server/public/admin.php [L,QSA]
 RewriteRule ^setup\.php$ Server/public/setup.php [L,QSA]
@@ -35,6 +36,10 @@ RewriteRule ^ Web-App/public/index.html [L]
 # manifest (manifest.json, SHA256SUMS) and HTML/API responses stay uncached so
 # new revisions are picked up; JS/CSS assets are reused across warm starts.
 <IfModule mod_headers.c>
+  # The service worker must always be revalidated so deployments take effect.
+  <FilesMatch "^service-worker\.js$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
   <FilesMatch "\.(?:js|css)$">
     Header set Cache-Control "public, max-age=86400"
   </FilesMatch>
