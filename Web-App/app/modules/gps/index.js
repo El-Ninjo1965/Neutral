@@ -27,6 +27,7 @@
     let lastError = null;
     let lastPosition = null;
     // Bounded diagnostic state. Coordinates and personal data are never recorded here.
+    // TEMPORARY: remove after the real-device GPS fault has been identified.
     const diagnostics = {
         secureContext: typeof window !== 'undefined' && window.isSecureContext === true,
         geolocationAvailable: false,
@@ -34,7 +35,12 @@
         permissionState: 'unknown',
         getCurrentPositionCalled: false,
         lastOutcome: null,
-        lastErrorCode: null
+        lastErrorCode: null,
+        lastRequestAt: null,
+        lastDurationMs: null,
+        consentRequired: false,
+        consentShown: false,
+        lastConsentDecision: 'none'
     };
     const defaultSettings = Object.freeze({
         enableHighAccuracy: true,
@@ -538,7 +544,11 @@
                 // the standardized geolocation call; the browser enforces its own
                 // permission model and reports code 1 through the error callback.
                 diagnostics.getCurrentPositionCalled = true;
+                diagnostics.lastRequestAt = new Date().toISOString();
+                diagnostics.lastOutcome = null;
+                diagnostics.lastErrorCode = null;
                 syncDiagnostics();
+                const requestStartedAt = Date.now();
                 geolocation.getCurrentPosition(
                     (position) => {
                         const record = persistPosition(position);
@@ -548,6 +558,7 @@
                         permissionState = 'granted';
                         diagnostics.lastOutcome = 'success';
                         diagnostics.lastErrorCode = null;
+                        diagnostics.lastDurationMs = Date.now() - requestStartedAt;
                         syncDiagnostics();
                         emit('gps:position', record);
                         resolve(record);
@@ -556,6 +567,7 @@
                         const detail = normalizeError(error);
                         diagnostics.lastOutcome = 'error';
                         diagnostics.lastErrorCode = detail.code;
+                        diagnostics.lastDurationMs = Date.now() - requestStartedAt;
                         syncDiagnostics();
                         onError(error);
                         reject(Object.assign(new Error(detail.message), { code: detail.code }));
@@ -592,6 +604,8 @@
         confirmLocationRequest(confirmed) {
             if (confirmed !== true) {
                 permissionState = 'denied';
+                diagnostics.lastConsentDecision = 'no';
+                syncDiagnostics();
                 return { ok: false, code: 'USER_DECLINED', message: 'User declined the location request.' };
             }
 
@@ -609,9 +623,15 @@
             }
 
             permissionState = 'granted';
+            diagnostics.lastConsentDecision = 'yes';
+            syncDiagnostics();
             return new Promise((resolve, reject) => {
                 diagnostics.getCurrentPositionCalled = true;
+                diagnostics.lastRequestAt = new Date().toISOString();
+                diagnostics.lastOutcome = null;
+                diagnostics.lastErrorCode = null;
                 syncDiagnostics();
+                const requestStartedAt = Date.now();
                 geolocation.getCurrentPosition(
                     (position) => {
                         const record = persistPosition(position);
@@ -620,6 +640,7 @@
                         lastError = null;
                         diagnostics.lastOutcome = 'success';
                         diagnostics.lastErrorCode = null;
+                        diagnostics.lastDurationMs = Date.now() - requestStartedAt;
                         syncDiagnostics();
                         emit('gps:position', record);
                         resolve(record);
@@ -628,6 +649,7 @@
                         const detail = normalizeError(error);
                         diagnostics.lastOutcome = 'error';
                         diagnostics.lastErrorCode = detail.code;
+                        diagnostics.lastDurationMs = Date.now() - requestStartedAt;
                         syncDiagnostics();
                         onError(error);
                         reject(Object.assign(new Error(detail.message), { code: detail.code }));
@@ -639,6 +661,7 @@
 
         getDiagnostics() {
             syncDiagnostics();
+            const options = getGeolocationOptions();
             return {
                 secureContext: diagnostics.secureContext,
                 geolocationAvailable: diagnostics.geolocationAvailable,
@@ -646,7 +669,15 @@
                 permissionState: diagnostics.permissionState,
                 getCurrentPositionCalled: diagnostics.getCurrentPositionCalled,
                 lastOutcome: diagnostics.lastOutcome,
-                lastErrorCode: diagnostics.lastErrorCode
+                lastErrorCode: diagnostics.lastErrorCode,
+                lastRequestAt: diagnostics.lastRequestAt,
+                lastDurationMs: diagnostics.lastDurationMs,
+                consentRequired: diagnostics.consentRequired,
+                consentShown: diagnostics.consentShown,
+                lastConsentDecision: diagnostics.lastConsentDecision,
+                timeout: options.timeout,
+                enableHighAccuracy: options.enableHighAccuracy,
+                maximumAge: options.maximumAge
             };
         },
 
@@ -746,6 +777,33 @@
             }
         };
 
+        // TEMPORARY diagnostic panel — remove after the real-device GPS fault is identified.
+        const escapeDiag = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const renderDiagnostics = () => {
+            const d = GpsModule.getDiagnostics();
+            const yesNo = (value) => (value ? 'Ja' : 'Nein');
+            const outcome = d.lastOutcome === 'success' ? 'success' : d.lastOutcome === 'error' ? 'error' : 'noch keiner';
+            const consentDecision = d.lastConsentDecision === 'yes' ? 'JA' : d.lastConsentDecision === 'no' ? 'NEIN' : 'keine';
+            return `<details class="gps-diagnostics" open><summary>GPS-Diagnose (temporär)</summary><dl class="gps-diagnostics-list">`
+                + `<div><dt>Secure Context</dt><dd>${yesNo(d.secureContext)}</dd></div>`
+                + `<div><dt>Geolocation API verfügbar</dt><dd>${yesNo(d.geolocationAvailable)}</dd></div>`
+                + `<div><dt>Permissions API verfügbar</dt><dd>${yesNo(d.permissionsApiAvailable)}</dd></div>`
+                + `<div><dt>Permission State</dt><dd>${escapeDiag(d.permissionState)}</dd></div>`
+                + `<div><dt>getCurrentPosition aufgerufen</dt><dd>${yesNo(d.getCurrentPositionCalled)}</dd></div>`
+                + `<div><dt>Letzter Ausgang</dt><dd>${outcome}</dd></div>`
+                + `<div><dt>Letzter Fehlercode</dt><dd>${escapeDiag(d.lastErrorCode || 'keiner')}</dd></div>`
+                + `<div><dt>Letzte Anfrage</dt><dd>${escapeDiag(d.lastRequestAt || '—')}</dd></div>`
+                + `<div><dt>Dauer bis Antwort</dt><dd>${d.lastDurationMs === null ? '—' : `${d.lastDurationMs} ms`}</dd></div>`
+                + `<div><dt>Timeout</dt><dd>${escapeDiag(d.timeout)} ms</dd></div>`
+                + `<div><dt>High Accuracy</dt><dd>${yesNo(d.enableHighAccuracy)}</dd></div>`
+                + `<div><dt>Maximum Age</dt><dd>${escapeDiag(d.maximumAge)} ms</dd></div>`
+                + `<div><dt>Neutral-Consent erforderlich</dt><dd>${yesNo(d.consentRequired)}</dd></div>`
+                + `<div><dt>Neutral-Consent angezeigt</dt><dd>${yesNo(d.consentShown)}</dd></div>`
+                + `<div><dt>Letzte Neutral-Entscheidung</dt><dd>${consentDecision}</dd></div>`
+                + `</dl></details>`;
+        };
+
         const render = (message = '', isError = false) => {
             const state = GpsModule.getRuntimeState();
             const position = state.lastPosition || GpsModule.getLastPosition();
@@ -754,6 +812,9 @@
             const permissionRequested = state.permissionState === 'prompt' || state.permissionState === 'unknown';
             const autoRequestOnOpen = isAutoRequestEnabled();
             const showConsentModal = permissionRequested && active && !autoRequestOnOpen;
+            diagnostics.consentRequired = permissionRequested;
+            diagnostics.consentShown = showConsentModal;
+            syncDiagnostics();
             const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Zeitpunkt</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
             const shareDisabled = !position || !allowedToUse || !active;
             const infoMessage = message || (state.permissionState === 'denied'
@@ -766,7 +827,7 @@
             const modalMarkup = showConsentModal
                 ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
                 : '';
-            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-action="share" ${shareDisabled ? 'disabled' : ''}>Position teilen</button></div><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-action="share" ${shareDisabled ? 'disabled' : ''}>Position teilen</button></div><p id="gpsUserMessage" class="gps-message">${infoMessage}</p>${renderDiagnostics()}</div>`;
 
             const autoSetting = container.querySelector('[data-gps-setting="autoRequestOnOpen"]');
             if (autoSetting) {

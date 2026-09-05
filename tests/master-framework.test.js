@@ -1437,6 +1437,92 @@ test('gps records error outcome in diagnostics', { skip: gpsReferenceAvailable ?
   assert.ok(!('latitude' in diagnostics));
 });
 
+test('gps temporary diagnostics panel shows state without coordinates', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  const container = createGpsContainer();
+
+  gps.renderUserInterface(container);
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.match(container.innerHTML, /GPS-Diagnose \(temporär\)/);
+  assert.match(container.innerHTML, /Secure Context/);
+  assert.match(container.innerHTML, /Geolocation API/);
+  assert.match(container.innerHTML, /Permissions API/);
+  assert.match(container.innerHTML, /Permission State/);
+  assert.match(container.innerHTML, /getCurrentPosition aufgerufen/);
+  assert.match(container.innerHTML, /Consent/);
+  const panelMarkup = container.innerHTML.slice(container.innerHTML.indexOf('gps-diagnostics'));
+  assert.doesNotMatch(panelMarkup, /52\.52/);
+  assert.doesNotMatch(panelMarkup, /13\.405/);
+});
+
+test('gps diagnostics panel reflects missing permissions API', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({
+    permissionsApi: false,
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  const container = createGpsContainer();
+
+  gps.renderUserInterface(container);
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  // Without the Permissions API the panel must show this clearly, while the
+  // standardized geolocation call stays fully usable.
+  assert.match(container.innerHTML, /GPS-Diagnose \(temporär\)/);
+  assert.match(container.innerHTML, /Permissions API verfügbar<\/dt><dd>Nein<\/dd>/);
+
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  const diagnostics = gps.getDiagnostics();
+  assert.equal(diagnostics.permissionsApiAvailable, false);
+  assert.equal(diagnostics.getCurrentPositionCalled, true);
+  assert.equal(diagnostics.lastOutcome, 'success');
+});
+
+test('gps diagnostics consent fields track the neutral modal flow', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  await gps.confirmLocationRequest(true);
+  const diagnostics = gps.getDiagnostics();
+  assert.equal(diagnostics.lastConsentDecision, 'yes');
+
+  const declined = gps.confirmLocationRequest(false);
+  assert.equal(declined.ok, false);
+  const afterDecline = gps.getDiagnostics();
+  assert.equal(afterDecline.lastConsentDecision, 'no');
+});
+
+test('gps diagnostics never transmit data to a server', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
+  const source = fs.readFileSync(path.join(projectRoot, 'Web-App/app/modules/gps/index.js'), 'utf8');
+  const diagnosticsSection = source.slice(source.indexOf('GPS-Diagnose') > -1 ? 0 : 0);
+  assert.doesNotMatch(diagnosticsSection, /diagnostics[\s\S]{0,200}fetch\(/);
+  assert.doesNotMatch(diagnosticsSection, /diagnostics[\s\S]{0,200}XMLHttpRequest/);
+  assert.doesNotMatch(diagnosticsSection, /diagnostics[\s\S]{0,200}sendBeacon/);
+});
+
 test('gps shares the current position using the native share API or a copy fallback without platform hardcoding', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   const { sandbox } = createGpsModuleContext({ currentUser: null, authContext: true });
   const gps = sandbox.GpsModule;
