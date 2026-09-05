@@ -1,5 +1,12 @@
 # NEUTRAL – Changelog
 
+## 2026-09-05 – GPS-Benutzer-UI und persönliche Auto-Position ergänzt
+
+- `Web-App/app/modules/gps/index.js` auf den realen Benutzerfluss korrigiert: einfache `GPS`-Übersicht, `Aktuelle Position` im normalen UI, echtes Modal/Popup bei noch offener Standortentscheidung, kein roher `Permission: prompt/granted/denied` im Standard-UI, `Position beim Öffnen automatisch ermitteln` als persistinges `moduleSettings.gps.autoRequestOnOpen`, und `Position teilen` mit validem Share-/Copy-Fallback ohne iOS-/Android-Hardcodierung;
+- `Web-App/app/modules/gps/module.json` und `Web-App/app/modules/index.json` um die neue Auto-Position-Einstellung erweitert;
+- `ModuleCreation.md` um den persönlichen `moduleSettings.<id>`-Namespace für nutzerbezogene Modulvoreinstellungen ergänzt; Installations-/Lifecycle-Verantwortung bleibt getrennt;
+- `WORKFLOW.md` erweitert um den verifizierten GPS-UX-/Settings-Entscheidungsstand und die verbleibenden Live-Geräteabnahmen.
+
 ## 2026-09-05 – GPS-Referenzmodul und plattformneutraler Gerätevertrag konsolidiert
 
 - `Web-App/app/modules/gps/index.js` auf den neutralen Gerätevertrag angehoben: kein automatischer Browser-Permissiondialog im `prompt`-Zustand, explizite Bestätigung mit `Ja/Nein`, kurze Fehlernachricht bei verweigertem Standort, kein unkontrollierter Repeat-Request beim Öffnen und ein `Position teilen`-Flow mit `navigator.share` sowie Copy-Fallback ohne iOS-/Android-Hardcodierung;

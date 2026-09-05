@@ -1148,7 +1148,35 @@ test('gps renders cached position immediately and refreshes once when permission
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(geolocationState.currentPositionCalls, 1);
   assert.match(container.innerHTML, /52\.52/);
-  assert.match(container.innerHTML, /Location updated automatically/);
+ assert.match(container.innerHTML, /Position automatisch aktualisiert\./);
+});
+
+test('gps respects the personal autoRequestOnOpen setting while keeping a neutral modal in prompt state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+ const { sandbox, geolocationState } = createGpsModuleContext({
+   permissionState: 'prompt',
+   currentUser: null,
+   authContext: true
+ });
+ sandbox.ConfigManager = {
+   getPath(path, defaultValue) {
+     if (path === 'moduleSettings.gps') {
+       return { autoRequestOnOpen: true };
+     }
+     return defaultValue;
+   },
+   setPath() {},
+   persist() {}
+ };
+ const gps = sandbox.GpsModule;
+ gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+ gps.install();
+ gps.enable();
+ const container = createGpsContainer();
+
+ gps.renderUserInterface(container);
+ await new Promise((resolve) => setImmediate(resolve));
+ assert.equal(geolocationState.currentPositionCalls, 1);
+ assert.match(container.innerHTML, /Position beim Öffnen automatisch ermitteln/);
 });
 
 test('gps never triggers the first browser permission prompt automatically', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
@@ -1166,7 +1194,7 @@ test('gps never triggers the first browser permission prompt automatically', { s
   gps.renderUserInterface(container);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(geolocationState.currentPositionCalls, 0);
-  assert.match(container.innerHTML, /Get Current Position/);
+  assert.match(container.innerHTML, /Position aktualisieren/);
 });
 
 test('gps asks for explicit user confirmation before requesting location in prompt state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {

@@ -55,3 +55,14 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - alle Kriterien aus `CORE-1.0.md` gegen Code, Tests und Live-Bericht prüfen.
 
 **Abnahme:** `STATUS.md` enthält für Core 1.0 ausschließlich `VORHANDEN`; Release wird als **BESTANDEN** markiert.
+
+## 5. GPS-Referenzmodul und reale Geräteabnahme
+
+**Klassifikation:** GEMISCHT – Codespace-Tests autonom, echte iPad-/Android-Abnahme live
+
+- reale iPad-Safari-Abnahme des vereinfachten GPS-Layouts und des echten Modal-Dialogflusses auf dem Produktionsserver durchführen,
+- reale Android-Chrome-Abnahme des gleichen Flows inklusive Share-/Copy-Fallback und Auto-Position-Setting prüfen,
+- Start/Stop Tracking als Referenzfunktion gegen Datenschutz-, Akku- und Browser-Lifecycle-Kosten kritisch erneut bewerten und nur bei klarer Nutzung beibehalten,
+- verbleibende Browser-/Geräteunterschiede, sofern sichtbar, dokumentiert als Live-Abnahme und ggf. als `VORSCHLAG – noch nicht beschlossen/umgesetzt` festhalten.
+
+**Abnahme:** Reale Gerätesmokes auf iPad Safari und Android Chrome bestätigen den neutralen GPS-Referenzfluss ohne UI-Redundanz, ohne unerwartete Permission-Prompts und mit funktionierendem Share-/Fallback-Handling.

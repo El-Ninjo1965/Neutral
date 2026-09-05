@@ -2098,29 +2098,23 @@
 
     const module = window.GpsModule || (window.ModuleRegistry && typeof window.ModuleRegistry.get === 'function' ? window.ModuleRegistry.get('gps') : null);
     const runtime = module ? module.getRuntimeState() : { status: 'unavailable', active: false, tracking: false, permissionState: 'unknown', lastError: null, lastPosition: null };
-    const label = runtime.tracking ? 'Tracking active' : runtime.permissionState === 'denied' ? 'Permission denied' : runtime.status === 'enabled' ? 'Ready' : 'Not active';
     const position = runtime.lastPosition || null;
-    const positionHtml = position ? `<div><dt>Latitude</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Longitude</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Accuracy</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Timestamp</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>Not available</dd></div>';
+    const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Zeitpunkt</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
 
     page.innerHTML = `
       <div class="card">
-        <div class="card-header"><h2 class="card-title">GPS module</h2></div>
+        <div class="card-header"><h2 class="card-title">GPS</h2></div>
         <div class="content-wrap">
-          <div class="message info">Admin controls are wired to the real geolocation APIs and current module state.</div>
+          <div class="message info">Der GPS-Referenzfluss nutzt Capability Detection und einen kurzen, verständlichen Nutzerpfad.</div>
           <div class="gps-user-module" style="margin-top: 18px;">
-            <div class="gps-heading">
-              <div><span class="user-app-eyebrow">Location</span><h1>GPS</h1></div>
-              <span id="gpsAdminStatus" class="gps-status ${runtime.permissionState === 'denied' ? 'error' : ''}">${label}</span>
-            </div>
+            <h1>GPS</h1>
             <div class="gps-location-card">
-              <span class="gps-location-label">Current position</span>
+              <h2>Aktuelle Position</h2>
               <dl id="gpsAdminPosition" class="gps-position">${positionHtml}</dl>
-              <div class="gps-state-line">Permission: ${runtime.permissionState}</div>
             </div>
             <div class="gps-actions" style="margin-top: 18px;">
-              <button type="button" class="gps-primary-action" data-gps-action="current">Get Current Position</button>
-              <button type="button" data-gps-action="start" ${runtime.tracking ? 'disabled' : ''}>Start Tracking</button>
-              <button type="button" data-gps-action="stop" ${runtime.tracking ? '' : 'disabled'}>Stop Tracking</button>
+              <button type="button" class="gps-primary-action" data-gps-action="current">Position aktualisieren</button>
+              <button type="button" data-gps-action="share">Position teilen</button>
             </div>
             <p id="gpsAdminMessage" class="gps-message">${runtime.lastError ? runtime.lastError.message : 'GPS module available.'}</p>
           </div>
@@ -2131,20 +2125,14 @@
     const applyState = () => {
       const nextRuntime = module && typeof module.getRuntimeState === 'function' ? module.getRuntimeState() : { status: 'unavailable', active: false, tracking: false, permissionState: 'unknown', lastError: null, lastPosition: null };
       const positionNode = document.getElementById('gpsAdminPosition');
-      const statusNode = document.getElementById('gpsAdminStatus');
       const messageNode = document.getElementById('gpsAdminMessage');
-      const nextPosition = nextRuntime.lastPosition || nextRuntime.lastPosition || null;
-      const nextLabel = nextRuntime.tracking ? 'Tracking active' : nextRuntime.permissionState === 'denied' ? 'Permission denied' : nextRuntime.status === 'enabled' ? 'Ready' : 'Not active';
+      const nextPosition = nextRuntime.lastPosition || null;
       if (positionNode) {
-        const positionHtmlValue = nextPosition ? `<div><dt>Latitude</dt><dd>${nextPosition.latitude ?? nextPosition.lat ?? '—'}</dd></div><div><dt>Longitude</dt><dd>${nextPosition.longitude ?? nextPosition.lng ?? '—'}</dd></div><div><dt>Accuracy</dt><dd>${nextPosition.accuracy ?? '—'}</dd></div><div><dt>Timestamp</dt><dd>${nextPosition.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>Not available</dd></div>';
+        const positionHtmlValue = nextPosition ? `<div><dt>Breitengrad</dt><dd>${nextPosition.latitude ?? nextPosition.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${nextPosition.longitude ?? nextPosition.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${nextPosition.accuracy ?? '—'}</dd></div><div><dt>Zeitpunkt</dt><dd>${nextPosition.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
         positionNode.innerHTML = positionHtmlValue;
       }
-      if (statusNode) {
-        statusNode.textContent = nextLabel;
-        statusNode.className = `gps-status ${nextRuntime.permissionState === 'denied' ? 'error' : ''}`;
-      }
       if (messageNode) {
-        messageNode.textContent = nextRuntime.lastError ? nextRuntime.lastError.message : nextRuntime.tracking ? 'GPS tracking active.' : 'GPS module available.';
+        messageNode.textContent = nextRuntime.lastError ? nextRuntime.lastError.message : 'GPS module available.';
       }
     };
 
@@ -2164,38 +2152,27 @@
           const messageNode = document.getElementById('gpsAdminMessage');
           if (messageNode) {
             messageNode.textContent = error && error.code === 'PERMISSION_DENIED'
-              ? 'Location permission was denied.'
+              ? 'Standort nicht verfügbar. Bitte Standortzugriff aktivieren.'
               : error && error.code === 'POSITION_UNAVAILABLE'
-                ? 'Position could not be determined.'
+                ? 'Position konnte nicht bestimmt werden.'
                 : error && error.code === 'TIMEOUT'
-                  ? 'Location request timed out.'
-                  : 'Location could not be retrieved.';
+                  ? 'Die Positionsabfrage timed out.'
+                  : 'Position konnte nicht abgerufen werden.';
           }
           applyState();
         }
       },
-      start: () => {
-        if (!module || typeof module.startTracking !== 'function') {
+      share: async () => {
+        if (!module || typeof module.shareCurrentPosition !== 'function') {
           const messageNode = document.getElementById('gpsAdminMessage');
-          if (messageNode) messageNode.textContent = 'GPS module is unavailable.';
+          if (messageNode) messageNode.textContent = 'Position teilen ist nicht verfügbar.';
           return;
         }
-        const result = module.startTracking();
-        if (result && result.ok) {
-          applyState();
-        } else {
-          const messageNode = document.getElementById('gpsAdminMessage');
-          if (messageNode) {
-            messageNode.textContent = result && result.code === 'PERMISSION_DENIED' ? 'Location permission was denied.' : 'Location tracking could not be started.';
-          }
+        const result = await module.shareCurrentPosition({ requirePosition: true });
+        const messageNode = document.getElementById('gpsAdminMessage');
+        if (messageNode) {
+          messageNode.textContent = result && result.ok ? 'Position geteilt.' : 'Keine gültige Position zum Teilen vorhanden.';
         }
-        applyState();
-      },
-      stop: () => {
-        if (module && typeof module.stopTracking === 'function') {
-          module.stopTracking();
-        }
-        applyState();
       }
     };
 

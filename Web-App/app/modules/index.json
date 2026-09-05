@@ -141,6 +141,14 @@
           "type": "boolean",
           "defaultValue": true,
           "description": "Store GPS positions in the local framework storage for later reuse."
+        },
+        {
+          "key": "autoRequestOnOpen",
+          "path": "moduleSettings.gps.autoRequestOnOpen",
+          "label": "Position beim Öffnen automatisch ermitteln",
+          "type": "boolean",
+          "defaultValue": false,
+          "description": "Beim Öffnen automatisch einmal die aktuelle Position ermitteln, sofern der Browser das erlaubt."
         }
       ]
     },

@@ -127,6 +127,7 @@ Zukünftige Produktmodule müssen grundsätzlich für mobile Web-App-Nutzung auf
 - Ein Modul muss definierte Fallbacks für fehlende Gerätefähigkeiten besitzen, statt bei einem nicht vorhandenen Feature sofort zu scheitern.
 - Berechtigungen müssen im UI und im Modulfluss klar behandelt werden; Browser-Permissiondialoge dürfen nur in verständlichem, benutzergesteuertem Kontext ausgelöst werden.
 - Der öffentliche Modulvertrag soll bei späteren nativen Wrappern möglichst erhalten bleiben. Ein nativer Container darf intern adaptieren, aber der Modulkontrakt und die Nutzererfahrung müssen konsistent bleiben.
+- Persönliche Modulvoreinstellungen für installierte Module werden im Namespace `moduleSettings.<id>` gespeichert; sie steuern das Nutzerverhalten ohne die serverseitige Modulinstallation oder den Lifecycle zu verwischen. Installation, Aktivierung und Deinstallation bleiben getrennte Admin-/Management-Entscheidungen.
 - `GPS` dient als Referenzmodul für diesen plattformneutralen Gerätevertrag; ein Gerät-Feature muss im Core oder im Modul selbst durch dokumentierte Fallbacks und Progressive Enhancement abgesichert werden.
 
 ## 10. Erlaubte Core-Schnittstellen
