@@ -189,30 +189,32 @@ test('production smoke reports HTTPS enforcement separately from code deployment
 
   assert.equal(result.httpsEnforced, true);
 
-  // Simulate a host that serves HTTP without redirecting to HTTPS.
+  // Simulate a host edge that answers plain HTTP without redirecting:
+  // code deployment must still succeed, but the HTTPS live requirement
+  // is reported as NOT met instead of pretending full success.
   const httpFixture = productionFixture();
-  const httpFetch = async (url) => {
+  const httpFetch = async (url, options = {}) => {
     const parsed = new URL(url);
-    if (parsed.protocol === 'http:') {
-      const fixture = await httpFixture(`https://example.test${parsed.pathname}`);
-      return { ...fixture, url };
+    if (parsed.protocol === 'http:' && options.redirect === 'manual') {
+      return response(200, '<html>challenge</html>', url);
     }
-    return httpFixture(url);
+    return httpFixture(url, options);
   };
 
-  await assert.rejects(
-    runSmoke({
-      baseUrl: 'https://example.test/',
-      fetchImpl: httpFetch,
-      write: () => {},
-      expectedTitle: 'Example App',
-      expectedBasePath: '',
-      expectedSourceCommit: 'abc123',
-      expectedViewerModules: ['gps'],
-      expectedModules: [],
-    }),
-    /HTTPS/
-  );
+  const degradedOutput = [];
+  const degraded = await runSmoke({
+    baseUrl: 'https://example.test/',
+    fetchImpl: httpFetch,
+    write: (line) => degradedOutput.push(line),
+    expectedTitle: 'Example App',
+    expectedBasePath: '',
+    expectedSourceCommit: 'abc123',
+    expectedViewerModules: ['gps'],
+    expectedModules: [],
+  });
+
+  assert.equal(degraded.httpsEnforced, false);
+  assert.ok(degradedOutput.some((line) => JSON.parse(line).httpsEnforced === false));
 });
 
 test('root htaccess enforces a permanent HTTPS redirect without loops', () => {
