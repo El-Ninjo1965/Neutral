@@ -129,7 +129,11 @@ test('production smoke emits only bounded status evidence for a valid deployment
     viewerGps: true,
     httpsEnforced: true,
   });
-  assert.deepEqual(output.map(JSON.parse), [result]);
+  // Bounded output: an HTTPS probe evidence line plus the final summary.
+  const parsed = output.map(JSON.parse);
+  assert.equal(parsed.length, 2);
+  assert.deepEqual(parsed[0].httpsProbe, { status: 301, location: 'present', server: null });
+  assert.deepEqual(parsed[1], result);
 });
 
 test('production smoke fails closed when viewer GPS use is not granted', async () => {
