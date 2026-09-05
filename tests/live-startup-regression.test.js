@@ -49,6 +49,26 @@ test('navigation derives active state from the current view', () => {
   assert.doesNotMatch(source, /class="user-app-nav-item active"/);
 });
 
+test('module card open path sets the same view state as the nav button', () => {
+  const source = read('Web-App/public/user-app.js');
+
+  // The landing-page card path must run through renderModule, which sets
+  // state.activeView = `module:<id>`; it must not render module content while
+  // leaving state.activeView on 'home'.
+  const cardBlock = source.match(/data-module-card[\s\S]{0,400}?renderModule\(button\.dataset\.moduleCard\)/);
+  assert.ok(cardBlock, 'module card click must call renderModule');
+  const renderModuleBody = source.match(/const renderModule = \(moduleId\) => \{[\s\S]*?\n  \};/);
+  assert.ok(renderModuleBody);
+  assert.match(renderModuleBody[0], /state\.activeView = `module:\$\{moduleId\}`/);
+  assert.match(renderModuleBody[0], /state\.activeModuleId = moduleId/);
+});
+
+test('static shell placeholder nav carries no fake active state', () => {
+  const source = read('Web-App/public/index.html');
+
+  assert.doesNotMatch(source, /class="user-app-nav-item active" aria-current="page"/);
+});
+
 test('GPS view does not render the redundant module description text', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const gpsSource = read('Web-App/app/modules/gps/index.js');
 

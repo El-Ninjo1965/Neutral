@@ -40,7 +40,9 @@
         lastDurationMs: null,
         consentRequired: false,
         consentShown: false,
-        lastConsentDecision: 'none'
+        lastConsentDecision: 'none',
+        protocol: 'unknown',
+        framed: null
     };
     const defaultSettings = Object.freeze({
         enableHighAccuracy: true,
@@ -108,6 +110,15 @@
 
     const syncDiagnostics = () => {
         diagnostics.secureContext = typeof window !== 'undefined' && window.isSecureContext === true;
+        diagnostics.protocol = typeof window !== 'undefined' && window.location && typeof window.location.protocol === 'string'
+            ? window.location.protocol
+            : 'unknown';
+        try {
+            diagnostics.framed = typeof window !== 'undefined' ? window.self !== window.top : null;
+        } catch (error) {
+            // Cross-origin parent access throws; being framed is the relevant signal.
+            diagnostics.framed = true;
+        }
         diagnostics.geolocationAvailable = hasGeolocation();
         diagnostics.permissionsApiAvailable = typeof navigator !== 'undefined'
             && !!navigator.permissions
@@ -603,7 +614,9 @@
 
         confirmLocationRequest(confirmed) {
             if (confirmed !== true) {
-                permissionState = 'denied';
+                // A neutral "no" is a session decision only. It must NOT be written
+                // into the browser permission state; the real browser/OS permission
+                // is reported exclusively by the Permissions API or error callback.
                 diagnostics.lastConsentDecision = 'no';
                 syncDiagnostics();
                 return { ok: false, code: 'USER_DECLINED', message: 'User declined the location request.' };
@@ -675,6 +688,8 @@
                 consentRequired: diagnostics.consentRequired,
                 consentShown: diagnostics.consentShown,
                 lastConsentDecision: diagnostics.lastConsentDecision,
+                protocol: diagnostics.protocol,
+                framed: diagnostics.framed,
                 timeout: options.timeout,
                 enableHighAccuracy: options.enableHighAccuracy,
                 maximumAge: options.maximumAge
@@ -787,6 +802,8 @@
             const consentDecision = d.lastConsentDecision === 'yes' ? 'JA' : d.lastConsentDecision === 'no' ? 'NEIN' : 'keine';
             return `<details class="gps-diagnostics" open><summary>GPS-Diagnose (temporär)</summary><dl class="gps-diagnostics-list">`
                 + `<div><dt>Secure Context</dt><dd>${yesNo(d.secureContext)}</dd></div>`
+                + `<div><dt>Protokoll</dt><dd>${escapeDiag(d.protocol)}</dd></div>`
+                + `<div><dt>Eingebettet (Frame)</dt><dd>${d.framed === null ? 'unbekannt' : yesNo(d.framed)}</dd></div>`
                 + `<div><dt>Geolocation API verfügbar</dt><dd>${yesNo(d.geolocationAvailable)}</dd></div>`
                 + `<div><dt>Permissions API verfügbar</dt><dd>${yesNo(d.permissionsApiAvailable)}</dd></div>`
                 + `<div><dt>Permission State</dt><dd>${escapeDiag(d.permissionState)}</dd></div>`
@@ -817,8 +834,9 @@
             syncDiagnostics();
             const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Zeitpunkt</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
             const shareDisabled = !position || !allowedToUse || !active;
+            const browserDeniedMessage = 'Standortzugriff nicht erlaubt. Bitte Standortzugriff für diese Seite in den Browser- bzw. Geräteeinstellungen aktivieren.';
             const infoMessage = message || (state.permissionState === 'denied'
-                ? 'Standort nicht verfügbar. Bitte Standortzugriff aktivieren.'
+                ? browserDeniedMessage
                 : !allowedToUse
                     ? 'Für diese Nutzung ist keine Berechtigung vorhanden.'
                     : active
@@ -851,7 +869,7 @@
                         await GpsModule.getCurrentPosition();
                         render('Position aktualisiert.');
                     } catch (error) {
-                        render(error && error.code === 'INSUFFICIENT_PERMISSIONS' ? 'Für diese Nutzung ist keine Berechtigung vorhanden.' : error && error.code === 'PERMISSION_DENIED' ? 'Standort nicht verfügbar. Bitte Standortzugriff aktivieren.' : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position konnte nicht bestimmt werden.' : error && error.code === 'TIMEOUT' ? 'Die Positionsabfrage timed out.' : error && error.code === 'MODULE_NOT_ENABLED' ? 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.' : 'Position konnte nicht abgerufen werden.', true);
+                        render(error && error.code === 'INSUFFICIENT_PERMISSIONS' ? 'Für diese Nutzung ist keine Berechtigung vorhanden.' : error && error.code === 'PERMISSION_DENIED' ? browserDeniedMessage : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position konnte nicht bestimmt werden.' : error && error.code === 'TIMEOUT' ? 'Die Positionsabfrage timed out.' : error && error.code === 'MODULE_NOT_ENABLED' ? 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.' : 'Position konnte nicht abgerufen werden.', true);
                     }
                 });
             }

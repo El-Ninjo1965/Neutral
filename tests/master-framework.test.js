@@ -1515,6 +1515,54 @@ test('gps diagnostics consent fields track the neutral modal flow', { skip: gpsR
   assert.equal(afterDecline.lastConsentDecision, 'no');
 });
 
+test('gps neutral no does not become a browser denied state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  gps.confirmLocationRequest(false);
+  assert.equal(gps.getDiagnostics().lastConsentDecision, 'no');
+  // A neutral decline is a session decision; it must not mark the browser
+  // permission as denied. The next real request stays possible.
+  assert.notEqual(gps.getPermissionState(), 'denied');
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps diagnostics expose protocol and framing for secure-context analysis', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  sandbox.location = { protocol: 'https:' };
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const diagnostics = gps.getDiagnostics();
+  assert.equal(diagnostics.protocol, 'https:');
+  assert.ok('framed' in diagnostics);
+  assert.ok(!('latitude' in diagnostics) && !('longitude' in diagnostics));
+});
+
+test('gps shows honest denial message without fake enable action', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
+  const source = fs.readFileSync(path.join(projectRoot, 'Web-App/app/modules/gps/index.js'), 'utf8');
+
+  assert.match(source, /Standortzugriff nicht erlaubt\./);
+  assert.match(source, /Browser- bzw\. Geräteeinstellungen/);
+  // No fake "enable" action that pretends the app can change browser/OS permission.
+  assert.doesNotMatch(source, /data-gps-action="enable-permission"/);
+});
+
 test('gps diagnostics never transmit data to a server', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const source = fs.readFileSync(path.join(projectRoot, 'Web-App/app/modules/gps/index.js'), 'utf8');
   const diagnosticsSection = source.slice(source.indexOf('GPS-Diagnose') > -1 ? 0 : 0);
