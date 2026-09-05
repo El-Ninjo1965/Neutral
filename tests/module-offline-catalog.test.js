@@ -117,6 +117,60 @@ test('offline API failure reuses only the last valid anonymous catalog', async (
   assert.equal(modules[0].clientAccess.canUse, true);
 });
 
+test('warmstart with valid cached catalog discovers modules without waiting for a delayed remote', async () => {
+  const storage = createStorage();
+  const online = loadContext({
+    storage,
+    catalogResponse: { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }
+  });
+  await online.CoreLoader.discoverExternalModules();
+
+  let remoteStarted = false;
+  const slow = loadContext({ storage });
+  slow.fetch = (url) => {
+    if (String(url).includes('/api/v1/modules')) {
+      remoteStarted = true;
+      return new Promise((resolve) => setTimeout(() => resolve({
+        ok: true,
+        async json() { return { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }; }
+      }), 5000));
+    }
+    if (String(url).endsWith('/Web-App/app/modules/gps/index.js')) {
+      return Promise.resolve({
+        ok: true,
+        async text() { return 'window.GpsModule = { id: "gps", name: "GPS", status: "available", active: false };'; }
+      });
+    }
+    return Promise.resolve({ ok: false, async text() { return ''; } });
+  };
+
+  const discovery = slow.CoreLoader.discoverExternalModules();
+  const fastResult = await Promise.race([
+    discovery,
+    new Promise((resolve) => setTimeout(() => resolve('still-waiting'), 300))
+  ]);
+  assert.notEqual(fastResult, 'still-waiting');
+  const modules = await discovery;
+  assert.equal(modules.length, 1);
+  assert.equal(modules[0].id, 'gps');
+  assert.equal(remoteStarted, true);
+});
+
+test('warmstart caches the module entry for offline reuse', async () => {
+  const storage = createStorage();
+  const online = loadContext({
+    storage,
+    catalogResponse: { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }
+  });
+  await online.CoreLoader.discoverExternalModules();
+
+  const offline = loadContext({ storage, catalogError: new Error('offline') });
+  const modules = await offline.CoreLoader.discoverExternalModules();
+  assert.equal(modules.length, 1);
+  assert.equal(modules[0].id, 'gps');
+  assert.equal(modules[0].clientAccess.canUse, true);
+});
+
 test('first offline load without anonymous cache fails closed', async () => {
   const context = loadContext({ storage: createStorage(), catalogError: new Error('offline') });
   assert.deepEqual(JSON.parse(JSON.stringify(await context.CoreLoader.discoverExternalModules())), []);

@@ -230,16 +230,19 @@
         }
     };
 
-    const readModuleCatalog = async (catalogPath) => {
-        if (typeof fetch !== 'function') {
-            return readAnonymousCatalogCache();
-        }
+    // ── Local-first catalog hydration ─────────────────────────────────────────
+    // A previously cached anonymous catalog is a valid last-known-good state.
+    // Warmstart must hydrate from it immediately; the remote catalog is then
+    // reconciled in the background. Security contract: only anonymous catalogs
+    // are ever cached, authenticated responses never persist as fallback.
+    let backgroundCatalogSyncPromise = null;
 
+    const fetchRemoteCatalog = async (catalogPath) => {
         try {
             const response = await fetch(catalogPath, { cache: 'no-store' });
 
             if (!response.ok) {
-                return readAnonymousCatalogCache();
+                return null;
             }
 
             const payload = await response.json();
@@ -257,10 +260,44 @@
                 writeAnonymousCatalogCache(modules);
             }
 
-            return catalogIsValid ? modules : [];
+            return catalogIsValid ? modules : null;
         } catch (error) {
+            return null;
+        }
+    };
+
+    const startBackgroundCatalogSync = (catalogPath) => {
+        if (backgroundCatalogSyncPromise) {
+            return backgroundCatalogSyncPromise;
+        }
+
+        backgroundCatalogSyncPromise = fetchRemoteCatalog(catalogPath)
+            .then((modules) => {
+                if (Array.isArray(modules) && window.Core && typeof window.Core.emit === 'function') {
+                    window.Core.emit('module-catalog:refreshed', { count: modules.length });
+                }
+                return modules;
+            })
+            .finally(() => { backgroundCatalogSyncPromise = null; });
+        return backgroundCatalogSyncPromise;
+    };
+
+    const readModuleCatalog = async (catalogPath) => {
+        if (typeof fetch !== 'function') {
             return readAnonymousCatalogCache();
         }
+
+        const cached = readAnonymousCatalogCache();
+        if (cached.length > 0) {
+            // Warmstart: hydrate from the last known good catalog immediately and
+            // reconcile against the server in the background without blocking the UI.
+            startBackgroundCatalogSync(catalogPath);
+            return cached;
+        }
+
+        // First run without any local state: the remote catalog is the only source.
+        const remote = await fetchRemoteCatalog(catalogPath);
+        return remote || [];
     };
 
     const normalizeModuleKey = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
