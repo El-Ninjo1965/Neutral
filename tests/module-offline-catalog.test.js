@@ -45,6 +45,7 @@ const loadContext = ({ storage, catalogResponse, catalogError = null }) => {
   const sandbox = {
     console,
     URL,
+    navigator: { onLine: true },
     localStorage: storage,
     location: { pathname: '/', origin: 'https://example.test' },
     document: {
@@ -154,6 +155,40 @@ test('warmstart with valid cached catalog discovers modules without waiting for 
   assert.equal(modules.length, 1);
   assert.equal(modules[0].id, 'gps');
   assert.equal(remoteStarted, true);
+});
+
+test('offline warmstart reuses cached catalog and skips the remote refresh entirely', async () => {
+  const storage = createStorage();
+  const online = loadContext({
+    storage,
+    catalogResponse: { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }
+  });
+  await online.CoreLoader.discoverExternalModules();
+
+  let remoteStarted = false;
+  const offline = loadContext({ storage });
+  offline.navigator.onLine = false;
+  offline.fetch = (url) => {
+    if (String(url).includes('/api/v1/modules')) {
+      remoteStarted = true;
+      return new Promise((resolve) => setTimeout(() => resolve({
+        ok: true,
+        async json() { return { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }; }
+      }), 5000));
+    }
+    if (String(url).endsWith('/Web-App/app/modules/gps/index.js')) {
+      return Promise.resolve({
+        ok: true,
+        async text() { return 'window.GpsModule = { id: "gps", name: "GPS", status: "available", active: false };'; }
+      });
+    }
+    return Promise.resolve({ ok: false, async text() { return ''; } });
+  };
+
+  const modules = await offline.CoreLoader.discoverExternalModules();
+  assert.equal(modules.length, 1);
+  assert.equal(modules[0].id, 'gps');
+  assert.equal(remoteStarted, false);
 });
 
 test('warmstart caches the module entry for offline reuse', async () => {

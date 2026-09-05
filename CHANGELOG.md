@@ -1,5 +1,14 @@
 # NEUTRAL – Changelog
 
+## 2026-09-05 – Offline-Warmstart-Delay behoben, Admin-UI-Regression geprüft und Local-Settings-Fehleranzeige ergänzt
+
+- `Web-App/core/core-loader.js` blockiert nun Remote-Katalog-Refreshes bei `navigator.onLine === false`; das cached anonymous Catalog bleibt der sofort nutzbare Last-Known-Good-Status, statt in einem offline-Timeout zu hängen. Dies ist ein Code-Root-Cause-Fix mit Testbeleg (`tests/module-offline-catalog.test.js`), keine reale Chrome-/iPadOS-Neumessung der zuvor beobachteten ~3,5s.
+- Online-Discovery-Kette (`CoreStartup` → `DatabaseManager`/Framework-Init → `ModuleManager.discoverModules` → `ModuleRegistry.discover` → `CoreLoader.discoverExternalModules`) getraced: kein hartcodierter Timeout oder blockierender Auth-Call gefunden; die Kette ist strukturell seriell. Keine Architekturänderung vorgenommen, da ohne reale Messung spekulativ.
+- Admin-UI-Regression geprüft: `Web-App/public/admin/shell.js` und `Web-App/public/admin/navigation.js` sind seit dem letzten Admin-CMS-Commit `3bbee0b` unverändert; alle 14 Admin-CMS-Pflichttests bestehen weiterhin. Keine Wiederherstellung notwendig.
+- `Web-App/public/user-app.js`: `saveUserPreferences()` liefert jetzt `persisted: boolean`; Save-/Reset-Button in den lokalen Settings zeigen bei fehlgeschlagener `localStorage`-Persistenz eine sichtbare Fehlermeldung statt fälschlich „Settings saved successfully.“ Neue CSS-Klasse `.user-settings-status.error` in `Web-App/public/style.css`.
+- `tests/module-offline-catalog.test.js` ergänzt den Regressionstest für den echten Offline-Warmstart-Pfad; `tests/live-startup-regression.test.js` ergänzt zwei Tests für den Save-Error-/Save-Success-Pfad der lokalen Settings.
+- Vollständige Suite `PATH="/usr/local/php/current/bin:$PATH" npm test`: 373/373 bestanden. PHP-Lint über alle 36 `Server/**/*.php`-Dateien mit `/usr/local/php/current/bin/php -l`: fehlerfrei. `git diff --check` bestanden.
+
 ## 2026-09-05 – Offline-First-Service-Worker, HTTPS-Erzwingung und Warmstart-Diagnose
 
 - Neuer Core-Service-Worker `Web-App/public/service-worker.js`: versionierter App-Shell-Cache (`neutral-shell-v<Source-Commit>`, vom Produktionspaket-Build in die ausgelieferte Datei injiziert; Repo-Quelle bleibt generisch, Build bricht ohne gültigen Commit erkennbar ab), Precache von HTML/CSS/Core-Skripten, Navigation network-first mit Shell-Fallback, statische Assets cache-first mit Hintergrund-Refresh, einmal geladene Modul-Entries offline nutzbar, kontrollierte Entfernung alter Cacheversionen, strikte Sicherheitsgrenze (kein Caching von Nicht-GET, `/api/`, Auth/Admin/Setup);

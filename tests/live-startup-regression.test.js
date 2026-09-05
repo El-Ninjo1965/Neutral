@@ -69,15 +69,14 @@ test('static shell placeholder nav carries no fake active state', () => {
   assert.doesNotMatch(source, /class="user-app-nav-item active" aria-current="page"/);
 });
 
-test('temporary startup diagnostics panel exposes local performance marks', () => {
+test('startup diagnostics are kept internal and removed from the default user UI', () => {
   const source = read('Web-App/public/user-app.js');
   const startupSource = read('Web-App/core/core-startup.js');
 
-  assert.match(source, /Startup-Diagnose \(temporär\)/);
-  assert.match(source, /CorePerformance\.snapshot\(\)/);
+  assert.doesNotMatch(source, /Startup-Diagnose \(temporär\)/);
+  assert.doesNotMatch(source, /renderStartupDiagnostics/);
   assert.match(startupSource, /mark\('module-discovery-complete'\)/);
-  // Local-only: the panel must never transmit diagnostics anywhere.
-  assert.doesNotMatch(source, /snapshot\(\)[\s\S]{0,200}fetch\(/);
+  assert.doesNotMatch(source, /window\.NeutralPublicPath\.admin\(\).*Admin/);
 });
 
 test('GPS view does not render the redundant module description text', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
@@ -122,4 +121,26 @@ test('admin settings UI exposes the Startseite contract', () => {
   assert.match(source, /id="homepageTitle"/);
   assert.match(source, /id="homepageContent"/);
   assert.match(source, /id="homepageModuleId"/);
+});
+
+test('local settings save surfaces both success and error status without admin hints', () => {
+  const source = read('Web-App/public/user-app.js');
+  const css = read('Web-App/public/style.css');
+
+  assert.match(source, /persisted = false;/);
+  assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = 'Settings saved successfully\.';\s*status\.className = 'user-settings-status success';\s*\} else \{\s*status\.textContent = 'Settings could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = 'All functions are visible again\.';\s*status\.className = 'user-settings-status success';\s*\} else \{\s*status\.textContent = 'Reset could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
+  assert.match(css, /\.user-settings-status\.error\s*\{/);
+  assert.doesNotMatch(source, /Settings saved successfully\.'[\s\S]{0,200}[Aa]dmin/);
+});
+
+test('local settings persist across navigation and reload via localStorage', () => {
+  const source = read('Web-App/public/user-app.js');
+
+  assert.match(source, /const USER_SETTINGS_KEY = 'neutral\.user\.preferences\.v1';/);
+  assert.match(source, /localStorage\.setItem\(USER_SETTINGS_KEY, JSON\.stringify\(nextPreferences\)\);/);
+  assert.match(source, /localStorage\.getItem\(USER_SETTINGS_KEY\)/);
+  assert.match(source, /Show all functions<\/button>/);
+  assert.doesNotMatch(source, /userSettingsResetButton[\s\S]{0,400}[Aa]dmin/);
 });

@@ -67,15 +67,18 @@
       }
     };
 
+    let persisted = true;
+
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(nextPreferences));
       }
     } catch (error) {
-      // Ignore persistence failures in restricted offline environments.
+      // Restricted/offline storage must not throw; surface the failure to the caller instead.
+      persisted = false;
     }
 
-    return nextPreferences;
+    return { ...nextPreferences, persisted };
   };
 
   const escapeHtml = (value) => String(value ?? '')
@@ -202,11 +205,6 @@
       ? '—'
       : String(modules.length);
 
-  const canOpenAdmin = () => {
-    const currentUser = getCurrentUser();
-    return !!currentUser && Array.isArray(currentUser.roles) && (currentUser.roles.includes('developer') || currentUser.roles.includes('admin'));
-  };
-
   const applyBranding = () => {
     const appName = getAppName();
     document.title = appName;
@@ -243,7 +241,6 @@
 
     actions.innerHTML = `
       <span class="user-app-session-badge">${escapeHtml(currentUser.displayName || currentUser.username || 'User')}</span>
-      ${canOpenAdmin() ? `<a class="user-app-link" href="${escapeHtml(window.NeutralPublicPath.admin())}">Admin</a>` : ''}
       ${settingsButton}
       <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
     `;
@@ -433,8 +430,13 @@
 
         const status = document.getElementById('userSettingsStatus');
         if (status) {
-          status.textContent = 'Settings saved successfully.';
-          status.className = 'user-settings-status success';
+          if (nextPreferences.persisted) {
+            status.textContent = 'Settings saved successfully.';
+            status.className = 'user-settings-status success';
+          } else {
+            status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
+            status.className = 'user-settings-status error';
+          }
         }
 
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
@@ -452,11 +454,16 @@
     if (resetButton) {
       resetButton.addEventListener('click', () => {
         const moduleIds = getAvailableModulesForUser().map((module) => module.id);
-        saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy });
+        const nextPreferences = saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy });
         const status = document.getElementById('userSettingsStatus');
         if (status) {
-          status.textContent = 'All functions are visible again.';
-          status.className = 'user-settings-status success';
+          if (nextPreferences.persisted) {
+            status.textContent = 'All functions are visible again.';
+            status.className = 'user-settings-status success';
+          } else {
+            status.textContent = 'Reset could not be saved. Local storage is unavailable or restricted.';
+            status.className = 'user-settings-status error';
+          }
         }
         renderUserSettings();
       });
@@ -502,22 +509,6 @@
     content.focus();
   };
 
-  // TEMPORARY startup diagnostics panel — remove after the real-device warmstart
-  // measurement is complete. Local-only: reads CorePerformance marks and never
-  // transmits anything.
-  const renderStartupDiagnostics = () => {
-    if (!window.CorePerformance || typeof window.CorePerformance.snapshot !== 'function') {
-      return '';
-    }
-    const snapshot = window.CorePerformance.snapshot();
-    const start = snapshot['navigation-start'] ?? 0;
-    const rows = Object.keys(snapshot)
-      .sort((a, b) => snapshot[a] - snapshot[b])
-      .map((name) => `<div><dt>${escapeHtml(name)}</dt><dd>${Math.round(snapshot[name] - start)} ms</dd></div>`)
-      .join('');
-    return `<details class="startup-diagnostics"><summary>Startup-Diagnose (temporär)</summary><dl class="startup-diagnostics-list">${rows || '<div><dt>Marken</dt><dd>keine</dd></div>'}</dl></details>`;
-  };
-
   const renderModuleCards = () => {
     if (state.discoveryState !== 'ready') {
       return '';
@@ -558,7 +549,6 @@
           <section class="user-app-panel">
             <div class="user-app-module-intro">${escapeHtml(module.description || 'This module is active in the current application.')}</div>
             <div id="moduleUserInterface"></div>
-            ${renderStartupDiagnostics()}
           </section>
         `;
         const target = document.getElementById('moduleUserInterface');
@@ -588,7 +578,6 @@
         <div class="user-app-homepage-content">${message}</div>
         ${moduleCards}
         ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can use the available workspace features without signing in.</div>'}
-        ${renderStartupDiagnostics()}
       </section>
     `;
 

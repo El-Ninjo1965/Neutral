@@ -237,7 +237,23 @@
     // are ever cached, authenticated responses never persist as fallback.
     let backgroundCatalogSyncPromise = null;
 
+    const isCatalogRefreshOnline = () => {
+        if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
+            return navigator.onLine;
+        }
+
+        if (window.CoreNetwork && typeof window.CoreNetwork.isOnline === 'function') {
+            return !!window.CoreNetwork.isOnline();
+        }
+
+        return true;
+    };
+
     const fetchRemoteCatalog = async (catalogPath) => {
+        if (!isCatalogRefreshOnline()) {
+            return null;
+        }
+
         try {
             const response = await fetch(catalogPath, { cache: 'no-store' });
 
@@ -267,6 +283,10 @@
     };
 
     const startBackgroundCatalogSync = (catalogPath) => {
+        if (!isCatalogRefreshOnline()) {
+            return null;
+        }
+
         if (backgroundCatalogSyncPromise) {
             return backgroundCatalogSyncPromise;
         }
@@ -291,8 +311,14 @@
         if (cached.length > 0) {
             // Warmstart: hydrate from the last known good catalog immediately and
             // reconcile against the server in the background without blocking the UI.
-            startBackgroundCatalogSync(catalogPath);
+            if (isCatalogRefreshOnline()) {
+                startBackgroundCatalogSync(catalogPath);
+            }
             return cached;
+        }
+
+        if (!isCatalogRefreshOnline()) {
+            return [];
         }
 
         // First run without any local state: the remote catalog is the only source.
