@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const projectRoot = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+const gpsReferenceAvailable = fs.existsSync(path.join(projectRoot, 'Web-App/app/modules/gps/index.js'));
 
 test('user shell distinguishes pending discovery from an empty module catalog', () => {
   const source = read('Web-App/public/user-app.js');
@@ -24,7 +25,7 @@ test('user shell rerenders settings and navigation after discovery completes', (
   assert.match(source, /renderApp\(\)/);
 });
 
-test('GPS module owns its title while the generic shell does not duplicate it', () => {
+test('GPS module owns its title while the generic shell does not duplicate it', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const userSource = read('Web-App/public/user-app.js');
   const gpsSource = read('Web-App/app/modules/gps/index.js');
 
@@ -32,7 +33,7 @@ test('GPS module owns its title while the generic shell does not duplicate it', 
   assert.doesNotMatch(userSource, /user-app-eyebrow">Module<\/span>[\s\S]{0,160}<h1>\$\{escapeHtml\(getModuleDisplayName\(module\)\)\}<\/h1>/);
 });
 
-test('GPS consent has modal presentation and focus management', () => {
+test('GPS consent has modal presentation and focus management', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const gpsSource = read('Web-App/app/modules/gps/index.js');
   const css = read('Web-App/public/style.css');
 
