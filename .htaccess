@@ -3,6 +3,12 @@ DirectoryIndex Web-App/public/index.html
 
 RewriteEngine On
 
+# Enforce HTTPS permanently for every public request. HTTP must never serve the
+# application: geolocation and other secure-context APIs depend on it. Path and
+# query string are preserved; HTTPS requests are not redirected (no loop).
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
 # Never expose configuration, server internals, runtime state, or repository data.
 RewriteRule (^|/)\. - [F,L]
 RewriteRule ^Server/(php|runtime)(/|$) - [F,L,NC]
@@ -24,3 +30,12 @@ RewriteRule ^setup\.php$ Server/public/setup.php [L,QSA]
 
 # Application routes fall back to the static shell relative to this install directory.
 RewriteRule ^ Web-App/public/index.html [L]
+
+# Long-lived browser caching for the static application assets. The deployment
+# manifest (manifest.json, SHA256SUMS) and HTML/API responses stay uncached so
+# new revisions are picked up; JS/CSS assets are reused across warm starts.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(?:js|css)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+</IfModule>

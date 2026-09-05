@@ -10,8 +10,13 @@ const workflowPath = path.join(projectRoot, '.github/workflows/ftp-upload.yml');
 const smokePath = path.join(projectRoot, 'scripts/production-readonly-smoke.js');
 const { runSmoke } = require(smokePath);
 
-function response(status, body, finalUrl) {
-  return { status, url: finalUrl, text: async () => body };
+function response(status, body, finalUrl, headers = {}) {
+  return {
+    status,
+    url: finalUrl,
+    text: async () => body,
+    headers: { get: (name) => headers[String(name).toLowerCase()] ?? null },
+  };
 }
 
 function productionFixture(overrides = {}) {
@@ -36,8 +41,13 @@ function productionFixture(overrides = {}) {
     })),
     ...overrides,
   };
-  return async (url) => {
-    const fixture = fixtures[new URL(url).pathname];
+  return async (url, options = {}) => {
+    const parsed = new URL(url);
+    // The HTTPS enforcement probe uses redirect: 'manual' on the HTTP origin.
+    if (parsed.protocol === 'http:' && options.redirect === 'manual') {
+      return response(301, '', url, { location: `https://${parsed.host}${parsed.pathname}` });
+    }
+    const fixture = fixtures[parsed.pathname];
     return { ...fixture, url: fixture.url || url };
   };
 }
@@ -117,6 +127,7 @@ test('production smoke emits only bounded status evidence for a valid deployment
     deploymentRevision: true,
     moduleContracts: 1,
     viewerGps: true,
+    httpsEnforced: true,
   });
   assert.deepEqual(output.map(JSON.parse), [result]);
 });
@@ -161,6 +172,55 @@ test('production smoke rejects redirects outside the expected HTTPS origin and p
     }),
     /unerwarteten Ziel/
   );
+});
+
+test('production smoke reports HTTPS enforcement separately from code deployment', async () => {
+  const output = [];
+  const result = await runSmoke({
+    baseUrl: 'https://example.test/',
+    fetchImpl: productionFixture(),
+    write: (line) => output.push(line),
+    expectedTitle: 'Example App',
+    expectedBasePath: '',
+    expectedSourceCommit: 'abc123',
+    expectedViewerModules: ['gps'],
+    expectedModules: [],
+  });
+
+  assert.equal(result.httpsEnforced, true);
+
+  // Simulate a host that serves HTTP without redirecting to HTTPS.
+  const httpFixture = productionFixture();
+  const httpFetch = async (url) => {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:') {
+      const fixture = await httpFixture(`https://example.test${parsed.pathname}`);
+      return { ...fixture, url };
+    }
+    return httpFixture(url);
+  };
+
+  await assert.rejects(
+    runSmoke({
+      baseUrl: 'https://example.test/',
+      fetchImpl: httpFetch,
+      write: () => {},
+      expectedTitle: 'Example App',
+      expectedBasePath: '',
+      expectedSourceCommit: 'abc123',
+      expectedViewerModules: ['gps'],
+      expectedModules: [],
+    }),
+    /HTTPS/
+  );
+});
+
+test('root htaccess enforces a permanent HTTPS redirect without loops', () => {
+  const htaccess = fs.readFileSync(path.join(projectRoot, '.htaccess'), 'utf8');
+
+  assert.match(htaccess, /RewriteCond\s+%\{HTTPS\}\s+off/i);
+  assert.match(htaccess, /RewriteRule\s+\^\(\.\*\)\$\s+https:\/\/%\{HTTP_HOST\}%\{REQUEST_URI\}/i);
+  assert.match(htaccess, /R=301/);
 });
 
 test('production smoke rejects a public URL and manifest outside the built base path', async () => {

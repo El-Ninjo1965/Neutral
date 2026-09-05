@@ -460,6 +460,22 @@
     content.focus();
   };
 
+  // TEMPORARY startup diagnostics panel — remove after the real-device warmstart
+  // measurement is complete. Local-only: reads CorePerformance marks and never
+  // transmits anything.
+  const renderStartupDiagnostics = () => {
+    if (!window.CorePerformance || typeof window.CorePerformance.snapshot !== 'function') {
+      return '';
+    }
+    const snapshot = window.CorePerformance.snapshot();
+    const start = snapshot['navigation-start'] ?? 0;
+    const rows = Object.keys(snapshot)
+      .sort((a, b) => snapshot[a] - snapshot[b])
+      .map((name) => `<div><dt>${escapeHtml(name)}</dt><dd>${Math.round(snapshot[name] - start)} ms</dd></div>`)
+      .join('');
+    return `<details class="startup-diagnostics"><summary>Startup-Diagnose (temporär)</summary><dl class="startup-diagnostics-list">${rows || '<div><dt>Marken</dt><dd>keine</dd></div>'}</dl></details>`;
+  };
+
   const renderLandingPage = () => {
     const appName = getAppName();
     const modules = getVisibleModules();
@@ -487,6 +503,7 @@
             </button>
           `).join('') : '<div class="user-app-empty">No modules are active yet. Activate modules in the admin area to make them available here.</div>'}
         </div>
+        ${renderStartupDiagnostics()}
       </section>
     `;
     content.querySelectorAll('[data-module-card]').forEach((button) => {

@@ -69,6 +69,17 @@ test('static shell placeholder nav carries no fake active state', () => {
   assert.doesNotMatch(source, /class="user-app-nav-item active" aria-current="page"/);
 });
 
+test('temporary startup diagnostics panel exposes local performance marks', () => {
+  const source = read('Web-App/public/user-app.js');
+  const startupSource = read('Web-App/core/core-startup.js');
+
+  assert.match(source, /Startup-Diagnose \(temporär\)/);
+  assert.match(source, /CorePerformance\.snapshot\(\)/);
+  assert.match(startupSource, /mark\('module-discovery-complete'\)/);
+  // Local-only: the panel must never transmit diagnostics anywhere.
+  assert.doesNotMatch(source, /snapshot\(\)[\s\S]{0,200}fetch\(/);
+});
+
 test('GPS view does not render the redundant module description text', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const gpsSource = read('Web-App/app/modules/gps/index.js');
 

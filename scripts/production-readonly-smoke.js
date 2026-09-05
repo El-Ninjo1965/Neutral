@@ -128,6 +128,30 @@ async function runSmoke({
 
   requireCondition([403, 404].includes(results.internal.status), 'Interner PHP-Core ist öffentlich erreichbar.');
 
+  // HTTPS enforcement is a live requirement separate from code deployment:
+  // the HTTP variant of the public base must permanently redirect to HTTPS.
+  // A host serving HTTP 200 without redirect makes geolocation and other
+  // secure-context APIs unusable and must fail this smoke.
+  const httpProbe = new URL(publicBase.toString());
+  httpProbe.protocol = 'http:';
+  const httpResponse = await fetchImpl(httpProbe.toString(), {
+    method: 'GET',
+    redirect: 'manual',
+    cache: 'no-store',
+    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    headers: { Accept: 'text/html,*/*;q=0.1' },
+  });
+  const redirectLocation = httpResponse.headers && typeof httpResponse.headers.get === 'function'
+    ? httpResponse.headers.get('location')
+    : null;
+  const isHttpsRedirect = [301, 302, 307, 308].includes(httpResponse.status)
+    && typeof redirectLocation === 'string'
+    && redirectLocation.startsWith('https://');
+  requireCondition(
+    isHttpsRedirect,
+    `HTTPS-Anforderung nicht erfüllt: HTTP liefert Status ${httpResponse.status} statt einer HTTPS-Weiterleitung.`
+  );
+
   requireCondition(results.manifest.status === 200, 'Deploymentmanifest ist nicht erreichbar.');
   const deploymentManifest = parseJson(results.manifest.body, 'Deploymentmanifest');
   requireCondition(deploymentManifest.sourceDirty === false, 'Deploymentmanifest stammt nicht aus einem sauberen Commit.');
@@ -155,6 +179,7 @@ async function runSmoke({
     deploymentRevision: true,
     moduleContracts: expectedModules.length,
     viewerGps: expectedViewerModules.includes('gps'),
+    httpsEnforced: true,
   };
   write(JSON.stringify(summary));
   return summary;
