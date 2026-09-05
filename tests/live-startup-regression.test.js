@@ -33,6 +33,28 @@ test('GPS module owns its title while the generic shell does not duplicate it', 
   assert.doesNotMatch(userSource, /user-app-eyebrow">Module<\/span>[\s\S]{0,160}<h1>\$\{escapeHtml\(getModuleDisplayName\(module\)\)\}<\/h1>/);
 });
 
+test('navigation shows Start instead of the app name', () => {
+  const source = read('Web-App/public/user-app.js');
+
+  assert.match(source, /id:\s*['"]home['"],\s*label:\s*['"]Start['"]/);
+  assert.doesNotMatch(source, /id:\s*['"]home['"],\s*label:\s*getAppName\(\)/);
+});
+
+test('navigation derives active state from the current view', () => {
+  const source = read('Web-App/public/user-app.js');
+
+  assert.match(source, /class="user-app-nav-item \$\{state\.activeView === item\.id \? 'active' : ''\}"/);
+  assert.match(source, /state\.activeView = nextView/);
+  assert.match(source, /state\.activeView = `module:\$\{moduleId\}`/);
+  assert.doesNotMatch(source, /class="user-app-nav-item active"/);
+});
+
+test('GPS view does not render the redundant module description text', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
+  const gpsSource = read('Web-App/app/modules/gps/index.js');
+
+  assert.doesNotMatch(gpsSource, /Neutral GPS tracking module\./);
+});
+
 test('GPS consent has modal presentation and focus management', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
   const gpsSource = read('Web-App/app/modules/gps/index.js');
   const css = read('Web-App/public/style.css');

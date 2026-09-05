@@ -50,7 +50,7 @@ const loadScriptIntoContext = (context, filePath) => {
   vm.runInContext(source, context, { filename: filePath });
 };
 
-const createGpsModuleContext = ({ permissionState = 'granted', currentUser, authContext = currentUser !== undefined } = {}) => {
+const createGpsModuleContext = ({ permissionState = 'granted', currentUser, authContext = currentUser !== undefined, permissionsApi = true } = {}) => {
   const geolocationState = {
     permissionState,
     watchCalls: 0,
@@ -71,14 +71,17 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser, auth
 
   const sandbox = {
     window: null,
+    isSecureContext: true,
     document: {
       readyState: 'complete',
       addEventListener() {}
     },
     navigator: {
-      permissions: {
-        query: () => ({ state: geolocationState.permissionState })
-      },
+      ...(permissionsApi ? {
+        permissions: {
+          query: () => ({ state: geolocationState.permissionState })
+        }
+      } : {}),
       geolocation: {
         watchPosition(success, error, options) {
           const watchId = ++geolocationState.watchCalls;
@@ -92,6 +95,10 @@ const createGpsModuleContext = ({ permissionState = 'granted', currentUser, auth
         getCurrentPosition(success, error, options) {
           geolocationState.currentPositionCalls += 1;
           geolocationState.lastCurrentPositionOptions = options || null;
+          if (Array.isArray(geolocationState.nextCurrentPositionErrors) && geolocationState.nextCurrentPositionErrors.length > 0) {
+            error(geolocationState.nextCurrentPositionErrors.shift());
+            return;
+          }
           if (geolocationState.nextCurrentPositionError) {
             const currentError = geolocationState.nextCurrentPositionError;
             geolocationState.nextCurrentPositionError = null;
@@ -1220,6 +1227,214 @@ test('gps asks for explicit user confirmation before requesting location in prom
   const declined = gps.confirmLocationRequest(false);
   assert.equal(declined.ok, false);
   assert.equal(declined.code, 'USER_DECLINED');
+});
+
+test('gps works when navigator.permissions is unavailable', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionsApi: false,
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps manual refresh always calls getCurrentPosition', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  await gps.getCurrentPosition();
+  await gps.getCurrentPosition();
+  assert.equal(geolocationState.currentPositionCalls, 2);
+});
+
+test('gps manual refresh works in prompt state with user gesture', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps auto setting triggers exactly one request on mount', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  sandbox.ConfigManager = {
+    getPath(path, defaultValue) {
+      if (path === 'moduleSettings.gps') {
+        return { autoRequestOnOpen: true };
+      }
+      return defaultValue;
+    },
+    setPath() {},
+    persist() {}
+  };
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+  const container = createGpsContainer();
+
+  gps.renderUserInterface(container);
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps auto off with yes triggers exactly one request', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const result = await gps.confirmLocationRequest(true);
+  assert.equal(result.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps auto off with no triggers no request', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'prompt',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const result = gps.confirmLocationRequest(false);
+  assert.equal(result.ok, false);
+  assert.equal(geolocationState.currentPositionCalls, 0);
+});
+
+test('gps error codes 1, 2, 3 are normalized', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  geolocationState.nextCurrentPositionErrors = [
+    { code: 1, message: 'Permission denied' },
+    { code: 2, message: 'Position unavailable' },
+    { code: 3, message: 'Timeout' }
+  ];
+
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'PERMISSION_DENIED');
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'POSITION_UNAVAILABLE');
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'TIMEOUT');
+  assert.equal(geolocationState.currentPositionCalls, 3);
+});
+
+test('gps success callback stores valid coordinates', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  assert.equal(position.longitude, 13.405);
+  assert.equal(position.accuracy, 7.5);
+  assert.ok(position.timestamp);
+});
+
+test('gps permission check never blocks geolocation call', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'unknown',
+    currentUser: null,
+    authContext: true
+  });
+  sandbox.navigator.permissions.query = () => { throw new Error('Permissions API failed'); };
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
+  assert.equal(geolocationState.currentPositionCalls, 1);
+});
+
+test('gps exposes bounded diagnostic state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  await gps.getCurrentPosition();
+  const diagnostics = gps.getDiagnostics();
+  assert.equal(diagnostics.secureContext, true);
+  assert.equal(diagnostics.geolocationAvailable, true);
+  assert.equal(diagnostics.permissionsApiAvailable, true);
+  assert.equal(diagnostics.permissionState, 'granted');
+  assert.equal(diagnostics.getCurrentPositionCalled, true);
+  assert.equal(diagnostics.lastOutcome, 'success');
+  assert.equal(diagnostics.lastErrorCode, null);
+  assert.ok(!('latitude' in diagnostics) && !('longitude' in diagnostics));
+});
+
+test('gps records error outcome in diagnostics', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+  const { sandbox, geolocationState } = createGpsModuleContext({
+    permissionState: 'granted',
+    currentUser: null,
+    authContext: true
+  });
+  const gps = sandbox.GpsModule;
+  gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
+  gps.install();
+  gps.enable();
+
+  geolocationState.nextCurrentPositionError = { code: 2, message: 'Position unavailable' };
+  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'POSITION_UNAVAILABLE');
+  const diagnostics = gps.getDiagnostics();
+  assert.equal(diagnostics.lastOutcome, 'error');
+  assert.equal(diagnostics.lastErrorCode, 'POSITION_UNAVAILABLE');
+  assert.ok(!('latitude' in diagnostics));
 });
 
 test('gps shares the current position using the native share API or a copy fallback without platform hardcoding', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {

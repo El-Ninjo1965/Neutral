@@ -235,7 +235,7 @@
     if (!nav) return;
     const modules = getVisibleModules();
     const items = [
-      { id: 'home', label: getAppName() },
+      { id: 'home', label: 'Start' },
       ...modules.map((module) => ({ id: `module:${module.id}`, label: getModuleDisplayName(module) }))
     ];
     nav.innerHTML = items.map((item) => `

@@ -2,7 +2,7 @@
  * GPS Tracker Module
  * Version: 1.0.0
  *
- * Neutral GPS tracking module for the platform.
+ * Geolocation module for the platform.
  * Provides geolocation access, CoreEventBus integration,
  * CoreStorage / DatabaseManager persistence, CoreAudit recording
  * and a full ModuleInterface lifecycle.
@@ -26,6 +26,16 @@
     let permissionState = 'unknown'; // unknown | granted | prompt | denied | unsupported
     let lastError = null;
     let lastPosition = null;
+    // Bounded diagnostic state. Coordinates and personal data are never recorded here.
+    const diagnostics = {
+        secureContext: typeof window !== 'undefined' && window.isSecureContext === true,
+        geolocationAvailable: false,
+        permissionsApiAvailable: false,
+        permissionState: 'unknown',
+        getCurrentPositionCalled: false,
+        lastOutcome: null,
+        lastErrorCode: null
+    };
     const defaultSettings = Object.freeze({
         enableHighAccuracy: true,
         timeoutMs: 10000,
@@ -89,6 +99,15 @@
     const hasGeolocation = () => typeof navigator !== 'undefined' && !!navigator.geolocation;
 
     const getGeolocation = () => (hasGeolocation() ? navigator.geolocation : null);
+
+    const syncDiagnostics = () => {
+        diagnostics.secureContext = typeof window !== 'undefined' && window.isSecureContext === true;
+        diagnostics.geolocationAvailable = hasGeolocation();
+        diagnostics.permissionsApiAvailable = typeof navigator !== 'undefined'
+            && !!navigator.permissions
+            && typeof navigator.permissions.query === 'function';
+        diagnostics.permissionState = permissionState;
+    };
 
     const getCurrentUser = () => {
         if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
@@ -225,8 +244,13 @@
     };
 
     const refreshPermissionState = async () => {
+        syncDiagnostics();
         if (typeof navigator === 'undefined' || !navigator.permissions || typeof navigator.permissions.query !== 'function') {
-            permissionState = hasGeolocation() ? 'prompt' : 'unsupported';
+            // The Permissions API is optional. Geolocation itself stays fully usable.
+            if (permissionState === 'unknown' || permissionState === 'unsupported') {
+                permissionState = hasGeolocation() ? 'prompt' : 'unsupported';
+            }
+            syncDiagnostics();
             return permissionState;
         }
 
@@ -234,10 +258,16 @@
             const result = navigator.permissions.query({ name: 'geolocation' });
             const permission = result && typeof result.then === 'function' ? await result : result;
             const state = permission && typeof permission.state === 'string' ? permission.state : 'unknown';
-            permissionState = state;
+            if (state === 'granted' || state === 'denied' || state === 'prompt') {
+                permissionState = state;
+            }
+            syncDiagnostics();
             return permissionState;
         } catch (error) {
-            permissionState = hasGeolocation() ? 'prompt' : 'unsupported';
+            if (permissionState === 'unknown' || permissionState === 'unsupported') {
+                permissionState = hasGeolocation() ? 'prompt' : 'unsupported';
+            }
+            syncDiagnostics();
             return permissionState;
         }
     };
@@ -265,7 +295,7 @@
         name: 'GPS',
         displayName: 'GPS',
         version: '1.0.0',
-        description: 'Neutral GPS tracking module.',
+        description: 'Geolocation module.',
         permissions: permissionDefinitions.map((entry) => entry.key),
         permissionDefinitions,
         access,
@@ -493,6 +523,7 @@
 
                 const geolocation = getGeolocation();
                 if (!geolocation) {
+                    syncDiagnostics();
                     reject(Object.assign(new Error('Geolocation API not available.'), { code: 'GEOLOCATION_UNAVAILABLE' }));
                     return;
                 }
@@ -503,30 +534,29 @@
                     // Continue with the direct browser call and surface the actual geolocation error.
                 }
 
-                if (permissionState === 'denied') {
-                    const error = Object.assign(new Error('Standort nicht verfügbar. Bitte Standortzugriff aktivieren.'), { code: 'PERMISSION_DENIED' });
-                    lastError = { code: 'PERMISSION_DENIED', message: error.message };
-                    reject(error);
-                    return;
-                }
-
-                if (permissionState === 'prompt' || permissionState === 'unknown') {
-                    const error = Object.assign(new Error('Location permission needs explicit user confirmation.'), { code: 'USER_CONFIRMATION_REQUIRED' });
-                    reject(error);
-                    return;
-                }
-
+                // The Permissions API result is informational only. It must never block
+                // the standardized geolocation call; the browser enforces its own
+                // permission model and reports code 1 through the error callback.
+                diagnostics.getCurrentPositionCalled = true;
+                syncDiagnostics();
                 geolocation.getCurrentPosition(
                     (position) => {
                         const record = persistPosition(position);
                         lastPosition = record;
                         this.lastPosition = record;
                         lastError = null;
+                        permissionState = 'granted';
+                        diagnostics.lastOutcome = 'success';
+                        diagnostics.lastErrorCode = null;
+                        syncDiagnostics();
                         emit('gps:position', record);
                         resolve(record);
                     },
                     (error) => {
                         const detail = normalizeError(error);
+                        diagnostics.lastOutcome = 'error';
+                        diagnostics.lastErrorCode = detail.code;
+                        syncDiagnostics();
                         onError(error);
                         reject(Object.assign(new Error(detail.message), { code: detail.code }));
                     },
@@ -580,23 +610,44 @@
 
             permissionState = 'granted';
             return new Promise((resolve, reject) => {
+                diagnostics.getCurrentPositionCalled = true;
+                syncDiagnostics();
                 geolocation.getCurrentPosition(
                     (position) => {
                         const record = persistPosition(position);
                         lastPosition = record;
                         this.lastPosition = record;
                         lastError = null;
+                        diagnostics.lastOutcome = 'success';
+                        diagnostics.lastErrorCode = null;
+                        syncDiagnostics();
                         emit('gps:position', record);
                         resolve(record);
                     },
                     (error) => {
                         const detail = normalizeError(error);
+                        diagnostics.lastOutcome = 'error';
+                        diagnostics.lastErrorCode = detail.code;
+                        syncDiagnostics();
                         onError(error);
                         reject(Object.assign(new Error(detail.message), { code: detail.code }));
                     },
                     getGeolocationOptions()
                 );
             });
+        },
+
+        getDiagnostics() {
+            syncDiagnostics();
+            return {
+                secureContext: diagnostics.secureContext,
+                geolocationAvailable: diagnostics.geolocationAvailable,
+                permissionsApiAvailable: diagnostics.permissionsApiAvailable,
+                permissionState: diagnostics.permissionState,
+                getCurrentPositionCalled: diagnostics.getCurrentPositionCalled,
+                lastOutcome: diagnostics.lastOutcome,
+                lastErrorCode: diagnostics.lastErrorCode
+            };
         },
 
         shareCurrentPosition(options = {}) {
