@@ -1437,7 +1437,7 @@ test('gps records error outcome in diagnostics', { skip: gpsReferenceAvailable ?
   assert.ok(!('latitude' in diagnostics));
 });
 
-test('gps temporary diagnostics panel shows state without coordinates', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+test('gps temporary diagnostics panel is removed from the normal user UI', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   const { sandbox } = createGpsModuleContext({
     permissionState: 'granted',
     currentUser: null,
@@ -1453,19 +1453,17 @@ test('gps temporary diagnostics panel shows state without coordinates', { skip: 
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
 
-  assert.match(container.innerHTML, /GPS-Diagnose \(temporär\)/);
-  assert.match(container.innerHTML, /Secure Context/);
-  assert.match(container.innerHTML, /Geolocation API/);
-  assert.match(container.innerHTML, /Permissions API/);
-  assert.match(container.innerHTML, /Permission State/);
-  assert.match(container.innerHTML, /getCurrentPosition aufgerufen/);
-  assert.match(container.innerHTML, /Consent/);
-  const panelMarkup = container.innerHTML.slice(container.innerHTML.indexOf('gps-diagnostics'));
-  assert.doesNotMatch(panelMarkup, /52\.52/);
-  assert.doesNotMatch(panelMarkup, /13\.405/);
+  assert.doesNotMatch(container.innerHTML, /GPS-Diagnose \(temporär\)/i);
+  assert.doesNotMatch(container.innerHTML, /Secure Context/i);
+  assert.doesNotMatch(container.innerHTML, /Geolocation API/i);
+  assert.doesNotMatch(container.innerHTML, /Permissions API/i);
+  assert.doesNotMatch(container.innerHTML, /Permission State/i);
+  assert.doesNotMatch(container.innerHTML, /getCurrentPosition aufgerufen/i);
+  assert.doesNotMatch(container.innerHTML, /Consent/i);
+  assert.ok(container.innerHTML.length > 0);
 });
 
-test('gps diagnostics panel reflects missing permissions API', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+test('gps permission state remains neutral without the temporary diagnostics panel', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   const { sandbox } = createGpsModuleContext({
     permissionsApi: false,
     currentUser: null,
@@ -1481,10 +1479,8 @@ test('gps diagnostics panel reflects missing permissions API', { skip: gpsRefere
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
 
-  // Without the Permissions API the panel must show this clearly, while the
-  // standardized geolocation call stays fully usable.
-  assert.match(container.innerHTML, /GPS-Diagnose \(temporär\)/);
-  assert.match(container.innerHTML, /Permissions API verfügbar<\/dt><dd>Nein<\/dd>/);
+  assert.doesNotMatch(container.innerHTML, /GPS-Diagnose \(temporär\)/i);
+  assert.doesNotMatch(container.innerHTML, /Permissions API verfügbar<\/dt><dd>Nein<\/dd>/i);
 
   const position = await gps.getCurrentPosition();
   assert.equal(position.latitude, 52.52);

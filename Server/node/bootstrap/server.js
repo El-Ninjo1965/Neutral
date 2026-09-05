@@ -933,6 +933,34 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
+  // Settings API - /api/admin/settings
+  if (pathname === `${apiBase}/admin/settings` || pathname === `${apiBase}/admin/settings/`) {
+    if (req && req.method === 'GET') {
+      if (!requireAdminAccess(req, res)) {
+        return true;
+      }
+      const settings = settingsService.getAll();
+      sendJson(res, 200, { ok: true, settings });
+      return true;
+    }
+
+    if (req && req.method === 'POST') {
+      if (!requireAdminWriteAccess(req, res)) {
+        return true;
+      }
+      readJsonBody(req)
+        .then((payload = {}) => {
+          const actor = req.sessionIdentity && req.sessionIdentity.user ? (req.sessionIdentity.user.username || 'system') : 'system';
+          const updated = settingsService.update(payload, actor);
+          sendJson(res, 200, { ok: true, settings: updated });
+        })
+        .catch((error) => {
+          sendJson(res, 400, { ok: false, code: 'INVALID_SETTINGS_PAYLOAD', message: error.message || 'Invalid settings payload.' });
+        });
+      return true;
+    }
+  }
+
   if (pathname === `${apiBase}/admin/system/health` || pathname === `${apiBase}/admin/system/health/`) {
     if (!requireAdminAccess(req, res)) {
       return true;

@@ -760,6 +760,22 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/uninstall$#', $route, $matches) ==
     JsonResponse::success(['module' => $module]);
 }
 
+if ($route === 'admin/settings' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    JsonResponse::success($settingsService->getAll());
+}
+
+if ($route === 'admin/settings' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'settings.write', $headers);
+    try {
+        $payload = parse_json_body();
+        $updated = $settingsService->update($payload, actor_user_id($identity));
+        JsonResponse::success(['settings' => $updated], 200);
+    } catch (Throwable $exception) {
+        JsonResponse::error($exception->getMessage(), 400, ['code' => 'SETTINGS_INVALID']);
+    }
+}
+
 if ($route === 'admin/system/health' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
     $appDatabase = $config->database();

@@ -142,6 +142,18 @@ VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktisc
 - **Eigene Vorschläge:** `VORSCHLAG – noch nicht beschlossen/umgesetzt` – Für eine allgemeine Nutzer-Modul-Steuerung wäre eine minimale generische Sichtbarkeits-/Nutzungs-Preference im Benutzerprofil sinnvoll, aber ohne Installation/Deinstallation in den Core-Lifecycle zu verschieben. Die heutige GPS-Umsetzung bleibt bewusst klein und nutzt den bestehenden Modulsettings-Vertrag.
 - **Verbleibende Live-/Gerätetests:** echte iPad-/Safari- und Android-/Chrome-Abnahme auf dem Produktionsserver/realem Gerät; die konfigurierte Codespace-Logik ist verifiziert, aber keine echte Host-/Geräteprüfung.
 
+### 2026-09-05 – Neutral Homepage-Contract, Admin-Startseite und GPS-UI-Cleanup
+
+- **Aufgabe:** Den neutralen Landing-Page-Vertrag im User-Shell konsistent machen, die Homepage-Konfiguration zentral in den vorhandenen Admin-/Persistenz-Stack aufnehmen und die temporäre GPS-Diagnose aus der normalen Nutzeransicht entfernen, ohne die Startup-Diagnose zu entfernen.
+- **Ausgangszustand:** Die öffentliche User-App renderte weiterhin die aktive Modul-Liste/aktive Modulanzahl im Home-Contract, obwohl ein neutraler Startbildschirm vorgesehen war. Die Admin-/Persistenzschicht hatte keine zentrale `homepage`-Konfiguration, und das GPS-Modul zeigte weiterhin eine direkte Diagnoseansicht an.
+- **Ausgeführt und dokumentiert durch:** **Copilot Agent / GitHub Codespace**.
+- **Technische Entscheidung:** Die bestehende zentrale Konfigurations-/Persistenzschicht wurde als einzige Quelle der Wahrheit genutzt; keine zweite Parallel-Config-Architektur wurde eingeführt. `homepage.mode` unterstützt weiterhin `content` und `module`; `content` zeigt die konfigurierbare Startseite, `module` öffnet nur ein validiertes aktives Modul, sonst fällt das System auf neutralen Content zurück.
+- **Geänderte Dateien:** `Web-App/public/user-app.js`, `Web-App/public/admin/settings-view.js`, `Web-App/core/config-manager.js`, `Server/node/services/settings-service.js`, `Server/node/services/persistence-service.js`, `Server/php/src/Phase4AuthRbac.php`, `Server/php/src/Phase6AdminStorage.php`, `Server/public/api/index.php`, `Server/node/bootstrap/server.js`, `Web-App/app/modules/gps/index.js`, `WORKFLOW.md`, `STATUS.md`.
+- **Ergebnis:** Der normale Home-Contract ist neutral und ohne Module-Liste; die Startseite kann über zentrale Homepage-Settings (`mode`, `title`, `content`, `moduleId`) konfiguriert werden; die Admin-Oberfläche enthält den Bereich `Startseite`; die lokale Settings-UI zeigt sichtbare Erfolgsmeldungen und behält das lokale Sichtbarkeits-Reset; die GPS-Diagnose wurde aus dem normalen Nutzer-UI entfernt, während die temporäre lokale Startup-Diagnose weiter existiert.
+- **Tests und Validierung:** `cd /workspaces/Neutral && node --test tests/live-startup-regression.test.js` mit 10/10 erfolgreichen Assertions.
+- **Offene Punkte:** Echte Live-/Geräteprüfung auf iPad/Safari oder Android/Chrome bleibt weiterhin als externe Abnahme offen; das Projekt hat nur den lokalen, reproduzierbaren Code-/UI-Vertrag verifiziert.
+- **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Eine zusätzliche Projektentscheidung für eine gemeinsame Core-Homepage-Policy auf Dauer wäre sinnvoll, aber sie wurde nicht als generisches Produktfeature in diesem Scope eingeführt.
+
 ## 10. Fortlaufendes Arbeitsprotokoll
 
 ### 2026-09-04 – Workflow-Übergabeprotokoll und Regelprüfung

@@ -1093,11 +1093,26 @@ final class Phase4SettingsService
      */
     public function getAll(): array
     {
-        return $this->store->read(self::FILE, [
+       $current = $this->store->read(self::FILE, [
             'appName' => 'Neutral Platform',
             'appId' => 'neutral-app',
-            'settings' => [],
-        ]);
+           'homepage' => [
+               'mode' => 'content',
+               'title' => '',
+               'content' => '',
+               'moduleId' => '',
+           ],
+           'settings' => [],
+       ]);
+       $homepage = $this->normalizeHomepage($current['homepage'] ?? ($current['settings']['homepage'] ?? null));
+       $settings = is_array($current['settings'] ?? null) ? $current['settings'] : [];
+       $settings['homepage'] = $homepage;
+       return [
+           'appName' => trim((string) ($current['appName'] ?? 'Neutral Platform')) !== '' ? trim((string) ($current['appName'] ?? 'Neutral Platform')) : 'Neutral Platform',
+           'appId' => trim((string) ($current['appId'] ?? 'neutral-app')) !== '' ? trim((string) ($current['appId'] ?? 'neutral-app')) : 'neutral-app',
+           'homepage' => $homepage,
+           'settings' => $settings,
+       ];
     }
 
     /**
@@ -1106,16 +1121,41 @@ final class Phase4SettingsService
      */
     public function update(array $payload): array
     {
-        $current = $this->getAll();
-        $next = [
-            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
-            'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
-            'settings' => is_array($payload['settings'] ?? null)
-                ? $payload['settings']
-                : (is_array($current['settings'] ?? null) ? $current['settings'] : []),
-        ];
-        $this->store->write(self::FILE, $next);
-        return $next;
+       $current = $this->getAll();
+       $settings = is_array($payload['settings'] ?? null)
+           ? $payload['settings']
+           : (is_array($current['settings'] ?? null) ? $current['settings'] : []);
+       $homepage = $this->normalizeHomepage(
+           $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
+       );
+       $settings['homepage'] = $homepage;
+       $next = [
+           'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
+           'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
+           'homepage' => $homepage,
+           'settings' => $settings,
+       ];
+       $this->store->write(self::FILE, $next);
+       return $next;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string,string>
+     */
+    private function normalizeHomepage($value): array
+    {
+       $candidate = is_array($value) ? $value : [];
+       $mode = (($candidate['mode'] ?? 'content') === 'module') ? 'module' : 'content';
+       $title = is_string($candidate['title'] ?? null) ? trim($candidate['title']) : '';
+       $content = is_string($candidate['content'] ?? null) ? trim($candidate['content']) : '';
+       $moduleId = is_string($candidate['moduleId'] ?? null) ? trim($candidate['moduleId']) : '';
+       return [
+           'mode' => $mode,
+           'title' => $title,
+           'content' => $content,
+           'moduleId' => $moduleId,
+       ];
     }
 }
 

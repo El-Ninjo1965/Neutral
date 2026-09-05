@@ -27,14 +27,17 @@ final class Phase6SettingsService
             $appName = $this->readValue($rows['core.app.name'] ?? null, 'Neutral Platform');
             $appId = $this->readValue($rows['core.app.id'] ?? null, 'neutral-app');
             $settings = $this->readObjectValue($rows['core.ui.settings'] ?? null);
-            return [
-                'appName' => is_string($appName) && $appName !== '' ? $appName : 'Neutral Platform',
-                'appId' => is_string($appId) && $appId !== '' ? $appId : 'neutral-app',
-                'settings' => $settings,
-            ];
-        } catch (\Throwable $exception) {
-            return $this->fallback->getAll();
-        }
+           $homepage = $this->normalizeHomepage($settings['homepage'] ?? null);
+           $settings['homepage'] = $homepage;
+           return [
+               'appName' => is_string($appName) && $appName !== '' ? $appName : 'Neutral Platform',
+               'appId' => is_string($appId) && $appId !== '' ? $appId : 'neutral-app',
+               'homepage' => $homepage,
+               'settings' => $settings,
+           ];
+       } catch (\Throwable $exception) {
+           return $this->fallback->getAll();
+       }
     }
 
     /**
@@ -43,24 +46,30 @@ final class Phase6SettingsService
      */
     public function update(array $payload, ?int $updatedBy = null): array
     {
-        $current = $this->getAll();
-        $next = [
-            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
-            'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
-            'settings' => is_array($payload['settings'] ?? null)
-                ? $payload['settings']
-                : (is_array($current['settings'] ?? null) ? $current['settings'] : []),
-        ];
+       $current = $this->getAll();
+       $settings = is_array($payload['settings'] ?? null)
+           ? $payload['settings']
+           : (is_array($current['settings'] ?? null) ? $current['settings'] : []);
+       $homepage = $this->normalizeHomepage(
+           $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
+       );
+       $settings['homepage'] = $homepage;
+       $next = [
+           'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
+           'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
+           'homepage' => $homepage,
+           'settings' => $settings,
+       ];
 
-        try {
-            $pdo = $this->database->connect();
-            $this->upsert($pdo, 'core.app.name', ['value' => $next['appName']], $updatedBy);
-            $this->upsert($pdo, 'core.app.id', ['value' => $next['appId']], $updatedBy);
-            $this->upsert($pdo, 'core.ui.settings', $next['settings'], $updatedBy);
-            return $next;
-        } catch (\Throwable $exception) {
-            return $this->fallback->update($next);
-        }
+       try {
+           $pdo = $this->database->connect();
+           $this->upsert($pdo, 'core.app.name', ['value' => $next['appName']], $updatedBy);
+           $this->upsert($pdo, 'core.app.id', ['value' => $next['appId']], $updatedBy);
+           $this->upsert($pdo, 'core.ui.settings', $next['settings'], $updatedBy);
+           return $next;
+       } catch (\Throwable $exception) {
+           return $this->fallback->update($next);
+       }
     }
 
     public function removeModuleSettings(string $moduleId, ?int $updatedBy = null): array
@@ -143,6 +152,25 @@ final class Phase6SettingsService
         }
         $decoded = json_decode($raw, true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string,string>
+     */
+    private function normalizeHomepage($value): array
+    {
+       $candidate = is_array($value) ? $value : [];
+       $mode = (($candidate['mode'] ?? 'content') === 'module') ? 'module' : 'content';
+       $title = is_string($candidate['title'] ?? null) ? trim($candidate['title']) : '';
+       $content = is_string($candidate['content'] ?? null) ? trim($candidate['content']) : '';
+       $moduleId = is_string($candidate['moduleId'] ?? null) ? trim($candidate['moduleId']) : '';
+       return [
+           'mode' => $mode,
+           'title' => $title,
+           'content' => $content,
+           'moduleId' => $moduleId,
+       ];
     }
 
     /**

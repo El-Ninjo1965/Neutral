@@ -3,20 +3,48 @@
 const persistenceService = require('./persistence-service');
 const auditService = require('./audit-service');
 
+const defaultHomepage = Object.freeze({
+  mode: 'content',
+  title: '',
+  content: '',
+  moduleId: ''
+});
+
+const normalizeHomepage = (value) => {
+  const candidate = value && typeof value === 'object' ? value : {};
+  const mode = candidate.mode === 'module' ? 'module' : 'content';
+  const title = typeof candidate.title === 'string' ? candidate.title.trim() : '';
+  const content = typeof candidate.content === 'string' ? candidate.content.trim() : '';
+  const moduleId = typeof candidate.moduleId === 'string' ? candidate.moduleId.trim() : '';
+
+  return {
+    mode,
+    title,
+    content,
+    moduleId
+  };
+};
+
 const getAll = () => {
   try {
     const data = persistenceService.loadAdminSettings();
+    const homepage = normalizeHomepage(data.homepage || data.settings?.homepage || defaultHomepage);
     return {
       appName: data.appName || 'Neutral App',
       appId: data.appId || 'neutral-app',
-      settings: data.settings || {}
+      homepage,
+      settings: {
+        ...(data.settings || {}),
+        homepage: homepage
+      }
     };
   } catch (error) {
     console.error('[settings-service] Failed to load settings:', error.message);
     return {
       appName: 'Neutral App',
       appId: 'neutral-app',
-      settings: {}
+      homepage: { ...defaultHomepage },
+      settings: { homepage: { ...defaultHomepage } }
     };
   }
 };
@@ -29,19 +57,29 @@ const update = (updates, actor = 'system') => {
     }
 
     const current = getAll();
+    const homepageValue = normalizeHomepage(
+      updates.homepage !== undefined
+        ? updates.homepage
+        : (updates.settings && updates.settings.homepage !== undefined ? updates.settings.homepage : current.homepage)
+    );
+    const settings = {
+      ...current.settings,
+      ...(updates.settings || {})
+    };
+    settings.homepage = homepageValue;
+
     const updated = {
       appName: updates.appName !== undefined ? updates.appName : current.appName,
       appId: updates.appId !== undefined ? updates.appId : current.appId,
-      settings: {
-        ...current.settings,
-        ...(updates.settings || {})
-      }
+      homepage: homepageValue,
+      settings
     };
 
     persistenceService.saveAdminSettings(updated);
 
     auditService.log(auditService.actions.SETTINGS_UPDATED, 'settings', 'global', actor, {
       appName: updated.appName,
+      homepageMode: homepageValue.mode,
       settingKeys: Object.keys(updates.settings || {})
     });
 
@@ -104,6 +142,10 @@ const validateSettingsData = (data) => {
 
   if (data.settings !== undefined && typeof data.settings !== 'object') {
     errors.push('settings must be an object');
+  }
+
+  if (data.homepage !== undefined && (typeof data.homepage !== 'object' || data.homepage === null)) {
+    errors.push('homepage must be an object');
   }
 
   return {

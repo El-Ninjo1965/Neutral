@@ -142,6 +142,33 @@ class AdminSettingsView {
         </div>
       </fieldset>
 
+      <fieldset>
+        <legend>Startseite</legend>
+
+        <div class="form-group">
+          <label for="homepageMode">Start page mode</label>
+          <select id="homepageMode" name="homepageMode">
+            <option value="content" ${this.getHomepageSetting('mode', 'content') === 'content' ? 'selected' : ''}>Content</option>
+            <option value="module" ${this.getHomepageSetting('mode', 'content') === 'module' ? 'selected' : ''}>Module</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="homepageTitle">Page title</label>
+          <input type="text" id="homepageTitle" name="homepageTitle" value="${escapeHtmlSettings(this.getHomepageSetting('title', ''))}" />
+        </div>
+
+        <div class="form-group">
+          <label for="homepageContent">Page content</label>
+          <textarea id="homepageContent" name="homepageContent" rows="6">${escapeHtmlSettings(this.getHomepageSetting('content', ''))}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="homepageModuleId">Module ID</label>
+          <input type="text" id="homepageModuleId" name="homepageModuleId" value="${escapeHtmlSettings(this.getHomepageSetting('moduleId', ''))}" />
+        </div>
+      </fieldset>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save Settings</button>
         <button type="button" class="btn btn-secondary" onclick="adminSettings.reloadSettings()">Reload</button>
@@ -157,6 +184,11 @@ class AdminSettingsView {
     formDiv.appendChild(form);
   }
 
+  getHomepageSetting(key, defaultValue = null) {
+    const homepage = this.settings?.homepage || this.settings?.settings?.homepage || {};
+    return homepage[key] !== undefined ? homepage[key] : defaultValue;
+  }
+
   // Get a setting value
   getSetting(key, defaultValue = null) {
     if (!this.settings?.settings) return defaultValue;
@@ -166,16 +198,24 @@ class AdminSettingsView {
   // Save settings
   async saveSettings(form) {
     const formData = new FormData(form);
+    const homepage = {
+      mode: formData.get('homepageMode') === 'module' ? 'module' : 'content',
+      title: String(formData.get('homepageTitle') || '').trim(),
+      content: String(formData.get('homepageContent') || '').trim(),
+      moduleId: String(formData.get('homepageModuleId') || '').trim()
+    };
     const data = {
       appName: formData.get('appName'),
       appId: formData.get('appId'),
+      homepage,
       settings: {
         theme: formData.get('theme'),
         language: formData.get('language'),
         timezone: formData.get('timezone'),
         logLevel: formData.get('logLevel'),
         backupEnabled: formData.get('backupEnabled') === 'on',
-        backupInterval: formData.get('backupInterval')
+        backupInterval: formData.get('backupInterval'),
+        homepage
       }
     };
 

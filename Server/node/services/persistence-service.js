@@ -82,6 +82,12 @@ module.exports = {
   loadAdminSettings: () => readJsonFile('admin-settings.json', {
     appName: 'Neutral App',
     appId: 'neutral-app',
+    homepage: {
+      mode: 'content',
+      title: '',
+      content: '',
+      moduleId: ''
+    },
     settings: {}
   }),
 

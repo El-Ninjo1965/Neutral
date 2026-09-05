@@ -178,6 +178,13 @@
                 maintenanceMode: false
             });
 
+            this.set('homepage', {
+                mode: 'content',
+                title: '',
+                content: '',
+                moduleId: ''
+            });
+
             // Module-owned settings are stored centrally so new modules can
             // contribute editable admin configuration without custom UI code.
             this.set('moduleSettings', {});

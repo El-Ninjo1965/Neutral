@@ -85,6 +85,45 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+  const getSafeHomepageContent = (value) => {
+    let html = String(value ?? '');
+    html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/<iframe[\s\S]*?<\/iframe>/gi, '');
+    html = html.replace(/<(?:object|embed|svg|math)[\s\S]*?(?:<\/\1>|$)/gi, '');
+    html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    html = html.replace(/href\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'href="#"');
+    html = html.replace(/src\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'src="#"');
+    html = html.replace(/<(?!\/?(?:p|br|strong|b|em|i|u|small|ul|ol|li|h1|h2|h3|h4|h5|h6|a|span|div|blockquote|code|pre|hr|mark|section)\b)[^>]+>/gi, '');
+    html = html.replace(/<a\b([^>]*)\s+href=(?:"[^"]*"|'[^']*'|[^\s>]+)([^>]*)>/gi, (match, before, after) => {
+      const hrefMatch = match.match(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const href = hrefMatch ? (hrefMatch[1] || hrefMatch[2] || hrefMatch[3] || '') : '';
+      const safeHref = /^https?:\/\//i.test(href) || href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')
+        ? href
+        : '#';
+      return `<a${before || ''} href="${escapeHtml(safeHref)}"${after || ''}>`;
+    });
+    return html;
+  };
+
+  const getHomepageConfig = () => {
+    const configManager = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? window.ConfigManager
+      : null;
+    const assigned = configManager ? configManager.get('homepage', null) : null;
+    const fromWindow = window.NeutralHomepageConfig || window.NeutralAppHomepage || {};
+    const source = assigned && typeof assigned === 'object' ? assigned : fromWindow;
+    const mode = source && source.mode === 'module' ? 'module' : 'content';
+    const title = typeof source?.title === 'string' ? source.title.trim() : '';
+    const content = typeof source?.content === 'string' ? source.content : '';
+    const moduleId = typeof source?.moduleId === 'string' ? source.moduleId.trim() : '';
+    return {
+      mode,
+      title,
+      content: getSafeHomepageContent(content),
+      moduleId
+    };
+  };
+
   const getCurrentUser = () => {
     if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
       return window.UserModule.getCurrentUser();
@@ -414,9 +453,12 @@
       resetButton.addEventListener('click', () => {
         const moduleIds = getAvailableModulesForUser().map((module) => module.id);
         saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy });
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        renderApp();
+        const status = document.getElementById('userSettingsStatus');
+        if (status) {
+          status.textContent = 'All functions are visible again.';
+          status.className = 'user-settings-status success';
+        }
+        renderUserSettings();
       });
     }
   };
@@ -476,38 +518,89 @@
     return `<details class="startup-diagnostics"><summary>Startup-Diagnose (temporär)</summary><dl class="startup-diagnostics-list">${rows || '<div><dt>Marken</dt><dd>keine</dd></div>'}</dl></details>`;
   };
 
-  const renderLandingPage = () => {
-    const appName = getAppName();
+  const renderModuleCards = () => {
+    if (state.discoveryState !== 'ready') {
+      return '';
+    }
     const modules = getVisibleModules();
+    if (!modules.length) {
+      return '';
+    }
+    return `
+      <div class="user-module-list">
+        ${modules.map((module) => `
+          <button type="button" class="user-module-card" data-module-card="${escapeHtml(module.id)}">
+            <span>
+              <strong>${escapeHtml(getModuleDisplayName(module))}</strong>
+              <small>${escapeHtml(module.description || 'Open this module.')}</small>
+            </span>
+            <span>Open</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+  };
+
+  const renderLandingPage = () => {
+    const homepage = getHomepageConfig();
+    const appName = getAppName();
     const currentUser = getCurrentUser();
+
+    if (homepage.mode === 'module') {
+      const moduleId = homepage.moduleId;
+      const module = moduleId && getModules().some((entry) => entry.id === moduleId)
+        ? getModules().find((entry) => entry.id === moduleId)
+        : null;
+      if (module) {
+        state.activeView = 'home';
+        state.activeModuleId = null;
+        content.innerHTML = `
+          <section class="user-app-panel">
+            <div class="user-app-module-intro">${escapeHtml(module.description || 'This module is active in the current application.')}</div>
+            <div id="moduleUserInterface"></div>
+            ${renderStartupDiagnostics()}
+          </section>
+        `;
+        const target = document.getElementById('moduleUserInterface');
+        if (typeof module.renderUserInterface === 'function') {
+          module.renderUserInterface(target);
+        } else {
+          target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
+        }
+        return;
+      }
+    }
+
+    const heading = homepage.title ? homepage.title : appName;
+    const message = homepage.content
+      ? homepage.content
+      : '<p class="user-app-intro">Welcome to the workspace.</p>';
+    const moduleCards = homepage.mode === 'module' ? renderModuleCards() : '';
+
     content.innerHTML = `
       <section class="user-app-panel">
         <div class="user-app-section-heading">
           <div>
             <span class="user-app-eyebrow">Welcome</span>
-            <h1>${escapeHtml(appName)}</h1>
+            <h1>${escapeHtml(heading)}</h1>
           </div>
-          <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
-        <p class="user-app-intro">The active modules of this application appear directly in the top menu and can also be opened from the workspace below.</p>
-        ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can already use public modules without signing in. Sign in to unlock personalized administration and role-based features.</div>'}
-        <div class="user-module-list" style="margin-top: 22px;">
-          ${isDiscoveryPending() || state.discoveryState === 'error' ? `<div class="user-app-empty">${getDiscoveryMessage()}</div>` : modules.length ? modules.map((module) => `
-            <button type="button" class="user-module-card" data-module-card="${escapeHtml(module.id)}">
-              <span class="user-module-icon">${escapeHtml((getModuleDisplayName(module).charAt(0) || 'M').toUpperCase())}</span>
-              <span class="user-module-copy">
-                <strong>${escapeHtml(getModuleDisplayName(module))}</strong>
-                <small>${escapeHtml(module.description || 'Open this module in the current application.')}</small>
-              </span>
-              <span class="user-module-arrow" aria-hidden="true">›</span>
-            </button>
-          `).join('') : '<div class="user-app-empty">No modules are active yet. Activate modules in the admin area to make them available here.</div>'}
-        </div>
+        <div class="user-app-homepage-content">${message}</div>
+        ${moduleCards}
+        ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can use the available workspace features without signing in.</div>'}
         ${renderStartupDiagnostics()}
       </section>
     `;
-    content.querySelectorAll('[data-module-card]').forEach((button) => {
+
+    const homeModuleCards = content.querySelectorAll('[data-module-card]');
+    homeModuleCards.forEach((button) => {
       button.addEventListener('click', () => {
+        const nextModuleId = button.dataset.moduleCard;
+        if (!nextModuleId) {
+          return;
+        }
+        state.activeView = `module:${button.dataset.moduleCard}`;
+        state.activeModuleId = button.dataset.moduleCard;
         renderModule(button.dataset.moduleCard);
       });
     });

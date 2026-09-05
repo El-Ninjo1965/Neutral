@@ -7,6 +7,10 @@
 
 Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
+## 0. Aktueller nachgewiesener Stand
+
+**Status:** die im Core-Freeze aufgestellten Verträge für neutrale Landingpage, zentrale Homepage-Konfiguration, lokale Settings-UX, entfernte GPS-User-Diagnose und temporäre Startup-Diagnose sind im Repository verifiziert. Die vollständige Node-Testsuite und der PHP 8.1+-Lint sind grün. Live-/Betreiberabhängige Abnahmen bleiben wegen echter iPadOS/Android-/Warmstart-/Offline-Host-Prüfungen ausdrücklich offen.
+
 ## 1. Installation und Produktionssicherheit
 
 **Klassifikation:** GEMISCHT – Teilweise autonom im Codespace, teilweise Live-/Betreiberabhängig
