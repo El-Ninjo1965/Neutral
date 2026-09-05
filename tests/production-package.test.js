@@ -96,6 +96,7 @@ function createSourceFixture(t) {
     ''
   ].join('\n'));
   writeFile(path.join(sourceRoot, 'Web-App/public/public-path.js'), 'globalThis.NeutralPublicPath = {};\n');
+  writeFile(path.join(sourceRoot, 'Web-App/public/service-worker.js'), "'use strict';\n/* self.__NEUTRAL_DEPLOY_STAMP__ placeholder */\n");
   writeFile(path.join(sourceRoot, 'Web-App/public/app.js'), 'console.log("neutral");\n');
   writeFile(path.join(sourceRoot, 'Server/php/bootstrap.php'), '<?php declare(strict_types=1);\n');
   writeFile(path.join(sourceRoot, 'Server/php/src/PublicPath.php'), '<?php declare(strict_types=1);\n');
@@ -108,6 +109,11 @@ function createSourceFixture(t) {
 
   return { workspaceRoot, sourceRoot };
 }
+
+// The production builder requires a source commit for the service worker
+// deploy stamp; fixtures without a git repository supply a deterministic one.
+const FIXTURE_SOURCE_COMMIT = '0123456789abcdef0123456789abcdef01234567';
+const buildFixturePackage = (options = {}) => buildProductionPackage({ sourceCommit: FIXTURE_SOURCE_COMMIT, ...options });
 
 test('normalizes production package base paths with the shared public-path contract', () => {
   assert.equal(normalizeBasePath(''), '');
@@ -181,7 +187,7 @@ test('builder requires both public-path resolver entrypoints', async (t) => {
       fs.rmSync(path.join(sourceRoot, relativePath));
 
       assert.throws(
-        () => buildProductionPackage({ sourceRoot, outputDir }),
+        () => buildFixturePackage({ sourceRoot, outputDir }),
         /required production.*entrypoint|missing required production path/i
       );
       assert.equal(fs.existsSync(outputDir), false);
@@ -322,19 +328,19 @@ test('[review-3] rejects lexical and symlinked output overlap while allowing sou
   const { workspaceRoot, sourceRoot } = createSourceFixture(t);
 
   assert.throws(
-    () => buildProductionPackage({ sourceRoot, outputDir: path.join(sourceRoot, 'Server') }),
+    () => buildFixturePackage({ sourceRoot, outputDir: path.join(sourceRoot, 'Server') }),
     /output.*Server\/php|Server\/php.*output/i
   );
 
   const outputParentLink = path.join(workspaceRoot, 'linked-output-parent');
   fs.symlinkSync(path.join(sourceRoot, 'Web-App'), outputParentLink, 'dir');
   assert.throws(
-    () => buildProductionPackage({ sourceRoot, outputDir: path.join(outputParentLink, 'package') }),
+    () => buildFixturePackage({ sourceRoot, outputDir: path.join(outputParentLink, 'package') }),
     /output.*Web-App|Web-App.*output/i
   );
   assert.equal(fs.existsSync(path.join(sourceRoot, 'Web-App/package')), false);
 
-  const result = buildProductionPackage({ sourceRoot });
+  const result = buildFixturePackage({ sourceRoot });
   assert.equal(result.outputDir, path.join(sourceRoot, 'dist', 'neutral-production'));
   assert.equal(fs.existsSync(path.join(result.outputDir, 'manifest.json')), true);
 });
@@ -352,21 +358,21 @@ test('builds a verified package without mutating the source base-path meta tag',
     outputDir: firstOutput,
     basePath: '/meine-app/',
     generatedAt: '2026-09-03T00:00:00.000Z',
-    sourceCommit: 'abc123'
+    sourceCommit: 'abc1230abc1230abc1230abc1230abc1230abc1230'
   });
   buildProductionPackage({
     sourceRoot,
     outputDir: secondOutput,
     basePath: '/meine-app/',
     generatedAt: '2026-09-03T01:00:00.000Z',
-    sourceCommit: 'def456'
+    sourceCommit: 'def4560def4560def4560def4560def4560def4560'
   });
   buildProductionPackage({
     sourceRoot,
     outputDir: rootOutput,
     basePath: '',
     generatedAt: '2026-09-03T02:00:00.000Z',
-    sourceCommit: 'ghi789'
+    sourceCommit: '111789011178901117890111789011178901117890aa'
   });
 
   const packagedIndex = fs.readFileSync(path.join(firstOutput, 'Web-App/public/index.html'), 'utf8');
@@ -388,7 +394,7 @@ test('builds a verified package without mutating the source base-path meta tag',
   assert.equal(firstManifest.packageFormat, 'neutral-production');
   assert.equal(firstManifest.appVersion, '9.8.7');
   assert.equal(firstManifest.frameworkVersion, '9.8.7');
-  assert.equal(firstManifest.sourceCommit, 'abc123');
+  assert.equal(firstManifest.sourceCommit, 'abc1230abc1230abc1230abc1230abc1230abc1230');
   assert.equal(firstManifest.generatedAt, '2026-09-03T00:00:00.000Z');
   assert.equal(firstManifest.basePath, '/meine-app');
   assert.equal(firstManifest.sourceDirty, true);
@@ -396,7 +402,15 @@ test('builds a verified package without mutating the source base-path meta tag',
   const firstFiles = firstManifest.files;
   const secondFiles = secondManifest.files;
   assert.deepEqual(firstFiles.map(({ path: filePath }) => filePath), [...firstFiles.map(({ path: filePath }) => filePath)].sort());
-  assert.deepEqual(firstFiles, secondFiles);
+  // The packaged service worker embeds the per-deployment source commit as its
+  // cache stamp, so only that file differs between deployments; everything else
+  // must stay byte-identical for identical source content.
+  const withoutWorker = (files) => files.filter(({ path: filePath }) => filePath !== 'Web-App/public/service-worker.js');
+  assert.deepEqual(withoutWorker(firstFiles), withoutWorker(secondFiles));
+  const firstWorker = firstFiles.find(({ path: filePath }) => filePath === 'Web-App/public/service-worker.js');
+  const secondWorker = secondFiles.find(({ path: filePath }) => filePath === 'Web-App/public/service-worker.js');
+  assert.ok(firstWorker && secondWorker);
+  assert.notEqual(firstWorker.sha256, secondWorker.sha256);
   assert.equal(firstFiles.some(({ path: filePath }) => filePath === 'manifest.json'), false);
   assert.equal(firstFiles.some(({ path: filePath }) => filePath === 'SHA256SUMS'), false);
 
@@ -418,11 +432,11 @@ test('records whether the package source is clean at build time', (t) => {
 
   const cleanOutput = path.join(workspaceRoot, 'clean-package');
   const dirtyOutput = path.join(workspaceRoot, 'dirty-package');
-  const clean = buildProductionPackage({ sourceRoot, outputDir: cleanOutput });
+  const clean = buildFixturePackage({ sourceRoot, outputDir: cleanOutput });
   assert.equal(clean.manifest.sourceDirty, false);
 
   fs.appendFileSync(path.join(sourceRoot, 'Web-App/public/app.js'), '// changed\n');
-  const dirty = buildProductionPackage({ sourceRoot, outputDir: dirtyOutput });
+  const dirty = buildFixturePackage({ sourceRoot, outputDir: dirtyOutput });
   assert.equal(dirty.manifest.sourceDirty, true);
 });
 
@@ -437,13 +451,13 @@ test('documents the conservative sourceDirty manifest semantics', () => {
 test('preserves the previous package when a replacement fails validation', (t) => {
   const { workspaceRoot, sourceRoot } = createSourceFixture(t);
   const outputDir = path.join(workspaceRoot, 'production-package');
-  buildProductionPackage({ sourceRoot, outputDir, basePath: '' });
+  buildFixturePackage({ sourceRoot, outputDir, basePath: '' });
   const originalManifest = fs.readFileSync(path.join(outputDir, 'manifest.json'), 'utf8');
 
   const secretFixtureValue = 'ghp_abcdefghijklmnopqrstuvwxyz0123456789';
   writeFile(path.join(sourceRoot, 'Web-App/public/leak.js'), `const leaked = "${secretFixtureValue}";\n`);
 
-  assert.throws(() => buildProductionPackage({ sourceRoot, outputDir, basePath: '' }), /\[MASKIERT\]/);
+  assert.throws(() => buildFixturePackage({ sourceRoot, outputDir, basePath: '' }), /\[MASKIERT\]/);
   assert.equal(fs.readFileSync(path.join(outputDir, 'manifest.json'), 'utf8'), originalManifest);
 });
 
@@ -482,7 +496,7 @@ test('[review-4] refuses to replace an output with invalid metadata or payload h
     await t.test(entry.name, (subtest) => {
       const { workspaceRoot, sourceRoot } = createSourceFixture(subtest);
       const outputDir = path.join(workspaceRoot, 'package');
-      buildProductionPackage({ sourceRoot, outputDir });
+      buildFixturePackage({ sourceRoot, outputDir });
       entry.mutate(outputDir);
       const before = fs.readFileSync(path.join(outputDir, entry.name === 'payload'
         ? 'Web-App/public/app.js'
@@ -490,7 +504,7 @@ test('[review-4] refuses to replace an output with invalid metadata or payload h
           : entry.name === 'foreign-file' ? 'foreign.txt' : 'manifest.json'), 'utf8');
 
       assert.throws(
-        () => buildProductionPackage({ sourceRoot, outputDir }),
+        () => buildFixturePackage({ sourceRoot, outputDir }),
         /existing production package/i
       );
       const after = fs.readFileSync(path.join(outputDir, entry.name === 'payload'
@@ -505,10 +519,10 @@ test('[review-4] refuses to replace an output with invalid metadata or payload h
 test('[review-4] replaces a verified output and removes its rollback backup', (t) => {
   const { workspaceRoot, sourceRoot } = createSourceFixture(t);
   const outputDir = path.join(workspaceRoot, 'package');
-  buildProductionPackage({ sourceRoot, outputDir });
+  buildFixturePackage({ sourceRoot, outputDir });
   writeFile(path.join(sourceRoot, 'Web-App/public/app.js'), 'console.log("updated");\n');
 
-  buildProductionPackage({ sourceRoot, outputDir });
+  buildFixturePackage({ sourceRoot, outputDir });
 
   assert.equal(
     fs.readFileSync(path.join(outputDir, 'Web-App/public/app.js'), 'utf8'),
@@ -547,7 +561,7 @@ test('refuses to replace self-consistent foreign output directories and preserve
       const before = fs.readFileSync(markerPath, 'utf8');
 
       assert.throws(
-        () => buildProductionPackage({ sourceRoot, outputDir }),
+        () => buildFixturePackage({ sourceRoot, outputDir }),
         /existing production package/i
       );
       assert.equal(fs.readFileSync(markerPath, 'utf8'), before);
@@ -561,7 +575,7 @@ test('[review-5] rejects unsafe package filenames before creating an output', (t
   writeFile(path.join(sourceRoot, 'Web-App/public/unsafe\nname.js'), 'safe content\n');
 
   assert.throws(
-    () => buildProductionPackage({ sourceRoot, outputDir }),
+    () => buildFixturePackage({ sourceRoot, outputDir }),
     /unsafe package path/i
   );
   assert.equal(fs.existsSync(outputDir), false);
@@ -578,7 +592,7 @@ test('[review-6] changes only genuine neutral base-path meta attributes', (t) =>
     ''
   ].join('\n'));
 
-  buildProductionPackage({ sourceRoot, outputDir, basePath: '/nested' });
+  buildFixturePackage({ sourceRoot, outputDir, basePath: '/nested' });
   const packagedIndex = fs.readFileSync(path.join(outputDir, 'Web-App/public/index.html'), 'utf8');
   assert.match(packagedIndex, /data-name="neutral-base-path" data-content="decoy"/);
   assert.match(packagedIndex, /data-info='name="neutral-base-path" content="quoted-decoy"'/);

@@ -58,6 +58,7 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
       '.env.example': 'DB_PASSWORD=\n',
       'Web-App/public/index.html': '<meta name="neutral-base-path" content="">\n<base href="/">\n',
       'Web-App/public/public-path.js': 'globalThis.NeutralPublicPath = {};\n',
+      'Web-App/public/service-worker.js': "'use strict';\n/* self.__NEUTRAL_DEPLOY_STAMP__ placeholder */\n",
       'Server/php/bootstrap.php': '<?php\n',
       'Server/php/src/PublicPath.php': '<?php\n',
       'Server/public/api/index.php': '<?php\n',
@@ -69,7 +70,12 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
       fs.writeFileSync(filePath, content);
     }
 
-    const { stagingRoot, missing } = buildStagingTree({ sourceRoot, outputDir, basePath: '/nested' });
+    const { stagingRoot, missing } = buildStagingTree({
+      sourceRoot,
+      outputDir,
+      basePath: '/nested',
+      sourceCommit: '0123456789abcdef0123456789abcdef01234567'
+    });
     assert.deepStrictEqual(missing, []);
     assert.equal(stagingRoot, outputDir);
     assert.equal(fs.existsSync(path.join(stagingRoot, '.htaccess')), true);

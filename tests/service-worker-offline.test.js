@@ -87,10 +87,12 @@ const createServiceWorkerSandbox = ({ online = true, responses = {}, version = n
   };
   sandbox.self = sandbox;
   vm.createContext(sandbox);
-  if (version) {
-    vm.runInContext(`self.__NEUTRAL_SW_VERSION_OVERRIDE__ = ${JSON.stringify(version)};`, sandbox);
-  }
-  vm.runInContext(read('Web-App/public/service-worker.js'), sandbox, { filename: 'service-worker.js' });
+  // Tests inject the deploy stamp the same way the production build does:
+  // as a `self.__NEUTRAL_DEPLOY_STAMP__` line prepended to the worker source.
+  const source = version
+    ? `self.__NEUTRAL_DEPLOY_STAMP__ = ${JSON.stringify(version)};\n${read('Web-App/public/service-worker.js')}`
+    : read('Web-App/public/service-worker.js');
+  vm.runInContext(source, sandbox, { filename: 'service-worker.js' });
   return { sandbox, cacheStorage, listeners };
 };
 
@@ -208,6 +210,110 @@ test('service worker source never caches non-GET or API/auth responses', () => {
   assert.match(worker, /request\.method\s*!==\s*'GET'/);
   assert.match(worker, /\/api\//);
   assert.doesNotMatch(worker, /cache\.put\([^)]*\/api\//);
+});
+
+test('source service worker carries no hardcoded production commit', () => {
+  const worker = read('Web-App/public/service-worker.js');
+
+  assert.doesNotMatch(worker, /neutral-shell-v[0-9a-f]{7,40}/);
+  assert.match(worker, /__NEUTRAL_DEPLOY_STAMP__/);
+});
+
+test('production package injects the source commit as the worker stamp', async () => {
+  const os = require('node:os');
+  const { buildProductionPackage } = require('../scripts/lib/portable-install.js');
+  const outputA = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-pkg-a-'));
+  const outputB = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-pkg-b-'));
+
+  try {
+    const pkgA = buildProductionPackage({
+      sourceRoot: projectRoot,
+      outputDir: path.join(outputA, 'dist'),
+      sourceCommit: 'aaaa1111bbbb2222cccc3333dddd4444eeee5555'
+    });
+    const workerA = fs.readFileSync(path.join(pkgA.outputDir, 'Web-App/public/service-worker.js'), 'utf8');
+    assert.match(workerA, /aaaa1111bbbb2222cccc3333dddd4444eeee5555/);
+    assert.doesNotMatch(workerA, /neutral-shell-vdev/);
+    assert.equal(pkgA.manifest.sourceCommit, 'aaaa1111bbbb2222cccc3333dddd4444eeee5555');
+
+    const pkgB = buildProductionPackage({
+      sourceRoot: projectRoot,
+      outputDir: path.join(outputB, 'dist'),
+      sourceCommit: 'ffff666600007777888899990000aaaabbbbcccc'
+    });
+    const workerB = fs.readFileSync(path.join(pkgB.outputDir, 'Web-App/public/service-worker.js'), 'utf8');
+    assert.match(workerB, /ffff666600007777888899990000aaaabbbbcccc/);
+    assert.doesNotMatch(workerB, /aaaa1111/);
+
+    // Distinct deployments must yield distinct cache names.
+    const cacheName = (source) => source.match(/neutral-shell-v\$\{VERSION\}|neutral-shell-v([a-z0-9-]+)/)?.[0];
+    void cacheName;
+    assert.notEqual(
+      workerA.match(/__NEUTRAL_DEPLOY_STAMP__[^;]*'([0-9a-f]+)'/)?.[1],
+      workerB.match(/__NEUTRAL_DEPLOY_STAMP__[^;]*'([0-9a-f]+)'/)?.[1]
+    );
+  } finally {
+    fs.rmSync(outputA, { recursive: true, force: true });
+    fs.rmSync(outputB, { recursive: true, force: true });
+  }
+});
+
+test('production package fails closed when no deploy stamp is available', () => {
+  const os = require('node:os');
+  const { buildProductionPackage } = require('../scripts/lib/portable-install.js');
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-pkg-nostamp-'));
+
+  try {
+    assert.throws(
+      () => buildProductionPackage({
+        sourceRoot: projectRoot,
+        outputDir: path.join(output, 'dist'),
+        sourceCommit: null
+      }),
+      /deploy|stamp|commit/i
+    );
+  } finally {
+    fs.rmSync(output, { recursive: true, force: true });
+  }
+});
+
+test('development fallback never produces the shared dev cache name', () => {
+  const os = require('node:os');
+  const { buildProductionPackage } = require('../scripts/lib/portable-install.js');
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-pkg-dev-'));
+
+  try {
+    const pkg = buildProductionPackage({
+      sourceRoot: projectRoot,
+      outputDir: path.join(output, 'dist'),
+      sourceCommit: null,
+      allowDevStampFallback: true
+    });
+    const worker = fs.readFileSync(path.join(pkg.outputDir, 'Web-App/public/service-worker.js'), 'utf8');
+    // Dev builds get a unique stamp per build, never the shared literal 'dev'.
+    assert.doesNotMatch(worker, /neutral-shell-vdev'/);
+    assert.match(worker, /__NEUTRAL_DEPLOY_STAMP__ = 'dev[0-9a-f]{12}'/);
+  } finally {
+    fs.rmSync(output, { recursive: true, force: true });
+  }
+});
+
+test('the packaged service worker never contains the test override hook', async () => {
+  const os = require('node:os');
+  const { buildProductionPackage } = require('../scripts/lib/portable-install.js');
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-pkg-hook-'));
+
+  try {
+    const pkg = buildProductionPackage({
+      sourceRoot: projectRoot,
+      outputDir: path.join(output, 'dist'),
+      sourceCommit: '0123456789abcdef0123456789abcdef01234567'
+    });
+    const worker = fs.readFileSync(path.join(pkg.outputDir, 'Web-App/public/service-worker.js'), 'utf8');
+    assert.doesNotMatch(worker, /__NEUTRAL_SW_VERSION_OVERRIDE__/);
+  } finally {
+    fs.rmSync(output, { recursive: true, force: true });
+  }
 });
 
 test('production package includes the service worker and .htaccess does not cache it long', () => {

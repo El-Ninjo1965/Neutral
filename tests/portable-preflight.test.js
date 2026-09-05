@@ -39,6 +39,7 @@ function createPackage(t, basePath = '/meine-app') {
     ''
   ].join('\n'));
   writeFile(path.join(sourceRoot, 'Web-App/public/public-path.js'), 'globalThis.NeutralPublicPath = {};\n');
+  writeFile(path.join(sourceRoot, 'Web-App/public/service-worker.js'), "'use strict';\n/* self.__NEUTRAL_DEPLOY_STAMP__ placeholder */\n");
   writeFile(path.join(sourceRoot, 'Server/php/bootstrap.php'), '<?php declare(strict_types=1);\n');
   writeFile(path.join(sourceRoot, 'Server/php/src/PublicPath.php'), '<?php declare(strict_types=1);\n');
   writeFile(path.join(sourceRoot, 'Server/public/admin.php'), '<?php echo "admin";\n');
@@ -51,7 +52,7 @@ function createPackage(t, basePath = '/meine-app') {
     outputDir: packageRoot,
     basePath,
     generatedAt: '2026-09-03T00:00:00.000Z',
-    sourceCommit: '0123456789abcdef'
+    sourceCommit: '0123456789abcdef0123456789abcdef01234567'
   });
   return { workspace, packageRoot };
 }

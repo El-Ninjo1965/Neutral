@@ -17,6 +17,7 @@ const REQUIRED_ENTRIES = [
 ];
 const REQUIRED_PRODUCTION_ENTRYPOINTS = [
   'Web-App/public/public-path.js',
+  'Web-App/public/service-worker.js',
   'Server/php/src/PublicPath.php'
 ];
 
@@ -361,6 +362,31 @@ function discoverSourceCommit(sourceRoot) {
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
+// The shipped service worker gets its cache version from the deployment stamp.
+// The repository source stays generic; only the build output receives the
+// stamp, so every real deployment produces a distinct cache version and the
+// worker never silently falls back to a shared 'dev' cache in production.
+function injectServiceWorkerDeployStamp(serviceWorkerPath, sourceCommit, { allowFallback = false } = {}) {
+  if (typeof sourceCommit !== 'string' || !/^[0-9a-f]{7,64}$/i.test(sourceCommit)) {
+    if (!allowFallback) {
+      throw new Error('Production package requires a valid source commit as the service worker deploy stamp.');
+    }
+    // Local development fallback outside any git checkout: package-version
+    // scoped stamp so dev caches never collide with production deployments.
+    const fallback = crypto.createHash('sha256').update(`neutral-dev-${Date.now()}`).digest('hex').slice(0, 12);
+    sourceCommit = `dev${fallback}`;
+  }
+
+  const source = fs.readFileSync(serviceWorkerPath, 'utf8');
+  const marker = 'self.__NEUTRAL_DEPLOY_STAMP__';
+  if (!source.includes(marker)) {
+    throw new Error('Web-App/public/service-worker.js must declare the deploy stamp placeholder.');
+  }
+
+  const injected = `self.__NEUTRAL_DEPLOY_STAMP__ = '${sourceCommit}';\n`;
+  fs.writeFileSync(serviceWorkerPath, injected + source);
+}
+
 function discoverSourceDirty(sourceRoot) {
   const result = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], {
     cwd: sourceRoot,
@@ -620,6 +646,18 @@ function buildProductionPackage(options = {}) {
 
     injectBasePath(path.join(temporaryDirectory, 'Web-App/public/index.html'), basePath);
 
+    const resolvedSourceCommit = options.sourceCommit === undefined
+      ? discoverSourceCommit(sourceRoot)
+      : options.sourceCommit;
+    injectServiceWorkerDeployStamp(
+      path.join(temporaryDirectory, 'Web-App/public/service-worker.js'),
+      resolvedSourceCommit,
+      // Local development outside a git checkout may fall back to a unique
+      // dev stamp; production builds (workflow passes GITHUB_SHA / an explicit
+      // commit) always fail closed when no stamp is available.
+      { allowFallback: options.allowDevStampFallback === true }
+    );
+
     for (const relativePath of inventory) {
       scanFile(path.join(temporaryDirectory, relativePath), relativePath);
     }
@@ -639,9 +677,7 @@ function buildProductionPackage(options = {}) {
       packageFormat: PACKAGE_FORMAT,
       appVersion: version,
       frameworkVersion: version,
-      sourceCommit: options.sourceCommit === undefined
-        ? discoverSourceCommit(sourceRoot)
-        : options.sourceCommit,
+      sourceCommit: resolvedSourceCommit,
       generatedAt: options.generatedAt || new Date().toISOString(),
       basePath,
       sourceDirty,

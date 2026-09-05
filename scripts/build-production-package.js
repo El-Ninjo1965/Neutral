@@ -61,7 +61,10 @@ function main() {
   const result = buildProductionPackage({
     sourceRoot,
     outputDir: options.output === undefined ? undefined : path.resolve(process.cwd(), options.output),
-    basePath: options.basePath ?? process.env.NEUTRAL_BASE_PATH ?? ''
+    basePath: options.basePath ?? process.env.NEUTRAL_BASE_PATH ?? '',
+    // A checkout without a git repository (generated app copies) uses a unique
+    // development stamp; real deployments always carry the source commit.
+    allowDevStampFallback: true
   });
 
   console.log(JSON.stringify({

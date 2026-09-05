@@ -19,14 +19,16 @@
  * - On activate, all cache versions other than the current one are removed, so
  *   a deployment never leaves a mixed old-core/new-module state behind.
  *
- * The cache version comes from the deployment stamp injected by the build
- * (self.__NEUTRAL_SW_VERSION_OVERRIDE__ is a test hook only); there is no
- * hardcoded manual version number.
+ * Version source: the production build injects the deploy stamp (source commit)
+ * as `self.__NEUTRAL_DEPLOY_STAMP__ = '<commit>';` above this header in the
+ * packaged file. The repository source intentionally has no hardcoded
+ * production version; without any stamp the worker falls back to 'dev', which
+ * is only acceptable for local development — production packages fail the
+ * build when no stamp is available.
  */
 'use strict';
 
-const VERSION = (typeof self !== 'undefined' && self.__NEUTRAL_SW_VERSION_OVERRIDE__)
-    || (typeof self !== 'undefined' && self.__NEUTRAL_DEPLOY_STAMP__)
+const VERSION = (typeof self !== 'undefined' && typeof self.__NEUTRAL_DEPLOY_STAMP__ === 'string' && self.__NEUTRAL_DEPLOY_STAMP__)
     || 'dev';
 const CACHE_NAME = `neutral-shell-v${VERSION}`;
 

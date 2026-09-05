@@ -2,7 +2,7 @@
 
 ## 2026-09-05 – Offline-First-Service-Worker, HTTPS-Erzwingung und Warmstart-Diagnose
 
-- Neuer Core-Service-Worker `Web-App/public/service-worker.js`: versionierter App-Shell-Cache (`neutral-shell-v<Deploy-Stamp>`), Precache von HTML/CSS/Core-Skripten, Navigation network-first mit Shell-Fallback, statische Assets cache-first mit Hintergrund-Refresh, einmal geladene Modul-Entries offline nutzbar, kontrollierte Entfernung alter Cacheversionen, strikte Sicherheitsgrenze (kein Caching von Nicht-GET, `/api/`, Auth/Admin/Setup);
+- Neuer Core-Service-Worker `Web-App/public/service-worker.js`: versionierter App-Shell-Cache (`neutral-shell-v<Source-Commit>`, vom Produktionspaket-Build in die ausgelieferte Datei injiziert; Repo-Quelle bleibt generisch, Build bricht ohne gültigen Commit erkennbar ab), Precache von HTML/CSS/Core-Skripten, Navigation network-first mit Shell-Fallback, statische Assets cache-first mit Hintergrund-Refresh, einmal geladene Modul-Entries offline nutzbar, kontrollierte Entfernung alter Cacheversionen, strikte Sicherheitsgrenze (kein Caching von Nicht-GET, `/api/`, Auth/Admin/Setup);
 - Registrierung in `Web-App/public/user-app.js` ausschließlich unter Secure Context, ohne First-Paint-Blockade;
 - Root-`.htaccess`: permanente 301-HTTPS-Erzwingung (Pfad/Query erhalten), `service-worker.js`-Rewrite am Scope-Root, `no-cache` für den Service Worker, `Cache-Control: public, max-age=86400` für übrige JS/CSS-Assets;
 - `scripts/production-readonly-smoke.js` weist die HTTPS-Live-Anforderung getrennt vom Code-Deployment aus (`httpsProbe`-Evidenz, `httpsEnforced`), statt fehlende HTTPS-Umleitung als vollen Erfolg zu melden;

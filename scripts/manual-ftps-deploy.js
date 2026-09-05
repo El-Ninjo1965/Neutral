@@ -330,7 +330,8 @@ function buildStagingTree(options = {}) {
   const result = buildProductionPackage({
     sourceRoot,
     outputDir,
-    basePath: options.basePath ?? process.env.NEUTRAL_BASE_PATH ?? ''
+    basePath: options.basePath ?? process.env.NEUTRAL_BASE_PATH ?? '',
+    sourceCommit: options.sourceCommit
   });
 
   return { stagingRoot: result.outputDir, packageManifest: result.manifest, missing: [] };
