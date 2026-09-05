@@ -41,7 +41,7 @@ Der echte produktive Login und die fortbestehende Sitzung über alle 15 Admin-Ha
 
 Zusätzlich offen sind die reale responsive iPad-/Safari-Abnahme und die Neuinstallationsnachweise in einem neuen physischen DocumentRoot sowie unter einem URL-Unterpfad. Die zentrale Installationsbasis und der lokale Preflight sind vorhanden, wurden in diesem Änderungssatz aber weder hochgeladen noch gegen einen fremden Apache-/PHP-Host ausgeführt. Deshalb bleiben folgende Nachweise ausdrücklich offen:
 
-- PHP 8.x samt PDO/`pdo_mysql`, JSON, Session und OpenSSL in der neuen Zielumgebung,
+- PHP 8.1+ samt PDO/`pdo_mysql`, JSON, Session und OpenSSL in der neuen Zielumgebung,
 - Apache-/LiteSpeed-Rewrite für Root, API, Assets, Admin, Setup und SPA-Fallback,
 - leere Datenbank, Migrationen, Betreiberanlage und anschließende Setup-Sperre,
 - Login, Session, CSRF, API-, Asset- und SPA-Smoke-Tests im echten URL-Unterpfad,

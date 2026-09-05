@@ -22,7 +22,7 @@ test('GPS and reference-notes publish the same versioned server contract', { ski
   const gps = manifest('gps');
   const notes = manifest('reference-notes');
   for (const item of [gps, notes]) {
-    assert.deepEqual(item.compatibility, { core: '>=1.0.0 <2.0.0', api: 1, php: '>=8.0.0' });
+    assert.deepEqual(item.compatibility, { core: '>=1.0.0 <2.0.0', api: 1, php: '>=8.1.0' });
     assert.match(item.server.entry, new RegExp(`^Server/php/modules/${item.id}/`));
     assert.equal(Array.isArray(item.server.services), true);
     assert.equal(Array.isArray(item.server.routes), true);

@@ -65,7 +65,7 @@ $base = [
     ['key' => 'reference-notes.view'],
     ['key' => 'reference-notes.use'],
   ],
-  'compatibility' => ['core' => '>=1.0.0 <2.0.0', 'api' => 1, 'php' => '>=8.0.0'],
+  'compatibility' => ['core' => '>=1.0.0 <2.0.0', 'api' => 1, 'php' => '>=8.1.0'],
   'server' => [
     'entry' => 'Server/php/modules/reference-notes/module.php',
     'services' => ['module.reference-notes.notes'],
@@ -171,7 +171,7 @@ file_put_contents($dir . '/module.php', $entry);
 $manifest = [
   'id' => 'reference-notes', 'name' => 'Reference Notes', 'version' => '1.0.0', 'type' => 'module',
   'permissions' => [['key' => 'reference-notes.view']],
-  'compatibility' => ['core' => '>=1.0.0 <2.0.0', 'api' => 1, 'php' => '>=8.0.0'],
+  'compatibility' => ['core' => '>=1.0.0 <2.0.0', 'api' => 1, 'php' => '>=8.1.0'],
   'server' => [
     'entry' => 'Server/php/modules/reference-notes/module.php',
     'services' => ['module.reference-notes.notes'],

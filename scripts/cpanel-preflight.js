@@ -184,7 +184,7 @@ function checkPhpRuntime() {
   });
 
   if (result.error && result.error.code === 'ENOENT') {
-    return check('php', STATUS.NOT_CHECKED, 'PHP-Binary ist lokal nicht verfügbar; PHP 8.x und Erweiterungen sind im Zielhosting zu prüfen.');
+    return check('php', STATUS.NOT_CHECKED, 'PHP-Binary ist lokal nicht verfügbar; PHP 8.1+ und Erweiterungen sind im Zielhosting zu prüfen.');
   }
   if (result.error || result.status !== 0) {
     return check('php', STATUS.BLOCKED, 'Die vorhandene PHP-Binary konnte nicht sicher geprüft werden.');
@@ -198,13 +198,13 @@ function checkPhpRuntime() {
   }
 
   const extensions = data && data.extensions;
-  const versionIsSupported = Number.isInteger(data && data.versionId) && data.versionId >= 80000 && data.versionId < 90000;
+  const versionIsSupported = Number.isInteger(data && data.versionId) && data.versionId >= 80100 && data.versionId < 90000;
   const extensionsArePresent = extensions && Object.values(extensions).length === 5 && Object.values(extensions).every(Boolean);
   if (!versionIsSupported || !extensionsArePresent) {
-    return check('php', STATUS.BLOCKED, 'PHP 8.x oder eine erforderliche PHP-Erweiterung fehlt.');
+    return check('php', STATUS.BLOCKED, 'PHP 8.1+ oder eine erforderliche PHP-Erweiterung fehlt.');
   }
 
-  return check('php', STATUS.PASS, 'Lokale PHP-8.x-Binary und erforderliche Erweiterungen sind vorhanden.');
+  return check('php', STATUS.PASS, 'Lokale PHP-8.1+-Binary und erforderliche Erweiterungen sind vorhanden.');
 }
 
 function runPreflight(options) {

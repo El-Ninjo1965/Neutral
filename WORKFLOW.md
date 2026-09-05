@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHE ARBEITSREGELN
 
-**Geprüft:** 2026-09-04
+**Geprüft:** 2026-09-05
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
 ## 1. Zweck
@@ -103,6 +103,18 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 - Eine spätere Agentensitzung muss den Stand aus Repository plus `WORKFLOW.md` rekonstruieren können. Chatprotokolle sind keine alleinige Autorität für Arbeitsstand, Entscheidungslogik oder Risiken.
 
 VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktische Überprüfung und Übergabe zu stark anwächst, ist die sinnvollste Fortsetzungsform eine dateiübergreifende Folge mit klarer Namenskonvention wie `WORKFLOW-YYYY-MM-DD.md` oder `WORKFLOW-<Thema>.md`, wobei die Hauptdatei die Kontinuität und die verknüpften Folgeblätter listet. Alte Einträge bleiben unverändert erhalten; keine frühere Historie wird gelöscht. Eine harte Zeichen- oder Zeilenbegrenzung ist derzeit keine belastbare Projektregel und wird erst nach einer konkreten Projektentscheidung eingeführt.
+
+### 2026-09-05 – Abschlussprüfung PHP-Mindestversion und persistenter Testnachweis
+
+- **Aufgabe:** Verbleibende aktive PHP-Mindestversionsangaben im Repository auf den tatsächlichen Core-Vertrag `PHP 8.1+` konsistent machen, die offene TODO-Klassifikation ergänzen und den aktuellen verifizierten Testnachweis im Repository persistieren.
+- **Ausgangszustand:** Der produktive Core verwendet `private readonly`-Eigenschaften und Constructor Property Promotion; die reale Mindestversion ist damit `PHP 8.1+`. Die Codespace-Umgebung lief zunächst auf `/usr/bin/php` mit PHP 8.0.30; dieser Pfad war für die gültige PHP-Syntax nicht passend. Aktive Produktdokumentation und Modulverträge mussten noch vollständig gegeneinander abgeglichen werden.
+- **Betroffene Dateien:** `Server/php/src/PrerequisiteChecker.php`, `Web-App/app/modules/index.json`, `Web-App/app/modules/gps/module.json`, `Web-App/app/modules/reference-notes/module.json`, `TODO.md`, `PRODUCTION-VERIFICATION.md`, `WORKFLOW.md`, `CHANGELOG.md`.
+- **Änderung:** `PrerequisiteChecker` und die aktiven Modulmanifest-`php`-Verträge wurden auf `>=8.1.0` korrigiert. Offene Aufgaben in `TODO.md` wurden mit `AUTONOM IM CODESPACE`, `LIVE / BETREIBERABHÄNGIG` beziehungsweise `GEMISCHT` gekennzeichnet. Der aktuelle verifizierte Abschlusslauf wurde als Repository-Nachweis dokumentiert: Codespace-PHP 8.4.15 über `/usr/local/php/current/bin/php`, kompletter PHP-Lint auf allen Server-PHP-Dateien mit Exit 0, vollständiger `npm test`-Lauf mit `PATH="/usr/local/php/current/bin:$PATH"` und `git diff --check` erfolgreich.
+- **Wichtiger Hinweis:** Der normale Codespace-PATH kann weiterhin `/usr/bin/php` mit PHP 8.0.30 liefern. Für die verifizierten Tests wurde PHP 8.4.15 über `/usr/local/php/current/bin/php` verwendet; dies ist ein bekanntes Umgebungsrisiko und kein Produktcodefehler. Die aktuelle Regel bleibt: keine globale Devcontainer-/Systemänderung ohne konkrete Entscheidung.
+- **Tests/Validierung:** `find Server -name '*.php' -print0 | xargs -0 -n1 /usr/local/php/current/bin/php -l` erfolgreich; `PATH="/usr/local/php/current/bin:$PATH" npm test -- --runInBand` mit 319 Tests, 319 bestanden, 0 fehlgeschlagen; `git diff --check` ohne Ausgabe.
+- **Ergebnis:** Aktive PHP-Mindestversionsangaben und fehlende Klassifikationen wurden abgeschlossen; der verifizierte Abschlusslauf bleibt persistiert im Repository-Workflow.
+- **Offene Punkte:** keine im aktuellen Abschlussauftrag; echte Live-/Host-Abnahmen bleiben explizit als `LIVE / BETREIBERABHÄNGIG` aufgeführt.
+- **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Für zukünftige Codespace-Sitzungen kann eine repo- oder workspacegestützte PHP-Pfadabsicherung über eine lokale Shell-Umgebung oder ein Devcontainer-Setup sinnvoll sein; sie wurde hier nicht umgesetzt, weil keine Projektentscheidung für eine dauerhafte Infrastrukturänderung vorliegt.
 
 ## 10. Fortlaufendes Arbeitsprotokoll
 

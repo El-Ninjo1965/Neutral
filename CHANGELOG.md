@@ -1,5 +1,11 @@
 # NEUTRAL – Changelog
 
+## 2026-09-05 – PHP-Mindestversionen konsistent und Testnachweis persistiert
+
+- aktive PHP-Mindestversionsangaben im produktiven Core auf `PHP 8.1+` vereinheitlicht (`PrerequisiteChecker`, modulare `compatibility.php`-Einträge und offene Installations-/Produktionsdokumentation);
+- offene TODO-Punkte mit `AUTONOM IM CODESPACE`, `LIVE / BETREIBERABHÄNGIG` und gemischten Fällen klassifiziert;
+- aktueller verifizierter Nachweis im Workflow dokumentiert: Codespace-PHP 8.4.15 über `/usr/local/php/current/bin/php`, kompletter PHP-Lint mit Exit 0, vollständiger `npm test`-Lauf mit 319/319 Tests und 0 Fehlern sowie erfolgreicher `git diff --check`.
+
 ## 2026-09-04 – PHP-Mindestversion und Dokumentationskonsistenz verifiziert
 
 - reale PHP-Mindestversion im produktiven Code auf `PHP 8.1+` bestätigt (`readonly`-Eigenschaften und Constructor Property Promotion in `Server/php/src/LoginRateLimiter.php` und `DatabaseBackupService.php`);

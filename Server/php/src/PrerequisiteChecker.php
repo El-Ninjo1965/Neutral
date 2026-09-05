@@ -38,8 +38,8 @@ final class PrerequisiteChecker
 
         $checks = [];
         $checks['php_version'] = [
-            'ok' => version_compare(PHP_VERSION, '8.0.0', '>='),
-            'required' => '>=8.0.0',
+            'ok' => version_compare(PHP_VERSION, '8.1.0', '>='),
+            'required' => '>=8.1.0',
             'current' => PHP_VERSION,
         ];
         $checks['php_extensions'] = [
