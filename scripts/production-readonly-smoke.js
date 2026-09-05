@@ -144,6 +144,15 @@ async function runSmoke({
   const redirectLocation = httpResponse.headers && typeof httpResponse.headers.get === 'function'
     ? httpResponse.headers.get('location')
     : null;
+  write(JSON.stringify({
+    httpsProbe: {
+      status: httpResponse.status,
+      location: redirectLocation ? 'present' : null,
+      server: httpResponse.headers && typeof httpResponse.headers.get === 'function'
+        ? httpResponse.headers.get('server')
+        : null,
+    },
+  }));
   const isHttpsRedirect = [301, 302, 307, 308].includes(httpResponse.status)
     && typeof redirectLocation === 'string'
     && redirectLocation.startsWith('https://');
