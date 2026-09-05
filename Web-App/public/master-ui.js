@@ -3109,6 +3109,7 @@
         ? new window.ApiClient()
         : null;
       if (sessionApiClient) {
+        if (window.CorePerformance) window.CorePerformance.mark('auth-status-start'); // TEMPORARY diagnostic mark
         const sessionResult = await sessionApiClient.me();
         const sessionData = extractApiData(sessionResult);
         if (sessionResult.ok && sessionData && sessionData.user) {

@@ -92,6 +92,8 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
 
+**IST:** `PublicPath::assetUrl()`/`AppConfig::assetUrl()` erweitern `publicUrl()` um einen optionalen Cache-Busting-Marker (`?v=<sourceCommit>`), damit statische Assets (`style.css`, Admin-JS), die serverseitig mit `Cache-Control: public, max-age=86400` ausgeliefert werden, nach einem Deployment nicht bis zu 24h lang in einer veralteten Version aus dem Browser-Cache bedient werden, während die zugehörige PHP-Seite (`no-store`) bereits die neue Struktur zeigt. Die Version wird von `AppRuntime::detectAssetVersion()` sicher (Fallback `null`, kein Fehler) aus dem bei jedem Produktionspaket vorhandenen `manifest.json` (`sourceCommit`) gelesen; ohne `manifest.json` (lokale Entwicklung/Tests) verhält sich `assetUrl()` identisch zu `publicUrl()`. Verwendet in `Server/public/admin.php` und `Server/php/views/admin-ui.php`.
+
 **IST:** Die PHP-Runtime ist für PHP 8.1+, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
 
 **GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.

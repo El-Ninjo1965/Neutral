@@ -150,6 +150,9 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
   let tempRuntimeRoot;
   let setuplessServerPort;
   let setuplessServerProcess;
+  let deployedRuntimeRoot;
+  let deployedServerPort;
+  let deployedServerProcess;
   let activeSetupRoot;
   let lockedSetupPort;
   let lockedSetupProcess;
@@ -185,6 +188,22 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     setuplessServerPort = await getFreePort();
     setuplessServerProcess = startPhpServer({ docroot: tempWebroot, port: setuplessServerPort, sessionSavePath });
     await waitForServerReady(setuplessServerPort);
+
+    deployedRuntimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-admin-php-deployed-'));
+    const deployedServer = path.join(deployedRuntimeRoot, 'Server');
+    const deployedWebroot = path.join(deployedServer, 'public');
+    const deployedPhp = path.join(deployedServer, 'php');
+    fs.mkdirSync(deployedServer, { recursive: true });
+    fs.cpSync(webrootDir, deployedWebroot, { recursive: true });
+    fs.cpSync(path.join(projectRoot, 'Server', 'php'), deployedPhp, { recursive: true });
+    fs.writeFileSync(path.join(deployedRuntimeRoot, 'manifest.json'), JSON.stringify({
+      schemaVersion: 1,
+      sourceCommit: 'deadbee1234'
+    }));
+
+    deployedServerPort = await getFreePort();
+    deployedServerProcess = startPhpServer({ docroot: deployedWebroot, port: deployedServerPort, sessionSavePath });
+    await waitForServerReady(deployedServerPort);
 
     activeSetupRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-active-setup-'));
     const activeServer = path.join(activeSetupRoot, 'Server');
@@ -233,6 +252,9 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     if (setuplessServerProcess && !setuplessServerProcess.killed) {
       setuplessServerProcess.kill('SIGTERM');
     }
+    if (deployedServerProcess && !deployedServerProcess.killed) {
+      deployedServerProcess.kill('SIGTERM');
+    }
     if (lockedSetupProcess && !lockedSetupProcess.killed) {
       lockedSetupProcess.kill('SIGTERM');
     }
@@ -247,6 +269,9 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     }
     if (tempRuntimeRoot) {
       fs.rmSync(tempRuntimeRoot, { recursive: true, force: true });
+    }
+    if (deployedRuntimeRoot) {
+      fs.rmSync(deployedRuntimeRoot, { recursive: true, force: true });
     }
     if (activeSetupRoot) {
       fs.rmSync(activeSetupRoot, { recursive: true, force: true });
@@ -303,6 +328,36 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin\/navigation\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin\/shell\.js"/);
+  });
+
+  test('Fall C2: /admin.php cache-busts CSS and JS with the deployed manifest.json version', async () => {
+    createSessionIdentity(sessionSavePath, 'deployed-admin-session', {
+      userId: '102',
+      username: 'admin-deployed',
+      roles: ['admin'],
+      permissions: ['admin.read', 'admin.write'],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    });
+    const result = await request('/admin.php', {
+      port: deployedServerPort,
+      cookies: { neutral_session: 'deployed-admin-session' }
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    // Root cause regression coverage: style.css and JS/CSS carry a 24h
+    // public browser cache (see .htaccess) with no filename hashing. Without
+    // a deployment-bound cache-busting marker, a client that already cached
+    // an old style.css/admin JS bundle would keep rendering the previous
+    // (possibly incompatible) layout for up to 24h after a new deploy, even
+    // though the freshly served HTML shell itself is always up to date
+    // (admin.php is no-store). The manifest.json sourceCommit must appear
+    // as a `?v=` marker on every cache-busted static asset URL.
+    assert.match(result.body, /href="\/Web-App\/public\/style\.css\?v=deadbee1234"/);
+    assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js\?v=deadbee1234"/);
+    assert.match(result.body, /src="\/Web-App\/public\/admin\/shell\.js\?v=deadbee1234"/);
+    assert.match(result.body, /src="\/Web-App\/public\/master-ui\.js\?v=deadbee1234"/);
   });
 
   test('Fall D: Runtime remains bootstrappable without setup.php', async () => {

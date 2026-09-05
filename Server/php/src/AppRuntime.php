@@ -30,7 +30,7 @@ final class AppRuntime
 
         $envFile = EnvLoader::detectEnvFile($projectRoot);
         $env = EnvLoader::loadMerged($projectRoot);
-        $config = new AppConfig($env);
+        $config = new AppConfig($env, self::detectAssetVersion($projectRoot));
         $logger = new AppLogger(AppLogger::defaultLogFile($projectRoot));
         $database = new Database($config);
 
@@ -40,6 +40,34 @@ final class AppRuntime
             $runtime->registerErrorHandling();
         }
         return $runtime;
+    }
+
+    /**
+     * Reads the deployed package manifest (manifest.json, written by the
+     * production packaging step) for its sourceCommit, so static asset URLs
+     * can be cache-busted per deployment. Missing or unreadable manifests
+     * (local development, tests) are not an error: assets simply render
+     * without a version marker.
+     */
+    private static function detectAssetVersion(string $projectRoot): ?string
+    {
+        $manifestPath = $projectRoot . '/manifest.json';
+        if (!is_file($manifestPath) || !is_readable($manifestPath)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($manifestPath);
+        if ($raw === false) {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $sourceCommit = $decoded['sourceCommit'] ?? null;
+        return (is_string($sourceCommit) && $sourceCommit !== '') ? $sourceCommit : null;
     }
 
     private function configurePhpRuntime(): void

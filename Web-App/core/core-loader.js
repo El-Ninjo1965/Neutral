@@ -10,6 +10,13 @@
 (() => {
     'use strict';
 
+    // TEMPORARY diagnostic instrumentation (local-only, non-PII, no telemetry
+    // — see WORKFLOW.md). Removed once the offline/online discovery timing
+    // has been confirmed on a real device.
+    const mark = (name) => {
+        if (typeof window !== 'undefined' && window.CorePerformance) window.CorePerformance.mark(name);
+    };
+
     const defaultFrameworkCatalog = Object.freeze([
         {
             id: 'core-user',
@@ -251,13 +258,16 @@
 
     const fetchRemoteCatalog = async (catalogPath) => {
         if (!isCatalogRefreshOnline()) {
+            mark('fetch-remote-catalog-skipped'); // TEMPORARY diagnostic mark
             return null;
         }
 
+        mark('fetch-remote-catalog-start'); // TEMPORARY diagnostic mark
         try {
             const response = await fetch(catalogPath, { cache: 'no-store' });
 
             if (!response.ok) {
+                mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
                 return null;
             }
 
@@ -276,8 +286,10 @@
                 writeAnonymousCatalogCache(modules);
             }
 
+            mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
             return catalogIsValid ? modules : null;
         } catch (error) {
+            mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
             return null;
         }
     };
@@ -303,7 +315,9 @@
     };
 
     const readModuleCatalog = async (catalogPath) => {
+        mark('read-module-catalog-start'); // TEMPORARY diagnostic mark
         if (typeof fetch !== 'function') {
+            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
             return readAnonymousCatalogCache();
         }
 
@@ -314,15 +328,18 @@
             if (isCatalogRefreshOnline()) {
                 startBackgroundCatalogSync(catalogPath);
             }
+            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
             return cached;
         }
 
         if (!isCatalogRefreshOnline()) {
+            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
             return [];
         }
 
         // First run without any local state: the remote catalog is the only source.
         const remote = await fetchRemoteCatalog(catalogPath);
+        mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
         return remote || [];
     };
 
@@ -415,11 +432,13 @@
                 return null;
             }
 
+            mark(`load-module-entry-start-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
             const entryName = entryOverride || normalizedManifest.entry || normalizedManifest.main || 'index.js';
             const entryPath = toAbsolutePath(moduleRootPath, entryName);
             const scriptText = await readTextFile(entryPath);
 
             if (!scriptText) {
+                mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
                 return null;
             }
 
@@ -428,6 +447,7 @@
             const implementation = resolveModuleImplementation(normalizedManifest);
 
             if (!implementation) {
+                mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
                 return null;
             }
 
@@ -445,6 +465,7 @@
                 }
             }
 
+            mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
             return {
                 ...implementation,
                 id: implementation.id || normalizedManifest.id,
@@ -465,6 +486,7 @@
         },
 
         async discoverExternalModules(basePath = null) {
+            mark('discover-external-modules-start'); // TEMPORARY diagnostic mark
             const defaultBasePath = typeof process !== 'undefined' && process.versions && process.versions.node
                 ? 'Web-App/app/modules'
                 : window.NeutralPublicPath.join('Web-App/app/modules');
@@ -495,6 +517,7 @@
                 const rootDirectory = path.resolve(rootPath);
 
                 if (!fs.existsSync(rootDirectory)) {
+                    mark('discover-external-modules-end'); // TEMPORARY diagnostic mark
                     return discovered;
                 }
 
@@ -600,6 +623,7 @@
                 }
             }
 
+            mark('discover-external-modules-end'); // TEMPORARY diagnostic mark
             return discovered;
         },
 

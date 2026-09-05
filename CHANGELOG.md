@@ -1,5 +1,15 @@
 # NEUTRAL – Changelog
 
+## 2026-09-06 – Korrektur: Admin-CSS-Cache-Busting-Fix nach realem Live-Test-Widerspruch
+
+- **Korrektur:** Der reale Live-Test nach Deployment `89a4178` widersprach den Einträgen vom 2026-09-05 „Offline-Root-Cause behoben“ und „Admin-UI-Regression: keine Abweichung gefunden“ — beide Probleme waren real weiterhin vorhanden. Diese Schlussfolgerungen werden zurückgenommen (siehe STATUS.md/WORKFLOW.md für Details).
+- Reale Admin-UI-Root-Cause gefunden: `Server/public/admin.php`/`Server/php/views/admin-ui.php` referenzierten `style.css`/Admin-JS ohne Cache-Busting, während `.htaccess` diese Dateien pauschal 24h cached — nach Deployment blieb bei bereits geladenen Clients bis zu 24h die alte Version aktiv, während die HTML-Shell sofort frisch war. Neue `PublicPath::assetUrl()`/`AppConfig::assetUrl()` hängen `?v=<manifest.json sourceCommit>` an; `AppRuntime::detectAssetVersion()` liest die Version sicher (Fallback `null`) aus dem bereits vorhandenen Produktions-`manifest.json`.
+- Service Worker als Ursache geprüft: `style.css` wird zwar SW-`cacheFirstWithRefresh`-behandelt, aber unter deploy-stamp-gebundenem Cache-Namen (selbstkorrigierend); `admin.php` selbst ist von SW-Caching ausgeschlossen. Keine SW-Änderung vorgenommen.
+- Temporäre, klar markierte `CorePerformance`-Zeitmarkeninstrumentierung entlang der gesamten Startkette ergänzt (`core-startup.js`, `core-loader.js`, `module-manager.js`, `module-registry.js`, `master-ui.js`), um die reale Ursache der weiterhin unveränderten ~3,5s-Offline-Verzögerung bei der nächsten Gerätemessung zu bestimmen. Keine Performanceänderung ohne Messdaten vorgenommen.
+- Neue rot→grün-Tests: `AppConfig::assetUrl` (`tests/php-public-path.test.js`) und `Fall C2` (`tests/admin-php-entry.test.js`).
+- Vollständige Suite: 375/375 bestanden. PHP-Lint fehlerfrei. `node --check`/`git diff --check` bestanden.
+- **Offen/weiterhin ungeklärt:** exakte ms-Aufschlüsselung der 3,5s-Verzögerung (erfordert reale Gerätemessung); reale iPad-Bestätigung, dass der CSS-Fix das Layout tatsächlich repariert; Online-Discovery-Performance (~5,5s); Safari; Android Chrome.
+
 ## 2026-09-05 – Offline-Warmstart-Delay behoben, Admin-UI-Regression geprüft und Local-Settings-Fehleranzeige ergänzt
 
 - `Web-App/core/core-loader.js` blockiert nun Remote-Katalog-Refreshes bei `navigator.onLine === false`; das cached anonymous Catalog bleibt der sofort nutzbare Last-Known-Good-Status, statt in einem offline-Timeout zu hängen. Dies ist ein Code-Root-Cause-Fix mit Testbeleg (`tests/module-offline-catalog.test.js`), keine reale Chrome-/iPadOS-Neumessung der zuvor beobachteten ~3,5s.

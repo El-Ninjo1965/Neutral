@@ -87,3 +87,45 @@ echo json_encode([
   assert.deepEqual(actual.apiRequest, { version: 1, route: 'status' });
   assert.deepEqual(actual.legacyApiRequest, { version: null, route: 'status' });
 });
+
+test('AppConfig::assetUrl appends a deployment version marker for cache-busting', (t) => {
+  const script = `
+require getenv('NEUTRAL_TEST_BOOTSTRAP');
+
+use Neutral\\Core\\AppConfig;
+
+$unversioned = new AppConfig([]);
+$versioned = new AppConfig([], 'abc1234');
+$subpathVersioned = new AppConfig(['NEUTRAL_BASE_PATH' => '/meine-app'], 'abc1234');
+$emptyVersion = new AppConfig([], '');
+
+echo json_encode([
+    'unversioned' => $unversioned->assetUrl('Web-App/public/style.css'),
+    'versioned' => $versioned->assetUrl('Web-App/public/style.css'),
+    'subpathVersioned' => $subpathVersioned->assetUrl('Web-App/public/style.css'),
+    'emptyVersion' => $emptyVersion->assetUrl('Web-App/public/style.css'),
+    'unversionedAssetVersion' => $unversioned->assetVersion(),
+    'versionedAssetVersion' => $versioned->assetVersion(),
+]);
+`;
+  const result = spawnSync('php', ['-r', script], {
+    env: { ...process.env, NEUTRAL_TEST_BOOTSTRAP: bootstrapPath },
+    encoding: 'utf8'
+  });
+
+  if (result.error && result.error.code === 'ENOENT') {
+    t.skip('PHP executable is not available (ENOENT).');
+    return;
+  }
+
+  assert.equal(result.error, undefined, result.error && result.error.message);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+
+  const actual = JSON.parse(result.stdout);
+  assert.equal(actual.unversioned, '/Web-App/public/style.css');
+  assert.equal(actual.versioned, '/Web-App/public/style.css?v=abc1234');
+  assert.equal(actual.subpathVersioned, '/meine-app/Web-App/public/style.css?v=abc1234');
+  assert.equal(actual.emptyVersion, '/Web-App/public/style.css');
+  assert.equal(actual.unversionedAssetVersion, null);
+  assert.equal(actual.versionedAssetVersion, 'abc1234');
+});

@@ -37,7 +37,7 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Authentication required</title>
-  <link rel="stylesheet" href="<?= htmlspecialchars($config->publicUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars($config->assetUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
   <div class="auth-shell">
@@ -64,7 +64,7 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
     </div>
   </div>
   <script>window.NeutralConfig = <?= $publicConfigJson ?>;</script>
-  <script src="<?= htmlspecialchars($config->publicUrl('Web-App/public/public-path.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/public-path.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
   (function () {
     const loginButton = document.getElementById('loginBtn');
@@ -141,7 +141,7 @@ function render_access_denied_page(AppConfig $config): void
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access denied</title>
-  <link rel="stylesheet" href="<?= htmlspecialchars($config->publicUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars($config->assetUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
   <div class="auth-shell">

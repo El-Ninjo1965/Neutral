@@ -18,6 +18,7 @@
         async start() {
             if (started) return true;
             if (startPromise) return startPromise;
+            mark('core-startup-start'); // TEMPORARY diagnostic mark (local-only, no PII) — see WORKFLOW.md
             startPromise = Promise.resolve().then(() => {
                 if (window.CoreShutdown && typeof window.CoreShutdown.reset === 'function') window.CoreShutdown.reset();
                 const required = ['Core', 'CoreLoader', 'CoreContext', 'CoreConfig', 'CoreLifecycle', 'ModuleRegistry', 'ModuleManager'];
@@ -32,6 +33,7 @@
                 }
                 started = true;
                 mark('minimal-core-ready');
+                mark('core-startup-end'); // TEMPORARY diagnostic mark
                 window.Core.emit('core:started', { version: window.CoreConfig.core.version, backgroundComplete: false });
                 return true;
             }).catch((error) => {
@@ -44,13 +46,17 @@
         startBackground() {
             if (backgroundPromise) return backgroundPromise;
             if (backgroundComplete) return Promise.resolve(true);
+            mark('start-background-start'); // TEMPORARY diagnostic mark
             backgroundPromise = this.start().then(async () => {
                 try {
+                    mark('database-manager-init-start'); // TEMPORARY diagnostic mark
                     if (window.DatabaseManager && typeof window.DatabaseManager.init === 'function') await window.DatabaseManager.init();
+                    mark('database-manager-init-end'); // TEMPORARY diagnostic mark
                     mark('storage-ready');
                     window.Core.emit('startup:storage-ready');
                 } catch (error) {
                     reportPhaseError('storage', error);
+                    mark('database-manager-init-end'); // TEMPORARY diagnostic mark
                     mark('storage-ready');
                 }
 
@@ -60,18 +66,26 @@
                     ['UserModule', 'user'], ['AdminModule', 'admin'], ['I18nModule', 'i18n']
                 ]) {
                     try {
+                        mark(`framework-init-${phase}-start`); // TEMPORARY diagnostic mark
                         if (window[name] && typeof window[name].init === 'function') window[name].init();
-                    } catch (error) { reportPhaseError(phase, error); }
+                        mark(`framework-init-${phase}-end`); // TEMPORARY diagnostic mark
+                    } catch (error) {
+                        reportPhaseError(phase, error);
+                        mark(`framework-init-${phase}-end`); // TEMPORARY diagnostic mark
+                    }
                 }
 
                 try {
+                    mark('module-manager-discover-start'); // TEMPORARY diagnostic mark
                     if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
                         await window.ModuleManager.discoverModules();
                     }
+                    mark('module-manager-discover-end'); // TEMPORARY diagnostic mark
                     mark('module-discovery-complete');
                     window.Core.emit('startup:modules-ready');
                 } catch (error) {
                     reportPhaseError('module-discovery', error);
+                    mark('module-manager-discover-end'); // TEMPORARY diagnostic mark
                     mark('module-discovery-complete');
                     window.Core.emit('startup:modules-error', {
                         message: error && error.message ? error.message : String(error)
@@ -88,6 +102,7 @@
                 }
                 backgroundComplete = true;
                 mark('background-initialization-complete');
+                mark('start-background-end'); // TEMPORARY diagnostic mark
                 window.Core.emit('core:background-ready');
                 return true;
             }).finally(() => { backgroundPromise = null; });

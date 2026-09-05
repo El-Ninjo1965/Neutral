@@ -8,14 +8,16 @@ final class AppConfig
     /** @var array<string, string> */
     private array $env;
     private PublicPath $publicPath;
+    private ?string $assetVersion;
 
     /**
      * @param array<string, string> $env
      */
-    public function __construct(array $env)
+    public function __construct(array $env, ?string $assetVersion = null)
     {
         $this->env = $env;
         $this->publicPath = new PublicPath($env['NEUTRAL_BASE_PATH'] ?? '');
+        $this->assetVersion = ($assetVersion !== null && $assetVersion !== '') ? $assetVersion : null;
     }
 
     /**
@@ -49,6 +51,23 @@ final class AppConfig
     public function publicUrl(string $path): string
     {
         return $this->publicPath->publicUrl($path);
+    }
+
+    /**
+     * Cache-busted variant of publicUrl() for static assets (CSS/JS). Static
+     * files carry a long-lived HTTP cache (see .htaccess); the `?v=` marker
+     * (the deployed manifest.json sourceCommit, when known) forces browsers
+     * to fetch the new file immediately after a deployment instead of
+     * serving a stale cached copy for up to the cache lifetime.
+     */
+    public function assetUrl(string $path): string
+    {
+        return $this->publicPath->assetUrl($path, $this->assetVersion);
+    }
+
+    public function assetVersion(): ?string
+    {
+        return $this->assetVersion;
     }
 
     /**

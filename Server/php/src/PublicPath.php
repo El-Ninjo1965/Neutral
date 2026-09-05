@@ -51,6 +51,25 @@ final class PublicPath
         return $this->basePath . '/' . $normalizedPath;
     }
 
+    /**
+     * Same as publicUrl(), but appends a `?v=<assetVersion>` cache-busting
+     * query string when a version is supplied. Static assets (CSS/JS) are
+     * served with a long-lived browser cache (see .htaccess); without a
+     * version marker a new deployment would keep serving a stale cached
+     * copy of the file for up to that cache lifetime. The version string is
+     * not itself validated here (callers only ever pass a trusted deployment
+     * identifier such as the manifest.json sourceCommit).
+     */
+    public function assetUrl(string $path, ?string $assetVersion): string
+    {
+        $url = $this->publicUrl($path);
+        if ($assetVersion === null || $assetVersion === '') {
+            return $url;
+        }
+
+        return $url . '?v=' . rawurlencode($assetVersion);
+    }
+
     public function apiBase(): string
     {
         return $this->publicUrl('api/v1');

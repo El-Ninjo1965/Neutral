@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-app-title>Platform Administration</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars($runtime->config()->publicUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>" />
+    <link rel="stylesheet" href="<?= htmlspecialchars($runtime->config()->assetUrl('Web-App/public/style.css'), ENT_QUOTES, 'UTF-8') ?>" />
   </head>
   <body data-page="admin" data-theme="light">
     <div id="accessDenied" class="auth-shell hidden">
@@ -95,7 +95,7 @@
     ];
     foreach ($scripts as $script):
     ?>
-    <script defer src="<?= htmlspecialchars($runtime->config()->publicUrl($script), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script defer src="<?= htmlspecialchars($runtime->config()->assetUrl($script), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endforeach; ?>
   </body>
 </html>
