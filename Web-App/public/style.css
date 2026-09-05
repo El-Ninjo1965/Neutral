@@ -1122,6 +1122,29 @@ body[data-page="admin"] .gps-message {
   color: var(--muted);
 }
 
+.gps-confirmation-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--overlay);
+  z-index: 1200;
+}
+
+.gps-confirmation {
+  width: min(420px, 100%);
+  padding: 24px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.gps-confirmation h2 {
+  margin-top: 0;
+}
+
 /* Administration: classic CMS shell */
 .admin-cms-layout {
   display: grid;

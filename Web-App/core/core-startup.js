@@ -73,6 +73,9 @@
                 } catch (error) {
                     reportPhaseError('module-discovery', error);
                     mark('module-discovery-complete');
+                    window.Core.emit('startup:modules-error', {
+                        message: error && error.message ? error.message : String(error)
+                    });
                 }
 
                 if (window.MasterFramework && typeof window.MasterFramework.markFrameworkInitialized === 'function') {

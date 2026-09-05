@@ -713,7 +713,7 @@
                         ? ''
                         : 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.');
             const modalMarkup = showConsentModal
-                ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
+                ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
                 : '';
             container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-action="share" ${shareDisabled ? 'disabled' : ''}>Position teilen</button></div><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
 
@@ -769,6 +769,28 @@
                 confirmationNo.addEventListener('click', () => {
                     GpsModule.confirmLocationRequest(false);
                     render('Standort nicht verfügbar. Bitte Standortzugriff aktivieren.', true);
+                });
+            }
+
+            const confirmationModal = container.querySelector('.gps-confirmation-modal');
+            const confirmationButtons = confirmationModal && typeof confirmationModal.querySelectorAll === 'function'
+                ? Array.from(confirmationModal.querySelectorAll('button'))
+                : [];
+            if (confirmationModal && confirmationButtons.length > 0) {
+                confirmationButtons[0].focus();
+                confirmationModal.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Tab') {
+                        return;
+                    }
+                    const first = confirmationButtons[0];
+                    const last = confirmationButtons[confirmationButtons.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
                 });
             }
         };

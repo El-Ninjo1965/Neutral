@@ -8,7 +8,8 @@
   const mark = document.getElementById('userAppMark');
   const state = {
     activeView: 'home',
-    activeModuleId: null
+    activeModuleId: null,
+    discoveryState: 'pending'
   };
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
@@ -151,6 +152,16 @@
     currentUser: getCurrentUser(),
     visibleModuleIds: null
   });
+
+  const isDiscoveryPending = () => state.discoveryState === 'pending';
+  const getDiscoveryMessage = () => state.discoveryState === 'error'
+    ? 'Modules could not be loaded. Check your connection and try again.'
+    : 'Loading available modules...';
+  const getModuleCountLabel = (modules) => state.discoveryState === 'pending'
+    ? '...'
+    : state.discoveryState === 'error'
+      ? '—'
+      : String(modules.length);
 
   const canOpenAdmin = () => {
     const currentUser = getCurrentUser();
@@ -312,13 +323,13 @@
             <span class="user-app-eyebrow">${currentUser ? 'Profile' : 'Local workspace'}</span>
             <h1>${currentUser ? 'Settings' : 'Local settings'}</h1>
           </div>
-          <span class="user-app-count">${modules.length}</span>
+          <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
         <div class="user-settings-card">
           <h2>Functions</h2>
           <p>Choose which features should remain visible in your current workspace menu.</p>
           <div class="user-settings-module-list">
-            ${modules.length ? modules.map((module) => `
+            ${isDiscoveryPending() || state.discoveryState === 'error' ? `<p class="user-app-empty">${getDiscoveryMessage()}</p>` : modules.length ? modules.map((module) => `
               <label class="user-settings-toggle" for="module-toggle-${escapeHtml(module.id)}">
                 <input id="module-toggle-${escapeHtml(module.id)}" type="checkbox" data-user-setting-module="${escapeHtml(module.id)}" ${moduleVisibility.has(module.id) ? 'checked' : ''} />
                 <span>
@@ -428,13 +439,6 @@
     content.innerHTML = `
       <section class="user-app-panel">
         <button class="user-app-back" type="button" id="userModuleBackButton">Back</button>
-        <div class="user-app-section-heading">
-          <div>
-            <span class="user-app-eyebrow">Module</span>
-            <h1>${escapeHtml(getModuleDisplayName(module))}</h1>
-          </div>
-          <span class="user-app-count">${escapeHtml(moduleId)}</span>
-        </div>
         <div class="user-app-module-intro">${escapeHtml(module.description || 'This module is active in the current application.')}</div>
         <div id="moduleUserInterface"></div>
       </section>
@@ -467,12 +471,12 @@
             <span class="user-app-eyebrow">Welcome</span>
             <h1>${escapeHtml(appName)}</h1>
           </div>
-          <span class="user-app-count">${modules.length}</span>
+          <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
         <p class="user-app-intro">The active modules of this application appear directly in the top menu and can also be opened from the workspace below.</p>
         ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can already use public modules without signing in. Sign in to unlock personalized administration and role-based features.</div>'}
         <div class="user-module-list" style="margin-top: 22px;">
-          ${modules.length ? modules.map((module) => `
+          ${isDiscoveryPending() || state.discoveryState === 'error' ? `<div class="user-app-empty">${getDiscoveryMessage()}</div>` : modules.length ? modules.map((module) => `
             <button type="button" class="user-module-card" data-module-card="${escapeHtml(module.id)}">
               <span class="user-module-icon">${escapeHtml((getModuleDisplayName(module).charAt(0) || 'M').toUpperCase())}</span>
               <span class="user-module-copy">
@@ -533,6 +537,17 @@
       }
     }, 0);
   };
+
+  if (window.Core && typeof window.Core.on === 'function') {
+    window.Core.on('startup:modules-ready', () => {
+      state.discoveryState = 'ready';
+      renderApp();
+    });
+    window.Core.on('startup:modules-error', () => {
+      state.discoveryState = 'error';
+      renderApp();
+    });
+  }
 
   // First paint and basic navigation do not wait for IndexedDB, auth, network or module discovery.
   if (window.CorePerformance) window.CorePerformance.mark('shell-visible');

@@ -1,7 +1,7 @@
 # NEUTRAL – Status
 
 **Status:** NACHGEWIESENER IST-STAND  
-**Geprüft:** 2026-09-04
+**Geprüft:** 2026-09-05
 **Referenz:** GitHub `main` enthält den vollständigen Modulvertrag; Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige GitHub-/PHP-Tests, Paketbau, explizites FTPS-Deployment und den permanenten rein lesenden Produktions-Smoke
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
@@ -12,7 +12,7 @@ Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0
 
 Der Modul-Serververtrag wurde durch **Codex (ChatGPT Work)** test-first vervollständigt: streng versionierte Kompatibilität, modul-eigene geschützte Services/Routen, serverseitige Rechte und Mengenlimits, SHA-256-gebundene Migrationen mit Fehlerkompensation, inaktive Updates ohne Downgrade sowie eine inaktivitätsgebundene Deinstallation mit sicherem `retain`-Standard. GPS und das fachlich unabhängige Referenzmodul `reference-notes` erfüllen denselben Vertrag; der App-Bootstrap entfernt das reine Vertragsreferenzmodul aus neuen Produkten. Lokal bestanden 269 von 269 ausführbaren Tests; acht PHP-Prozesstests wurden mangels lokaler PHP-Binary wahrheitsgemäß übersprungen. GitHub Actions, echtes PHP und Produktion sind für diesen Arbeitsstand noch nicht behauptet.
 
-Das GPS-Referenzmodul ist zusätzlich als plattformneutraler Gerätevertrag konkretisiert: es nutzt Capability Detection, verschiebt Browser-Permissionfragen auf eine explizite Benutzerentscheidung, zeigt einen kleinen Neutraldialog bei `prompt`, blockiert keinen Ablauf bei `Nein`, verwendet native `navigator.share` mit plattformneutralem Kartenlink und fällt auf Copy-Links zurück, wenn kein native Share verfügbar ist. Diese Regeln sind in `ModuleCreation.md` und im GPS-Modul selbst festgehalten.
+Das GPS-Referenzmodul ist zusätzlich als plattformneutraler Gerätevertrag konkretisiert: es nutzt Capability Detection, verschiebt Browser-Permissionfragen auf eine explizite Benutzerentscheidung, zeigt einen kleinen Neutraldialog bei `prompt`, blockiert keinen Ablauf bei `Nein`, verwendet native `navigator.share` mit plattformneutralem Kartenlink und fällt auf Copy-Links zurück, wenn kein native Share verfügbar ist. Diese Regeln sind in `ModuleCreation.md` und im GPS-Modul selbst festgehalten. Die reale iPad-Beobachtung vom 2026-09-05 widerlegt jedoch eine bestandene Geräteabnahme: zeitweise erscheinen 0 aktive Module, die Initialisierung ist spürbar langsam, GPS meldet keine Position, und die zuvor erwartete Modal-/Redundanzdarstellung war im produktiven Stand noch nicht belastbar bestätigt.
 
 Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
 
@@ -27,6 +27,7 @@ Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Conn
 | Öffentlicher Client-Core-Vertrag | VORHANDEN | `Web-App/core/core-contracts.js`, `tests/core-contracts.test.js` |
 | Events, Services, Fehlerisolation | VORHANDEN | Core-Dateien und Vertragstests |
 | Modul-Discovery und Client-Lifecycle | VORHANDEN | `module-manager.js`, `module-interface.js`, Lifecycle-Tests |
+| Nicht-blockierender Modulstartzustand | TEILWEISE | Shell rendert sofort; Discovery-Feedback und Re-Render nach `startup:modules-ready` jetzt testgedeckt, reale iPad-Messung und Deploymentprüfung offen |
 | PHP-Modulregistrierung und Zustände | VORHANDEN | `Phase7ModuleRuntime.php`, Admin-API |
 | Modulrechte nach Rollen | VORHANDEN | Modulmanifest, RBAC, Admin-Modulansicht, GPS-Referenz |
 | Anonymer Modulzugriff | VORHANDEN | GitHub `main` `f1b1522`; vollständige Node-/PHP-Suite vor Deployment, anonymer Livekatalog mit aktivem GPS und `canView`/`canUse`, keine Adminmetadaten |
@@ -42,7 +43,7 @@ Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Conn
 | PHP-Login-Drosselung | TEILWEISE | `LoginRateLimiter` und persistenter PDO-Store einschließlich Fail-closed-Pfad sind getestet; produktiver Lockout-/Retry-Nachweis fehlt |
 | API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
 | API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
-| Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus und anonymer Modulkatalogfallback vorhanden; Sync-Queue und Konfliktengine fehlen |
+| Offline-Grundlage | TEILWEISE | IndexedDB/Netzwerkstatus und anonymer Modulkatalogfallback vorhanden; Sync-Queue und Konfliktengine fehlen; Cache-/Deploymentinvalidierung des Modulkatalogs bleibt ungemessen |
 | Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung. Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige PHP-Tests, Paketbau, Upload und das permanente Post-Deployment-HTTP-Gate; älterer Read-only-Lauf `33803384719` bestätigte zudem Zielinventar ohne Änderung oder Secret-Ausgabe. |
 | Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
 | Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
@@ -74,3 +75,13 @@ Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die vor
 ## Nächster Abschlussmeilenstein
 
 Der nächste Meilenstein ist die externe Neuinstallations- und Portabilitätsabnahme in einem neuen physischen DocumentRoot und unter einem URL-Unterpfad. Danach folgen sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.
+
+## Nicht bestandener realer iPad-/Safari-Befund vom 2026-09-05
+
+- Beim Start zeigten `Local settings` und die Hauptseite vorübergehend 0 aktive Module, obwohl GPS serverseitig aktiv und zuvor öffentlich sichtbar war; nach weiterer Initialisierung erschien GPS wieder.
+- Die Ursache ist im Clientpfad ein Zwischenzustand: die Shell renderte vor abgeschlossener Hintergrund-Discovery mit dem leeren Registry-Ergebnis und formulierte dieses als endgültigen „keine Module“-Zustand. Discovery lädt den anonymen Katalog und danach den Modul-Entry asynchron; die bisherige Shell hatte keinen sichtbaren `pending`-Zustand und keinen garantierten Re-Render der Settings nach Discovery.
+- Die Shell unterscheidet nun `pending`, `ready` und `error`, zeigt während laufender Discovery keinen 0-Zähler/Leerzustand und rendert nach `startup:modules-ready` erneut. Ein echter iPad-/Produktionsnachweis steht aus.
+- Die langsame Verfügbarkeit der Modulnavigation ist dadurch erklärbar, dass API-/Cache-Lesen, Entry-Laden und Modulinitialisierung vollständig im Hintergrund, aber seriell innerhalb der Discovery-Kette laufen. First Paint wird nicht blockiert; ein gemessenes Mobilbudget und eine Entscheidung über weitere allgemeine Core-Optimierung fehlen. Keine GPS-spezifische Core-Abkürzung wurde eingeführt.
+- GPS blieb auf dem Gerät ohne Position (`Position nicht verfügbar`/`Standort kann nicht ermittelt werden`). Lokal prüfbar sind `navigator.geolocation`, Permission-State, `getCurrentPosition` sowie Fehlercodes; die konkrete iPad-Ursache ist ohne reproduzierbaren Geräte-/Secure-Context-/Permission-Trace nicht festgestellt.
+- Der produktive Befund zeigte weiterhin redundante `MODULE`/`GPS`/Beschreibung/`GPS`-Überschriften und einen Inline-Consent. Die Rendering-Verantwortung lag doppelt beim generischen User-Shell-Rahmen und beim GPS-Modul; außerdem fehlten Modal-CSS und Fokusführung. Der generische Titelrahmen wurde entfernt, GPS besitzt den Titel, und der Consent erhielt Overlay-/Fokuslogik. Das ist noch real auf iPad zu verifizieren.
+- **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Für den allgemeinen Core sollte nach Messung ein versionierter Discovery-Statusvertrag (`pending`/`ready`/`error`, optional Cachealter/Quelle) festgelegt werden, den alle Shells verwenden. Keine weitere allgemeine Core-Architekturänderung wurde ohne Messdaten umgesetzt.

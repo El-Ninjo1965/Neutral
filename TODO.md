@@ -60,7 +60,11 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Klassifikation:** GEMISCHT – Codespace-Tests autonom, echte iPad-/Android-Abnahme live
 
-- reale iPad-Safari-Abnahme des vereinfachten GPS-Layouts und des echten Modal-Dialogflusses auf dem Produktionsserver durchführen,
+- **DRINGEND – nicht bestanden / erneut abnehmen:** zeitweisen 0-Modul-Startzustand auf realem iPad/Safari gegen den neuen `pending`-/`ready`-Renderpfad prüfen; `Local settings`, Hauptnavigation und GPS müssen ohne Reload konsistent erscheinen,
+- **DRINGEND – nicht bestanden / erneut abnehmen:** langsame Initialisierung mit Core-Performance-Marken, Netzwerk-/Cache-/Entry-Zeiten und tatsächlicher First Paint-/Interaktionszeit messen; keine Bestehensbehauptung aus browserlosen Tests ableiten,
+- **DRINGEND – nicht bestanden / erneut abnehmen:** GPS auf Secure Context, Permission-State, User Gesture, `navigator.geolocation.getCurrentPosition` und konkrete Fehlercodes diagnostizieren; technische Details nur in Diagnose/Test, nicht ungefiltert im User-UI,
+- reale iPad-Safari-Abnahme des vereinfachten GPS-Layouts und des echten Modal-Dialogflusses auf dem Produktionsserver durchführen; insbesondere Overlay, Hintergrundtrennung, Fokusführung, Ja/Nein und Schließen prüfen,
+- redundante `MODULE`-/`GPS`-Überschriften im realen Produktionsstand erneut prüfen; GPS darf nicht zugleich vom generischen User-Shell-Rahmen und vom Modul selbst betitelt werden,
 - reale Android-Chrome-Abnahme des gleichen Flows inklusive Share-/Copy-Fallback und Auto-Position-Setting prüfen,
 - Start/Stop Tracking als Referenzfunktion gegen Datenschutz-, Akku- und Browser-Lifecycle-Kosten kritisch erneut bewerten und nur bei klarer Nutzung beibehalten,
 - verbleibende Browser-/Geräteunterschiede, sofern sichtbar, dokumentiert als Live-Abnahme und ggf. als `VORSCHLAG – noch nicht beschlossen/umgesetzt` festhalten.
