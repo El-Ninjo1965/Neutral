@@ -31,7 +31,7 @@ These conditions are historic and part of the workflow evidence trail; they are 
 ## Core work status
 - User- and admin-session separation: DONE / LIVE BESTANDEN
 - User-App header cleanup: DONE / LIVE BESTANDEN
-- Navigation as true buttons/tabs: PENDING
+- Navigation as true buttons/tabs: DONE / LIVE BESTANDEN
 - Configurable landing page: PENDING
 - i18n: PENDING
 - Permission catalog UX improvements: PENDING

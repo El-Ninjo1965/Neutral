@@ -48,10 +48,9 @@ These are not current failures; they remain part of the historical workflow and 
 - Remaining work in this block (if any): none; the user-facing contract is consistent.
 
 ### P3 – Navigation as real buttons/tabs
-- Status: PENDING
-- Make navigation entries visibly interactive with clear default, active, hover, focus, and touch-friendly sizing.
-- Use clear icon semantics: home, location, settings.
-- Make module icons resolvable via manifest metadata when available.
+- Status: DONE / LIVE BESTANDEN
+- Verified: navigation entries are rendered as real interactive buttons/tabs with active-state styling and touch-friendly sizing.
+- Remaining work in this block: none for the current repo state.
 
 ### P4 – Configurable landing page
 - Status: PENDING
