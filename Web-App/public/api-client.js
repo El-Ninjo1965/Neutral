@@ -157,14 +157,29 @@ class ApiClient {
   }
 
   extractEnvelopeData(result) {
-    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+    if (!result || typeof result !== 'object') {
       return null;
     }
-    const envelope = result.data;
-    if (envelope.ok !== true || !envelope.data || typeof envelope.data !== 'object') {
-      return null;
+
+    const candidates = [result, result.data, result.data && result.data.data];
+    for (const candidate of candidates) {
+      if (!candidate || typeof candidate !== 'object') {
+        continue;
+      }
+
+      if (candidate.user !== undefined || candidate.roles !== undefined || candidate.permissions !== undefined || candidate.csrfToken !== undefined) {
+        return candidate;
+      }
+
+      if (candidate.ok === true && candidate.data && typeof candidate.data === 'object') {
+        const payload = candidate.data;
+        if (payload.user !== undefined || payload.roles !== undefined || payload.permissions !== undefined || payload.csrfToken !== undefined) {
+          return payload;
+        }
+      }
     }
-    return envelope.data;
+
+    return null;
   }
 
   // GET request
@@ -360,8 +375,10 @@ class ApiClient {
 
   async login(username, password) {
     const result = await this.post('/api/auth/login', { username, password });
-    if (result.ok && result.data && result.data.csrfToken) {
-      this.setCsrfToken(result.data.csrfToken);
+    const payload = this.extractEnvelopeData(result) || (result && result.ok && result.data && typeof result.data === 'object' ? result.data : null);
+    const csrf = (payload && payload.csrfToken) || (result && result.data && result.data.csrfToken) || (typeof document !== 'undefined' ? this.getCookie('neutral_csrf') : null);
+    if (csrf) {
+      this.setCsrfToken(csrf);
     }
     return result;
   }
