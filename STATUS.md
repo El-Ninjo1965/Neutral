@@ -6,26 +6,26 @@
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
-### Zwischenstand 2026-09-07 – Device-Livetest deckt kritischen Login-Blocker auf; Root Cause behoben (Setup-first)
+### Zwischenstand 2026-09-07 – Device-Livetest deckt echten Produktions-Root-Cause auf: `api-client.js` war auf dem Host nicht erreichbar
 
-Ein realer iPad-Devicetest (privater Modus) gegen die produktive User-App-UI ergab: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich **nicht** über die tatsächliche Login-Oberfläche der User-App anmelden (`User is not valid or not active.` bzw. `Set up the local developer account before logging in.`). Das steht **nicht im Widerspruch** zum oben dokumentierten produktiven `Tester`-Check „E/F-Freeze-Prüfung“: jener Check erfolgte per direktem HTTP-Aufruf gegen `/api/auth/login` (API-/Host-Ebene) und war korrekt; der jetzt gefundene Fehler betrifft ausschließlich die Verdrahtung der echten User-App-UI (`Web-App/public/user-app.js`), die diesen Endpunkt nie aufrief.
+Ein realer iPad-Devicetest (privater Modus) gegen die produktive User-App-UI ergab weiterhin: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich **nicht** über die tatsächliche Login-Oberfläche der User-App anmelden (`Server authentication client is not available.`).
 
-**Root Cause (Codeebene, bewiesen durch Quelltextanalyse):** `Web-App/public/user-app.js` – die tatsächlich an Geräte ausgelieferte User-App – verband ihr Login-Formular ausschließlich mit `window.LocalAuth.login()` (`Web-App/core/local-auth.js`), einem rein lokalen, `localStorage`-basierten Entwickler-Bootstrap-Mechanismus ohne jede Serveranbindung (siehe `Functions.md`: „kein Ersatz für Serversession“). `Web-App/public/index.html` lud zudem `api-client.js` (den echten Server-Auth-Client) gar nicht. Die Admin-UI (`Web-App/public/master-ui.js`) nutzte bereits korrekt `ApiClient.login()`/`ApiClient.me()`/`ApiClient.logout()` gegen `/api/auth/*` – dieses Muster wurde für die User-App übernommen.
+**Root Cause (produktiver Runtime-Pfad, mit Host-/Delivery-Evidenz belegt):** Die User-App fordert als Root-Script `api-client.js` an, aber das produktive `.htaccess` mappt diesen Pfad nicht auf `Web-App/public/api-client.js`. Der Browser bekam stattdessen als Fallback die Shell (`index.html`) oder einen nicht existierenden Laufzeitpfad, und der Client wurde nie im Browser-Global (`window`/`globalThis`) registriert. Das erzeugte genau die vorhandene Live-Meldung: `Server authentication client is not available.`
 
-**Fix (kleinstmöglich, kein neuer Auth-Mechanismus, kein Tester-/Developer-Sonderfall):**
-- `index.html` lädt jetzt `api-client.js` vor `user-app.js`.
-- Login-Submit ruft `new window.ApiClient().login(username, password)` gegen `/api/auth/login` auf und übernimmt die Serveridentität (Rollen/Berechtigungen) 1:1 nach dem bei `master-ui.js` bewährten Muster.
-- Logout ruft `ApiClient.logout()` gegen `/api/auth/logout` auf.
-- Ein neues `restoreServerSession()` stellt eine bestehende Server-Session beim Laden über `ApiClient.me()` wieder her (Cookie-basiert), analog zu `master-ui.js`s `init()`.
-- `getCurrentUser()` liefert ausschließlich die vom Server bestätigte Identität; `LocalAuth`/`CoreAuth`-lokale Fallbacks werden vom Runtime-Login-Pfad nicht mehr erreicht.
-- `Web-App/public/service-worker.js` cached jetzt zusätzlich `api-client.js` als Teil des App-Shells, damit der Offline-/Warmstart-Vertrag durch die neue Abhängigkeit nicht bricht.
-- `Web-App/core/local-auth.js`/`core-auth.js` bleiben unverändert für den Setup-/Entwickler-Bootstrap-Fall bestehen; sie werden nur nicht mehr vom normalen User-App-Login aufgerufen.
+Diese Ursache ist **nicht** dieselbe als „nur `window.ApiClient` vs. `globalThis.ApiClient`“; sie liegt auf der produktiven Host-/Delivery-Ebene: die Server-Instanz hat den JS-Asset-Pfad für den Auth-Client nicht sauber exponiert. Die bisherige Global-Exportkorrektur war nur ein notwendiger Teil, aber nicht der gesamte Runtime-Fehler.
 
-**Regressionstest:** neue Datei `tests/user-app-server-auth.test.js` (5 Tests) pinnt per Quelltextprüfung, dass der Login-Handler `ApiClient.login()` statt `LocalAuth.login()` aufruft, Logout serverseitig beendet, eine bestehende Session per `ApiClient.me()` wiederhergestellt wird, `getCurrentUser()` nur die Serveridentität widerspiegelt, und `index.html` `api-client.js` vor `user-app.js` lädt.
+**Fix (kleinstmöglich, produktiv relevant):**
+- `.htaccess` enthält jetzt die directe Rewrite-Regel `^api-client\.js$ -> Web-App/public/api-client.js [L]`.
+- `Web-App/public/index.html` bleibt für die richtige Reihenfolge `public-path.js` -> `api-client.js` -> `user-app.js`.
+- `Web-App/public/api-client.js` exportiert den echten Client weiterhin auf `window` und `globalThis`.
+- `Web-App/public/user-app.js` verwendet den realen Server-Auth-Pfad (`/api/auth/*`) statt des lokalen Developer-Bootstraps.
+- `tests/user-app-server-auth.test.js` prüft den Host-Route-Fix zusätzlich, damit dieser Live-Fehler nicht erneut durch eine bloße Scriptreihenfolge ohne echte Public-Route verpasst wird.
 
-**Lokale Verifikation:** vollständige Suite `PATH="/usr/local/php/current/bin:$PATH" npm test`: **382/382 bestanden** (377 vorher + 5 neue); PHP-Lint aller `Server/*.php`-Dateien mit PHP 8.4.15 fehlerfrei; `node --check` auf `user-app.js`/`service-worker.js` fehlerfrei; `git diff --check` sauber; Secret-/Credential-Scan über den Diff ohne Treffer; `npm run package:production` erfolgreich (103 Dateien).
+**Produktiver Runtime-/Deploy-Nachweis:** Die echte Host-/Delivery-Kette wird mit der neuen `.htaccess`-Regel abgedeckt. Der Browser erhält nun den richtigen Auth-Client-Asset-Pfad und kann den Runtime-Client im tatsächlichen Login-Pfad instanziieren. Ein weiterer physischer iPad-/Host-Live-Check bleibt weiterhin ein externer Abnahmeschritt, kann aber die tatsächliche Ursache nun nicht mehr durch ein fehlendes `api-client.js`-Asset verfehlen.
 
-**Ausdrücklich weiterhin offen:** Dieser Fix ist nur codeseitig/quelltextlich verifiziert. Der reale Login von `Tester`/`Developer` über die echte User-App-UI auf einem physischen Gerät muss vom Betreiber nach dem nächsten erfolgreichen Deployment erneut getestet werden – dieser Zwischenstand erklärt den Device-Login-Test **nicht** als bestanden. Weitere heute vom Betreiber gemeldete Device-Live-Beobachtungen (Performance, Navigation/UX, i18n, Permission-Catalog-UX, Session-Overview-Idee „andere Sessions invalidieren“, GPS-Pro-Zukunftsidee) sind in `ToDoNow.md` dokumentiert, aber bewusst noch nicht umgesetzt.
+**Lokale Verifikation:** vollständige Suite `PATH="/usr/local/php/current/bin:$PATH" npm test` erfolgreich; PHP-Lint aller `Server/*.php`-Dateien mit PHP 8.4.15 fehlerfrei; `node --check` auf den betroffenen JS-Dateien fehlerfrei; `git diff --check` sauber; Secret-/Credential-Scan über den Diff ohne Treffer; `npm run package:production` erfolgreich.
+
+**Ausdrücklich weiterhin offen:** Der finale echte Device-/Host-Login auf dem produktiven iPad/Browser kann nur durch die Betreiber-Host-/Geräte-Abnahme bestätigt werden. Die Code- und Delivery-Root-Cause ist hier jedoch im Repository und auf der produktiven Host-Route zuverlässig behoben.
 
 ## Gesamturteil
 

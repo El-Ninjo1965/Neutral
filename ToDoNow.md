@@ -31,6 +31,12 @@
 - Ursache: Login-/Rollenpfad wurde code-seitig korrigiert und lokal sowie gegen die produktive API verifiziert: `Tester` konnte sich anmelden, `/api/auth/me` identifizierte den Nutzer als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`; die Session wurde anschließend beendet.
 - Nachweis: lokaler Serverlauf und produktiver Read-only-/Tester-Check; keine Admin- oder mutierende Produktivaktion wurde ausgeführt.
 
+### A5 – Produktive Script-Delivery für `/api-client.js` reparieren
+- Status: CODE-SEITIG ERLEDIGT
+- Ursache: Die echte Live-User-App lud `api-client.js` als Root-Script `api-client.js`, aber die Host-Rewrite-Regeln in `.htaccess` mappten diesen Pfad nicht auf `Web-App/public/api-client.js`. In der Produktion fiel der Request deshalb auf den Shell-Fallback (`index.html`) zurück, und der Browser hatte keinen verifizierbaren `ApiClient`-Konstruktor im Runtime-Kontext. Das erzeugte exakt die Live-Meldung `Server authentication client is not available.`
+- Korrektur: `.htaccess` enthält jetzt eine direkte Rewrite-Regel für `^api-client\.js$` nach `Web-App/public/api-client.js`; der Regressionstest `tests/user-app-server-auth.test.js` prüft dieses Deploy-/Runtime-Contract zusätzlich.
+- Hinweis: Der reale Host-/Geräte-Login bleibt extern zu verifizieren; der Codepfad ist hier mit Produktions-Host-Korrespondenz und Runtime-Contract geprüft.
+
 ## B. Schreib-/Settings-Verträge
 
 ### B1 – Einheitliche Speicherbestätigungen

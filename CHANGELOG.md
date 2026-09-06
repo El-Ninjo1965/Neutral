@@ -1,5 +1,13 @@
 # NEUTRAL – Changelog
 
+## 2026-09-07 – Produktive Asset-Route für den Server-Auth-Client repariert
+
+- Realer Device-Live-Befund: `Server authentication client is not available.` blieb trotz der vorherigen User-App-/Global-Export-Fixes weiterhin bestehen.
+- Echte Root Cause: `.htaccess` mappt `api-client.js` nicht auf `Web-App/public/api-client.js`, sodass der Browser den Auth-Client über den Public-Root-Pfad nicht erhielt und der Login-Pfad keine valide Runtime-Instanz bekam. Das ist ein Host-/Delivery-Problem, nicht nur ein `window`- vs. `globalThis`-Problem.
+- Fix: `^api-client\.js$` wird direkt auf `Web-App/public/api-client.js` gemappt; der Login-Pfad und die Export-Contract bleiben unverändert auf dem echten Server-Auth-Client. Neuer Regressionstest in `tests/user-app-server-auth.test.js` prüft das Public-Route-Contract zusätzlich.
+- Verifiziert lokal: vollständige Suite, PHP-Lint, `node --check`, `git diff --check`, Secret-Scan und Produktionspaket-Build grün.
+- Keine Live-Device-Abnahme als bestanden markiert; der verbleibende Host-/Geräte-Test muss im produktiven Browser/Host erneut erfolgen.
+
 ## 2026-09-07 – Kritischer User-App-Login-Blocker aus Device-Livetest behoben
 
 - Realer iPad-Devicetest gegen die produktive User-App-UI ergab: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich nicht über die tatsächliche Login-Oberfläche anmelden (`User is not valid or not active.` / `Set up the local developer account before logging in.`).

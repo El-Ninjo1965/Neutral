@@ -68,3 +68,11 @@ test('ApiClient exports to the global runtime surface used by app shells and use
   const userAppSource = read('Web-App/public/user-app.js');
   assert.match(userAppSource, /globalThis\s*!==\s*'undefined'\s*\?\s*globalThis\s*:\s*\(typeof window/);
 });
+
+test('Production host rewrite exposes api-client.js at the public root so the User-App can access the real auth client', () => {
+  const htaccess = read('.htaccess');
+
+  assert.match(htaccess, /RewriteRule \^api-client\\\.js\$ Web-App\/public\/api-client\.js \[L\]/);
+  assert.match(htaccess, /RewriteRule \^user-app\\\.js\$/);
+  assert.match(htaccess, /RewriteRule \^public-path\\\.js\$/);
+});

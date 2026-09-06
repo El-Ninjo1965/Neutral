@@ -138,6 +138,16 @@ VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktisc
 - Wenn ein Agent einen Auftrag nur teilweise erledigt, muss er ausdrücklich `GESAMTAUFTRAG NICHT ABGESCHLOSSEN` schreiben und danach ohne neuen Benutzerprompt mit dem nächst offenen Punkt weitermachen.
 - Diese Regeln gelten dauerhaft für alle zukünftigen Arbeiten im Repository.
 
+### 2026-09-07 – Reale Host-Root-Cause des User-App-Login-Fehlers: `api-client.js` war produktiv nicht über das Public-Root erreichbar
+
+- **Aufgabe:** Die reale Live-Meldung `Server authentication client is not available.` auf dem produktiv deployten Stand final, host-/delivery-seitig auflösen und nicht erneut durch vermeintliche Client-Global-Änderungen falsch abschließen.
+- **Ausgangszustand:** Die App-Logik und `index.html` wurden bereits in Richtung echtes Server-Auth-Muster korrigiert, aber der Browser bekam bei der realen User-App-Login-Route den Auth-Client-Asset nicht aus dem Public-Root, weil `.htaccess` keinen Rewrite für `api-client.js` hatte. Dadurch fiel der Script-Request auf den Shell-/Index-Fallback und es gab keinen validen Runtime-`ApiClient`.
+- **Betroffene Dateien:** `.htaccess`, `Web-App/public/index.html`, `Web-App/public/api-client.js`, `Web-App/public/user-app.js`, `tests/user-app-server-auth.test.js`.
+- **Änderung:** Die Host-Route `^api-client\.js$` wird jetzt direkt auf `Web-App/public/api-client.js` gemappt. Der Regressionstest prüft zusätzlich das Deploy-/Runtime-Contract, damit eine bloße Scriptreihenfolge nicht erneut als falscher Erfolg interpretierbar bleibt.
+- **Wichtiger Hinweis:** Die frühere Vermutung `window.ApiClient` vs. `globalThis.ApiClient` war notwendig, aber nicht die vollständige Root Cause; der echte Live-Fehler war auf der produktiven Asset-Delivery durch die fehlende Rewrite-Regel. Die globalen Runtime-Exports bleiben trotzdem erhalten, weil das Browser-Global der App den Client tatsächlich bereitstellen muss.
+- **Tests/Validierung:** `NODE_ENV=test PATH="/usr/local/php/current/bin:$PATH" npm test` erfolgreich; `node --check` und `git diff --check` grün; Produktionspaket sauber gebaut.
+- **Ergebnis:** Die echte Host-/Runtime-Evidenz ist im Repository und im Deliverable korrigiert; die verbleibende echte Live-Abnahme bleibt nur noch durch Betreiber-/Geräte-Test mit dem realen Host machbar.
+
 ### 2026-09-05 – Abschlussprüfung PHP-Mindestversion und persistenter Testnachweis
 
 - **Aufgabe:** Verbleibende aktive PHP-Mindestversionsangaben im Repository auf den tatsächlichen Core-Vertrag `PHP 8.1+` konsistent machen, die offene TODO-Klassifikation ergänzen und den aktuellen verifizierten Testnachweis im Repository persistieren.
