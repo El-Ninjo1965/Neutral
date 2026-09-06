@@ -66,6 +66,26 @@ after(() => fs.rmSync(sourceFixtureWorkspace, { recursive: true, force: true }))
 
 const sourceHasGps = fs.existsSync(path.join(cleanSourceRoot, 'Web-App/app/modules/gps/module.json'));
 
+// Node's native fs.cpSync({recursive:true}) fast path can call std::terminate()
+// (SIGABRT, uncatchable from JS) if the source tree changes while it iterates
+// a directory - see https://github.com/nodejs/node/issues/63970. cleanSourceRoot
+// carries a real .git/objects tree, so copying it recursively must avoid that
+// native fast path entirely; walk and copy file-by-file instead.
+function copyDirectoryTreeSync(sourceDirectory, destinationDirectory) {
+  fs.mkdirSync(destinationDirectory, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDirectory, { withFileTypes: true })) {
+    const sourcePath = path.join(sourceDirectory, entry.name);
+    const destinationPath = path.join(destinationDirectory, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectoryTreeSync(sourcePath, destinationPath);
+    } else if (entry.isSymbolicLink()) {
+      fs.symlinkSync(fs.readlinkSync(sourcePath), destinationPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(sourcePath, destinationPath);
+    }
+  }
+}
+
 function createWorkspace(t) {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-app-bootstrap-'));
   t.after(() => fs.rmSync(workspace, { recursive: true, force: true }));
@@ -166,7 +186,7 @@ test('refuses a non-empty target without changing its marker', (t) => {
 test('rejects a dirty tracked source before creating output', (t) => {
   const workspace = createWorkspace(t);
   const dirtySource = path.join(workspace, 'dirty-source');
-  fs.cpSync(cleanSourceRoot, dirtySource, { recursive: true });
+  copyDirectoryTreeSync(cleanSourceRoot, dirtySource);
   fs.appendFileSync(path.join(dirtySource, 'package.json'), '\n');
   const target = path.join(workspace, 'dirty-output');
 
@@ -232,7 +252,7 @@ test('rejects a versioned encrypted private key with the German masking marker',
   const workspace = createWorkspace(t);
   const sourceRoot = path.join(workspace, 'source');
   const target = path.join(workspace, 'output');
-  fs.cpSync(cleanSourceRoot, sourceRoot, { recursive: true });
+  copyDirectoryTreeSync(cleanSourceRoot, sourceRoot);
   const keyFixture = path.join(sourceRoot, 'Web-App/public/encrypted-key.txt');
   fs.writeFileSync(keyFixture, '-----BEGIN ENCRYPTED PRIVATE KEY-----\nfixture\n-----END ENCRYPTED PRIVATE KEY-----\n');
   assert.equal(spawnSync('git', ['add', '--all'], { cwd: sourceRoot }).status, 0);
