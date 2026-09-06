@@ -159,7 +159,13 @@
   // localStorage and is re-derived on every reload via restoreServerSession().
   let serverUser = null;
 
-  const getServerApiClient = () => (typeof window.ApiClient === 'function' ? new window.ApiClient() : null);
+  const getServerApiClient = () => {
+    const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
+    const ApiCtor = eligibleScope && typeof eligibleScope.ApiClient === 'function'
+      ? eligibleScope.ApiClient
+      : (typeof window !== 'undefined' && typeof window.ApiClient === 'function' ? window.ApiClient : null);
+    return ApiCtor ? new ApiCtor() : null;
+  };
 
   const extractServerAuthData = (result) => {
     if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {

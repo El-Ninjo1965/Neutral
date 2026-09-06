@@ -377,9 +377,23 @@ class ApiClient {
   }
 }
 
+const globalScope = typeof globalThis !== 'undefined'
+  ? globalThis
+  : (typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : null));
+
+if (globalScope) {
+  globalScope.resolveNeutralApiUrl = resolveNeutralApiUrl;
+  globalScope.ApiClient = ApiClient;
+}
+
 if (typeof window !== 'undefined') {
   window.resolveNeutralApiUrl = resolveNeutralApiUrl;
   window.ApiClient = ApiClient;
+}
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.resolveNeutralApiUrl = resolveNeutralApiUrl;
+  globalThis.ApiClient = ApiClient;
 }
 
 // Export for browser and Node.js

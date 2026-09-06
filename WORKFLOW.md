@@ -5,6 +5,23 @@
 **Geprüft:** 2026-09-05
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
+# VERBINDLICHE GLOBALE AGENTENREGEL
+
+## Aktuellen Ist-Zustand prüfen – dokumentieren – autonom vollständig abarbeiten
+
+Diese Regel gilt dauerhaft und agentenübergreifend für alle zukünftigen Arbeiten am Neutral-Projekt.
+
+- Vor jedem neuen Auftrag ist der tatsächliche aktuelle Repository-Zustand zu prüfen: Git-Status, Branch, HEAD, `origin/main`, uncommittete Änderungen, Dokumentationslage und relevante Tests.
+- Die primäre Wahrheit ist immer der aktuelle Git-Stand, der aktuelle Repo-Code, die aktuelle Dokumentation und die aktuelle Test-/Deployment-Evidenz. Chatverläufe, Vermutungen, frühere Agentenaussagen oder alte Zwischenberichte ersetzen den aktuellen Ist-Zustand nicht.
+- Vor jeder Implementierung müssen die relevanten aktuellen Dokumente gelesen werden: `WORKFLOW.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, und je nach Auftrag zusätzlich `CHANGELOG.md`, `Architecture.md`, `Functions.md`, `CORE-1.0.md`.
+- Jeder Auftrag ist als Gesamtauftrag vollständig auszuführen. Ein Teilblock gilt nicht als Abschluss, solange noch selbst ausführbare Pflichtpunkte offen sind.
+- Ein Agent darf keine halben, ungeprüften oder mutmaßlichen Fixes als erledigt melden. Nur belegte, testbare Änderungen mit nachvollziehbarer Ursache sind gültig.
+- Komplexe Aufträge sind persistiert in `ToDoNow.md` oder einer geeigneten Projektarbeitsliste zu erfassen, logisch in Schritte zu zerlegen und mit Statuswerten wie `OFFEN`, `IN ARBEIT`, `BLOCKIERT`, `CODE-SEITIG ERLEDIGT` und `LIVE BESTANDEN` zu führen.
+- Vor einem finalen Abschluss sind die gültigen Nachweise zu prüfen: relevante Tests, Git-Diff, Branch-/HEAD-/Remote-Abgleich, Arbeitsbaum und offene Punkte im Repository.
+- Wenn der aktuelle Stand nicht sauber oder nicht überprüfbar ist, darf der Agent nicht als „erledigt“ melden, sondern muss den tatsächlichen Stand ehrlich dokumentieren und den nächst offenen, überprüfbaren Punkt fortsetzen.
+
+Diese Regel ist die verbindliche Arbeitsgrundlage für alle nachfolgenden Agentensitzungen und ersetzt keine Projekt-Dokumentation, sondern ergänzt und konsolidiert sie.
+
 ## 1. Zweck
 
 Dieses Dokument enthält verbindliche Arbeitsregeln und ein fortlaufendes Arbeitsprotokoll. Zielarchitektur steht in `VISION.md`; tatsächliche technische Verträge stehen in den jeweiligen Fachdokumenten. Historische Bugs und abgeschlossene Live-Diagnosen gehören nicht in die Arbeitsregeln.

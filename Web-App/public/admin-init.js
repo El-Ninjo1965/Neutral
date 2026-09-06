@@ -4,8 +4,13 @@
 (() => {
   let initialization = null;
 
+  const getClientConstructor = () => {
+    const scope = typeof globalThis !== 'undefined' ? globalThis : window;
+    return scope && typeof scope.ApiClient === 'function' ? scope.ApiClient : (window && typeof window.ApiClient === 'function' ? window.ApiClient : null);
+  };
+
   const dependenciesReady = () => [
-    window.ApiClient, window.AdminCommon, window.AdminUsersView, window.AdminRolesView,
+    getClientConstructor(), window.AdminCommon, window.AdminUsersView, window.AdminRolesView,
     window.AdminSettingsView, window.AdminAuditView, window.AdminModulesView, window.AdminNavigation,
     window.AdminShell, window.AdminRouter
   ].every(Boolean);
@@ -17,7 +22,9 @@
       const appShell = document.getElementById('appShell');
       if (!appShell || appShell.classList.contains('hidden') || !dependenciesReady()) return false;
 
-      const apiClient = new window.ApiClient();
+      const ApiClientCtor = getClientConstructor();
+      const apiClient = ApiClientCtor ? new ApiClientCtor() : null;
+      if (!apiClient) return false;
       apiClient.setAuthRole('admin');
       let container = document.getElementById('adminPanel');
       if (!container) {

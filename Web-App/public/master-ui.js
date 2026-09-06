@@ -11,6 +11,13 @@
         : 'dashboard';
   const state = { activeView: defaultView, activeSettingsModuleId: null };
   const defaultApiBase = () => window.NeutralPublicPath.api('');
+  const getServerApiClient = () => {
+    const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
+    const ApiCtor = eligibleScope && typeof eligibleScope.ApiClient === 'function'
+      ? eligibleScope.ApiClient
+      : (typeof window !== 'undefined' && typeof window.ApiClient === 'function' ? window.ApiClient : null);
+    return ApiCtor ? new ApiCtor() : null;
+  };
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -2984,9 +2991,7 @@
 
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
-        const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient()
-          : null;
+        const serverApiClient = getServerApiClient();
         const usernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('loginPassword');
         const username = usernameInput ? usernameInput.value.trim() : 'Developer';
@@ -3054,9 +3059,7 @@
 
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
-        const serverApiClient = typeof window.ApiClient === 'function'
-          ? new window.ApiClient()
-          : null;
+        const serverApiClient = getServerApiClient();
         if (serverApiClient) {
           await serverApiClient.logout();
         }
@@ -3105,9 +3108,7 @@
     await ensureRuntime();
     if (isServerAuthPage) {
       clearServerIdentity();
-      const sessionApiClient = typeof window.ApiClient === 'function'
-        ? new window.ApiClient()
-        : null;
+      const sessionApiClient = getServerApiClient();
       if (sessionApiClient) {
         if (window.CorePerformance) window.CorePerformance.mark('auth-status-start'); // TEMPORARY diagnostic mark
         const sessionResult = await sessionApiClient.me();

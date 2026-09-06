@@ -60,3 +60,11 @@ test('index.html loads the server API client before the User-App shell so login 
     'api-client.js must load before user-app.js'
   );
 });
+
+test('ApiClient exports to the global runtime surface used by app shells and user contexts', () => {
+  const apiClientSource = read('Web-App/public/api-client.js');
+  assert.match(apiClientSource, /globalThis\.ApiClient\s*=\s*ApiClient/);
+
+  const userAppSource = read('Web-App/public/user-app.js');
+  assert.match(userAppSource, /globalThis\s*!==\s*'undefined'\s*\?\s*globalThis\s*:\s*\(typeof window/);
+});
