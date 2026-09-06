@@ -168,29 +168,79 @@
   };
 
   const extractServerAuthData = (result) => {
-    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+    if (!result || typeof result !== 'object') {
       return null;
     }
-    return result.data;
+
+    const seen = new Set();
+    let cursor = result;
+
+    while (cursor && typeof cursor === 'object' && !seen.has(cursor)) {
+      seen.add(cursor);
+
+      if (cursor.user !== undefined || cursor.roles !== undefined || cursor.permissions !== undefined) {
+        return cursor;
+      }
+
+      if (cursor.ok === true && cursor.data && typeof cursor.data === 'object') {
+        const payload = cursor.data;
+        if (payload.user !== undefined || payload.roles !== undefined || payload.permissions !== undefined) {
+          return payload;
+        }
+      }
+
+      if (cursor.data && typeof cursor.data === 'object' && cursor.data !== cursor) {
+        cursor = cursor.data;
+        continue;
+      }
+
+      break;
+    }
+
+    return null;
   };
 
   const normalizeServerUser = (identityData) => {
-    const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
-      ? identityData.user
-      : null;
-    if (!userRecord) return null;
+    if (!identityData || typeof identityData !== 'object') {
+      return null;
+    }
 
-    const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
+    let userRecord = null;
+    if (identityData.user && typeof identityData.user === 'object') {
+      userRecord = identityData.user;
+    } else if (identityData.data && identityData.data.user && typeof identityData.data.user === 'object') {
+      userRecord = identityData.data.user;
+    } else if (identityData.data && identityData.data.data && identityData.data.data.user && typeof identityData.data.data.user === 'object') {
+      userRecord = identityData.data.data.user;
+    } else if (identityData.username || identityData.id) {
+      userRecord = identityData;
+    }
+
+    if (!userRecord || typeof userRecord !== 'object') {
+      return null;
+    }
+
+    const rawRoles = (Array.isArray(identityData.roles) && identityData.roles.length)
       ? identityData.roles
-      : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
-    const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
+      : (Array.isArray(identityData.data && identityData.data.roles) && identityData.data.roles.length
+        ? identityData.data.roles
+        : (Array.isArray(userRecord.roles) && userRecord.roles.length
+          ? userRecord.roles
+          : (typeof userRecord.role === 'string' && userRecord.role.trim() ? [userRecord.role.trim()] : [])));
+
+    const rawPermissions = (Array.isArray(identityData.permissions) && identityData.permissions.length)
       ? identityData.permissions
-      : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
+      : (Array.isArray(identityData.data && identityData.data.permissions) && identityData.data.permissions.length
+        ? identityData.data.permissions
+        : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []));
+
+    const resolvedRoles = Array.from(new Set(rawRoles.map((role) => String(role || '').trim()).filter(Boolean)));
+    const resolvedPermissions = Array.from(new Set(rawPermissions.map((perm) => String(perm || '').trim()).filter(Boolean)));
 
     return {
       ...userRecord,
-      roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
-      permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
+      roles: resolvedRoles.length ? resolvedRoles : ['user'],
+      permissions: resolvedPermissions,
       status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
     };
   };

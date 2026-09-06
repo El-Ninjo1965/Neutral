@@ -26,6 +26,12 @@ Diese Regel ist die verbindliche Arbeitsgrundlage für alle nachfolgenden Agente
 
 Dieses Dokument enthält verbindliche Arbeitsregeln und ein fortlaufendes Arbeitsprotokoll. Zielarchitektur steht in `VISION.md`; tatsächliche technische Verträge stehen in den jeweiligen Fachdokumenten. Historische Bugs und abgeschlossene Live-Diagnosen gehören nicht in die Arbeitsregeln.
 
+### 2026-09-07 – Device-Live-Befund: PHP-Login-Envelope-Mismatch im echten User-App-Flow
+
+Bei einem weiteren Live-Test auf echtem iPad verschwand die vorherige Meldung `Server authentication client is not available.`. Der Loginaufbau erreicht nun den echten Serverpfad, scheitert aber eine Ebene später beim `user`-Parsing: `Web-App/public/user-app.js` erwartet bei `ApiClient.login()` nur das direkte Objekt `{ user, roles, permissions }`, obwohl die PHP-API als `JsonResponse::success()` ein zweischichtiges Envelope `{ ok: true, data: { user, ... } }` liefert. Das Node-/Test-Backend liefert stattdessen die direkte Form `{ ok: true, user, roles, permissions }`. Dadurch war `result.data.user` bzw. `result.data.data.user` im realen Betrieb `undefined`, und der Browser zeigte `No authenticated user was returned by the server.`
+
+Korrigiert wurde die Extraktion in `Web-App/public/user-app.js`, sodass beide Formen robust akzeptiert werden (`result.user`, `result.data.user`, `result.data.data.user`, sowie das PHP-Envelope `result.data` mit `ok/data`). Der zugehörige Regressionstest `tests/user-app-server-auth.test.js` prüft jetzt die echte PHP-Response-Struktur und die direkte Node-Struktur.
+
 ## 2. Projektgrenzen
 
 - Projektname und Produktidentität sind ausschließlich **NEUTRAL**.

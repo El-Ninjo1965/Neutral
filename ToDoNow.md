@@ -37,6 +37,13 @@
 - Korrektur: `.htaccess` enthält jetzt eine direkte Rewrite-Regel für `^api-client\.js$` nach `Web-App/public/api-client.js`; der Regressionstest `tests/user-app-server-auth.test.js` prüft dieses Deploy-/Runtime-Contract zusätzlich.
 - Hinweis: Der reale Host-/Geräte-Login bleibt extern zu verifizieren; der Codepfad ist hier mit Produktions-Host-Korrespondenz und Runtime-Contract geprüft.
 
+### A6 – PHP-Login-Envelope korrekt auslesen
+- Status: CODE-SEITIG ERLEDIGT
+- Ursache: `Web-App/public/user-app.js` erwartete bei `ApiClient.login()` das direkte Objekt `{ user, roles, permissions }`, aber die produktive PHP-API liefert den standardisierten Envelope-Typ `JsonResponse::success()` mit `{ ok: true, data: { user, roles, permissions, ... } }`. Der Test-/Node-Backend liefert dagegen die direkte Form `{ ok: true, user, roles, permissions }`. Die User-App hat nur `result.data` bzw. nur `result.data.user` ausgewertet, wodurch `user` am echten PHP-Login nie erkannt wurde und die Meldung `No authenticated user was returned by the server.` erschien.
+- Nachweis: `Server/public/api/index.php` antwortet auf `/api/auth/login` mit `JsonResponse::success(['via' => 'session', 'user' => ..., 'roles' => ..., 'permissions' => ...]);` und `JsonResponse::success()` setzt ein zweischichtiges Envelope `{ ok: true, data: ... }` per `JsonResponse.php`.
+- Korrektur: `extractServerAuthData()` in `Web-App/public/user-app.js` unwrappt jetzt beide Formate robust (`result.user`, `result.data.user`, `result.data.data.user`, `result.data` als PHP-Evelope) und akzeptiert nachfolgenden Server-Normalisierungen beide Backends ohne Codepath-Split.
+- Regressionstest: `tests/user-app-server-auth.test.js` prüft jetzt die reale PHP-Envelope-Struktur mit `ok/data/user` und zusätzlich das Node-/Testbackend-Format.
+
 ## B. Schreib-/Settings-Verträge
 
 ### B1 – Einheitliche Speicherbestätigungen

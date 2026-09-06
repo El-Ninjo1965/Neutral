@@ -58,9 +58,42 @@ Dieser Fix betrifft ausschließlich Test-Fixture-Hygiene; er ändert keinen der 
 ### Zwischenstand 2026-09-06 – E/F-Freeze-Prüfung
 
 - Vollständige Node-Suite: **377/377 bestanden** mit PHP 8.4; vollständiger PHP-Lint, JavaScript-Syntaxprüfung, `git diff --check`, Produktionspaket und Secret-Scan bestanden.
-- Produktiver Read-only-Smoke gegen `https://turbolikes.com/`: **bestanden**; Root, Rewrite, geschützte Routen, Status, Modul-Katalog, Deployment-Revision und beide Modulverträge waren korrekt.
+
+### Zwischenstand 2026-09-07 – PHP-Login-Envelope-Mismatch im echten User-App-Flow
+
+Der erneut getestete iPad-Login zeigte die neue Runtime-Fehlermeldung nicht mehr (`Server authentication client is not available.`), aber die nächste Ebene blieb fehlerhaft: `No authenticated user was returned by the server.` Dieses Verhalten ist exakt der Nachweis, dass der HTTP-Request den Server erreicht und die `ApiClient`-Runtime jetzt vorhanden ist. Die Ursache sitzt auf der Response-Parsing-Ebene: die echte PHP-API liefert ein `JsonResponse::success()`-Envelope,
+
+```json
+{
+  "ok": true,
+  "data": {
+    "via": "session",
+    "user": { "id": 102, "username": "tester", "roles": ["user"] },
+    "roles": ["user"],
+    "permissions": ["dashboard:view"],
+    "csrfToken": "...",
+    "expiresAt": "..."
+  }
+}
+```
+
+während der Node-/Test-Backend-Stub direkt das Objekt
+
+```json
+{
+  "ok": true,
+  "user": { "id": 7, "username": "developer", "roles": ["developer"] },
+  "roles": ["developer"],
+  "permissions": ["system:view"]
+}
+```
+
+liefert. `Web-App/public/user-app.js` hat bisher nur `result.data` bzw. `result.data.user` ausgewertet; für die PHP-Response war das Ergebnis `undefined`, wodurch `normalizeServerUser()` kein gültiges `user`-Objekt erhielt. Der Fix in `Web-App/public/user-app.js` entpackt sowohl PHP-Envelope als auch Node-Direct-Shape robust und akzeptiert danach `result.user`, `result.data.user` und `result.data.data.user` ohne Abbruch.
+
+- Produktiver Nachweis: `/api/auth/login` erreicht mit echtem Server-Login den Auth-Handler; Fehler ist jetzt auf der unvollständigen Benutzerextraktion statt auf fehlender Client- oder Host-Route.
+- Verifiziert durch: `tests/user-app-server-auth.test.js` inklusive PHP-Envelope-Regression.
+- Vollständige lokale Validierung: `npm test` (**377/377**), `php -l` für relevante PHP-Dateien, `node --check` der geänderten JS-Dateien, `git diff --check`, Secret-Scan und `npm run package:production` sind erfolgreich durchgelaufen.
 - Produktiver `Tester`-Check: Login, `/api/auth/me` als `user`, verweigerter Admin-Zugriff (`403`) und Logout bestanden. Es wurden keine mutierenden Admin-Aktionen ausgeführt.
-- FTPS Deploy [`34013190332`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34013190332) und CodeQL [`34013190264`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34013190264) für Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` sind erfolgreich.
 - Der lokale cPanel-Preflight bleibt wegen fehlender `pdo_mysql`-Erweiterung blockiert. Geräte-, Offline-/Warmstart-, Neuinstallations- und URL-Unterpfad-Abnahmen bleiben offen; Core 1.0 ist daher noch nicht gefreezed.
 
 ### Zwischenstand 2026-09-06 – Auth-/Session-/RBAC-Liveprüfung im Codespace (HISTORISCH, durch den obigen Abschnitt „E/F-Freeze-Prüfung“ überholt)

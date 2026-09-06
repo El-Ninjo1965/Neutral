@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const projectRoot = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -75,4 +76,141 @@ test('Production host rewrite exposes api-client.js at the public root so the Us
   assert.match(htaccess, /RewriteRule \^api-client\\\.js\$ Web-App\/public\/api-client\.js \[L\]/);
   assert.match(htaccess, /RewriteRule \^user-app\\\.js\$/);
   assert.match(htaccess, /RewriteRule \^public-path\\\.js\$/);
+});
+
+test('User-App unwraps the real PHP /api/auth/login response envelope before applying the authenticated user', () => {
+  const source = read('Web-App/public/user-app.js');
+  const extractMatch = source.match(/const extractServerAuthData = \(result\) => \{[\s\S]*?\n  \};/);
+  const normalizeMatch = source.match(/const normalizeServerUser = \(identityData\) => \{[\s\S]*?\n  \};/);
+
+  assert.ok(extractMatch, 'extractServerAuthData helper must exist');
+  assert.ok(normalizeMatch, 'normalizeServerUser helper must exist');
+
+  const sandbox = {
+    console,
+    Array,
+    Date,
+    Map,
+    Set,
+    Object,
+    String,
+    Number,
+    Boolean,
+    RegExp,
+    JSON
+  };
+  sandbox.globalThis = sandbox;
+  sandbox.window = sandbox;
+
+  vm.runInNewContext(`${extractMatch[0]}\n${normalizeMatch[0]}\nsandbox.extractServerAuthData = extractServerAuthData;\nsandbox.normalizeServerUser = normalizeServerUser;`, { ...sandbox, sandbox });
+
+  // 1. Exact structure returned by ApiClient.post('/api/auth/login') against the PHP backend
+  const phpHttpResult = {
+    ok: true,
+    status: 200,
+    data: {
+      ok: true,
+      data: {
+        via: 'session',
+        user: {
+          id: '102',
+          username: 'tester',
+          displayName: 'Tester',
+          email: 'tester@example.com',
+          status: 'active',
+          roles: ['user'],
+          permissions: ['user:read'],
+          createdAt: '2026-03-24T18:00:00Z',
+          updatedAt: '2026-03-24T18:00:00Z'
+        },
+        roles: ['user'],
+        permissions: ['user:read'],
+        csrfToken: 'php-csrf-token-abc',
+        expiresAt: '2026-09-06T12:00:00Z'
+      }
+    }
+  };
+
+  // 2. Exact structure returned by ApiClient.me() against PHP backend
+  const phpMeHttpResult = {
+    ok: true,
+    status: 200,
+    data: {
+      ok: true,
+      data: {
+        via: 'session',
+        user: {
+          id: '102',
+          username: 'tester',
+          displayName: 'Tester',
+          email: 'tester@example.com',
+          status: 'active',
+          roles: ['user'],
+          permissions: ['user:read']
+        },
+        roles: ['user'],
+        permissions: ['user:read']
+      }
+    }
+  };
+
+  // 3. Node test backend structure
+  const nodeHttpResult = {
+    ok: true,
+    status: 200,
+    data: {
+      ok: true,
+      user: {
+        id: '101',
+        username: 'developer',
+        displayName: 'Developer',
+        email: 'dev@example.com',
+        roles: ['developer'],
+        permissions: ['system:view', 'module:read']
+      },
+      roles: ['developer'],
+      permissions: ['system:view', 'module:read']
+    }
+  };
+
+  const phpUser = sandbox.normalizeServerUser(sandbox.extractServerAuthData(phpHttpResult));
+  assert.ok(phpUser, 'PHP login response must yield an authenticated user');
+  assert.equal(phpUser.username, 'tester');
+  assert.deepEqual(phpUser.roles, ['user']);
+  assert.deepEqual(phpUser.permissions, ['user:read']);
+
+  const phpMeUser = sandbox.normalizeServerUser(sandbox.extractServerAuthData(phpMeHttpResult));
+  assert.ok(phpMeUser, 'PHP /api/auth/me response must yield an authenticated user');
+  assert.equal(phpMeUser.username, 'tester');
+
+  const nodeUser = sandbox.normalizeServerUser(sandbox.extractServerAuthData(nodeHttpResult));
+  assert.ok(nodeUser, 'Node login response must yield an authenticated user');
+  assert.equal(nodeUser.username, 'developer');
+  assert.deepEqual(nodeUser.roles, ['developer']);
+});
+
+test('ApiClient extracts CSRF token from PHP JsonResponse envelope upon login', async () => {
+  const ApiClient = require('../Web-App/public/api-client.js');
+  const client = new ApiClient();
+
+  const phpEnvelopeResult = {
+    ok: true,
+    status: 200,
+    data: {
+      ok: true,
+      data: {
+        via: 'session',
+        user: { id: '102', username: 'tester' },
+        roles: ['user'],
+        csrfToken: 'csrf-token-from-php-envelope',
+        expiresAt: '2026-09-06T12:00:00Z'
+      }
+    }
+  };
+
+  // Stub post to return the PHP envelope
+  client.post = async () => phpEnvelopeResult;
+  await client.login('tester', 'password123');
+
+  assert.equal(client.csrfToken, 'csrf-token-from-php-envelope');
 });
