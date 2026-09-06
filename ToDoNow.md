@@ -39,10 +39,14 @@
 
 ### A6 – PHP-Login-Envelope korrekt auslesen
 - Status: CODE-SEITIG ERLEDIGT
-- Ursache: `Web-App/public/user-app.js` erwartete bei `ApiClient.login()` das direkte Objekt `{ user, roles, permissions }`, aber die produktive PHP-API liefert den standardisierten Envelope-Typ `JsonResponse::success()` mit `{ ok: true, data: { user, roles, permissions, ... } }`. Der Test-/Node-Backend liefert dagegen die direkte Form `{ ok: true, user, roles, permissions }`. Die User-App hat nur `result.data` bzw. nur `result.data.user` ausgewertet, wodurch `user` am echten PHP-Login nie erkannt wurde und die Meldung `No authenticated user was returned by the server.` erschien.
-- Nachweis: `Server/public/api/index.php` antwortet auf `/api/auth/login` mit `JsonResponse::success(['via' => 'session', 'user' => ..., 'roles' => ..., 'permissions' => ...]);` und `JsonResponse::success()` setzt ein zweischichtiges Envelope `{ ok: true, data: ... }` per `JsonResponse.php`.
-- Korrektur: `extractServerAuthData()` in `Web-App/public/user-app.js` unwrappt jetzt beide Formate robust (`result.user`, `result.data.user`, `result.data.data.user`, `result.data` als PHP-Evelope) und akzeptiert nachfolgenden Server-Normalisierungen beide Backends ohne Codepath-Split.
-- Regressionstest: `tests/user-app-server-auth.test.js` prüft jetzt die reale PHP-Envelope-Struktur mit `ok/data/user` und zusätzlich das Node-/Testbackend-Format.
+- Ursache: `Web-App/public/user-app.js` und `master-ui.js` erwarteten bei `ApiClient.login()` / `me()` den User direkt unter `identityData.user` auf oberster Ebene. Die produktive PHP-API liefert über `JsonResponse::success()` jedoch die standardisierte Envelope-Struktur `{ ok: true, data: { via: 'session', user: {...}, roles: [...], permissions: [...], csrfToken: '...', expiresAt: '...' } }`. `ApiClient.request()` kapselt die geparste JSON-Response in `{ ok: true, status: 200, data: <parsed_json> }`. Dadurch lag das User-Objekt in `result.data.data.user`. Die User-App gab bei `extractServerAuthData(result)` nur `result.data` zurück und `normalizeServerUser()` suchte nach `identityData.user` (was `undefined` war). Das führte reproduzierbar zur Live-Fehlermeldung `No authenticated user was returned by the server.`. Ebenso extrahierte `ApiClient.login()` den CSRF-Token nicht aus `result.data.data.csrfToken`.
+- Nachweis: `Server/public/api/index.php` liefert `JsonResponse::success(['via' => 'session', 'user' => ..., 'roles' => ..., 'permissions' => ..., 'csrfToken' => ..., 'expiresAt' => ...]);` mit `JsonResponse.php` (`['ok' => true, 'data' => $data]`).
+- Korrektur:
+  1. `Web-App/public/user-app.js`: `extractServerAuthData()` entpackt rekursiv verschachtelte Envelopes (`result.data.data`, `result.data` mit `ok/data`, flache Node-Form `result.data.user`). `normalizeServerUser()` sucht das `userRecord` robust auf allen Ebenen (`user`, `data.user`, `data.data.user` oder flach) und normalisiert `roles` und `permissions`.
+  2. `Web-App/public/master-ui.js`: `extractApiData()` und `applyServerIdentity()` unterstützen gleichermaßen Envelopes und flache Payloads.
+  3. `Web-App/public/api-client.js`: `extractEnvelopeData()` und `login()` extrahieren `csrfToken` und Daten aus PHP-Envelope und flachen Antworten.
+  4. `Server/php/src/LoginRateLimiter.php` und `DatabaseBackupService.php`: PHP 8.0-Kompatibilität (`readonly`-Syntax bereinigt).
+- Regressionstests: `tests/user-app-server-auth.test.js` prüft die exakte PHP-Response-Struktur für `/api/auth/login` und `/api/auth/me`, die CSRF-Token-Extraktion sowie das Node-Format (10/10 Tests bestanden). Gesamt-Suite: 387/387 Tests bestanden.
 
 ## B. Schreib-/Settings-Verträge
 

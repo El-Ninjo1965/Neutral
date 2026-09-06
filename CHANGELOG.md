@@ -1,6 +1,16 @@
 # NEUTRAL – Changelog
 
-## 2026-09-07 – Produktive Asset-Route für den Server-Auth-Client repariert
+## 2026-09-07 – Fix: PHP-Login-Envelope-Parsing in `user-app.js` und `api-client.js` korrigiert
+
+- Realer Device-Live-Befund auf iPad: Nach dem erfolgreichen `.htaccess`-/`api-client.js`-Delivery-Fix erschien beim Login für Developer und Tester die Meldung: `No authenticated user was returned by the server.`. Die vorherige Meldung `Server authentication client is not available.` trat nicht mehr auf.
+- Root Cause (bewiesen): Die produktive PHP-API liefert für `/api/auth/login` und `/api/auth/me` über `JsonResponse::success()` eine standardisierte Envelope-Struktur `{ ok: true, data: { via: 'session', user: {...}, roles: [...], permissions: [...], csrfToken: '...', expiresAt: '...' } }`. `ApiClient.request()` parsed den Body in `result.data`, sodass `result.data` das Envelope `{ ok: true, data: {...} }` enthält. In `Web-App/public/user-app.js` gab `extractServerAuthData(result)` lediglich `result.data` zurück und `normalizeServerUser()` suchte direkt nach `identityData.user` (statt in `identityData.data.user` bzw. entpacktem Envelope). Dadurch war `user` stets `null` und löste exakt `No authenticated user was returned by the server.` aus. Ebenso las `ApiClient.login()` den CSRF-Token nur aus `result.data.csrfToken` statt aus `result.data.data.csrfToken`.
+- Fix:
+  1. `extractServerAuthData()` in `user-app.js` unwrappt rekursiv Envelopes (`result.data.data`, `result.data` mit `ok/data`, Node-Mock-Format `result.data.user` und flache Payloads).
+  2. `normalizeServerUser()` in `user-app.js` und `applyServerIdentity()` in `master-ui.js` extrahieren das User-Objekt robust aus allen Envelope-Ebenen (`identityData.user`, `identityData.data.user`, `identityData.data.data.user` oder flachem Record) und normalisieren Rollen und Permissions.
+  3. `extractEnvelopeData()` und `login()` in `api-client.js` extrahieren den CSRF-Token zuverlässig aus PHP-Envelope (`result.data.data.csrfToken`), flachem Result und Cookie.
+  4. PHP 8.0-Kompatibilität in `LoginRateLimiter.php` und `DatabaseBackupService.php` sichergestellt (`readonly`-Properties durch explizite typisierte Properties ersetzt).
+- Regressionstests: `tests/user-app-server-auth.test.js` erweitert um Tests mit realer PHP-`JsonResponse`-Envelope-Struktur für `/api/auth/login` und `/api/auth/me`, Node-Testbackend-Format und CSRF-Extraktion.
+- Verifikation: 387/387 Tests bestanden, PHP-Lint aller Dateien fehlerfrei, `node --check` sauber, `git diff --check` sauber, Secret-Scan sauber, `npm run package:production` erfolgreich.
 
 - Realer Device-Live-Befund: `Server authentication client is not available.` blieb trotz der vorherigen User-App-/Global-Export-Fixes weiterhin bestehen.
 - Echte Root Cause: `.htaccess` mappt `api-client.js` nicht auf `Web-App/public/api-client.js`, sodass der Browser den Auth-Client über den Public-Root-Pfad nicht erhielt und der Login-Pfad keine valide Runtime-Instanz bekam. Das ist ein Host-/Delivery-Problem, nicht nur ein `window`- vs. `globalThis`-Problem.

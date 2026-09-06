@@ -214,3 +214,68 @@ test('ApiClient extracts CSRF token from PHP JsonResponse envelope upon login', 
 
   assert.equal(client.csrfToken, 'csrf-token-from-php-envelope');
 });
+
+test('Master-UI unwraps the real PHP /api/auth/login response envelope and sets up authenticated admin/developer identity', () => {
+  const source = read('Web-App/public/master-ui.js');
+  const extractMatch = source.match(/const extractApiData = \(result\) => \{[\s\S]*?\n  \};/);
+  const applyMatch = source.match(/const applyServerIdentity = \(identityData\) => \{[\s\S]*?\n  \};/);
+
+  assert.ok(extractMatch, 'extractApiData helper must exist');
+  assert.ok(applyMatch, 'applyServerIdentity helper must exist');
+
+  const sandbox = {
+    console,
+    Array,
+    Date,
+    Map,
+    Set,
+    Object,
+    String,
+    Number,
+    Boolean,
+    RegExp,
+    JSON,
+    serverAuthenticatedUser: null,
+    window: {}
+  };
+  sandbox.globalThis = sandbox;
+
+  vm.runInNewContext(`
+    let serverAuthenticatedUser = null;
+    ${extractMatch[0]}
+    ${applyMatch[0]}
+    sandbox.extractApiData = extractApiData;
+    sandbox.applyServerIdentity = applyServerIdentity;
+  `, { ...sandbox, sandbox });
+
+  const phpLoginResult = {
+    ok: true,
+    status: 200,
+    data: {
+      ok: true,
+      data: {
+        via: 'session',
+        user: {
+          id: '101',
+          username: 'developer',
+          displayName: 'Developer',
+          email: 'dev@example.com',
+          status: 'active',
+          roles: ['developer'],
+          permissions: ['system:view', 'module:read']
+        },
+        roles: ['developer'],
+        permissions: ['system:view', 'module:read'],
+        csrfToken: 'csrf-token-php',
+        expiresAt: '2026-09-06T12:00:00Z'
+      }
+    }
+  };
+
+  const extracted = sandbox.extractApiData(phpLoginResult);
+  assert.ok(extracted, 'PHP envelope must be extracted');
+  const user = sandbox.applyServerIdentity(extracted);
+  assert.ok(user, 'User must be authenticated');
+  assert.equal(user.username, 'developer');
+  assert.deepEqual(user.roles, ['developer']);
+});

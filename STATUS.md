@@ -6,6 +6,21 @@
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
+### Zwischenstand 2026-09-07 – Device-Livetest: PHP-Login-Envelope-Parsing korrigiert
+
+Nach Deployment des `.htaccess`-/`api-client.js`-Fixes erreichte der Request im realen iPad-Devicetest die Server-API. Es trat jedoch der Folgefehler `No authenticated user was returned by the server.` für Tester und Developer auf.
+
+**Root Cause (nachgewiesen):** Die PHP-API kapselt alle erfolgreichen Antworten per `JsonResponse::success()` in ein standardisiertes Envelope `{ ok: true, data: { via: 'session', user: {...}, ... } }`. `ApiClient.request()` legt die geparste Server-Antwort in `result.data` ab, sodass das User-Objekt unter `result.data.data.user` liegt. `extractServerAuthData()` in `user-app.js` gab lediglich `result.data` zurück, und `normalizeServerUser()` suchte nach `identityData.user` (was `undefined` war). Dadurch schlug die Authentifizierungsanzeige im Frontend fehl, obwohl der Server-Login mit Status 200 und Cookie erfolgreich war.
+
+**Fix:**
+- `Web-App/public/user-app.js`: `extractServerAuthData()` entpackt Envelopes auf allen Ebenen (`result.data.data`, `result.data`, flache Node-Formate). `normalizeServerUser()` extrahiert `userRecord` robust aus allen verschachtelten Pfaden (`user`, `data.user`, `data.data.user` oder Direktobjekt).
+- `Web-App/public/master-ui.js`: `extractApiData()` und `applyServerIdentity()` unterstützen Envelopes und flache Payloads gleichermaßen.
+- `Web-App/public/api-client.js`: `extractEnvelopeData()` und `login()` extrahieren CSRF-Token aus dem PHP-Envelope (`result.data.data.csrfToken`).
+- `Server/php/src/LoginRateLimiter.php` und `DatabaseBackupService.php`: PHP 8.0-Syntaxkompatibilität hergestellt (`readonly`-Properties durch typisierte Properties ersetzt).
+- `tests/user-app-server-auth.test.js`: Regressionstests mit der realen PHP-Response-Struktur für `/api/auth/login` und `/api/auth/me`.
+
+**Lokale Verifikation:** Vollständige Testsuite mit 387/387 Tests bestanden (0 Fehler); PHP-Lint aller PHP-Dateien fehlerfrei; `node --check` sauber; `git diff --check` sauber; Secret-Scan ohne Treffer; `npm run package:production` mit 103 Dateien erfolgreich gebaut.
+
 ### Zwischenstand 2026-09-07 – Device-Livetest deckt echten Produktions-Root-Cause auf: `api-client.js` war auf dem Host nicht erreichbar
 
 Ein realer iPad-Devicetest (privater Modus) gegen die produktive User-App-UI ergab weiterhin: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich **nicht** über die tatsächliche Login-Oberfläche der User-App anmelden (`Server authentication client is not available.`).
