@@ -9,6 +9,11 @@
 
 # NEUTRAL – Changelog
 
+## 2026-09-07 – Fix: User-App header wording normalized to `Settings`
+
+- User-App header and settings entry now use the same wording in both signed-in and signed-out states.
+- Regression coverage: `tests/user-module-access.test.js` verifies the user shell exposes consistent `Settings` wording without reintroducing the previous user/admin split issue.
+
 ## 2026-09-07 – Fix: User/Admin session scopes separated and validated
 
 - Root cause: the runtime had been resolving a single shared session identifier for both user and admin contexts, so one login could overwrite the other and logout flows leaked across scopes.

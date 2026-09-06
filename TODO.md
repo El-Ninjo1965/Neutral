@@ -9,7 +9,7 @@
 
 ## Action list
 1. Separate user and admin session contexts without breaking shared RBAC/database contracts.
-2. Clean up user-app header wording and settings label.
+2. Clean up user-app header wording and settings label. (DONE / verified)
 3. Make navigation entries clearly interactive tabs/buttons.
 4. Implement configurable homepage modes and admin controls.
 5. Add i18n with device detection and persistent override.

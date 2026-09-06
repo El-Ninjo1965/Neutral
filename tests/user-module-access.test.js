@@ -77,7 +77,7 @@ test('anonymous settings and viewer permission behavior are explained accurately
   const userSource = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
   const adminSource = fs.readFileSync(path.join(projectRoot, 'Web-App/public/admin/modules-view.js'), 'utf8');
 
-  assert.match(userSource, /Local settings/);
+  assert.match(userSource, /<h1>Settings<\/h1>/);
   assert.match(adminSource, /without login/i);
   assert.match(adminSource, /visibility.*usage|usage.*visibility/i);
 });

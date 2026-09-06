@@ -32,6 +32,10 @@ Bei einem weiteren Live-Test auf echtem iPad verschwand die vorherige Meldung `S
 
 Korrigiert wurde die Extraktion in `Web-App/public/user-app.js`, sodass beide Formen robust akzeptiert werden (`result.user`, `result.data.user`, `result.data.data.user`, sowie das PHP-Envelope `result.data` mit `ok/data`). Der zugehörige Regressionstest `tests/user-app-server-auth.test.js` prüft jetzt die echte PHP-Response-Struktur und die direkte Node-Struktur.
 
+### 2026-09-07 – P2: User-App header wording und Settings-Label konsolidiert
+
+Im nächsten selbst ausführbaren Block wurde die User-App-Header-/Settings-Konsistenz geprüft und korrigiert. Die gesichtete Ursache war eine unterschiedliche Benennung zwischen angemeldetem und nicht angemeldetem Zustand (`Settings` vs. `Local settings`). Die User-App verwendet jetzt in beiden Zuständen konsistent `Settings`, ohne dabei die Live-Session- oder Admin-Scope-Logik zu beeinflussen. Der fokussierte Regressionstest `tests/user-module-access.test.js` deckt die entsprechende Erwartung jetzt ab.
+
 ### 2026-09-06 – Session-Scope-Fix: User-/Admin-Context getrennt und verifiziert
 
 Der aktuelle aktive Prioritätsfall war die gemeinsame Session-Context-Logik zwischen User-App und Admin-Interface. Die Lösung trennt jetzt die cookie- und scope-gebundenen Session-Resolutionen sauber (`neutral_session` / `neutral_admin_session`), sodass Admin-Login, User-Login, Logout und `/api/auth/me` jeweils für den korrekten Scope validiert werden. Die Regressionstests bestätigen parallel agierende User-/Admin-Logins und verhindern Cross-Overwrite und Cross-Logout.

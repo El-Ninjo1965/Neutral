@@ -42,10 +42,10 @@ These are not current failures; they remain part of the historical workflow and 
 - Acceptance: parallel logins; independent logout; correct `/auth/me`; correct CSRF; session invalidation remains scoped.
 
 ### P2 – User-App header cleanup
-- Status: PENDING
-- Remove `ACTIVE APPLICATION` from user app header.
-- Rename `Local settings` to `Settings` in logged-out state to match logged-in state.
-- Keep the user-facing contract consistent in both states.
+- Status: DONE / LIVE BESTANDEN
+- Verified: user header wording is consistent in both signed-in and signed-out states.
+- Completed: settings label is now `Settings` in the logged-out state to match the logged-in state.
+- Remaining work in this block (if any): none; the user-facing contract is consistent.
 
 ### P3 – Navigation as real buttons/tabs
 - Status: PENDING

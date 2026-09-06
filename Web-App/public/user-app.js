@@ -371,7 +371,7 @@
   const renderActions = () => {
     if (!actions) return;
     const currentUser = getCurrentUser();
-    const settingsLabel = currentUser ? 'Settings' : 'Local settings';
+    const settingsLabel = 'Settings';
     const settingsButton = `<button id="userSettingsButton" class="user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
 
     if (!currentUser) {
@@ -534,7 +534,7 @@
         <div class="user-app-section-heading">
           <div>
             <span class="user-app-eyebrow">${currentUser ? 'Profile' : 'Local workspace'}</span>
-            <h1>${currentUser ? 'Settings' : 'Local settings'}</h1>
+            <h1>Settings</h1>
           </div>
           <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
