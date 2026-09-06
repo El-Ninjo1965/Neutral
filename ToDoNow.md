@@ -28,9 +28,8 @@
 
 ### A4 – Auth/Session/RBAC nach Login verifizieren
 - Status: LIVE BESTANDEN
-- Ursache: Login-/Rollenpfad wurde code-seitig korrigiert und in einem lokalen Live-Check gegen die Codespace-Instanz verifiziert: `Tester` konnte sich mit `dw445566dw` anmelden, die Session wurde als `neutral_session` gesetzt, `/api/auth/me` identifizierte den Nutzer als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`.
-- Nachweis: lokaler Serverlauf im Codespace; keine Host-/Deployment-Umgebung im Repository als produktive Live-Umgebung verfügbar.
-- Hinweis: Produktive Host-/Live-Abnahme für Deployment-/Geräteökosystem bleibt weiterhin offen; dieser Punkt ist hier aber im Codespace-Serverlauf verifiziert.
+- Ursache: Login-/Rollenpfad wurde code-seitig korrigiert und lokal sowie gegen die produktive API verifiziert: `Tester` konnte sich anmelden, `/api/auth/me` identifizierte den Nutzer als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`; die Session wurde anschließend beendet.
+- Nachweis: lokaler Serverlauf und produktiver Read-only-/Tester-Check; keine Admin- oder mutierende Produktivaktion wurde ausgeführt.
 
 ## B. Schreib-/Settings-Verträge
 
@@ -94,14 +93,17 @@
 - Ergebnis: User-Module nutzen zentrale Navigation, keine automatische technische Beschreibung/Back-Navigation und bleiben Light/Dark-kompatibel.
 
 ## E. Live-Abnahme
-- Status: OFFEN
-- Hinweis: lokale Tester-/Session-/RBAC-Prüfung ist bestanden; reale Deployment-/Browser-/Geräteabnahme und die geforderten Produktivsmokes bleiben offen.
+- Status: TEILWEISE BESTANDEN
+- Nachweis: Produktiver Read-only-Smoke gegen `https://turbolikes.com/` bestand für Root, Rewrite, geschützte Admin-/Core-Routen, Status, Modul-Katalog, Deployment-Revision und beide Modulverträge. Der produktive `Tester`-Login bestätigte `user`-RBAC und Logout.
+- Offen: reale iPad/Safari-/Android-Abnahme, Offline-/Warmstart, neue Hosting-/Datenbankinstallation und URL-Unterpfad bleiben betreiber- bzw. geräteabhängig.
 
 ## F. Freeze-Bewertung
 - Status: OFFEN
-- Hinweis: In der aktuellen Codespace-Validierung sind Auth-/Session-/RBAC-Härtung und die relevanten Regressionstests grün; der vollständige Freeze-Block inklusive Deployment-/Smoke-/HEAD-Check bleibt offen.
+- Nachweis: 377/377 Node-Tests, vollständiger PHP-Lint mit PHP 8.4, JavaScript-Syntaxprüfungen, `git diff --check`, Produktionspaket und Secret-Scan bestanden. FTPS Deploy `34013190332` und CodeQL `34013190264` für Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` bestanden.
+- Einschränkung: lokales Preflight bleibt wegen fehlender `pdo_mysql`-Erweiterung BLOCKIERT; die geforderten physischen Geräte-/Portabilitätsnachweise fehlen weiterhin. Daher kein Core-1.0-Freeze.
 
 ## Gesamtzustand
 - Code-seitig verifiziert: A1, A2, A3, A4 (lokal im Codespace)
-- Live-/Deployment-Abnahme: teilweise lokal validiert, Gesamtfreeze und reale Host-/Device-Checks offen
-- Operativer Auftrag bleibt aktiv; kein Abschluss-Status „DONE“ solange die Pflichtpunkte B–F und die vollständige Freeze-/Head-/Deployment-Prüfung nicht erfüllt sind
+- Code-seitig verifiziert: B1–B6, C1–C3 und D1–D6
+- Live-/Deployment-Abnahme: produktiver Smoke und Tester-RBAC bestanden; Device-, Offline-, Neuinstallations- und Unterpfadabnahmen offen
+- Gesamtfreeze: OFFEN wegen der genannten externen Nachweise und lokaler `pdo_mysql`-Preflight-Blockade

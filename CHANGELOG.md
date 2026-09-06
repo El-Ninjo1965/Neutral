@@ -10,7 +10,7 @@
 
 ## 2026-09-06 – Tester-Login / Session / RBAC lokal im Codespace live verifiziert
 
-- Lokaler Live-Check gegen die Codespace-Instanz erfolgreich: `Tester` konnte sich mit `dw445566dw` (`user`, Status `active`, ID `102`) anmelden; `/api/auth/login` setzte das Session-/CSRF-Cookie, `/api/auth/me` bestätigte die Session als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`.
+- Lokaler Live-Check gegen die Codespace-Instanz erfolgreich: `Tester` konnte sich mit einem nicht dokumentierten Testwert (`user`, Status `active`, ID `102`) anmelden; `/api/auth/login` setzte das Session-/CSRF-Cookie, `/api/auth/me` bestätigte die Session als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`.
 - Die authentifizierten Login-/Session-/RBAC-Regressionsprüfungen bleiben grün (`node --test tests/session-auth.test.js tests/admin-api.test.js tests/vision-framework.test.js`).
 - Die realen Produktiv- und Deployment-Abnahmen für den Gesamtfreeze-Block (Geräte-, Host-, Smoke- und Deployment-Schritte) bleiben ausdrücklich offen; sie werden nicht als bestanden markiert.
 

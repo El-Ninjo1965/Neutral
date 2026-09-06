@@ -2,7 +2,7 @@
 
 **Status:** NACHGEWIESENER IST-STAND  
 **Geprüft:** 2026-09-05
-**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag; Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige GitHub-/PHP-Tests, Paketbau, explizites FTPS-Deployment und den permanenten rein lesenden Produktions-Smoke
+**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag. Der aktuelle Settings-/Session-/User-UI-Stand wurde in Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` ausgeliefert; der zugehörige FTPS-Lauf, CodeQL und der rein lesende Produktions-Smoke waren erfolgreich.
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
@@ -21,6 +21,14 @@ Code-seitig umgesetzt und fokussiert syntaktisch geprüft:
 - Normale User-Modulansichten zeigen keine automatisch eingeblendete technische Modulbeschreibung und keinen redundanten generischen Back-Link. Light/Dark wird lokal persistent gespeichert und vor dem ersten Paint angewendet.
 
 Diese Punkte sind `CODE-SEITIG ERLEDIGT`, aber noch nicht als produktive oder reale Device-LIVE-Abnahme bestätigt. Host-, Browser-, Deployment- und Betreiberabhängigkeiten bleiben offen.
+
+### Zwischenstand 2026-09-06 – E/F-Freeze-Prüfung
+
+- Vollständige Node-Suite: **377/377 bestanden** mit PHP 8.4; vollständiger PHP-Lint, JavaScript-Syntaxprüfung, `git diff --check`, Produktionspaket und Secret-Scan bestanden.
+- Produktiver Read-only-Smoke gegen `https://turbolikes.com/`: **bestanden**; Root, Rewrite, geschützte Routen, Status, Modul-Katalog, Deployment-Revision und beide Modulverträge waren korrekt.
+- Produktiver `Tester`-Check: Login, `/api/auth/me` als `user`, verweigerter Admin-Zugriff (`403`) und Logout bestanden. Es wurden keine mutierenden Admin-Aktionen ausgeführt.
+- FTPS Deploy [`34013190332`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34013190332) und CodeQL [`34013190264`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34013190264) für Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` sind erfolgreich.
+- Der lokale cPanel-Preflight bleibt wegen fehlender `pdo_mysql`-Erweiterung blockiert. Geräte-, Offline-/Warmstart-, Neuinstallations- und URL-Unterpfad-Abnahmen bleiben offen; Core 1.0 ist daher noch nicht gefreezed.
 
 ### Zwischenstand 2026-09-06 – Auth-/Session-/RBAC-Liveprüfung im Codespace
 
