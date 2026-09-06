@@ -7,6 +7,8 @@
 
 Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante Funktionen. Detailmethoden bleiben im Quellcode maßgeblich.
 
+Die User-App ergänzt eine lokale Light/Dark-Auswahl unter `neutral.user.theme.v1`; Auswahl, Warmstart und Persistenz benötigen keine Serververbindung.
+
 ## Status
 
 - **VORHANDEN**: implementiert und aufrufbar.

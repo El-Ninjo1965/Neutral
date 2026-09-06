@@ -74,8 +74,8 @@ class AdminSettingsView {
 
         <div class="form-group">
           <label for="appId">Application ID *</label>
-          <input type="text" id="appId" name="appId" required value="${escapeHtmlSettings(this.settings.appId || 'neutral-app')}" />
-          <small>Lowercase, no spaces (for system use)</small>
+          <input type="text" id="appId" name="appId" value="${escapeHtmlSettings(this.settings.appId || 'neutral-app')}" readonly disabled />
+          <small>Technical application identity. It cannot be changed after installation.</small>
         </div>
       </fieldset>
 
@@ -206,7 +206,6 @@ class AdminSettingsView {
     };
     const data = {
       appName: formData.get('appName'),
-      appId: formData.get('appId'),
       homepage,
       settings: {
         theme: formData.get('theme'),

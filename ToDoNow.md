@@ -35,57 +35,63 @@
 ## B. Schreib-/Settings-Verträge
 
 ### B1 – Einheitliche Speicherbestätigungen
-- Status: OFFEN
-- Ursache: Allgemeiner UI-/Save-Vertrag muss noch im realen Produktivfluss für alle Schreibaktionen geprüft werden.
-- Hinweis: Kein generischer Save-Dialog-Mechanismus in diesem Fixblock verändert.
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: User-Settings zeigen bei erfolgreicher lokaler Persistenz einen sichtbaren Bestätigungsdialog und führen danach zur Startseite zurück; Fehler bleiben auf der Seite. Admin-Settings, Session-Invalidierung und bestehende Admin-Schreibaktionen zeigen Erfolg/Fehler über den gemeinsamen Admin-Hinweis.
 
 ### B2 – User Local Settings
-- Status: OFFEN
-- Ursache: Live-/UI-Regression mit echten User-Settings-Saves im produktiven Ablauf noch offen.
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Theme und User-Präferenzen werden lokal/offline gespeichert; Erfolg bestätigt und navigiert zurück, Fehler täuschen keinen Erfolg vor.
 
 ### B3 – Admin Settings
-- Status: OFFEN
-- Ursache: Verifizierte Backend-/UI-Korrektur nur für Rollen- und Loginpfad; allgemeiner Admin-Settings-Save-Flow weiterhin offen.
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Admin-Settings behalten die Seite nach Bestätigung und verwenden sichtbare Erfolg-/Fehlerhinweise.
 
 ### B4 – Application ID technisch prüfen und schützen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Application ID ist readonly/disabled und serverseitig unveränderbar; direkte API-Manipulation wird abgewiesen.
 
 ### B5 – Weitere sensible Systemfelder prüfen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Technische Identitätswerte werden nicht als normale editierbare Felder angeboten; Application Name bleibt editierbar.
 
 ### B6 – Application Name als gefahrlos änderbaren Anzeigenamen prüfen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Application Name bleibt persistent änderbar und wird weiterhin als Anzeigename verwendet.
 
 ## C. Access-/Admin-Verwaltung
 
 ### C1 – Permission Catalog
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Read-only-Katalog erklärt Zweck, Key, Beschreibung und Scope/Herkunft ohne gefährliche Edit/Delete-Aktionen.
 
 ### C2 – Session Overview
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Session-Übersicht zeigt Display Name/Username, User-ID, Rollen, Status, Issued, Expires und End-Action aus einem API-Request.
 
 ### C3 – Sessions manuell invalidieren/löschen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: Einzelne Sessions können nach Bestätigung serverseitig invalidiert werden; Erfolg/Fehler wird angezeigt.
 
 ## D. User-App UX / Modulvertrag
 
 ### D1 – User-App Light/Dark
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
 
 ### D2 – Theme persistent lokal speichern, Erststart Light
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
 
 ### D3 – User-Navigation/Button-States klar farbig
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
 
 ### D4 – redundanten `‹ Back`-Link entfernen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
 
 ### D5 – technische Modulbeschreibung aus normaler Modulansicht entfernen
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
 
 ### D6 – allgemeinen Modul-UI-Vertrag dokumentieren
-- Status: OFFEN
+- Status: CODE-SEITIG ERLEDIGT
+- Ergebnis: User-Module nutzen zentrale Navigation, keine automatische technische Beschreibung/Back-Navigation und bleiben Light/Dark-kompatibel.
 
 ## E. Live-Abnahme
 - Status: OFFEN

@@ -1595,6 +1595,21 @@ body[data-page="admin"] .gps-actions .gps-primary-action {
 .gps-heading { align-items: center; margin-bottom: 28px; }
 .gps-status { margin: 0; padding: 7px 10px; border-radius: 999px; background: #e5f2ec; color: #176b52; font-size: 0.82rem; font-weight: 700; }
 .gps-status.error { background: #f9e8e0; color: #9a4931; }
+
+.user-settings-field { display: block; margin-bottom: 8px; color: #183b2d; font-weight: 700; }
+.user-settings-select { width: 100%; max-width: 260px; padding: 10px 12px; border: 1px solid #cfe0d8; border-radius: 8px; background: #fff; color: #17211d; }
+html[data-user-theme="dark"] .user-app { background: #0b1220; color: #edf3ff; }
+html[data-user-theme="dark"] .user-app-shell,
+html[data-user-theme="dark"] .user-module-card,
+html[data-user-theme="dark"] .user-settings-card,
+html[data-user-theme="dark"] .user-settings-toggle { background: #111b2d; border-color: #2d3d63; }
+html[data-user-theme="dark"] .user-app-brand,
+html[data-user-theme="dark"] .user-app-panel h1,
+html[data-user-theme="dark"] .user-settings-field { color: #edf3ff; }
+html[data-user-theme="dark"] .user-app-nav { border-color: #23314d; }
+html[data-user-theme="dark"] .user-app-nav-item { color: #9db0c8; }
+html[data-user-theme="dark"] .user-app-nav-item.active { color: #a6bdff; border-bottom-color: #7aa2ff; }
+html[data-user-theme="dark"] .user-settings-select { background: #17263d; border-color: #2d3d63; color: #edf3ff; }
 .gps-location-card { padding: 20px; border: 1px solid #e1eae4; border-radius: 8px; background: #f8fbf9; }
 .gps-location-label { color: #5d786b; font-size: 0.8rem; font-weight: 700; }
 .gps-position { margin: 15px 0 0; }

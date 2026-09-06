@@ -70,7 +70,7 @@ const update = (updates, actor = 'system') => {
 
     const updated = {
       appName: updates.appName !== undefined ? updates.appName : current.appName,
-      appId: updates.appId !== undefined ? updates.appId : current.appId,
+      appId: current.appId,
       homepage: homepageValue,
       settings
     };

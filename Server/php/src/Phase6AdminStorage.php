@@ -54,9 +54,14 @@ final class Phase6SettingsService
            $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
        );
        $settings['homepage'] = $homepage;
+       $requestedAppId = array_key_exists('appId', $payload) ? trim((string) $payload['appId']) : $current['appId'];
+       if ($requestedAppId !== $current['appId']) {
+           throw new \RuntimeException('Application ID is a technical identity and cannot be changed.');
+       }
+
        $next = [
            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
-           'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
+           'appId' => $current['appId'],
            'homepage' => $homepage,
            'settings' => $settings,
        ];

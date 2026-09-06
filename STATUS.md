@@ -10,6 +10,18 @@ Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie veränder
 
 Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der vollständige allgemeine Modulvertrag sind vorhanden. Offen bleiben sichere Drittanbieterprovider, externe Portabilitätsabnahme und vollständige Produktionsprüfung.
 
+### Zwischenstand 2026-09-06 – Settings-, Session- und User-UI-Verträge
+
+Code-seitig umgesetzt und fokussiert syntaktisch geprüft:
+
+- Application ID bleibt als technische Identität readonly und wird auch bei direktem API-Schreibversuch serverseitig abgewiesen; Application Name bleibt als Anzeigename änderbar.
+- User-Settings speichern Theme und Präferenzen lokal/offline. Erfolgreiches Speichern bestätigt und führt zur Startseite; Persistenzfehler bleiben sichtbar auf der Settings-Seite.
+- Permission Catalog ist als erklärter read-only Katalog mit Key, Beschreibung und Scope dargestellt.
+- Session Overview zeigt Benutzeridentität, User-ID, Rollen, Status, Issued und Expires; einzelne Sessions können nach Bestätigung invalidiert werden.
+- Normale User-Modulansichten zeigen keine automatisch eingeblendete technische Modulbeschreibung und keinen redundanten generischen Back-Link. Light/Dark wird lokal persistent gespeichert und vor dem ersten Paint angewendet.
+
+Diese Punkte sind `CODE-SEITIG ERLEDIGT`, aber noch nicht als produktive oder reale Device-LIVE-Abnahme bestätigt. Host-, Browser-, Deployment- und Betreiberabhängigkeiten bleiben offen.
+
 ### Zwischenstand 2026-09-06 – Auth-/Session-/RBAC-Liveprüfung im Codespace
 
 Der lokale Codespace-Live-Check für den Tester-User ist grün: Benutzer `Tester` mit `user`-Rolle, Status `active`, ID `102` konnte sich erfolgreich anmelden; Session und CSRF-Cookie wurden gesetzt; `/api/auth/me` lieferte den erwarteten `user`-Kontext; `/api/admin/users` wies für dieselbe Sitzung `403 FORBIDDEN` zurück. Damit ist der A4-Teil „Auth/Session/RBAC nach Login verifizieren“ lokal bestätigt. Die verbleibenden B–F-Punkte (Settings-, UI-, Device-, Freeze- und Deployment-Abnahmen) sind weiterhin offen und werden nicht als bestanden markiert.

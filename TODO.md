@@ -11,6 +11,8 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 **Status:** die im Core-Freeze aufgestellten Verträge für neutrale Landingpage, zentrale Homepage-Konfiguration, lokale Settings-UX, entfernte GPS-User-Diagnose und temporäre Startup-Diagnose sind im Repository verifiziert. Die vollständige Node-Testsuite und der PHP 8.1+-Lint sind grün. Der lokale Codespace-Live-Check für Tester-Login/Session/RBAC (`Tester`, `user`, ID `102`) ist ebenfalls erfolgreich; echte Host-/Geräte-/Deployment-Abnahmen für den Gesamtfreeze-Block bleiben ausdrücklich offen.
 
+**2026-09-06 – CODE-SEITIG ERLEDIGT:** ToDoNow B1–B6, C1–C3 und D1–D6 sind umgesetzt. LIVE-/BETREIBERABHÄNGIG bleiben Produktionshost, reale Browser-/Device-Abnahme, Deployment-Smoke und Freeze-Bewertung E–F.
+
 ## 1. Installation und Produktionssicherheit
 
 **Klassifikation:** GEMISCHT – Teilweise autonom im Codespace, teilweise Live-/Betreiberabhängig

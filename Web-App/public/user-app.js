@@ -13,9 +13,11 @@
   };
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
+  const USER_THEME_KEY = 'neutral.user.theme.v1';
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
+    theme: 'light',
     privacy: {
       shareLocationContext: false,
       shareImages: false,
@@ -23,6 +25,26 @@
       allowUsageAnalytics: false
     }
   });
+
+  const readUserTheme = () => {
+    try {
+      return localStorage.getItem(USER_THEME_KEY) === 'dark' ? 'dark' : 'light';
+    } catch (error) {
+      return 'light';
+    }
+  };
+
+  const applyUserTheme = (theme) => {
+    const nextTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.userTheme = nextTheme;
+    document.body.dataset.theme = nextTheme;
+    try {
+      localStorage.setItem(USER_THEME_KEY, nextTheme);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 
   const readUserPreferences = () => {
     try {
@@ -42,6 +64,7 @@
 
       return {
         visibleModuleIds: Array.isArray(parsed.visibleModuleIds) ? parsed.visibleModuleIds.filter((id) => typeof id === 'string' && id.trim()) : null,
+        theme: parsed.theme === 'dark' ? 'dark' : 'light',
         privacy: {
           shareLocationContext: !!parsed.privacy?.shareLocationContext,
           shareImages: !!parsed.privacy?.shareImages,
@@ -59,6 +82,7 @@
       visibleModuleIds: Array.isArray(preferences && preferences.visibleModuleIds)
         ? preferences.visibleModuleIds.filter((id) => typeof id === 'string' && id.trim())
         : null,
+      theme: preferences && preferences.theme === 'dark' ? 'dark' : 'light',
       privacy: {
         shareLocationContext: !!(preferences && preferences.privacy && preferences.privacy.shareLocationContext),
         shareImages: !!(preferences && preferences.privacy && preferences.privacy.shareImages),
@@ -72,6 +96,7 @@
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(nextPreferences));
+        localStorage.setItem(USER_THEME_KEY, nextPreferences.theme);
       }
     } catch (error) {
       // Restricted/offline storage must not throw; surface the failure to the caller instead.
@@ -362,6 +387,15 @@
           <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
         <div class="user-settings-card">
+          <h2>Appearance</h2>
+          <p>Choose the theme used by this app. It is stored locally and works offline.</p>
+          <label class="user-settings-field" for="userThemeSelect">Theme</label>
+          <select id="userThemeSelect" class="user-settings-select">
+            <option value="light" ${readUserTheme() === 'light' ? 'selected' : ''}>Light</option>
+            <option value="dark" ${readUserTheme() === 'dark' ? 'selected' : ''}>Dark</option>
+          </select>
+        </div>
+        <div class="user-settings-card">
           <h2>Functions</h2>
           <p>Choose which features should remain visible in your current workspace menu.</p>
           <div class="user-settings-module-list">
@@ -423,10 +457,20 @@
           privacySelection[input.dataset.userSettingPrivacy] = !!input.checked;
         });
 
+        const selectedTheme = document.getElementById('userThemeSelect')?.value === 'dark' ? 'dark' : 'light';
         const nextPreferences = saveUserPreferences({
           visibleModuleIds: moduleSelection,
-          privacy: privacySelection
+          privacy: privacySelection,
+          theme: selectedTheme
         });
+        const themePersisted = applyUserTheme(selectedTheme);
+        nextPreferences.persisted = nextPreferences.persisted && themePersisted;
+        if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
+          const currentUser = getCurrentUser();
+          if (currentUser && window.UserModule && typeof window.UserModule.updateProfile === 'function') {
+            window.UserModule.updateProfile({ privacy: nextPreferences.privacy });
+          }
+        }
 
         const status = document.getElementById('userSettingsStatus');
         if (status) {
@@ -437,16 +481,15 @@
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
           }
-        }
-
-        if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
-          const currentUser = getCurrentUser();
-          if (currentUser && window.UserModule && typeof window.UserModule.updateProfile === 'function') {
-            window.UserModule.updateProfile({ privacy: nextPreferences.privacy });
+          if (nextPreferences.persisted) {
+            window.alert('Settings saved successfully.');
+            state.activeView = 'home';
+            state.activeModuleId = null;
+            renderApp();
+            return;
           }
         }
 
-        renderApp();
       });
     }
 
@@ -454,7 +497,7 @@
     if (resetButton) {
       resetButton.addEventListener('click', () => {
         const moduleIds = getAvailableModulesForUser().map((module) => module.id);
-        const nextPreferences = saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy });
+        const nextPreferences = saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy, theme: readUserTheme() });
         const status = document.getElementById('userSettingsStatus');
         if (status) {
           if (nextPreferences.persisted) {
@@ -464,6 +507,7 @@
             status.textContent = 'Reset could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
           }
+          if (nextPreferences.persisted) window.alert('All functions are visible again.');
         }
         renderUserSettings();
       });
@@ -487,8 +531,6 @@
     state.activeModuleId = moduleId;
     content.innerHTML = `
       <section class="user-app-panel">
-        <button class="user-app-back" type="button" id="userModuleBackButton">Back</button>
-        <div class="user-app-module-intro">${escapeHtml(module.description || 'This module is active in the current application.')}</div>
         <div id="moduleUserInterface"></div>
       </section>
     `;
@@ -497,14 +539,6 @@
       module.renderUserInterface(target);
     } else {
       target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
-    }
-    const backButton = document.getElementById('userModuleBackButton');
-    if (backButton) {
-      backButton.addEventListener('click', () => {
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        renderApp();
-      });
     }
     content.focus();
   };
@@ -547,7 +581,6 @@
         state.activeModuleId = null;
         content.innerHTML = `
           <section class="user-app-panel">
-            <div class="user-app-module-intro">${escapeHtml(module.description || 'This module is active in the current application.')}</div>
             <div id="moduleUserInterface"></div>
           </section>
         `;
@@ -596,6 +629,7 @@
   };
 
   const renderApp = () => {
+    applyUserTheme(readUserTheme());
     applyBranding();
     renderActions();
     renderModuleNav();

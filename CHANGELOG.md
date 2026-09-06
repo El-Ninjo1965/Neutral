@@ -1,5 +1,13 @@
 # NEUTRAL – Changelog
 
+## 2026-09-06 – Settings-, Session- und User-App-Verträge
+
+- Application ID im Admin-Settings-UI readonly gemacht und im PHP-Settings-Service gegen direkte Manipulation geschützt; Application Name bleibt persistent änderbar.
+- User-Theme (Light/Dark) wird lokal vor dem ersten Paint geladen und gemeinsam mit lokalen Präferenzen offline persistent gespeichert. Erfolgsdialog navigiert nach Bestätigung zur Startseite, Fehler bleiben sichtbar.
+- Permission Catalog um erklärenden read-only Vertrag erweitert; Session Overview zeigt Identität/User-ID/Rollen/Status/Issued/Expires und unterstützt bestätigte Einzelinvalidierung.
+- Normale Modulansichten enthalten keine automatisch eingeblendete technische Beschreibung und keinen redundanten generischen Back-Link.
+- Node-Syntax, PHP-Lint, `git diff --check` und fokussierte Admin-/Auth-/User-Regressionen geprüft; produktive LIVE-/Device-Abnahme bleibt offen.
+
 ## 2026-09-06 – Tester-Login / Session / RBAC lokal im Codespace live verifiziert
 
 - Lokaler Live-Check gegen die Codespace-Instanz erfolgreich: `Tester` konnte sich mit `dw445566dw` (`user`, Status `active`, ID `102`) anmelden; `/api/auth/login` setzte das Session-/CSRF-Cookie, `/api/auth/me` bestätigte die Session als `user`, und `/api/admin/users` verweigerte den Zugriff mit `403 FORBIDDEN`.

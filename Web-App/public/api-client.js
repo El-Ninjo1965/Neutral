@@ -281,6 +281,10 @@ class ApiClient {
     return this.get('/api/admin/sessions');
   }
 
+  async invalidateSession(sessionId) {
+    return this.post('/api/admin/sessions/invalidate', { sessionId });
+  }
+
   async getAuditEntries(filters = {}) {
     const params = new URLSearchParams();
     Object.entries(filters || {}).forEach(([key, value]) => {

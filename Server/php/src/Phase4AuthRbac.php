@@ -17,6 +17,7 @@ final class Phase4AuthRbac
         'settings.read',
         'settings.write',
         'session.read',
+        'session.write',
         'audit.read',
         'backups.view',
         'backups.manage',
@@ -36,6 +37,7 @@ final class Phase4AuthRbac
             'settings.read',
             'settings.write',
             'session.read',
+            'session.write',
             'audit.read',
             'backups.view',
             'backups.manage',
@@ -49,6 +51,7 @@ final class Phase4AuthRbac
             'settings.read',
             'settings.write',
             'session.read',
+            'session.write',
             'audit.read',
         ],
         'viewer' => [
@@ -1119,6 +1122,10 @@ final class Phase4SettingsService
     public function update(array $payload): array
     {
        $current = $this->getAll();
+       $requestedAppId = array_key_exists('appId', $payload) ? trim((string) $payload['appId']) : $current['appId'];
+       if ($requestedAppId !== $current['appId']) {
+           throw new \RuntimeException('Application ID is a technical identity and cannot be changed.');
+       }
        $settings = is_array($payload['settings'] ?? null)
            ? $payload['settings']
            : (is_array($current['settings'] ?? null) ? $current['settings'] : []);
@@ -1128,7 +1135,7 @@ final class Phase4SettingsService
        $settings['homepage'] = $homepage;
        $next = [
            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
-           'appId' => trim((string) ($payload['appId'] ?? $current['appId'] ?? 'neutral-app')),
+           'appId' => $current['appId'],
            'homepage' => $homepage,
            'settings' => $settings,
        ];
@@ -1224,10 +1231,15 @@ final class Phase4SessionRegistry
     {
         $pdo = $this->requireDatabase()->connect();
         $statement = $pdo->query('
-            SELECT session_id, user_id, status, issued_at, last_seen_at, expires_at
-            FROM sessions
-            ORDER BY last_seen_at DESC
-            LIMIT 500
+        SELECT s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at,
+               GROUP_CONCAT(r.role_key ORDER BY r.role_key SEPARATOR ",") AS role_keys
+        FROM sessions s
+        LEFT JOIN users u ON u.id = s.user_id
+        LEFT JOIN user_roles ur ON ur.user_id = s.user_id
+        LEFT JOIN roles r ON r.id = ur.role_id
+        GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at
+        ORDER BY s.last_seen_at DESC
+        LIMIT 500
         ');
         if ($statement === false) {
             throw new \RuntimeException('Could not read sessions.');
@@ -1240,8 +1252,9 @@ final class Phase4SessionRegistry
             $public[] = [
                 'sessionId' => (string) ($session['session_id'] ?? ''),
                 'userId' => $session['user_id'] !== null ? (string) $session['user_id'] : '',
-                'username' => '',
-                'roles' => [],
+                'username' => (string) ($session['username'] ?? ''),
+                'displayName' => (string) ($session['display_name'] ?? ''),
+                'roles' => ($session['role_keys'] ?? '') !== '' ? explode(',', (string) $session['role_keys']) : [],
                 'status' => (string) ($session['status'] ?? 'active'),
                 'issuedAt' => (string) ($session['issued_at'] ?? ''),
                 'lastSeenAt' => (string) ($session['last_seen_at'] ?? ''),
@@ -1470,5 +1483,14 @@ final class Phase4AuthManager
     public function listSessions(): array
     {
         return $this->sessions->listPublic();
+    }
+
+    public function invalidateSession(string $sessionId): void
+    {
+        $sessionId = trim($sessionId);
+        if ($sessionId === '') {
+            throw new \InvalidArgumentException('Session ID is required.');
+        }
+        $this->sessions->remove($sessionId);
     }
 }

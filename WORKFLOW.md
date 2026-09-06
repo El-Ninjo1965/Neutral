@@ -406,6 +406,17 @@ Dieser Abschnitt enthält den fortlaufenden detaillierten Arbeitsnachweis. Abges
 - **Offene Punkte:** P2.6.
 - **Commit-ID:** `a4878f28fe932ecab39a27e570faf3c0d3076914`.
 
+### 2026-09-06 – B–D Settings-, Session- und User-App-Verträge
+
+- **Aufgabe:** Den ersten tatsächlich offenen Abschnitt des laufenden ToDoNow-Auftrags code-seitig fortführen: B1–B6, C1–C3 und D1–D6.
+- **Ausgangszustand:** User-Settings navigierten nach dem Speichern ohne Bestätigung, Application ID war editierbar, Permission-/Session-Ansichten waren unvollständig, und normale Modulansichten zeigten technische Beschreibungen sowie einen redundanten Back-Link.
+- **Änderung:** Lokale Light/Dark-Theme-Persistenz mit frühem Initialisieren ergänzt; User-Save/Reset mit sichtbarer Bestätigung bzw. Fehlerstatus versehen; Application ID im UI deaktiviert und in beiden PHP-Settings-Stores serverseitig geschützt; Application Name unverändert editierbar gelassen. Permission Catalog erklärt den read-only Registry-Vertrag. Session-Daten werden mit Benutzername/Display Name/Rollen aus einem Query geliefert und einzelne Sessions können über eine geschützte, CSRF-pflichtige Route invalidiert werden. Normale Modulansichten bleiben auf dem fachlichen Inhalt ohne technische Metadaten und generischen Back-Link.
+- **Betroffene Dateien:** `Web-App/public/index.html`, `Web-App/public/user-app.js`, `Web-App/public/style.css`, `Web-App/public/admin/index.js`, `Web-App/public/admin/settings-view.js`, `Web-App/public/api-client.js`, `Server/php/src/Phase4AuthRbac.php`, `Server/php/src/Phase4AdminStorage.php`, `Server/php/src/Phase6AdminStorage.php`, `Server/public/api/index.php`, `ToDoNow.md`, `STATUS.md`, `CHANGELOG.md`.
+- **Tests/Validierung:** `node --check` für geänderte JavaScript-Dateien, PHP-Lint für geänderte PHP-Dateien, `git diff --check`, fokussierte Admin-/Auth-/User-Regressionen. Bestehende PHP-Entry- und generierte-Projekt-Fehler im Sammellauf sind umgebungs-/baselinebezogen und werden nicht als bestanden ausgegeben.
+- **Ergebnis:** B1–B6, C1–C3 und D1–D6 sind code-seitig erledigt. Produktive LIVE-, Browser-/Device- und Deployment-Abnahmen bleiben offen.
+- **Bewusste Nichtänderung:** Keine automatische Session-Aufbewahrungsfrist und keine gefährlichen Permission-Edit/Delete-Funktionen eingeführt.
+- **Offene Punkte:** E und F sowie reale Produktiv-/Device-Prüfungen.
+
 ### 2026-08-29 – P2.6 Modulvertrag und globale Kompatibilität abschließen
 
 - **Aufgabe:** Generischen Modul-Lifecycle explizit machen und Referenzmodule von privaten Globals wegführen.

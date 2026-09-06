@@ -28,9 +28,13 @@ class AdminPermissionsView {
       <div class="admin-permissions-view">
         <div class="section-header">
           <h2>Permission Catalog</h2>
+          <p class="form-help">This read-only registry lists permissions provided by the Core and installed modules. Assign them through roles; do not delete catalog entries.</p>
         </div>
         ${permissions.length
-          ? `<div class="permission-list">${permissions.map((permission) => `<span class="chip">${permission}</span>`).join('')}</div>`
+          ? `<div class="permission-list">${permissions.map((permission) => {
+            const detail = result.ok ? AdminCommon.unwrapData(result, 'permissionDetails', []).find((entry) => entry.key === permission) : null;
+            return `<div class="permission-entry"><strong>${AdminCommon.formatValue(detail?.key || permission)}</strong><span>${AdminCommon.formatValue(detail?.description || 'Registered permission')}</span><small>${AdminCommon.formatValue(detail?.scope || 'Core registry')}</small></div>`;
+          }).join('')}</div>`
           : '<p class="empty-state">Permission catalog is not available.</p>'
         }
       </div>
@@ -58,20 +62,24 @@ class AdminSessionsView {
               <thead>
                 <tr>
                   <th>User</th>
+                  <th>User ID</th>
                   <th>Roles</th>
                   <th>Status</th>
                   <th>Issued</th>
                   <th>Expires</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 ${sessions.map((session) => `
                   <tr>
-                    <td>${session.username || session.userId || '—'}</td>
+                    <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}</td>
+                    <td>${session.userId || '—'}</td>
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
                     <td>${session.status || 'active'}</td>
                     <td>${session.issuedAt || '—'}</td>
                     <td>${session.expiresAt || '—'}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">End session</button></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -81,6 +89,18 @@ class AdminSessionsView {
         }
       </div>
     `;
+    container.querySelectorAll('[data-session-invalidate]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        if (!AdminCommon.confirmAction('End this session? The session will no longer authenticate.')) return;
+        const response = await this.api.invalidateSession(button.dataset.sessionInvalidate);
+        if (!response.ok) {
+          AdminCommon.showAlert(`Session could not be ended: ${response.error || 'Unknown error'}`, 'error');
+          return;
+        }
+        AdminCommon.showAlert('Session ended successfully.', 'success');
+        await this.init(container);
+      });
+    });
   }
 }
 

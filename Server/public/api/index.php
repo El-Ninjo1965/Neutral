@@ -447,6 +447,13 @@ if ($route === 'admin/sessions' && $method === 'GET') {
     JsonResponse::success(['sessions' => $authManager->listSessions()]);
 }
 
+if ($route === 'admin/sessions/invalidate' && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'session.write', true, $headers);
+    $payload = parse_json_body();
+    $authManager->invalidateSession((string) ($payload['sessionId'] ?? ''));
+    JsonResponse::success(['message' => 'Session invalidated.']);
+}
+
 if ($route === 'admin/permissions' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
     $permissions = $permissionService->all();

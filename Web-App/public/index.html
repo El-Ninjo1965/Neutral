@@ -6,6 +6,16 @@
     <meta name="neutral-base-path" content="" />
     <base href="/" />
     <title data-app-title>Neutral Platform</title>
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('neutral.user.theme.v1');
+          document.documentElement.dataset.userTheme = theme === 'dark' ? 'dark' : 'light';
+        } catch (error) {
+          document.documentElement.dataset.userTheme = 'light';
+        }
+      }());
+    </script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body class="user-app">
