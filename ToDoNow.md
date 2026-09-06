@@ -106,5 +106,50 @@
 ## Gesamtzustand
 - Code-seitig verifiziert: A1, A2, A3, A4 (lokal im Codespace)
 - Code-seitig verifiziert: B1–B6, C1–C3 und D1–D6
-- Live-/Deployment-Abnahme: produktiver Smoke und Tester-RBAC bestanden; Device-, Offline-, Neuinstallations- und Unterpfadabnahmen offen
+- Live-/Deployment-Abnahme: produktiver Smoke und Tester-RBAC (API-/Host-Ebene) bestanden; Device-, Offline-, Neuinstallations- und Unterpfadabnahmen offen
+- Device-Livetest 2026-09-07: kritischer User-App-Login-Blocker gefunden und codeseitig behoben (siehe G-Login); Device-Retest steht aus. Weitere Beobachtungen (G-Performance, G-Navigation/UX, G-i18n, G-Permission-Catalog, G-Session-Overview, G-System-Settings, G-GPS-Pro) sind dokumentiert, nicht umgesetzt.
 - Gesamtfreeze: OFFEN wegen der genannten externen Nachweise und lokaler `pdo_mysql`-Preflight-Blockade
+
+## G. Device-Livetest 2026-09-07 (echtes iPad, privater/Inkognito-Modus)
+
+Dieser Abschnitt dokumentiert ausschließlich die heutigen Betreiber-Beobachtungen aus dem realen Devicetest. Nur G-Login (kritisch) wurde codeseitig behoben; alle anderen Punkte sind bewusst nur dokumentiert, nicht implementiert.
+
+### G-Login – KRITISCH – User-App-Login gegen echte Serverbenutzer schlug fehl
+- Status: CODE-SEITIG BEHOBEN, DEVICE-RETEST AUSSTEHEND
+- Befund: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`, Status `active`; ein bereits eingerichteter `Developer`) konnten sich über die tatsächliche User-App-UI nicht anmelden (`User is not valid or not active.` / `Set up the local developer account before logging in.`).
+- Root Cause: `Web-App/public/user-app.js` verband das Login-Formular ausschließlich mit dem lokalen, `localStorage`-basierten Entwickler-Bootstrap (`LocalAuth`), nie mit dem echten Server-Endpunkt `/api/auth/login`. `index.html` lud `api-client.js` nicht.
+- Fix: `user-app.js` nutzt jetzt `ApiClient.login()/.logout()/.me()` gegen `/api/auth/*` (gleiches Muster wie die Admin-UI in `master-ui.js`); `index.html` lädt `api-client.js`; `service-worker.js` cached `api-client.js` zusätzlich. Kein Tester-/ID-102-/Developer-Sonderfall. `LocalAuth`/`core-auth.js` bleiben für den Setup-/Entwickler-Bootstrap-Fall unverändert bestehen, werden aber vom normalen Runtime-Login nicht mehr aufgerufen.
+- Regressionstest: `tests/user-app-server-auth.test.js` (5 Tests, neu).
+- Ausdrücklich offen: realer Retest von `Tester`- und `Developer`-Login über die echte Device-UI nach dem nächsten erfolgreichen Deployment.
+
+### G-Performance – Startverhalten
+- Status: OFFEN (nur beobachtet, nicht gemessen)
+- Befund: gefühlt schneller Start (~1s) im realen Test; keine belastbare Messung mit den vorhandenen Performance-Marken durchgeführt. Kein Handlungsbedarf ohne konkrete Messdaten.
+
+### G-Navigation/UX – mehrere kleinere Punkte
+- Status: OFFEN (nur dokumentiert, nicht umgesetzt)
+- Button-Stil/Icons/Active-/Normal-Zustände sollen überarbeitet werden.
+- Das Label „ACTIVE APPLICATION“ soll entfernt werden.
+- „Local Settings“ soll für angemeldete normale Benutzer zu „Settings“ umbenannt werden (Hinweis: `renderActions()` in `user-app.js` unterscheidet bereits nach `currentUser` zwischen „Local settings“ und „Settings“; zu prüfen bleibt, ob dies nach dem Login-Fix tatsächlich korrekt greift).
+
+### G-i18n – Gerätesprache/Fallback/manuelle Übersteuerung
+- Status: OFFEN (neuer langfristiger Punkt, nur dokumentiert)
+- Wunsch: automatische Erkennung der Gerätesprache, Fallback auf Englisch, persistente manuelle Übersteuerung, keine feste Begrenzung auf aktuell drei Sprachen (EN/DE/ES in den Admin-Settings). Keine Google-Translate-Integration vorgesehen.
+- Spannungspunkt: aktuelles Sprachdropdown in den System-Settings ist auf EN/DE/ES begrenzt (siehe G-System-Settings unten) – muss bei zukünftiger i18n-Arbeit mitbedacht werden.
+
+### G-Permission-Catalog – funktional, aber UX redundant/unklar
+- Status: OFFEN (nur dokumentiert, keine Architekturänderung)
+- Befund: Permission Catalog funktioniert, wirkt in der Darstellung aber redundant/unklar für Endanwender.
+
+### G-Session-Overview – positiv, neue Idee
+- Status: OFFEN (Idee, keine Umsetzung)
+- Befund: Session Overview funktioniert wie erwartet.
+- Neue Idee: „alle anderen Sessions invalidieren“-Aktion. Benötigt vor Umsetzung eine Sicherheitsbetrachtung (z. B. Verhalten bei gleichzeitigem Self-Invalidate, CSRF/Race-Bedingungen); nicht umgesetzt.
+
+### G-System-Settings – bestätigt korrekt
+- Status: BESTÄTIGT KORREKT
+- Befund: Application ID ist readonly, Application Name bleibt editierbar (wie in B5/B6 spezifiziert). Sprachdropdown aktuell nur EN/DE/ES – siehe Spannungspunkt unter G-i18n.
+
+### G-GPS-Pro – Zukunftsidee, nicht Teil des aktuellen Core-Freeze
+- Status: IDEE, AUSSERHALB DES AKTUELLEN SCOPES
+- Befund: Betreiberidee für eine erweiterte „GPS-Pro“-Funktionalität. Ausdrücklich nicht Teil der aktuellen Core-1.0-Freeze-Kriterien; keine Architekturentscheidung getroffen.

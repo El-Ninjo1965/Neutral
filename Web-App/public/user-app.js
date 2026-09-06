@@ -152,15 +152,78 @@
     };
   };
 
-  const getCurrentUser = () => {
-    if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
-      return window.UserModule.getCurrentUser();
+  // Real end-user login must go through the server-authenticated session
+  // (ApiClient -> /api/auth/*), never through the local, storage-only
+  // developer bootstrap (LocalAuth/CoreAuth local fallback). serverUser holds
+  // the identity confirmed by the server for this tab; it is not persisted to
+  // localStorage and is re-derived on every reload via restoreServerSession().
+  let serverUser = null;
+
+  const getServerApiClient = () => (typeof window.ApiClient === 'function' ? new window.ApiClient() : null);
+
+  const extractServerAuthData = (result) => {
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+      return null;
     }
-    if (window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function') {
-      return window.CoreAuth.getCurrentUser();
+    return result.data;
+  };
+
+  const normalizeServerUser = (identityData) => {
+    const userRecord = identityData && identityData.user && typeof identityData.user === 'object'
+      ? identityData.user
+      : null;
+    if (!userRecord) return null;
+
+    const resolvedRoles = Array.isArray(identityData.roles) && identityData.roles.length
+      ? identityData.roles
+      : (Array.isArray(userRecord.roles) ? userRecord.roles : []);
+    const resolvedPermissions = Array.isArray(identityData.permissions) && identityData.permissions.length
+      ? identityData.permissions
+      : (Array.isArray(userRecord.permissions) ? userRecord.permissions : []);
+
+    return {
+      ...userRecord,
+      roles: Array.from(new Set(resolvedRoles.map((role) => String(role || '').trim()).filter(Boolean))),
+      permissions: Array.from(new Set(resolvedPermissions.map((permission) => String(permission || '').trim()).filter(Boolean))),
+      status: typeof userRecord.status === 'string' && userRecord.status.trim() ? userRecord.status : 'active'
+    };
+  };
+
+  const applyServerUser = (identityData) => {
+    const user = normalizeServerUser(identityData);
+    serverUser = user;
+    if (user) {
+      if (window.CoreAuth && typeof window.CoreAuth === 'object') window.CoreAuth.currentUser = user;
+      if (window.UserModule && typeof window.UserModule === 'object') window.UserModule.currentUser = user;
     }
+    return user;
+  };
+
+  const clearServerUser = () => {
+    serverUser = null;
+    if (window.CoreAuth && typeof window.CoreAuth === 'object') window.CoreAuth.currentUser = null;
+    if (window.UserModule && typeof window.UserModule === 'object') window.UserModule.currentUser = null;
+  };
+
+  // Restores an existing server session (e.g. after a page reload) via the
+  // cookie-backed /api/auth/me endpoint. Never falls back to local storage.
+  const restoreServerSession = async () => {
+    const apiClient = getServerApiClient();
+    if (!apiClient) return null;
+    try {
+      const sessionResult = await apiClient.me();
+      const sessionData = extractServerAuthData(sessionResult);
+      if (sessionResult.ok && sessionData && sessionData.user) {
+        return applyServerUser(sessionData);
+      }
+    } catch (error) {
+      // No active server session; treat as anonymous.
+    }
+    clearServerUser();
     return null;
   };
+
+  const getCurrentUser = () => serverUser;
 
   const getAppName = () => {
     const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
@@ -272,11 +335,11 @@
     const logoutButton = document.getElementById('userLogoutButton');
     if (logoutButton) {
       logoutButton.addEventListener('click', async () => {
-        if (window.LocalAuth && typeof window.LocalAuth.logout === 'function') {
-          await window.LocalAuth.logout();
-        } else if (window.UserModule && typeof window.UserModule.logout === 'function') {
-          await window.UserModule.logout();
+        const apiClient = getServerApiClient();
+        if (apiClient) {
+          await apiClient.logout();
         }
+        clearServerUser();
         state.activeView = 'home';
         state.activeModuleId = null;
         renderApp();
@@ -347,16 +410,39 @@
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
 
-      if (!window.LocalAuth || typeof window.LocalAuth.login !== 'function') {
+      const apiClient = getServerApiClient();
+      if (!apiClient) {
         status.className = 'message error';
-        status.textContent = 'Local authentication is not available.';
+        status.textContent = 'Server authentication client is not available.';
         return;
       }
 
-      const result = await window.LocalAuth.login({ username, password });
-      if (!result || !result.ok) {
+      status.className = 'message info';
+      status.textContent = 'Signing in…';
+
+      let loginResult;
+      try {
+        loginResult = await apiClient.login(username, password);
+      } catch (error) {
         status.className = 'message error';
-        status.textContent = result && result.message ? result.message : 'Authentication failed.';
+        status.textContent = 'Authentication failed. Check your connection and try again.';
+        return;
+      }
+
+      const loginData = extractServerAuthData(loginResult);
+      if (!loginResult.ok || !loginData) {
+        const serverError = loginResult && loginResult.data && loginResult.data.error && loginResult.data.error.message
+          ? loginResult.data.error.message
+          : (loginResult && loginResult.error ? loginResult.error : 'Authentication failed.');
+        status.className = 'message error';
+        status.textContent = serverError;
+        return;
+      }
+
+      const user = applyServerUser(loginData);
+      if (!user) {
+        status.className = 'message error';
+        status.textContent = 'No authenticated user was returned by the server.';
         return;
       }
 
@@ -660,6 +746,7 @@
           if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
           await window.CoreStartup.startBackground();
         }
+        await restoreServerSession();
       } catch (error) {
         if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
           window.CoreErrorHandler.handle(error, { type: 'background-startup' });

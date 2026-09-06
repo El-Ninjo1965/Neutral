@@ -81,3 +81,13 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 - verbleibende Browser-/Geräteunterschiede, sofern sichtbar, dokumentiert als Live-Abnahme und ggf. als `VORSCHLAG – noch nicht beschlossen/umgesetzt` festhalten.
 
 **Abnahme:** Reale Gerätesmokes auf iPad Safari und Android Chrome bestätigen den neutralen GPS-Referenzfluss ohne UI-Redundanz, ohne unerwartete Permission-Prompts und mit funktionierendem Share-/Fallback-Handling.
+
+## 6. Aus Device-Livetest 2026-09-07 abgeleitete langfristige Punkte
+
+**Klassifikation:** GEMISCHT – Login-Fix codeseitig erledigt, Retest live; übrige Punkte reine Beobachtung ohne Umsetzung
+
+- **DRINGEND – Retest erforderlich:** realer Login von `Tester` und `Developer` über die echte User-App-UI auf einem physischen Gerät nach dem nächsten erfolgreichen Deployment (Root Cause behoben, siehe `ToDoNow.md` Abschnitt G-Login, `WORKFLOW.md`/`CHANGELOG.md` 2026-09-07),
+- Internationalisierung (Gerätesprache automatisch erkennen, Fallback Englisch, persistente manuelle Übersteuerung, keine feste Sprachbegrenzung) – neuer langfristiger Punkt, noch keine Umsetzung, keine Architekturentscheidung getroffen,
+- Session Overview: Idee „alle anderen Sessions invalidieren“ – benötigt vor Umsetzung eine Sicherheitsbetrachtung (Self-Invalidate-Verhalten, Race-/CSRF-Bedingungen),
+- Navigation/UX-Feinschliff (Button-Stil/Icons/Active-Zustände, Entfernen des Labels „ACTIVE APPLICATION“, „Local Settings“ → „Settings“ für angemeldete Benutzer) – nur beobachtet, keine Priorisierung getroffen,
+- GPS-Pro – ausdrücklich als Zukunftsidee außerhalb des aktuellen Core-1.0-Freeze-Scopes vermerkt, keine Architekturentscheidung.

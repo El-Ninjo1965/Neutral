@@ -1,5 +1,13 @@
 # NEUTRAL – Changelog
 
+## 2026-09-07 – Kritischer User-App-Login-Blocker aus Device-Livetest behoben
+
+- Realer iPad-Devicetest gegen die produktive User-App-UI ergab: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich nicht über die tatsächliche Login-Oberfläche anmelden (`User is not valid or not active.` / `Set up the local developer account before logging in.`).
+- Root Cause (per Quelltextanalyse bewiesen): `Web-App/public/user-app.js` verband das Login-Formular ausschließlich mit dem rein lokalen, `localStorage`-basierten Entwickler-Bootstrap `LocalAuth`, nie mit dem echten Server-Endpunkt `/api/auth/login`; `index.html` lud den Server-Auth-Client `api-client.js` nicht. Die Admin-UI (`master-ui.js`) war bereits korrekt verdrahtet.
+- Fix: `user-app.js` nutzt jetzt `ApiClient.login()/.logout()/.me()` gegen `/api/auth/*`, `index.html` lädt `api-client.js`, `service-worker.js` cached `api-client.js` zusätzlich, damit der Offline-/Warmstart-Vertrag bestehen bleibt. Kein Tester-/ID-102-/Developer-Sonderfall; `LocalAuth`/`core-auth.js` bleiben unverändert für den Setup-/Entwickler-Bootstrap-Fall bestehen.
+- Neuer Regressionstest `tests/user-app-server-auth.test.js` (5 Tests) pinnt die Architektur. Vollständige Suite: 382/382 bestanden (377 vorher + 5 neue). PHP-Lint, `node --check`, `git diff --check`, Secret-Scan und Produktionspaket-Build erfolgreich.
+- Weitere heutige Device-Live-Beobachtungen (Performance, Navigation/UX, i18n, Permission-Catalog-UX, Session-Overview-Idee, System-Settings-Bestätigung, GPS-Pro-Zukunftsidee) sind in `ToDoNow.md` Abschnitt G dokumentiert, aber bewusst nicht umgesetzt. Device-Retest des Logins steht noch aus; kein Core-1.0-Freeze erklärt.
+
 ## 2026-09-06 – CI-/FTPS-Fehler behoben: nativer Node-`SIGABRT` in `tests/app-bootstrap.test.js`
 
 - FTPS Deploy [`34014196091`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34014196091) für Commit `1e76a64` scheiterte an der Teststufe mit `SIGABRT`/`ERR_TEST_FAILURE`. Root Cause bewiesen (nicht vermutet): ein bekannter Upstream-Node.js-Bug (`nodejs/node#63970`) im nativen Fast-Path von `fs.cpSync({recursive:true})`, ausgelöst beim Kopieren des `.git`-Baums einer Test-Fixture in `tests/app-bootstrap.test.js`. Die im Log sichtbare PHP-Version 8.3.6 war nachweislich nur Korrelation, keine Ursache.

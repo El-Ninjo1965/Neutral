@@ -6,6 +6,27 @@
 
 Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
 
+### Zwischenstand 2026-09-07 – Device-Livetest deckt kritischen Login-Blocker auf; Root Cause behoben (Setup-first)
+
+Ein realer iPad-Devicetest (privater Modus) gegen die produktive User-App-UI ergab: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich **nicht** über die tatsächliche Login-Oberfläche der User-App anmelden (`User is not valid or not active.` bzw. `Set up the local developer account before logging in.`). Das steht **nicht im Widerspruch** zum oben dokumentierten produktiven `Tester`-Check „E/F-Freeze-Prüfung“: jener Check erfolgte per direktem HTTP-Aufruf gegen `/api/auth/login` (API-/Host-Ebene) und war korrekt; der jetzt gefundene Fehler betrifft ausschließlich die Verdrahtung der echten User-App-UI (`Web-App/public/user-app.js`), die diesen Endpunkt nie aufrief.
+
+**Root Cause (Codeebene, bewiesen durch Quelltextanalyse):** `Web-App/public/user-app.js` – die tatsächlich an Geräte ausgelieferte User-App – verband ihr Login-Formular ausschließlich mit `window.LocalAuth.login()` (`Web-App/core/local-auth.js`), einem rein lokalen, `localStorage`-basierten Entwickler-Bootstrap-Mechanismus ohne jede Serveranbindung (siehe `Functions.md`: „kein Ersatz für Serversession“). `Web-App/public/index.html` lud zudem `api-client.js` (den echten Server-Auth-Client) gar nicht. Die Admin-UI (`Web-App/public/master-ui.js`) nutzte bereits korrekt `ApiClient.login()`/`ApiClient.me()`/`ApiClient.logout()` gegen `/api/auth/*` – dieses Muster wurde für die User-App übernommen.
+
+**Fix (kleinstmöglich, kein neuer Auth-Mechanismus, kein Tester-/Developer-Sonderfall):**
+- `index.html` lädt jetzt `api-client.js` vor `user-app.js`.
+- Login-Submit ruft `new window.ApiClient().login(username, password)` gegen `/api/auth/login` auf und übernimmt die Serveridentität (Rollen/Berechtigungen) 1:1 nach dem bei `master-ui.js` bewährten Muster.
+- Logout ruft `ApiClient.logout()` gegen `/api/auth/logout` auf.
+- Ein neues `restoreServerSession()` stellt eine bestehende Server-Session beim Laden über `ApiClient.me()` wieder her (Cookie-basiert), analog zu `master-ui.js`s `init()`.
+- `getCurrentUser()` liefert ausschließlich die vom Server bestätigte Identität; `LocalAuth`/`CoreAuth`-lokale Fallbacks werden vom Runtime-Login-Pfad nicht mehr erreicht.
+- `Web-App/public/service-worker.js` cached jetzt zusätzlich `api-client.js` als Teil des App-Shells, damit der Offline-/Warmstart-Vertrag durch die neue Abhängigkeit nicht bricht.
+- `Web-App/core/local-auth.js`/`core-auth.js` bleiben unverändert für den Setup-/Entwickler-Bootstrap-Fall bestehen; sie werden nur nicht mehr vom normalen User-App-Login aufgerufen.
+
+**Regressionstest:** neue Datei `tests/user-app-server-auth.test.js` (5 Tests) pinnt per Quelltextprüfung, dass der Login-Handler `ApiClient.login()` statt `LocalAuth.login()` aufruft, Logout serverseitig beendet, eine bestehende Session per `ApiClient.me()` wiederhergestellt wird, `getCurrentUser()` nur die Serveridentität widerspiegelt, und `index.html` `api-client.js` vor `user-app.js` lädt.
+
+**Lokale Verifikation:** vollständige Suite `PATH="/usr/local/php/current/bin:$PATH" npm test`: **382/382 bestanden** (377 vorher + 5 neue); PHP-Lint aller `Server/*.php`-Dateien mit PHP 8.4.15 fehlerfrei; `node --check` auf `user-app.js`/`service-worker.js` fehlerfrei; `git diff --check` sauber; Secret-/Credential-Scan über den Diff ohne Treffer; `npm run package:production` erfolgreich (103 Dateien).
+
+**Ausdrücklich weiterhin offen:** Dieser Fix ist nur codeseitig/quelltextlich verifiziert. Der reale Login von `Tester`/`Developer` über die echte User-App-UI auf einem physischen Gerät muss vom Betreiber nach dem nächsten erfolgreichen Deployment erneut getestet werden – dieser Zwischenstand erklärt den Device-Login-Test **nicht** als bestanden. Weitere heute vom Betreiber gemeldete Device-Live-Beobachtungen (Performance, Navigation/UX, i18n, Permission-Catalog-UX, Session-Overview-Idee „andere Sessions invalidieren“, GPS-Pro-Zukunftsidee) sind in `ToDoNow.md` dokumentiert, aber bewusst noch nicht umgesetzt.
+
 ## Gesamturteil
 
 Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der vollständige allgemeine Modulvertrag sind vorhanden. Offen bleiben sichere Drittanbieterprovider, externe Portabilitätsabnahme und vollständige Produktionsprüfung.
