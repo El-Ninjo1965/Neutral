@@ -159,12 +159,22 @@
   // localStorage and is re-derived on every reload via restoreServerSession().
   let serverUser = null;
 
-  const getServerApiClient = () => {
+  const getServerApiClient = (scope = 'user') => {
     const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
     const ApiCtor = eligibleScope && typeof eligibleScope.ApiClient === 'function'
       ? eligibleScope.ApiClient
       : (typeof window !== 'undefined' && typeof window.ApiClient === 'function' ? window.ApiClient : null);
-    return ApiCtor ? new ApiCtor() : null;
+    if (!ApiCtor) {
+      return null;
+    }
+    const client = new ApiCtor();
+    if (scope === 'admin' || scope === 'developer') {
+      client.setSessionScope('admin');
+      client.setAuthRole('admin');
+    } else {
+      client.setSessionScope('user');
+    }
+    return client;
   };
 
   const extractServerAuthData = (result) => {

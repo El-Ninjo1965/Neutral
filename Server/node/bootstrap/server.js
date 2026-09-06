@@ -494,6 +494,16 @@ const getRequestRoles = (req) => {
     .filter((role) => ['admin', 'developer', 'manager', 'member', 'user', 'viewer'].includes(role));
 };
 
+const resolveCookieNamesForRequest = (req) => {
+  const roles = getRequestRoles(req);
+  const wantsAdminSession = roles.some((role) => role === 'admin' || role === 'developer')
+    || (req && req.url && typeof req.url === 'string' && req.url.includes('/api/admin/'));
+
+  return wantsAdminSession
+    ? { cookieName: authConfig.adminCookieName || 'neutral_admin_session', csrfCookieName: authConfig.adminCsrfCookieName || 'neutral_admin_csrf' }
+    : { cookieName: authConfig.cookieName || 'neutral_session', csrfCookieName: authConfig.csrfCookieName || 'neutral_csrf' };
+};
+
 const getRequestToken = (req) => {
   if (!req || !req.headers) {
     return '';
@@ -596,7 +606,8 @@ const setResponseCookies = (res, cookies) => {
  */
 const resolveSessionIdentity = async (req) => {
   const cookies = parseCookies(req);
-  const sessionId = cookies[authConfig.cookieName];
+  const cookieNames = resolveCookieNamesForRequest(req);
+  const sessionId = cookies[cookieNames.cookieName] || cookies[authConfig.cookieName];
   if (!sessionId) {
     return null;
   }
@@ -981,6 +992,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     readJsonBody(req)
       .then(async (payload) => {
         const ip = clientIp(req);
+        const cookieNames = resolveCookieNamesForRequest(req);
         const result = await authService.login({ username: payload.username, password: payload.password, ip });
 
         if (!result.ok) {
@@ -990,10 +1002,10 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
         }
 
         const cookies = [
-          buildCookie(authConfig.cookieName, result.session.sessionId, { maxAgeMs: authConfig.sessionTtlMs, httpOnly: true }),
+          buildCookie(cookieNames.cookieName, result.session.sessionId, { maxAgeMs: authConfig.sessionTtlMs, httpOnly: true }),
           // CSRF cookie is intentionally NOT HttpOnly: the frontend must read
           // it to echo it back in the x-csrf-token header (double-submit).
-          buildCookie(authConfig.csrfCookieName, result.session.csrfToken, { maxAgeMs: authConfig.sessionTtlMs, httpOnly: false })
+          buildCookie(cookieNames.csrfCookieName, result.session.csrfToken, { maxAgeMs: authConfig.sessionTtlMs, httpOnly: false })
         ];
         setResponseCookies(res, cookies);
 
@@ -1012,11 +1024,14 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
 
   if (pathname === `${apiBase}/auth/logout` && req && req.method === 'POST') {
     const cookies = parseCookies(req);
-    const sessionId = cookies[authConfig.cookieName];
+    const cookieNames = resolveCookieNamesForRequest(req);
+    const sessionId = cookies[cookieNames.cookieName] || cookies[authConfig.cookieName];
 
     (sessionId ? authService.logout(sessionId) : Promise.resolve({ ok: true }))
       .then(() => {
         setResponseCookies(res, [
+          buildCookie(cookieNames.cookieName, '', { maxAgeMs: 0, httpOnly: true }),
+          buildCookie(cookieNames.csrfCookieName, '', { maxAgeMs: 0, httpOnly: false }),
           buildCookie(authConfig.cookieName, '', { maxAgeMs: 0, httpOnly: true }),
           buildCookie(authConfig.csrfCookieName, '', { maxAgeMs: 0, httpOnly: false })
         ]);

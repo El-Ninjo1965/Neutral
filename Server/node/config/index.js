@@ -180,7 +180,9 @@ module.exports = {
     sessionTtlMs: Number(process.env.AUTH_SESSION_TTL_MS || 1000 * 60 * 60 * 12), // 12h default
     sessionRenewThresholdMs: Number(process.env.AUTH_SESSION_RENEW_THRESHOLD_MS || 1000 * 60 * 30), // renew when <30min left
     cookieName: process.env.AUTH_SESSION_COOKIE_NAME || 'neutral_session',
+    adminCookieName: process.env.AUTH_ADMIN_SESSION_COOKIE_NAME || 'neutral_admin_session',
     csrfCookieName: process.env.AUTH_CSRF_COOKIE_NAME || 'neutral_csrf',
+    adminCsrfCookieName: process.env.AUTH_ADMIN_CSRF_COOKIE_NAME || 'neutral_admin_csrf',
     csrfHeaderName: 'x-csrf-token',
     secureCookies: process.env.NODE_ENV === 'production',
     sameSite: process.env.AUTH_COOKIE_SAMESITE || 'Lax',

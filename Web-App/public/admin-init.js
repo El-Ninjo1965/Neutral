@@ -25,6 +25,7 @@
       const ApiClientCtor = getClientConstructor();
       const apiClient = ApiClientCtor ? new ApiClientCtor() : null;
       if (!apiClient) return false;
+      apiClient.setSessionScope('admin');
       apiClient.setAuthRole('admin');
       let container = document.getElementById('adminPanel');
       if (!container) {

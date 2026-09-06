@@ -1,4 +1,20 @@
+
+## 2026-09-06 – Device-live confirmation and session-scope priority reset
+
+- Real device test on the target app: Tester login through the normal user app succeeded, and the UI confirmed `Signed in as Tester (user)`.
+- Real device test on the target app: Developer / Bootstrap Administrator login through the normal user app succeeded, and the UI confirmed `Signed in as Bootstrap Administrator (admin)`.
+- These confirmations replace the earlier historical login path failures as the active device-live status.
+- Current active priority: separate User-App and Admin-Interface session contexts so a logged-in admin does not overwrite the user app, and vice versa.
+- Historical login anomalies (`User is not valid or active`, `Set up the local developer account before logging in`, `Server authentication client is not available`, `No authenticated user was returned by the server`) remain recorded as historical workflow evidence.
+
 # NEUTRAL – Changelog
+
+## 2026-09-07 – Fix: User/Admin session scopes separated and validated
+
+- Root cause: the runtime had been resolving a single shared session identifier for both user and admin contexts, so one login could overwrite the other and logout flows leaked across scopes.
+- Fix: cookie/session resolution now treats user and admin contexts separately (`neutral_session` / `neutral_admin_session`), with matching CSRF handling and scope-aware `/api/auth/me` resolution.
+- Regression coverage: `tests/session-auth.test.js` and `tests/admin-php-entry.test.js` confirm concurrent user/admin logins, isolated logout, and admin protection behavior.
+- Validated: full project suite passes under the supported PHP 8.1 runtime. The earlier historic device error `No authenticated user was returned by the server.` remains documented as evidence of a different prior envelope bug; it is not the current active failure.
 
 ## 2026-09-07 – Fix: PHP-Login-Envelope-Parsing in `user-app.js` und `api-client.js` korrigiert
 

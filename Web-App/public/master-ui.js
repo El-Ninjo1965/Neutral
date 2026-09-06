@@ -11,12 +11,22 @@
         : 'dashboard';
   const state = { activeView: defaultView, activeSettingsModuleId: null };
   const defaultApiBase = () => window.NeutralPublicPath.api('');
-  const getServerApiClient = () => {
+  const getServerApiClient = (scope = pageType === 'admin' || pageType === 'developer' ? 'admin' : 'user') => {
     const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
     const ApiCtor = eligibleScope && typeof eligibleScope.ApiClient === 'function'
       ? eligibleScope.ApiClient
       : (typeof window !== 'undefined' && typeof window.ApiClient === 'function' ? window.ApiClient : null);
-    return ApiCtor ? new ApiCtor() : null;
+    if (!ApiCtor) {
+      return null;
+    }
+    const client = new ApiCtor();
+    if (scope === 'admin' || scope === 'developer') {
+      client.setSessionScope('admin');
+      client.setAuthRole('admin');
+    } else {
+      client.setSessionScope('user');
+    }
+    return client;
   };
 
   const escapeHtml = (value) => String(value ?? '')

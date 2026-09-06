@@ -1298,18 +1298,64 @@ final class Phase4AuthManager
         $this->sessions = $sessions;
     }
 
-    public function startSession(): void
+    public function startSession(?string $scope = null): void
     {
-        $cookieName = trim((string) ($this->config->env()['AUTH_SESSION_COOKIE_NAME'] ?? 'neutral_session'));
-        Security::ensureSessionStarted($cookieName !== '' ? $cookieName : 'neutral_session');
+        $cookieName = $this->sessionCookieNameForScope($scope);
+        Security::ensureSessionStarted($cookieName);
+    }
+
+    public function sessionScopeFromHeaders(array $headers, ?string $fallback = null): string
+    {
+        $scopeHint = strtolower(trim((string) ($headers['x-session-scope'] ?? '')));
+        if ($scopeHint === 'admin') {
+            return 'admin';
+        }
+        if ($scopeHint === 'user') {
+            return 'user';
+        }
+
+        $roleHeader = strtolower(trim((string) ($headers['x-framework-role'] ?? $headers['x-user-role'] ?? $headers['x-admin-role'] ?? '')));
+        if ($roleHeader !== '') {
+            foreach (explode(',', $roleHeader) as $role) {
+                $value = strtolower(trim((string) $role));
+                if ($value === 'admin' || $value === 'developer') {
+                    return 'admin';
+                }
+            }
+        }
+
+        return $this->normalizeSessionScope($fallback);
+    }
+
+    public function sessionCookieNameForScope(?string $scope): string
+    {
+        $normalized = $this->normalizeSessionScope($scope);
+        $envKey = $normalized === 'admin' ? 'AUTH_ADMIN_SESSION_COOKIE_NAME' : 'AUTH_SESSION_COOKIE_NAME';
+        $configured = trim((string) ($this->config->env()[$envKey] ?? ''));
+        if ($normalized === 'admin') {
+            return $configured !== '' ? $configured : 'neutral_admin_session';
+        }
+        return $configured !== '' ? $configured : 'neutral_session';
+    }
+
+    public function csrfCookieNameForScope(?string $scope): string
+    {
+        $normalized = $this->normalizeSessionScope($scope);
+        $envKey = $normalized === 'admin' ? 'AUTH_ADMIN_CSRF_COOKIE_NAME' : 'AUTH_CSRF_COOKIE_NAME';
+        $configured = trim((string) ($this->config->env()[$envKey] ?? ''));
+        if ($normalized === 'admin') {
+            return $configured !== '' ? $configured : 'neutral_admin_csrf';
+        }
+        return $configured !== '' ? $configured : 'neutral_csrf';
     }
 
     /**
      * @return array<string,mixed>|null
      */
-    public function authenticate(string $username, string $password): ?array
+    public function authenticate(string $username, string $password, ?string $scope = null): ?array
     {
-        $this->startSession();
+        $scope = $this->normalizeSessionScope($scope);
+        $this->startSession($scope);
         $this->users->ensureBootstrapAdminFromEnv();
         $user = $this->users->authenticate($username, $password);
         if (!$user) {
@@ -1350,9 +1396,9 @@ final class Phase4AuthManager
     /**
      * @return array<string,mixed>|null
      */
-    public function identityFromSession(): ?array
+    public function identityFromSession(?string $scope = null): ?array
     {
-        $this->startSession();
+        $this->startSession($scope);
         $identity = $_SESSION['auth_identity'] ?? null;
         if (!is_array($identity)) {
             return null;
@@ -1437,9 +1483,9 @@ final class Phase4AuthManager
         ];
     }
 
-    public function logout(): void
+    public function logout(?string $scope = null): void
     {
-        $this->startSession();
+        $this->startSession($scope);
         $sessionId = session_id();
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
@@ -1455,14 +1501,31 @@ final class Phase4AuthManager
     /**
      * @return array<string,mixed>|null
      */
-    public function resolveIdentity(array $headers): ?array
+    public function resolveIdentity(array $headers, ?string $scope = null): ?array
     {
-        $sessionIdentity = $this->identityFromSession();
+        $resolvedScope = $this->normalizeSessionScope($scope ?? $this->sessionScopeFromHeaders($headers, $scope));
+        $sessionIdentity = $this->identityFromSession($resolvedScope);
         if ($sessionIdentity) {
             $sessionIdentity['via'] = 'session';
             return $sessionIdentity;
         }
+        if ($resolvedScope === 'admin') {
+            $legacySessionIdentity = $this->identityFromSession('user');
+            if ($legacySessionIdentity) {
+                $legacySessionIdentity['via'] = 'session';
+                return $legacySessionIdentity;
+            }
+        }
         return $this->bootstrapTokenIdentity($headers);
+    }
+
+    private function normalizeSessionScope(?string $scope): string
+    {
+        $value = strtolower(trim((string) ($scope ?? '')));
+        if ($value === 'admin' || $value === 'developer') {
+            return 'admin';
+        }
+        return 'user';
     }
 
     /**

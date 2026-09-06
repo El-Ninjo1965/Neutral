@@ -12,6 +12,12 @@ final class Security
         }
 
         session_name($cookieName);
+        $providedSessionId = isset($_COOKIE[$cookieName]) && is_string($_COOKIE[$cookieName])
+            ? trim((string) $_COOKIE[$cookieName])
+            : '';
+        if ($providedSessionId !== '') {
+            session_id($providedSessionId);
+        }
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',

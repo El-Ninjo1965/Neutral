@@ -150,6 +150,37 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.ok(result.cookies.neutral_csrf);
   });
 
+  test('1b. User and admin logins use separate session and CSRF cookies', async () => {
+    await createTestUser({ username: 'dual-user', email: 'dual-user@example.com', role: 'user' });
+    await createTestUser({ username: 'dual-admin', email: 'dual-admin@example.com', role: 'admin' });
+
+    const userLogin = await rawRequest('POST', '/api/auth/login', { payload: { username: 'dual-user', password: 'correct-horse-battery-staple' } });
+    const adminLogin = await rawRequest('POST', '/api/auth/login', {
+      payload: { username: 'dual-admin', password: 'correct-horse-battery-staple' },
+      headers: { 'x-framework-role': 'admin' }
+    });
+
+    assert.equal(userLogin.statusCode, 200);
+    assert.equal(adminLogin.statusCode, 200);
+    assert.ok(userLogin.cookies.neutral_session);
+    assert.ok(userLogin.cookies.neutral_csrf);
+    assert.ok(adminLogin.cookies.neutral_admin_session);
+    assert.ok(adminLogin.cookies.neutral_admin_csrf);
+    assert.equal(userLogin.cookies.neutral_admin_session, undefined);
+    assert.equal(adminLogin.cookies.neutral_session, undefined);
+
+    const userMe = await rawRequest('GET', '/api/auth/me', { cookies: { neutral_session: userLogin.cookies.neutral_session } });
+    const adminMe = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+
+    assert.equal(userMe.statusCode, 200);
+    assert.equal(userMe.body.user.username, 'dual-user');
+    assert.equal(adminMe.statusCode, 200);
+    assert.equal(adminMe.body.user.username, 'dual-admin');
+  });
+
   test('2. Bootstrap admin is created from env values when no seeded admin exists', async () => {
     const username = process.env.CORE_BOOTSTRAP_USERNAME || 'bootstrap-login-user';
     const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-horse-battery-staple';

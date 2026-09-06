@@ -275,7 +275,22 @@ if ($method === 'OPTIONS') {
 }
 
 $headers = request_headers_lower();
-$identity = $authManager->resolveIdentity($headers);
+$sessionScope = 'user';
+if (str_starts_with((string) ($route ?? ''), 'admin/')) {
+    $sessionScope = 'admin';
+} else {
+    $roleHeader = strtolower(trim((string) ($headers['x-framework-role'] ?? $headers['x-user-role'] ?? $headers['x-admin-role'] ?? '')));
+    if ($roleHeader !== '') {
+        foreach (explode(',', $roleHeader) as $role) {
+            $value = strtolower(trim((string) $role));
+            if ($value === 'admin' || $value === 'developer') {
+                $sessionScope = 'admin';
+                break;
+            }
+        }
+    }
+}
+$identity = $authManager->resolveIdentity($headers, $sessionScope);
 
 if ($route === 'status') {
     $database = $config->database();
@@ -320,7 +335,7 @@ if ($route === 'auth/login' && $method === 'POST') {
             header('Retry-After: ' . max(1, $rateState['retryAfter']));
             JsonResponse::error('Too many failed login attempts. Try again later.', 429);
         }
-        $result = $authManager->authenticate($username, $password);
+        $result = $authManager->authenticate($username, $password, $sessionScope);
         if (!$result) {
             $rateState = $loginLimiter->registerFailure($username, $clientIp);
             if (!$rateState['allowed']) {
@@ -338,7 +353,7 @@ if ($route === 'auth/login' && $method === 'POST') {
     }
 
     setcookie(
-        'neutral_csrf',
+        $authManager->csrfCookieNameForScope($sessionScope),
         (string) $result['csrfToken'],
         [
             'expires' => strtotime((string) $result['expiresAt']) ?: 0,
@@ -363,6 +378,7 @@ if ($route === 'auth/logout' && $method === 'POST') {
     if (!$identity || (($identity['via'] ?? '') !== 'session')) {
         JsonResponse::error('Not authenticated.', 401);
     }
+    $authManager->startSession($sessionScope);
     try {
         Security::assertValidCsrfToken(is_string($headers['x-csrf-token'] ?? null) ? $headers['x-csrf-token'] : null);
     } catch (Throwable $exception) {
@@ -370,7 +386,7 @@ if ($route === 'auth/logout' && $method === 'POST') {
     }
     $authManager->logout();
     setcookie(
-        'neutral_csrf',
+        $authManager->csrfCookieNameForScope($sessionScope),
         '',
         [
             'expires' => time() - 3600,

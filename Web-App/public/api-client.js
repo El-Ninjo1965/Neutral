@@ -34,17 +34,30 @@ class ApiClient {
     this.baseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.replace(/\/$/, '') : null;
     this.csrfToken = null;
     this.timeoutMs = 10000;
+    this.sessionScope = 'user';
+    this.sessionCookieName = 'neutral_session';
+    this.csrfCookieName = 'neutral_csrf';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       ...defaultHeaders
     };
   }
 
+  setSessionScope(scope = 'user') {
+    const normalized = scope === 'admin' || scope === 'developer' ? 'admin' : 'user';
+    this.sessionScope = normalized;
+    this.sessionCookieName = normalized === 'admin' ? 'neutral_admin_session' : 'neutral_session';
+    this.csrfCookieName = normalized === 'admin' ? 'neutral_admin_csrf' : 'neutral_csrf';
+    return this;
+  }
+
   setAuthRole(role) {
     if (role) {
       this.defaultHeaders['x-framework-role'] = role;
+      this.setSessionScope(role);
     } else {
       delete this.defaultHeaders['x-framework-role'];
+      this.setSessionScope('user');
     }
     return this;
   }
@@ -78,7 +91,7 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const url = this.baseUrl ? this.baseUrl + endpoint : resolveNeutralApiUrl(endpoint);
     const method = options.method || 'GET';
-    const csrf = this.csrfToken || this.getCookie('neutral_csrf');
+    const csrf = this.csrfToken || this.getCookie(this.csrfCookieName);
     const config = {
       method,
       credentials: 'same-origin',
@@ -208,7 +221,7 @@ class ApiClient {
 
   async download(endpoint) {
     const url = this.baseUrl ? this.baseUrl + endpoint : resolveNeutralApiUrl(endpoint);
-    const csrf = this.csrfToken || this.getCookie('neutral_csrf');
+    const csrf = this.csrfToken || this.getCookie(this.csrfCookieName);
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -376,7 +389,7 @@ class ApiClient {
   async login(username, password) {
     const result = await this.post('/api/auth/login', { username, password });
     const payload = this.extractEnvelopeData(result) || (result && result.ok && result.data && typeof result.data === 'object' ? result.data : null);
-    const csrf = (payload && payload.csrfToken) || (result && result.data && result.data.csrfToken) || (typeof document !== 'undefined' ? this.getCookie('neutral_csrf') : null);
+    const csrf = (payload && payload.csrfToken) || (result && result.data && result.data.csrfToken) || (typeof document !== 'undefined' ? this.getCookie(this.csrfCookieName) : null);
     if (csrf) {
       this.setCsrfToken(csrf);
     }

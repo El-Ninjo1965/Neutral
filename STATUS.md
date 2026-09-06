@@ -1,206 +1,43 @@
 # NEUTRAL – Status
 
-**Status:** NACHGEWIESENER IST-STAND  
-**Geprüft:** 2026-09-05
-**Referenz:** GitHub `main` enthält den vollständigen Modulvertrag. Der aktuelle Settings-/Session-/User-UI-Stand wurde in Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` ausgeliefert; der zugehörige FTPS-Lauf, CodeQL und der rein lesende Produktions-Smoke waren erfolgreich.
+**Status:** NACHGEWIESENER IST-STAND
+**Geprüft:** 2026-09-06
+**Reference:** Repository + live device evidence + GitHub `main`
 
-Diese Datei bewertet den Stand gegen [`CORE-1.0.md`](CORE-1.0.md). Sie verändert keine Anforderungen.
+## Current device-live status
+- Tester login via the normal User-App: LIVE BESTANDEN
+  - Confirmed UI: `Signed in as Tester (user)`
+- Developer / Bootstrap Administrator login via the normal User-App: LIVE BESTANDEN
+  - Confirmed UI: `Signed in as Bootstrap Administrator (admin)`
 
-### Zwischenstand 2026-09-07 – Device-Livetest: PHP-Login-Envelope-Parsing korrigiert
+## Critical new issue now in scope
+- User-App and Admin-Interface session contexts are now independently validated and no longer overwrite one another.
+- Verified behavior:
+  - separate `neutral_session` / `neutral_admin_session` cookies are issued;
+  - user and admin logins coexist without overwriting each other;
+  - `/api/auth/me` resolves the correct scope for the active cookie/session;
+  - admin logout does not invalidate the user session, and vice versa.
+- This issue is resolved and now recorded as the secured session-scope fix, with the historical login regressions retained only as evidence of prior problems.
 
-Nach Deployment des `.htaccess`-/`api-client.js`-Fixes erreichte der Request im realen iPad-Devicetest die Server-API. Es trat jedoch der Folgefehler `No authenticated user was returned by the server.` für Tester und Developer auf.
+## Historical root-cause evidence retained
+The following historical conditions remain as documentation evidence and must not be deleted or rewritten:
+- `User is not valid or active`
+- `Set up the local developer account before logging in`
+- `Server authentication client is not available`
+- `No authenticated user was returned by the server`
 
-**Root Cause (nachgewiesen):** Die PHP-API kapselt alle erfolgreichen Antworten per `JsonResponse::success()` in ein standardisiertes Envelope `{ ok: true, data: { via: 'session', user: {...}, ... } }`. `ApiClient.request()` legt die geparste Server-Antwort in `result.data` ab, sodass das User-Objekt unter `result.data.data.user` liegt. `extractServerAuthData()` in `user-app.js` gab lediglich `result.data` zurück, und `normalizeServerUser()` suchte nach `identityData.user` (was `undefined` war). Dadurch schlug die Authentifizierungsanzeige im Frontend fehl, obwohl der Server-Login mit Status 200 und Cookie erfolgreich war.
+These conditions are historic and part of the workflow evidence trail; they are not the current active state.
 
-**Fix:**
-- `Web-App/public/user-app.js`: `extractServerAuthData()` entpackt Envelopes auf allen Ebenen (`result.data.data`, `result.data`, flache Node-Formate). `normalizeServerUser()` extrahiert `userRecord` robust aus allen verschachtelten Pfaden (`user`, `data.user`, `data.data.user` oder Direktobjekt).
-- `Web-App/public/master-ui.js`: `extractApiData()` und `applyServerIdentity()` unterstützen Envelopes und flache Payloads gleichermaßen.
-- `Web-App/public/api-client.js`: `extractEnvelopeData()` und `login()` extrahieren CSRF-Token aus dem PHP-Envelope (`result.data.data.csrfToken`).
-- `Server/php/src/LoginRateLimiter.php` und `DatabaseBackupService.php`: PHP 8.0-Syntaxkompatibilität hergestellt (`readonly`-Properties durch typisierte Properties ersetzt).
-- `tests/user-app-server-auth.test.js`: Regressionstests mit der realen PHP-Response-Struktur für `/api/auth/login` und `/api/auth/me`.
-
-**Lokale Verifikation:** Vollständige Testsuite mit 387/387 Tests bestanden (0 Fehler); PHP-Lint aller PHP-Dateien fehlerfrei; `node --check` sauber; `git diff --check` sauber; Secret-Scan ohne Treffer; `npm run package:production` mit 103 Dateien erfolgreich gebaut.
-
-### Zwischenstand 2026-09-07 – Device-Livetest deckt echten Produktions-Root-Cause auf: `api-client.js` war auf dem Host nicht erreichbar
-
-Ein realer iPad-Devicetest (privater Modus) gegen die produktive User-App-UI ergab weiterhin: reale, serverseitig aktive Nutzer (`Tester`, ID 102, Rolle `user`; ein bereits eingerichteter `Developer`) konnten sich **nicht** über die tatsächliche Login-Oberfläche der User-App anmelden (`Server authentication client is not available.`).
-
-**Root Cause (produktiver Runtime-Pfad, mit Host-/Delivery-Evidenz belegt):** Die User-App fordert als Root-Script `api-client.js` an, aber das produktive `.htaccess` mappt diesen Pfad nicht auf `Web-App/public/api-client.js`. Der Browser bekam stattdessen als Fallback die Shell (`index.html`) oder einen nicht existierenden Laufzeitpfad, und der Client wurde nie im Browser-Global (`window`/`globalThis`) registriert. Das erzeugte genau die vorhandene Live-Meldung: `Server authentication client is not available.`
-
-Diese Ursache ist **nicht** dieselbe als „nur `window.ApiClient` vs. `globalThis.ApiClient`“; sie liegt auf der produktiven Host-/Delivery-Ebene: die Server-Instanz hat den JS-Asset-Pfad für den Auth-Client nicht sauber exponiert. Die bisherige Global-Exportkorrektur war nur ein notwendiger Teil, aber nicht der gesamte Runtime-Fehler.
-
-**Fix (kleinstmöglich, produktiv relevant):**
-- `.htaccess` enthält jetzt die directe Rewrite-Regel `^api-client\.js$ -> Web-App/public/api-client.js [L]`.
-- `Web-App/public/index.html` bleibt für die richtige Reihenfolge `public-path.js` -> `api-client.js` -> `user-app.js`.
-- `Web-App/public/api-client.js` exportiert den echten Client weiterhin auf `window` und `globalThis`.
-- `Web-App/public/user-app.js` verwendet den realen Server-Auth-Pfad (`/api/auth/*`) statt des lokalen Developer-Bootstraps.
-- `tests/user-app-server-auth.test.js` prüft den Host-Route-Fix zusätzlich, damit dieser Live-Fehler nicht erneut durch eine bloße Scriptreihenfolge ohne echte Public-Route verpasst wird.
-
-**Produktiver Runtime-/Deploy-Nachweis:** Die echte Host-/Delivery-Kette wird mit der neuen `.htaccess`-Regel abgedeckt. Der Browser erhält nun den richtigen Auth-Client-Asset-Pfad und kann den Runtime-Client im tatsächlichen Login-Pfad instanziieren. Ein weiterer physischer iPad-/Host-Live-Check bleibt weiterhin ein externer Abnahmeschritt, kann aber die tatsächliche Ursache nun nicht mehr durch ein fehlendes `api-client.js`-Asset verfehlen.
-
-**Lokale Verifikation:** vollständige Suite `PATH="/usr/local/php/current/bin:$PATH" npm test` erfolgreich; PHP-Lint aller `Server/*.php`-Dateien mit PHP 8.4.15 fehlerfrei; `node --check` auf den betroffenen JS-Dateien fehlerfrei; `git diff --check` sauber; Secret-/Credential-Scan über den Diff ohne Treffer; `npm run package:production` erfolgreich.
-
-**Ausdrücklich weiterhin offen:** Der finale echte Device-/Host-Login auf dem produktiven iPad/Browser kann nur durch die Betreiber-Host-/Geräte-Abnahme bestätigt werden. Die Code- und Delivery-Root-Cause ist hier jedoch im Repository und auf der produktiven Host-Route zuverlässig behoben.
-
-## Gesamturteil
-
-Neutral ist eine belastbare Core-Grundlage, aber noch kein abgenommener Core 1.0. Client-Verträge, grundlegender PHP-Betrieb, Auth/RBAC, Administration und der vollständige allgemeine Modulvertrag sind vorhanden. Offen bleiben sichere Drittanbieterprovider, externe Portabilitätsabnahme und vollständige Produktionsprüfung.
-
-### Zwischenstand 2026-09-06 – Settings-, Session- und User-UI-Verträge
-
-Code-seitig umgesetzt und fokussiert syntaktisch geprüft:
-
-- Application ID bleibt als technische Identität readonly und wird auch bei direktem API-Schreibversuch serverseitig abgewiesen; Application Name bleibt als Anzeigename änderbar.
-- User-Settings speichern Theme und Präferenzen lokal/offline. Erfolgreiches Speichern bestätigt und führt zur Startseite; Persistenzfehler bleiben sichtbar auf der Settings-Seite.
-- Permission Catalog ist als erklärter read-only Katalog mit Key, Beschreibung und Scope dargestellt.
-- Session Overview zeigt Benutzeridentität, User-ID, Rollen, Status, Issued und Expires; einzelne Sessions können nach Bestätigung invalidiert werden.
-- Normale User-Modulansichten zeigen keine automatisch eingeblendete technische Modulbeschreibung und keinen redundanten generischen Back-Link. Light/Dark wird lokal persistent gespeichert und vor dem ersten Paint angewendet.
-
-Diese Punkte sind `CODE-SEITIG ERLEDIGT`, aber noch nicht als produktive oder reale Device-LIVE-Abnahme bestätigt. Host-, Browser-, Deployment- und Betreiberabhängigkeiten bleiben offen.
-
-### Zwischenstand 2026-09-06 – CI-/FTPS-Fehler nach Doku-Commit behoben (SIGABRT in `tests/app-bootstrap.test.js`)
-
-Nach dem reinen Doku-Commit `1e76a64` schlug der automatisch ausgelöste FTPS Deploy [`34014196091`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34014196091) an der Stufe „Vollständige Node- und PHP-Tests ausführen“ fehl: `tests/app-bootstrap.test.js` brach mit `SIGABRT`/`ERR_TEST_FAILURE` ab. Vollständige Root-Cause-Analyse des Runner-Logs ergab einen `std::filesystem::filesystem_error` beim Iterieren von `.git/objects/52` – das ist ein **Node.js-interner nativer Absturz** in `fs.cpSync({recursive:true})` (bekannter Upstream-Bug `nodejs/node#63970`: der native Fast-Path nutzt einen C++-`directory_iterator`, dessen Ausnahme nicht in JavaScript abfangbar ist und `std::terminate()`/`SIGABRT` auslöst, wenn sich der kopierte Verzeichnisbaum währenddessen ändert). Die im Log sichtbare PHP-Version 8.3.6 war nachweislich **nur eine Korrelation, keine Ursache** – der Absturz liegt vollständig in Node-eigenem Code und ist von PHP unabhängig.
-
-`tests/app-bootstrap.test.js` kopierte an zwei Stellen (`rejects a dirty tracked source…`, `rejects a versioned encrypted private key…`) die gemeinsame Fixture `cleanSourceRoot` per `fs.cpSync(cleanSourceRoot, ..., {recursive:true})` – inklusive deren echtem `.git/objects`-Baum, der zuvor per `git init`/`git commit` in derselben Datei erzeugt wird. Fix in Commit `8073d32`: beide Stellen nutzen jetzt eine manuelle `copyDirectoryTreeSync()`-Rekursion (`fs.readdirSync` + `fs.copyFileSync`/`fs.symlinkSync` je Eintrag) statt des nativen `cpSync`-Fast-Path – dieselbe sichere Methode, die diese Datei bereits für die initiale Fixture-Erstellung verwendet. Kein Test wurde übersprungen, gelöscht oder abgeschwächt; PHP-Mindestversion wurde nicht angehoben.
-
-Lokale Verifikation: isolierter `tests/app-bootstrap.test.js` 3× hintereinander **18/18 bestanden**; vollständige Suite mit PHP 8.4.15 **377/377 bestanden**; PHP-Lint aller `Server/*.php`-Dateien fehlerfrei; `node --check` auf der geänderten Datei fehlerfrei; `git diff --check` sauber; Secret-Scan über den Diff ohne Treffer; Produktionspaket (`npm run package:production`) erfolgreich mit 103 Dateien gebaut.
-
-Nach Push von `8073d32` lief FTPS Deploy [`34015306976`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34015306976) vollständig erfolgreich durch (Tests, Paketbau, FTPS-Upload, produktiver Read-only-Smoke); CodeQL für denselben Commit war ebenfalls erfolgreich. `git fetch origin` bestätigt `HEAD == origin/main == 8073d32e23ba8411643c758dcfcf36fe67205de1` bei sauberem Arbeitsbaum.
-
-Dieser Fix betrifft ausschließlich Test-Fixture-Hygiene; er ändert keinen der in [`CORE-1.0.md`](CORE-1.0.md) verlangten offenen Live-/Portabilitätsnachweise. Weiterhin offen: reale Geräte-Abnahmen, Offline-/Warmstart-Liveabnahme, Neuinstallation, URL-Unterpfad-Abnahme und der lokale `pdo_mysql`-Preflight-Blocker.
-
-### Zwischenstand 2026-09-06 – E/F-Freeze-Prüfung
-
-- Vollständige Node-Suite: **377/377 bestanden** mit PHP 8.4; vollständiger PHP-Lint, JavaScript-Syntaxprüfung, `git diff --check`, Produktionspaket und Secret-Scan bestanden.
-
-### Zwischenstand 2026-09-07 – PHP-Login-Envelope-Mismatch im echten User-App-Flow
-
-Der erneut getestete iPad-Login zeigte die neue Runtime-Fehlermeldung nicht mehr (`Server authentication client is not available.`), aber die nächste Ebene blieb fehlerhaft: `No authenticated user was returned by the server.` Dieses Verhalten ist exakt der Nachweis, dass der HTTP-Request den Server erreicht und die `ApiClient`-Runtime jetzt vorhanden ist. Die Ursache sitzt auf der Response-Parsing-Ebene: die echte PHP-API liefert ein `JsonResponse::success()`-Envelope,
-
-```json
-{
-  "ok": true,
-  "data": {
-    "via": "session",
-    "user": { "id": 102, "username": "tester", "roles": ["user"] },
-    "roles": ["user"],
-    "permissions": ["dashboard:view"],
-    "csrfToken": "...",
-    "expiresAt": "..."
-  }
-}
-```
-
-während der Node-/Test-Backend-Stub direkt das Objekt
-
-```json
-{
-  "ok": true,
-  "user": { "id": 7, "username": "developer", "roles": ["developer"] },
-  "roles": ["developer"],
-  "permissions": ["system:view"]
-}
-```
-
-liefert. `Web-App/public/user-app.js` hat bisher nur `result.data` bzw. `result.data.user` ausgewertet; für die PHP-Response war das Ergebnis `undefined`, wodurch `normalizeServerUser()` kein gültiges `user`-Objekt erhielt. Der Fix in `Web-App/public/user-app.js` entpackt sowohl PHP-Envelope als auch Node-Direct-Shape robust und akzeptiert danach `result.user`, `result.data.user` und `result.data.data.user` ohne Abbruch.
-
-- Produktiver Nachweis: `/api/auth/login` erreicht mit echtem Server-Login den Auth-Handler; Fehler ist jetzt auf der unvollständigen Benutzerextraktion statt auf fehlender Client- oder Host-Route.
-- Verifiziert durch: `tests/user-app-server-auth.test.js` inklusive PHP-Envelope-Regression.
-- Vollständige lokale Validierung: `npm test` (**377/377**), `php -l` für relevante PHP-Dateien, `node --check` der geänderten JS-Dateien, `git diff --check`, Secret-Scan und `npm run package:production` sind erfolgreich durchgelaufen.
-- Produktiver `Tester`-Check: Login, `/api/auth/me` als `user`, verweigerter Admin-Zugriff (`403`) und Logout bestanden. Es wurden keine mutierenden Admin-Aktionen ausgeführt.
-- Der lokale cPanel-Preflight bleibt wegen fehlender `pdo_mysql`-Erweiterung blockiert. Geräte-, Offline-/Warmstart-, Neuinstallations- und URL-Unterpfad-Abnahmen bleiben offen; Core 1.0 ist daher noch nicht gefreezed.
-
-### Zwischenstand 2026-09-06 – Auth-/Session-/RBAC-Liveprüfung im Codespace (HISTORISCH, durch den obigen Abschnitt „E/F-Freeze-Prüfung“ überholt)
-
-Der lokale Codespace-Live-Check für den Tester-User ist grün: Benutzer `Tester` mit `user`-Rolle, Status `active`, ID `102` konnte sich erfolgreich anmelden; Session und CSRF-Cookie wurden gesetzt; `/api/auth/me` lieferte den erwarteten `user`-Kontext; `/api/admin/users` wies für dieselbe Sitzung `403 FORBIDDEN` zurück. Damit ist der A4-Teil „Auth/Session/RBAC nach Login verifizieren“ lokal bestätigt. Zum Zeitpunkt dieses Eintrags waren die B–F-Punkte noch offen; dieser Zwischenstand ist durch den vorangehenden Abschnitt „Zwischenstand 2026-09-06 – E/F-Freeze-Prüfung“ überholt: B–D sind inzwischen `CODE-SEITIG ERLEDIGT`, E ist `TEILWEISE BESTANDEN`, und F ist technisch weitgehend bestanden (siehe dort für den aktuellen Stand).
-
-Der Modul-Serververtrag wurde durch **Codex (ChatGPT Work)** test-first vervollständigt: streng versionierte Kompatibilität, modul-eigene geschützte Services/Routen, serverseitige Rechte und Mengenlimits, SHA-256-gebundene Migrationen mit Fehlerkompensation, inaktive Updates ohne Downgrade sowie eine inaktivitätsgebundene Deinstallation mit sicherem `retain`-Standard. GPS und das fachlich unabhängige Referenzmodul `reference-notes` erfüllen denselben Vertrag; der App-Bootstrap entfernt das reine Vertragsreferenzmodul aus neuen Produkten. Lokal bestanden 269 von 269 ausführbaren Tests; acht PHP-Prozesstests wurden mangels lokaler PHP-Binary wahrheitsgemäß übersprungen. GitHub Actions, echtes PHP und Produktion sind für diesen Arbeitsstand noch nicht behauptet.
-
-Das GPS-Referenzmodul ist zusätzlich als plattformneutraler Gerätevertrag konkretisiert: es nutzt Capability Detection, verschiebt Browser-Permissionfragen auf eine explizite Benutzerentscheidung, zeigt einen kleinen Neutraldialog bei `prompt`, blockiert keinen Ablauf bei `Nein`, verwendet native `navigator.share` mit plattformneutralem Kartenlink und fällt auf Copy-Links zurück, wenn kein native Share verfügbar ist. Diese Regeln sind in `ModuleCreation.md` und im GPS-Modul selbst festgehalten. Eine frühere reale iPad-Beobachtung vom 2026-09-05 (historisch, siehe `WORKFLOW.md`) hatte eine bestandene Geräteabnahme widerlegt: zeitweise erschienen 0 aktive Module, die Initialisierung war spürbar langsam, GPS meldete keine Position, und die Modal-/Redundanzdarstellung war noch nicht belastbar bestätigt. Diese Befunde sind inzwischen behoben: Local-first-Discovery/Re-Render, Modal-/Fokusführung und Titelredundanz wurden korrigiert, und der **GPS-Live-Test vom 2026-09-05 (Google Chrome auf iPadOS) ist BESTANDEN** (Secure Context JA, `https:`, `getCurrentPosition` erfolgreich, reale Position ermittelt). Die getrennte Offline-/Warmstart-Liveabnahme bleibt weiterhin offen (siehe unten).
-
-Im aktuellen Core-Freeze-Umfang wurde die allgemeine Neutral-Landingpage des User-Shells auf einen neutralen Content-Contract zurückgesetzt und die Homepage-Config in den bestehenden Admin-/Persistenz-Layer integriert. Die Homepage unterstützt nun `content`/`module`-Modi mit sicherem Sanitizing und Fallback; die Admin-Oberfläche enthält den Startseitenbereich `Startseite`; die lokale Settings-UI zeigt jetzt sowohl sichtbare Erfolgs- als auch Fehlerstatusmeldungen bei fehlgeschlagener lokaler Persistenz, und das „Alle Funktionen anzeigen“-Reset bleibt auf der lokalen Sichtbarkeit ohne Admin-Hinweis. Die temporäre Startup- und GPS-Diagnose wurde vollständig aus der normalen Benutzeransicht entfernt (`Web-App/public/user-app.js` enthält keine `Startup-Diagnose`-Bereiche mehr); interne `CorePerformance`-Marken (`module-discovery-complete`, `background-initialization-complete`, `auth-status-known`) bleiben als reine Laufzeitmessung im Core erhalten, ohne sichtbare UI.
-
-Die portable Installationsbasis für Domain-Root, eigenen physischen DocumentRoot und URL-Unterpfad ist lokal implementiert: gemeinsamer Basispfadvertrag, reproduzierbares Paket, wertfreie Vorlagen, App-Bootstrap und paketbasierter Offline-Preflight sind vorhanden. Die externe Abnahme auf neuem PHP-/Apache-Hosting, leerer Datenbank und neuem Repository ist weiterhin offen; deshalb ist Neutral noch nicht als vollständig portable Produktion oder Core 1.0 freigegeben.
-
-Die Task-6-Umsetzung einschließlich Reviewkorrekturen, GitHub-Integration und produktivem FTPS-Deployment wurde durch **Codex (ChatGPT Work / GitHub-Connector)** ausgeführt und dokumentiert. CodeQL und der korrigierte produktive Deploymentlauf sind bestanden. Der geschützte Zielbestand wurde anschließend ausschließlich lesend bestätigt. Die vollständige PHP-/Apache-/Datenbank-Neuinstallation in einem neuen Ziel sowie die URL-Unterpfadabnahme bleiben offen.
-
-Der anonyme Offline-Modulzugriff wurde durch **Codex (ChatGPT Work / GitHub-Connector)** test-first umgesetzt und bis Commit `f1b1522b48f5605a20219d0cc57fb9eb2115ebb2` nach GitHub `main` integriert. Der öffentliche PHP-Katalog bildet aktive Module anhand der gespeicherten `viewer`-Sicht-/Nutzungsrechte auf bereinigtes `clientAccess` ab. Nur anonyme Kataloge werden als Offlinefallback gespeichert; Navigation und Direktaufrufe bleiben fail-closed. Das GPS-Referenzmodul zeigt lokale Daten sofort und aktualisiert bei bereits erteilter Browserberechtigung einmal automatisch. CodeQL-Lauf `33815089560`, vollständige Node-/PHP-Suite mit 296/296 Tests, Paketbau und FTPS-Lauf `33815089715` bestanden. Der anschließende Read-only-Smoke bestätigte den anonymen GPS-Zugriff ohne Adminmetadaten.
-
-## Funktionsmatrix
-
-| Bereich | Status | Nachweis / offene Lücke |
-|---|---|---|
-| Öffentlicher Client-Core-Vertrag | VORHANDEN | `Web-App/core/core-contracts.js`, `tests/core-contracts.test.js` |
-| Events, Services, Fehlerisolation | VORHANDEN | Core-Dateien und Vertragstests |
-| Modul-Discovery und Client-Lifecycle | VORHANDEN | `module-manager.js`, `module-interface.js`, Lifecycle-Tests |
-| Nicht-blockierender Modulstartzustand | TEILWEISE | Shell rendert sofort; Discovery-Feedback und Re-Render nach `startup:modules-ready` jetzt testgedeckt, reale iPad-Messung und Deploymentprüfung offen |
-| PHP-Modulregistrierung und Zustände | VORHANDEN | `Phase7ModuleRuntime.php`, Admin-API |
-| Modulrechte nach Rollen | VORHANDEN | Modulmanifest, RBAC, Admin-Modulansicht, GPS-Referenz |
-| Anonymer Modulzugriff | VORHANDEN | GitHub `main` `f1b1522`; vollständige Node-/PHP-Suite vor Deployment, anonymer Livekatalog mit aktivem GPS und `canView`/`canUse`, keine Adminmetadaten |
-| Mengenlimits/Entitlements | VORHANDEN | `ModuleLimitGuard` erzwingt rollenspezifische Grenzwerte vor Modulmutationen; stärkste Serverrolle gilt |
-| Allgemeine PHP-Routen je Modul | VORHANDEN | `ModuleHttpKernel` und `ModuleServerRegistry` dispatchen deklarierte geschützte Modulrouten ohne fachliche Routerzweige |
-| Modul-SQL-Migration und Rollback | VORHANDEN | `ModuleMigrationRunner` prüft Reihenfolge, Deklaration und SHA-256, sperrt parallel und kompensiert fehlgeschlagene Batches |
-| Modulupdate und sichere Deinstallation | VORHANDEN | Update nur inaktiv und ohne Downgrade; Deinstallation nur inaktiv, standardmäßig Datenerhalt, destruktiv nur für validierte eigene Tabellen |
-| Modulsettings | TEILWEISE | deklarative Felder und Namespace vorhanden; sichere Secrets/Provider fehlen |
-| Drittanbieter-Provideradapter | FEHLT | vorhandener Provider-Manager beschreibt primär Deployment und simuliert Operationen |
-| Login, Session, CSRF, RBAC | VORHANDEN | produktiver 401-Schutz, echter Betreiberlogin und fortbestehende Sitzung über alle 15 Hauptansichten bestätigt; Logout/Sitzungsende und negativer CSRF-Livefall bleiben offen |
-| Admin-CMS-Oberfläche | TEILWEISE | moderner Router, Sidebar und alle 15 Hauptansichten produktiv durch Codex geprüft, alte Fallbackansicht nicht sichtbar; reale responsive iPad-/Safari-Abnahme bleibt offen |
-| Setup-Sperre und öffentlicher Status | VORHANDEN | aktive Installation verbirgt Setup/UI/API; Statusantwort ist auf ungefährliche Betriebsdaten reduziert; Sicherheitstests vorhanden |
-| PHP-Login-Drosselung | TEILWEISE | `LoginRateLimiter` und persistenter PDO-Store einschließlich Fail-closed-Pfad sind getestet; produktiver Lockout-/Retry-Nachweis fehlt |
-| API-Timeout | VORHANDEN | `ApiClient` nutzt kontrollierten Timeout; `tests/api-timeout.test.js` besteht |
-| API-Versionierung | VORHANDEN | `/api/v1` ist kanonisch, `/api` bleibt kompatibel; Antworten senden `X-Neutral-API-Version: 1` |
-| Offline-Grundlage | TEILWEISE | Service Worker mit versioniertem App-Shell-Cache, Local-first-Kataloghydration und Sicherheitsgrenzen code-seitig vorhanden; Sync-Queue und Konfliktengine fehlen weiterhin; reale Chrome-/iPadOS-Offline-Neustart-Abnahme steht wegen HTTPS-/Hosting-Abhängigkeit (Secure Context) noch aus |
-| Shared-Hosting-Deployment | VORHANDEN | Produktiver Workflow nutzt `server.cpprotect5.de`, explizites FTPS auf Port 21 und zwingende Hostnamenprüfung. Commit `8846c96aabe1abe143b8f84295d97c7369296a67` bestand vollständige PHP-Tests, Paketbau, Upload und das permanente Post-Deployment-HTTP-Gate; älterer Read-only-Lauf `33803384719` bestätigte zudem Zielinventar ohne Änderung oder Secret-Ausgabe. |
-| Produktionspaket und Offline-Preflight | VORHANDEN | Produzenten-/Formatkennung, `sourceDirty`, exakte Allowlist, Manifest/`SHA256SUMS`, Resolver-Einstiege, Meta-/`base`-Pfad, Hash-, Traversal-, Symlink-, HTTPS-/Basispfad- und maskierte Secretprüfungen; externe PHP-/Rewritefähigkeiten bleiben `NICHT_GEPRUEFT` |
-| Neuinstallation/neues Repository | TEILWEISE | lokaler Bootstrap erzeugt secretfreie Appvarianten und optional ein Repository ohne Remote; echter Ablauf aus einem neu angelegten Repository in neuem Serverziel und neuer Datenbank fehlt |
-| Installation unter URL-Unterpfad | TEILWEISE | PHP-/Browserresolver, direktes API-Rewrite, paketiertes `<base href>`, Paket/Preflight und tiefe `/meine-app`-SPA-Fixtures sind lokal getestet; echter Apache-/PHP-/DB-End-to-End-Lauf unter einem URL-Unterpfad fehlt |
-| Backup, Restore und Umzug | TEILWEISE | Strukturen/Status vorhanden; reproduzierbarer End-to-End-Nachweis fehlt |
-| PWA/Store-Verpackung | GEPLANT | bewusst nach Core 1.0 verschoben |
-| Optionale Node-Erweiterung | GEPLANT | Node-Referenzcode existiert, ist keine Produktionsvoraussetzung |
-
-## Bestätigte Hostinggrundlage
-
-Die Hostingdiagnose bestätigte PHP, HTTPS und PDO/MySQL-Grundfähigkeiten. Der Security-Commit `a75470a` wurde erfolgreich per FTPS ausgerollt und durch CodeQL geprüft. Die produktiven Statusendpunkte liefern nur Service-, Environment-, App- und DB-Zustand; Setupseite sowie geroutete Setup-Status-/Installpfade liefern ohne Recoveryfreigabe für GET, OPTIONS und POST HTTP 404; der Admin-Einstieg liefert ohne Sitzung HTTP 401.
-
-Am 2026-09-02 reparierte Codex (ChatGPT Work / GitHub-Connector) mit Commit `156e6e9` die fehlenden Browser-Exports der Admin-Komponenten. CodeQL und FTPS-Deployment wurden erfolgreich abgeschlossen. Eine anschließende authentifizierte Live-Prüfung unter `https://www.turbolikes.com/admin.php` zeigte die neue CMS-Shell mit allen fünf Navigationsgruppen und ohne die frühere Ansicht „FRAMEWORK DASHBOARD“. Die reale responsive Abnahme auf iPad/Safari ist weiterhin offen.
-
-Am 2026-09-02 wurde die zuvor befüllte Neutral-Testdatenbank nach verifizierter Datenbankidentität und exaktem Alt-Tabellensatz zurückgesetzt und mit dem aktuellen Installer neu aufgebaut. Ein separater read-only Nachweis bestätigte anschließend Verbindung, Status `ACTIVE`, 16 vom aktuellen Schema erwartete Tabellen einschließlich `login_attempts` und 2 angewendete Migrationen. Alle temporären Prüf- und Ergebnisdateien wurden per FTPS entfernt; erneute Löschversuche bestätigten für sämtliche älteren Markerdateien `No such file or directory`. Die noch offene Produktionsabnahme umfasst authentifizierten Login, Moduloperationen, Backup/Restore und Umzug.
-
-## Testzustand am 2026-09-03
-
-Die aktuelle Cloud besitzt keine PHP-Binary. Nach gezielten RED/GREEN-Runden für Routing/Basispfad, Paketidentität/Secretprüfung, FTPS-Zielbindung und Dokumentationsverträge erfasste die finale PHP-ausgeschlossene Gesamtsuite 241 Tests: 239 bestanden, zwei erwartete PHP-Skips, 0 Fehler. Die fokussierte Nachprüfung fand einen verbliebenen öffentlichen `/api`-Default in weiteren Admin-/Providerpfaden; **Codex (ChatGPT Work)** schloss ihn testgetrieben, danach bestand dieselbe Gesamtsuite erneut unverändert. Ein fehlendes `php` wird vom CLI wahrheitsgemäß als `NICHT_GEPRUEFT` ausgegeben; PHP-Produktion wird daraus nicht abgeleitet.
-
-Der lokale Preflight prüft nur ein bereits gebautes Paket und die deklarierte öffentliche HTTPS-Basis. Paketmanifest, Inventar, Größen, Hashes, Einstiegspunkte und Secretfreiheit können `PASS` erreichen. Apache-Rewrite im Ziel bleibt ohne vollständigen HTTP-Smoke-Test `NICHT_GEPRUEFT`, sodass der Offline-Gesamtstatus keine Live-Freigabe vortäuscht. Nach der früheren sicheren Zertifikatsblockade wurde der produktive Host test-first auf `server.cpprotect5.de` festgelegt. CodeQL-Lauf `33802485847` und korrigierter FTPS-Lauf `33802485499` sind bestanden.
-
-Ein separater Read-only-Nachweis über den zertifikatsgültigen Host bestand abschließend mit Lauf `33803384719`: Server erreichbar, TLS erfolgreich, Authentifizierung akzeptiert, geschütztes Ziel lesbar und alle drei Marker `.htaccess`, `Web-App/` und `Server/` vorhanden. Der Betreiber-Screenshot aus dem cPanel-Dateimanager bestätigt dieselbe Struktur im geöffneten `public_html`. Eine kurzzeitige Codex-Fehlannahme, der virtuelle FTP-Pfad `/` sei dieses Ziel, führte zusätzlich zu Lauf `33802090900`; der Workflow wurde unmittelbar auf das geschützte Ziel-Secret zurückgestellt. Konto-Home-Einträge werden nicht ungeprüft gelöscht und sind in `TODO.md` zur kontrollierten Abgrenzung erfasst.
-
-Die abschließende Browserprüfung bestätigte die moderne Seite „Neutral Platform“, den geschützten Admin-Einstieg, den echten Betreiberlogin und die fortbestehende produktive Sitzung. Alle 15 Hauptansichten wurden ausschließlich lesend geöffnet; keine verlorene Authentifizierung, alte Dashboardansicht, sichtbare Anwendungsfehlermeldung, Warnbox oder hängende Ladeanzeige trat auf. Die 62 Browserkonsolenmeldungen stammten übereinstimmend aus einem Browser-Extension-Content-Script und nicht aus Neutral. Der Logout wurde angestoßen, sein Ergebnis ließ sich wegen eines anschließenden CDP-/Browser-Recovery-Timeouts nicht belastbar beobachten und bleibt daher offen.
-
-Commit `d31c870e83922ac518f127d8eccdecc42d5ea62f` entfernt testgetrieben die voreingestellten Kennungen `admin` und `Developer` sowie den versteckten `Developer`-Fallback aus den Loginformularen. FTPS-Lauf `33807649560` und CodeQL-Lauf `33807649227` bestanden. Der abschließende öffentliche Read-only-Smoke `33808897301` bestätigte HTTP 200 für Root, User-Asset und Status-API, 401 für Admin ohne Sitzung, 403 für eine interne PHP-Datei sowie produktiv leere Login-Kennungsfelder.
-
-## Nächster Abschlussmeilenstein
-
-Der nächste Meilenstein ist die externe Neuinstallations- und Portabilitätsabnahme in einem neuen physischen DocumentRoot und unter einem URL-Unterpfad. Danach folgen sichere Provider und die finale Core-1.0-Abnahme gemäß `TODO.md`.
-
-## Realer GPS-/iPad-Livebefund vom 2026-09-05 (Google Chrome auf iPadOS; Offline-/Warmstart-Liveabnahme separat offen)
-
-- Beim Start zeigten `Local settings` und die Hauptseite vorübergehend 0 aktive Module, obwohl GPS serverseitig aktiv und zuvor öffentlich sichtbar war; nach weiterer Initialisierung erschien GPS wieder.
-- Die Ursache ist im Clientpfad ein Zwischenzustand: die Shell renderte vor abgeschlossener Hintergrund-Discovery mit dem leeren Registry-Ergebnis und formulierte dieses als endgültigen „keine Module“-Zustand. Discovery lädt den anonymen Katalog und danach den Modul-Entry asynchron; die bisherige Shell hatte keinen sichtbaren `pending`-Zustand und keinen garantierten Re-Render der Settings nach Discovery.
-- Die Shell unterscheidet nun `pending`, `ready` und `error`, zeigt während laufender Discovery keinen 0-Zähler/Leerzustand und rendert nach `startup:modules-ready` erneut. Ein echter iPad-/Produktionsnachweis steht aus.
-- Die langsame Verfügbarkeit der Modulnavigation ist dadurch erklärbar, dass API-/Cache-Lesen, Entry-Laden und Modulinitialisierung seriell innerhalb der Discovery-Kette liefen; der gültige anonyme Katalogcache wurde nur bei Remote-Fehlern gelesen. Die Discovery hydriert nun local-first aus dem Cache und rekonziliert den Remote-Katalog im Hintergrund (First Run ohne lokalen Stand zeigt weiterhin sauber den Ladezustand). Ein gemessenes reales Warmstart-Budget auf Chrome/iPadOS steht noch aus; ein allgemeiner „Persisted Last Known Good State“-Core-Vertrag ist als VORSCHLAG dokumentiert, nicht beschlossen.
-- **GPS-Live-Test 2026-09-05 (Google Chrome auf iPadOS): BESTANDEN.** Der aktuelle reale Test war erfolgreich: Secure Context **JA**, **Protokoll: https:**, Frame **NEIN**, Permission **granted**, `getCurrentPosition` wurde erfolgreich aufgerufen, die reale Position wurde ermittelt, das Ergebnis war **success**. Die GPS-Diagnose wurde anschließend wie geplant aus der normalen User-UI entfernt. Das Ergebnis bleibt ausdrücklich von der getrennten Offline-/Warmstart-Liveabnahme abgegrenzt; diese ist weiterhin offen und nicht als bestanden markiert.
-- **Warmstart-Live-Regression 2026-09-05 (Chrome auf iPadOS): NICHT BESTANDEN.** Trotz Local-first-Kataloghydration erscheinen weiterhin zwei sichtbare Phasen (`STARTING`, dann `Loading available modules…`). Verbleibende Ursachen: 36 Core-Scripts ohne langfristige Cache-Header über dem langsamen Edge-Pfad (jetzt `Cache-Control: public, max-age=86400` für JS/CSS, sofern der Host `mod_headers` honoriert) und die strukturelle Serienabhängigkeit „Scripts → Core → Hydration → Re-Render“. Ein **TEMPORÄRER** Bereich `Startup-Diagnose (temporär)` auf der Startseite zeigt die Core-Performance-Marken in ms für die reale Messung. Service Worker / App-Shell-Caching für echten Offline-Neustart ist weiterhin offen und nicht als bestanden markiert.
-- Die GPS-Fehlerursache aus dem früheren HTTP-Test wurde im realen Live-Test nicht mehr reproduziert; der aktuelle Live-Stand zeigt einen erfolgreichen Standortabruf im Secure Context. Der Start-Navigationseintrag heißt nun `Start` statt des App-Namens; der Active-State wird generisch aus dem View-State abgeleitet. Der redundante Beschreibungstext `Neutral GPS tracking module.` wurde aus der Benutzeransicht entfernt. Die getrennte Offline-/Warmstart-Liveabnahme bleibt offen.
-- Der produktive Befund zeigte weiterhin redundante `MODULE`/`GPS`/Beschreibung/`GPS`-Überschriften und einen Inline-Consent. Die Rendering-Verantwortung lag doppelt beim generischen User-Shell-Rahmen und beim GPS-Modul; außerdem fehlten Modal-CSS und Fokusführung. Der generische Titelrahmen wurde entfernt, GPS besitzt den Titel, und der Consent erhielt Overlay-/Fokuslogik. Diese Punkte wurden im aktuellen Live-Stand als akzeptabel beurteilt; die separate Offline-/Warmstart-Abnahme bleibt offen.
-- **VORSCHLAG – noch nicht beschlossen/umgesetzt:** Für den allgemeinen Core sollte nach Messung ein versionierter Discovery-Statusvertrag (`pending`/`ready`/`error`, optional Cachealter/Quelle) festgelegt werden, den alle Shells verwenden. Keine weitere allgemeine Core-Architekturänderung wurde ohne Messdaten umgesetzt.
-
-## Offline-Discovery-Root-Cause und Admin-UI-Regressionsprüfung vom 2026-09-05
-
-- **Realer Offline-Neustart (Chrome/iPadOS): BESTANDEN.** Der reale Restart im Flugmodus zeigte App-Shell, Navigation und das gecachte lokale GPS-Modul vollständig offline funktionsfähig. Dieser Teilbefund bleibt bestehen.
-- **CODE-ROOT-CAUSE (durch realen Live-Test nach Deployment `89a4178` NICHT bestätigt) für die gemessene ~3,5s-Offline-Discovery-Verzögerung:** `Web-App/core/core-loader.js` startete den Remote-Katalog-Refresh (`startBackgroundCatalogSync`/`fetchRemoteCatalog`) unabhängig vom tatsächlichen Online-Status. Im Offline-Zustand lief dieser Refresh-Versuch weiterhin an und band unnötig Zeit/Ressourcen, obwohl der gültige anonyme Katalogcache sofort verfügbar war. Der Code wurde um eine `navigator.onLine`/`CoreNetwork.isOnline()`-Prüfung ergänzt, die den Remote-Refresh bei Offline-Status vollständig unterlässt. Ein Simulationstest (`tests/module-offline-catalog.test.js`) bestätigte, dass kein Remote-Fetch mehr angestoßen wird. **Der reale Live-Test nach Deployment `89a4178` zeigte die Offline-Discovery-Verzögerung jedoch UNVERÄNDERT.** Diese Codeänderung ist damit weiterhin nur als **Code-Fix mit Simulationstestbeleg** zu werten, NICHT als real bestätigte Ursachenbehebung. Die Formulierung „Offline-Root-Cause behoben“ aus einer vorherigen Version dieses Dokuments wird hiermit **zurückgenommen**. Korrekte Klassifikation: Offline-Neustart selbst (Shell/Navigation/lokales GPS) bleibt BESTANDEN; die Offline-Discovery-Verzögerung ist WEITERHIN REAL VORHANDEN; die tatsächliche Ursache ist noch nicht getroffen. Als Konsequenz wurde eine granulare, klar als TEMPORÄR markierte `CorePerformance`-Zeitmarkeninstrumentierung entlang der gesamten Startkette ergänzt (`core-startup.js`, `core-loader.js`, `module-registry.js`, `module-manager.js`, plus `auth-status-start`/`auth-status-known` in `master-ui.js`/`user-app.js`), um bei der nächsten realen Gerätemessung exakt zu bestimmen, welcher Einzelschritt die Verzögerung verursacht. Diese Marken speichern ausschließlich lokale, nicht personenbezogene Zeitstempel, senden keine Telemetrie und müssen nach erfolgreicher Diagnose wieder entfernt werden. Eine reale Chrome-/iPadOS-Nachmessung mit dieser Instrumentierung steht weiterhin aus und ist Voraussetzung für jede weitere Performanceänderung.
-- **Online-Discovery (~5,5s): Root Cause NICHT abschließend ermittelt, keine Architekturänderung vorgenommen.** Die Trace-Kette `CoreStartup.start()` → `CoreStartup.startBackground()` → `DatabaseManager.init()` → Framework-Initialisierung (`CoreAuth`, `CoreAccess`, `CoreAudit`, `CoreEventRing`, `ServiceManager`, `UserModule`, `AdminModule`, `I18nModule`) → `ModuleManager.discoverModules()` → `ModuleRegistry.discover()` → `CoreLoader.discoverExternalModules()` → `readModuleCatalog()`/`fetchRemoteCatalog()` läuft strukturell seriell (jede Stufe `await`et die vorherige), enthält aber **keine** gefundenen hardcodierten `setTimeout`-Wartezeiten oder blockierenden Auth-Timeouts im Core-Code; der einzige `setTimeout` im Startpfad ist `window.setTimeout(..., 0)` in `Web-App/public/user-app.js` zum Freigeben des ersten Renderticks. Die reale ~5,5s-Online-Zeit ist im Code aus den vorhandenen Quellen nicht monokausal reproduzierbar; plausibelste Faktoren sind Netzwerklatenz beim Remote-`fetch(/api/v1/modules)` sowie die Summierung mehrerer seriell ausgeführter Initialisierungsschritte, die hier nur benannt, aber ohne Live-Messung nicht als abschließend bestätigte Ursache behauptet werden. Es wurde bewusst **keine** Parallelisierung/Architekturänderung vorgenommen, da dies eine neue Featurephase wäre und ohne reale Messdaten spekulativ bliebe.
-- **Admin-UI-Regression: frühere Schlussfolgerung „KEINE Abweichung gefunden“ ZURÜCKGENOMMEN.** Der Vergleich von `Web-App/public/admin/shell.js`/`navigation.js` gegen Commit `3bbee0b` (byte-identisch) und das Bestehen der statischen Source-Match-Tests in `tests/admin-cms-ui.test.js` (14/14) bewiesen **nicht**, dass die real ausgelieferte Adminseite korrekt dargestellt wird. Der reale iPad-Live-Test nach Deployment `89a4178` zeigte weiterhin: rohe/unformatierte Navigation, zerstörtes Header-/Sidebar-Layout, falsch positionierte Light/Dark/Logout-Elemente und ein Dashboard, das unter ungestyltem Markup beginnt. Die vorherige Prüfung war damit als **unzureichende Codeprüfung** einzustufen, nicht als Bugausschluss. **Real gefundene Root Cause (Codeanalyse, siehe Begründung zur Nichtverifizierbarkeit von Live-HTTP unten):** `Server/public/admin.php` und `Server/php/views/admin-ui.php` referenzierten `style.css` sowie alle Admin-JS-Dateien ausschließlich über `AppConfig::publicUrl()`/`PublicPath::publicUrl()` — ohne jede Cache-Busting-Kennung. Gleichzeitig setzt `.htaccess` für `\.(js|css)$`-Dateien einen pauschalen `Cache-Control: public, max-age=86400` (24h), während `admin.php` selbst `no-store` für die HTML-Antwort liefert. Ergebnis: nach jedem Deployment wird die HTML-Shell sofort frisch neu ausgeliefert, während ein Client, der `style.css` (oder Admin-JS) bereits einmal geladen hat, bis zu 24 Stunden lang die alte, ggf. nicht mehr passende Version aus dem Browser-Cache weiterverwendet — exakt das gemeldete Symptom „korrektes/frisches Markup, aber kaputte/rohe Darstellung“. Der Service Worker wurde separat geprüft: `admin.php`-Navigationsanfragen sind explizit von der SW-Zwischenspeicherung ausgeschlossen (Regex `/(admin|setup|login)/`); `style.css` selbst wird von der SW zwar `cacheFirstWithRefresh` behandelt, aber unter einem an `self.__NEUTRAL_DEPLOY_STAMP__` gebundenen Cache-Namen, der sich beim nächsten SW-Install-Event selbst korrigiert. Der SW ist daher als **nicht die primäre Ursache** eingestuft, sondern höchstens ein sekundärer, sich selbst korrigierender Faktor; die eigentliche Ursache liegt in der `.htaccess`-Ebene ohne jede Selbstkorrektur. **Fix:** `PublicPath::assetUrl()`/`AppConfig::assetUrl()` wurden ergänzt und hängen `?v=<sourceCommit>` an, wobei `sourceCommit` aus dem bereits bei jedem Produktionspaket vorhandenen `manifest.json` (erzeugt von `scripts/lib/portable-install.js`) gelesen wird (`AppRuntime::detectAssetVersion()`, sicheres `null`-Fallback ohne `manifest.json`, z. B. lokal/Test). `admin.php` und `admin-ui.php` verwenden jetzt `assetUrl()` statt `publicUrl()` für `style.css` und alle `<script>`-Tags. Neue rot→grün-Tests: `AppConfig::assetUrl` (Unit, `tests/php-public-path.test.js`) sowie `Fall C2` (Integrationstest mit echtem PHP-Server und Fixture-`manifest.json`, `tests/admin-php-entry.test.js`) — beide zuvor nachweislich rot (per gezieltem `git stash` der Quelländerung), danach grün. **Wichtige Einschränkung:** Aus dieser Codespace-Umgebung ist kein echter HTTP-Zugriff auf die Produktionsseite möglich (jede Anfrage an `turbolikes.com` liefert eine Imunify360-Bot-Challenge-Seite statt echter Inhalte); die Wirksamkeit dieses Fixes auf einem realen Gerät (insbesondere ob das kaputte Layout dadurch tatsächlich verschwindet) ist **nach diesem Arbeitsblock noch nicht real re-verifiziert** und muss nach dem nächsten Deployment auf einem echten iPad erneut geprüft werden.
-- **Local-Settings-Save-UX korrigiert:** `saveUserPreferences()` in `Web-App/public/user-app.js` gab bisher bei fehlgeschlagenem `localStorage.setItem()` (z. B. eingeschränkter/privater Modus) stillschweigend `nextPreferences` ohne Fehlerindikator zurück; die UI zeigte in diesem Fall fälschlich „Settings saved successfully.“ an. Die Funktion liefert jetzt `{ ...nextPreferences, persisted }`; sowohl der Save- als auch der Reset-Handler zeigen bei `persisted === false` eine sichtbare Fehlermeldung (`user-settings-status error`, neue CSS-Klasse ergänzt). Zwei neue Assertions in `tests/live-startup-regression.test.js` decken beide Zustände ab; Persistenz über `localStorage` (Navigation/Reload) sowie das rein lokale „Show all functions“-Reset ohne Admin-Hinweis bleiben unverändert bestätigt.
-- **Startup-Diagnose:** Bereits vor diesem Arbeitsblock vollständig aus `Web-App/public/user-app.js` entfernt (kein `Startup-Diagnose`-Bereich mehr im Quellcode); interne `CorePerformance`-Marken bleiben als reine Laufzeitdiagnose im Core erhalten.
-- **PHP-Vertrag:** Keine unkorrekten PHP-8.0-Kompatibilitätsänderungen im Arbeitsbaum gefunden; `Server/php/src/LoginRateLimiter.php` und `Server/php/src/DatabaseBackupService.php` verwenden weiterhin `private readonly`-Constructor-Property-Promotion (PHP 8.1+). Verifiziert mit `/usr/local/php/current/bin/php -v` → PHP 8.4.15.
+## Core work status
+- User- and admin-session separation: DONE / LIVE BESTANDEN
+- User-App header cleanup: PENDING
+- Navigation as true buttons/tabs: PENDING
+- Configurable landing page: PENDING
+- i18n: PENDING
+- Permission catalog UX improvements: PENDING
+- Session overview enhancements: PENDING
+- Settings/device acceptance: PENDING
+- Light/Dark validation: PENDING
+- GPS/device flow: PENDING
+- Offline / airplane-mode / warm-start: PENDING
+- Final cleanup and freeze gate: FUTURE

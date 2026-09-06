@@ -1,93 +1,20 @@
-# NEUTRAL – Nächste Arbeiten
+# NEUTRAL – TODO
 
-**Status:** AUSFÜHRUNGSREIHENFOLGE
+## Current status
+- Device-live user login: DONE / LIVE BESTANDEN
+- Device-live admin login: DONE / LIVE BESTANDEN
+- Session separation (User-App vs Admin): DONE / LIVE BESTANDEN
+- Remaining UX/framework cleanup: PENDING
+- Final cleanup / Core 1.0 gate: FUTURE
 
-**Geprüft:** 2026-09-05
-**Ziel:** [`CORE-1.0.md`](CORE-1.0.md)
-
-Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision oder Architektur erfinden. Erledigte Pakete werden entfernt und in [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
-
-## 0. Aktueller nachgewiesener Stand
-
-**Status:** die im Core-Freeze aufgestellten Verträge für neutrale Landingpage, zentrale Homepage-Konfiguration, lokale Settings-UX, entfernte GPS-User-Diagnose und temporäre Startup-Diagnose sind im Repository verifiziert. Die vollständige Node-Testsuite und der PHP 8.1+-Lint sind grün. Der lokale Codespace-Live-Check für Tester-Login/Session/RBAC (`Tester`, `user`, ID `102`) ist ebenfalls erfolgreich; echte Host-/Geräte-/Deployment-Abnahmen für den Gesamtfreeze-Block bleiben ausdrücklich offen.
-
-**2026-09-06 – CODE-SEITIG ERLEDIGT:** ToDoNow B1–B6, C1–C3 und D1–D6 sind umgesetzt. LIVE-/BETREIBERABHÄNGIG bleiben Produktionshost, reale Browser-/Device-Abnahme, Deployment-Smoke und Freeze-Bewertung E–F.
-
-## 1. Installation und Produktionssicherheit
-
-**Klassifikation:** GEMISCHT – Teilweise autonom im Codespace, teilweise Live-/Betreiberabhängig
-
-- produktiven Logout samt Sitzungsende sowie einen negativen CSRF-Fall einmal mit Betreiberzugang abnehmen; der produktive Login, die fortbestehende Sitzung und sämtliche 15 Admin-Hauptansichten sind bereits rein lesend bestätigt,
-- PHP-Login-Drosselung einschließlich Retry-Zeit und Fail-closed-Verhalten im produktiven HTTPS-Betrieb datensparsam abnehmen,
-- responsive Admin-CMS-Darstellung auf einem realen iPad beziehungsweise in Safari abnehmen,
-- **2026-09-05 – Admin-UI-Regression geprüft, keine Abweichung gefunden [ZURÜCKGENOMMEN nach realem Live-Test]:** Git-Historie mit letztem Admin-CMS-Commit `3bbee0b` verglichen; `Web-App/public/admin/shell.js` und `Web-App/public/admin/navigation.js` sind byte-identisch zu HEAD, `style.css` erhielt seither nur Ergänzungen. Alle 14 Admin-CMS-Pflichttests (`tests/admin-cms-ui.test.js`) bestehen weiterhin. **Diese Schlussfolgerung war eine unzureichende Codeprüfung**, kein bestätigter Bugausschluss: der reale iPad-Live-Test nach Deployment `89a4178` zeigte weiterhin rohe/unformatierte Navigation und zerstörtes Layout. Root Cause jetzt gefunden: `admin.php`/`admin-ui.php` referenzierten `style.css`/Admin-JS ohne Cache-Busting, während `.htaccess` diese Dateien pauschal 24h cached — nach Deployment blieb bei bereits ladenden Clients die alte Version bis zu 24h aktiv. Fix: `AppConfig::assetUrl()`/`PublicPath::assetUrl()` hängen `?v=<manifest.json sourceCommit>` an; siehe STATUS.md für Details. **Reale iPad-Nachverifikation nach dem nächsten Deployment steht weiterhin aus.**
-- die im Konto-Home sichtbaren zusätzlichen `Server`-/`Web-App`-Einträge gegen `public_html` abgrenzen; nur eindeutig dem kurzzeitigen Lauf `33802090900` zuordenbare Artefakte nach separater Freigabe sichern oder entfernen, keine pauschale Löschung,
-
-**Abnahme:** datierter End-to-End-Bericht für eine leere Installation.
-
-## 2. Reproduzierbare Neuinstallation in neuem Repository und physischem Serverziel
-
-**Klassifikation:** LIVE / BETREIBERABHÄNGIG
-
-**Arbeitsstand:** Bei der lokalen Task-6-Umsetzung durch **Codex (ChatGPT Work / GitHub-Connector)** blieben die folgenden externen Abnahmen ausdrücklich offen:
-
-- einen neuen physischen Zielordner als eigenen HTTPS-DocumentRoot live installieren und getrennt von einem URL-Unterpfad abnehmen,
-- PHP 8.1+ samt erforderlichen Erweiterungen sowie Apache-/LiteSpeed-Rewrite im neuen Zielhosting nachweisen; lokale `NICHT_GEPRUEFT`-Ergebnisse nicht als Freigabe behandeln,
-- komplette leere Testinstallation in einem neuen physischen Document-Root und einer neuen Datenbank durchführen: Paket übertragen, `.env` hostlokal anlegen, Setup/Migration/Seed ausführen, Betreiber anmelden und Setup danach gesperrt nachweisen,
-- denselben Ablauf zusätzlich unter einem URL-Unterpfad wie `/meine-app/` einschließlich API-, Asset-, SPA-, Login-, Session- und CSRF-Smoke-Tests ausführen,
-- denselben Installationsablauf aus einem neu angelegten Testrepository reproduzieren und dokumentieren,
-- den bereits erfolgreich ausgerollten Full-Stack-Stand zusätzlich mit mutierenden, kontrollierten Smokes für Logout und negativen CSRF abnehmen; öffentlicher Client, Adminschutz, Asset, Status-API und interner Dateischutz sind durch den rein lesenden HTTP-Lauf `33808897301` bestätigt, Host, zwingende Hostnamenprüfung, geschütztes Ziel, `Web-App/`, `Server/` und Read-only-Remoteinventar durch die Läufe `33802485499` und `33803384719`.
-
-**Abnahme:** Ein versionierter Commit kann ohne manuelle Codeänderung als neues Repository in einen frei gewählten physischen HTTPS-Document-Root sowie unter einen konfigurierten URL-Unterpfad installiert werden; der vollständige Ordner `Web-App/` und die produktiven Teile `Server/php/` sowie `Server/public/` bleiben getrennt erhalten und alle Smoke-/Sicherheitstests bestehen.
-
-## 3. Sichere Provider und Administration
-
-**Klassifikation:** GEMISCHT – Test-/Mock-Vertrag autonom, produktive Provider-/Secret-Handling live
-
-- serverseitigen Provideradaptervertrag definieren,
-- Secrets geschützt speichern und ausschließlich serverseitig verwenden,
-- Provider im Admin anlegen, testen, auswählen und wechseln,
-- dem Client nur bereinigte Funktionskonfiguration liefern.
-
-**Abnahme:** Wechsel zwischen zwei Testprovidern ohne Clientänderung oder Secret-Leak.
-
-## 4. Portabilität und Core-1.0-Abnahme
-
-**Klassifikation:** LIVE / BETREIBERABHÄNGIG
-
-- Backup, Restore, Update und Rollback reproduzierbar machen,
-- Serverumzug auf eine leere kompatible Umgebung testen,
-- erzeugtes Installationspaket, Manifest und Prüfsummen gegen den Quellcommit verifizieren,
-- Neuinstallation, Update, Backup/Restore und Umzug jeweils als automatisierten oder exakt reproduzierbaren Abnahmelauf dokumentieren,
-- alle Kriterien aus `CORE-1.0.md` gegen Code, Tests und Live-Bericht prüfen.
-
-**Abnahme:** `STATUS.md` enthält für Core 1.0 ausschließlich `VORHANDEN`; Release wird als **BESTANDEN** markiert.
-
-## 5. GPS-Referenzmodul und reale Geräteabnahme
-
-**Klassifikation:** GEMISCHT – Codespace-Tests autonom, echte iPad-/Android-Abnahme live
-
-- **DRINGEND – nicht bestanden / erneut abnehmen:** zeitweisen 0-Modul-Startzustand auf realem iPad/Safari gegen den neuen `pending`-/`ready`-Renderpfad prüfen; `Local settings`, Hauptnavigation und GPS müssen ohne Reload konsistent erscheinen,
-- **DRINGEND – nicht bestanden / erneut abnehmen:** Warmstart auf realem Chrome/iPadOS nach Local-first-Korrektur messen: Shell, Navigation und lokal bekannte Module müssen ohne sichtbare Remote-Wartephase erscheinen; Core-Performance-Marken (`shell-visible`, `minimal-core-ready`, `module-discovery-complete`) und tatsächliche Zeiten dokumentieren; keine Bestehensbehauptung aus browserlosen Tests ableiten,
-- **BESTANDEN – GPS-Live-Test 2026-09-05 (Google Chrome auf iPadOS):** Secure Context **JA**, Protokoll **https:**, Frame **NEIN**, Permission **granted**, `getCurrentPosition` erfolgreich, reale Position ermittelt, Ergebnis **success**. Die GPS-Diagnose wurde anschließend wie geplant aus der normalen User-UI entfernt. Die separate Offline-/Warmstart-Liveabnahme bleibt weiterhin offen und wird nicht als bestanden markiert,
-- **DRINGEND – Warmstart real messen (Chrome/iPadOS):** Der Core-Service-Worker ist jetzt code-seitig implementiert und registriert sich unter Secure Context. Nach aktivierter HTTPS-Erzwingung am Hosting: (1) App einmal vollständig online laden, (2) Flugmodus einschalten und App neu öffnen — Shell, Navigation und lokal bekannte Module müssen ohne Netzwerk erscheinen, (3) die interne `CorePerformance`-Marke `module-discovery-complete` auswerten. Erst danach ist der Offline-First-Warmstart real abgenommen,
-- **2026-09-05 – CODE-ROOT-CAUSE ergänzt, LIVE-Test zeigt weiterhin UNVERÄNDERTE Verzögerung [Klassifikation korrigiert]:** `Web-App/core/core-loader.js` startete den Remote-Katalog-Refresh bislang unabhängig vom Online-Status; ein `navigator.onLine`/`CoreNetwork.isOnline()`-Guard unterbindet den Remote-Refresh jetzt im Offline-Zustand (Simulationstest: `tests/module-offline-catalog.test.js`, 22/22 fokussiert bestanden). **Der reale Live-Test nach Deployment `89a4178` zeigte die Offline-Discovery-Verzögerung jedoch unverändert** — dieser Fix hat die reale Ursache demnach NICHT getroffen. Die Formulierung „CODE-ROOT-CAUSE behoben“ wird zurückgenommen; korrekt ist: Code-Fix mit Simulationstestbeleg, reale Ursache weiterhin unbekannt. Als Konsequenz wurde eine granulare, klar als TEMPORÄR markierte `CorePerformance`-Zeitmarkeninstrumentierung über die gesamte Startkette ergänzt (`core-startup.js`, `core-loader.js`, `module-registry.js`, `module-manager.js`, `auth-status-start`/`auth-status-known`), um bei der nächsten realen Gerätemessung den tatsächlich blockierenden Schritt zu identifizieren. Die Root-Cause für die separate ~5,5s-Online-Discovery-Zeit ist weiterhin nicht abschließend isoliert; keine Architekturänderung vorgenommen. **Reale Chrome-/iPadOS-Nachmessung mit der neuen Instrumentierung steht weiterhin aus,**
-- **Offen – separat zu entscheiden (nicht begonnen):** persistenter Login für installierte Web-App/PWA ohne Klartextpasswort (sicherer Remember-/Session-Mechanismus, Login-Button wird Abmelden),
-- **DRINGEND – nicht bestanden / erneut abnehmen:** Navigation-State auf realem iPad prüfen: `Start` aktiv auf der Startseite, `GPS` aktiv im geöffneten Modul, genau ein aktiver Eintrag, korrekter Zustand nach Discovery-Re-Render,
-- reale iPad-Safari-Abnahme des vereinfachten GPS-Layouts und des echten Modal-Dialogflusses auf dem Produktionsserver durchführen; insbesondere Overlay, Hintergrundtrennung, Fokusführung, Ja/Nein und Schließen prüfen,
-- redundante `MODULE`-/`GPS`-Überschriften im realen Produktionsstand erneut prüfen; GPS darf nicht zugleich vom generischen User-Shell-Rahmen und vom Modul selbst betitelt werden,
-- reale Android-Chrome-Abnahme des gleichen Flows inklusive Share-/Copy-Fallback und Auto-Position-Setting prüfen,
-- Start/Stop Tracking als Referenzfunktion gegen Datenschutz-, Akku- und Browser-Lifecycle-Kosten kritisch erneut bewerten und nur bei klarer Nutzung beibehalten,
-- verbleibende Browser-/Geräteunterschiede, sofern sichtbar, dokumentiert als Live-Abnahme und ggf. als `VORSCHLAG – noch nicht beschlossen/umgesetzt` festhalten.
-
-**Abnahme:** Reale Gerätesmokes auf iPad Safari und Android Chrome bestätigen den neutralen GPS-Referenzfluss ohne UI-Redundanz, ohne unerwartete Permission-Prompts und mit funktionierendem Share-/Fallback-Handling.
-
-## 6. Aus Device-Livetest 2026-09-07 abgeleitete langfristige Punkte
-
-**Klassifikation:** GEMISCHT – Login-Fix codeseitig erledigt, Retest live; übrige Punkte reine Beobachtung ohne Umsetzung
-
-- **DRINGEND – Retest erforderlich:** realer Login von `Tester` und `Developer` über die echte User-App-UI auf einem physischen Gerät nach dem nächsten erfolgreichen Deployment (Root Cause behoben, siehe `ToDoNow.md` Abschnitt G-Login, `WORKFLOW.md`/`CHANGELOG.md` 2026-09-07),
-- Internationalisierung (Gerätesprache automatisch erkennen, Fallback Englisch, persistente manuelle Übersteuerung, keine feste Sprachbegrenzung) – neuer langfristiger Punkt, noch keine Umsetzung, keine Architekturentscheidung getroffen,
-- Session Overview: Idee „alle anderen Sessions invalidieren“ – benötigt vor Umsetzung eine Sicherheitsbetrachtung (Self-Invalidate-Verhalten, Race-/CSRF-Bedingungen),
-- Navigation/UX-Feinschliff (Button-Stil/Icons/Active-Zustände, Entfernen des Labels „ACTIVE APPLICATION“, „Local Settings“ → „Settings“ für angemeldete Benutzer) – nur beobachtet, keine Priorisierung getroffen,
-- GPS-Pro – ausdrücklich als Zukunftsidee außerhalb des aktuellen Core-1.0-Freeze-Scopes vermerkt, keine Architekturentscheidung.
+## Action list
+1. Separate user and admin session contexts without breaking shared RBAC/database contracts.
+2. Clean up user-app header wording and settings label.
+3. Make navigation entries clearly interactive tabs/buttons.
+4. Implement configurable homepage modes and admin controls.
+5. Add i18n with device detection and persistent override.
+6. Improve permission catalog UX.
+7. Expand session overview with end-other-sessions semantics.
+8. Re-test settings persistence and theme flows on device.
+9. Validate offline / warm-start / GPS device flows.
+10. Final cleanup and hardening; then freeze assessment.
