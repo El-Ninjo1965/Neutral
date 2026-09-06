@@ -265,6 +265,69 @@ test('developer setup persists a hashed local password for login and admin acces
   assert.ok(reloadedContext.window.CoreAuth.getCurrentUser().roles.includes('developer'));
 });
 
+test('regular user login is not blocked by the local developer bootstrap state', async () => {
+  const localStorage = {
+    getItem() { return null; },
+    setItem() {},
+    removeItem() {}
+  };
+
+  const windowStub = {
+    localStorage,
+    Core: { emit() {} },
+    ConfigManager: {
+      get() { return { enabled: true, developerUsername: 'Developer', developerPasswordHash: '' }; },
+      set() {}
+    },
+    UserModule: {
+      async getUserByUsername(username) {
+        if (String(username).trim().toLowerCase() === 'tester') {
+          return {
+            ok: true,
+            data: {
+              id: 'u-102',
+              username: 'Tester',
+              email: 'tester@example.com',
+              status: 'active',
+              roles: ['user'],
+              permissions: ['user:read']
+            }
+          };
+        }
+        return { ok: false };
+      },
+      async login({ username, password }) {
+        return {
+          ok: true,
+          data: {
+            user: {
+              id: 'u-102',
+              username,
+              email: 'tester@example.com',
+              status: 'active',
+              roles: ['user'],
+              permissions: ['user:read']
+            }
+          },
+          password
+        };
+      }
+    }
+  };
+  windowStub.window = windowStub;
+
+  const context = vm.createContext(windowStub);
+  loadScript(context, path.resolve(__dirname, '../Web-App/core/local-auth.js'));
+
+  const result = await context.window.LocalAuth.login({
+    username: 'Tester',
+    password: 'correct-horse-battery-staple'
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.username, 'Tester');
+});
+
 test('app config exposes the active public app name', () => {
   const windowStub = {
     window: null,

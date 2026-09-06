@@ -129,8 +129,13 @@ const update = (roleId, updates, actor = 'system') => {
 
     const nextRole = updates.role !== undefined ? updates.role : role.role;
     const nextName = updates.name !== undefined ? updates.name : role.name;
-    if (builtInRoleNames.includes(nextRole)) {
-      throw new Error(`Role '${nextRole}' is a built-in role and cannot be updated.`);
+    if (builtInRoleNames.includes(role.role)) {
+      if (nextRole && nextRole !== role.role) {
+        throw new Error(`Role '${role.role}' is a built-in role and cannot be renamed.`);
+      }
+      if (nextName && nextName !== role.name) {
+        throw new Error(`Role '${role.name}' is a built-in role and cannot be renamed.`);
+      }
     }
 
     const updated = normalizeRole({

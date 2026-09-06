@@ -114,7 +114,6 @@ class AdminRolesView {
     }
 
     const role = this.editingRoleId ? this.roles.find((entry) => String(entry.id) === String(this.editingRoleId)) : null;
-    const isBuiltIn = role && ['admin', 'developer', 'user', 'viewer'].includes(role.name);
 
     const form = document.createElement('form');
     form.className = 'admin-form';
@@ -142,28 +141,26 @@ class AdminRolesView {
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" ${isBuiltIn ? 'disabled' : ''}>${this.editingRoleId ? 'Update Role' : 'Create Role'}</button>
+        <button type="submit" class="btn btn-primary">${this.editingRoleId ? 'Update Role' : 'Create Role'}</button>
         <button type="button" class="btn btn-secondary" onclick="adminRoles.cancelForm()">Cancel</button>
       </div>
     `;
 
-    if (!isBuiltIn) {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-        const payload = {
-          description: formData.get('description') || '',
-          permissions: formData.getAll('permissions').map((entry) => String(entry))
-        };
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        description: formData.get('description') || '',
+        permissions: formData.getAll('permissions').map((entry) => String(entry))
+      };
 
-        if (!this.editingRoleId) {
-          payload.name = formData.get('name') || '';
-          this.createRole(payload);
-        } else {
-          this.updateRole(payload);
-        }
-      });
-    }
+      if (!this.editingRoleId) {
+        payload.name = formData.get('name') || '';
+        this.createRole(payload);
+      } else {
+        this.updateRole(payload);
+      }
+    });
 
     formDiv.innerHTML = '';
     formDiv.appendChild(form);

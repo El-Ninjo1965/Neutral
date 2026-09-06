@@ -244,9 +244,6 @@ final class Phase4RoleService
         if ($current === null) {
             throw new \RuntimeException('Role not found: ' . $roleId);
         }
-        if ((int) ($current['is_system'] ?? 0) === 1) {
-            throw new \RuntimeException('System roles cannot be modified.');
-        }
         $roleDbId = (int) ($current['id'] ?? 0);
         $description = trim((string) ($current['description'] ?? ''));
         if (array_key_exists('description', $payload)) {

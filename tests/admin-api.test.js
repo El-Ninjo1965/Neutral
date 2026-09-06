@@ -241,6 +241,17 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(result.body.role.name, 'Updated Editor');
   });
 
+  test('PUT /api/admin/roles/:role updates built-in role metadata', async () => {
+    const result = await requestJson('PUT', '/api/admin/roles/viewer', {
+      description: 'Updated read-only access',
+      permissions: ['app.read', 'settings.read']
+    });
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.ok, true);
+    assert.equal(result.body.role.description, 'Updated read-only access');
+    assert.ok(result.body.role.permissions.includes('app.read'));
+  });
+
   test('DELETE /api/admin/roles/:role deletes custom role', async () => {
     const result = await requestJson('DELETE', `/api/admin/roles/${testRoleId}`);
     assert.equal(result.statusCode, 200);

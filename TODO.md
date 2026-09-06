@@ -9,7 +9,7 @@ Diese Liste enthält nur offene, geordnete Arbeit. Sie darf keine neue Vision od
 
 ## 0. Aktueller nachgewiesener Stand
 
-**Status:** die im Core-Freeze aufgestellten Verträge für neutrale Landingpage, zentrale Homepage-Konfiguration, lokale Settings-UX, entfernte GPS-User-Diagnose und temporäre Startup-Diagnose sind im Repository verifiziert. Die vollständige Node-Testsuite und der PHP 8.1+-Lint sind grün. Live-/Betreiberabhängige Abnahmen bleiben wegen echter iPadOS/Android-/Warmstart-/Offline-Host-Prüfungen ausdrücklich offen.
+**Status:** die im Core-Freeze aufgestellten Verträge für neutrale Landingpage, zentrale Homepage-Konfiguration, lokale Settings-UX, entfernte GPS-User-Diagnose und temporäre Startup-Diagnose sind im Repository verifiziert. Die vollständige Node-Testsuite und der PHP 8.1+-Lint sind grün. Der lokale Codespace-Live-Check für Tester-Login/Session/RBAC (`Tester`, `user`, ID `102`) ist ebenfalls erfolgreich; echte Host-/Geräte-/Deployment-Abnahmen für den Gesamtfreeze-Block bleiben ausdrücklich offen.
 
 ## 1. Installation und Produktionssicherheit
 

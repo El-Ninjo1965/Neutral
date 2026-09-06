@@ -265,28 +265,35 @@
       }
 
       const state = this.getState();
-      const expectedUsername = normalizeUsername(state.username) || DEFAULT_DEVELOPER_USERNAME;
-      const expectedPasswordHash = normalizeHash(state.passwordHash);
+      const developerUsername = normalizeUsername(state.username) || DEFAULT_DEVELOPER_USERNAME;
+      const developerPasswordHash = normalizeHash(state.passwordHash);
+      const isDeveloperLogin = username.toLowerCase() === developerUsername.toLowerCase();
 
-      if (!expectedPasswordHash) {
+      if (isDeveloperLogin && !developerPasswordHash) {
         return { ok: false, code: 'LOCAL_SETUP_REQUIRED', message: 'Set up the local developer account before logging in.' };
       }
 
-      const submittedPasswordHash = await hashSecret(password);
-      if (submittedPasswordHash !== expectedPasswordHash) {
-        return { ok: false, code: 'INVALID_PASSWORD', message: 'The local developer password is invalid.' };
+      if (isDeveloperLogin) {
+        const submittedPasswordHash = await hashSecret(password);
+        if (submittedPasswordHash !== developerPasswordHash) {
+          return { ok: false, code: 'INVALID_PASSWORD', message: 'The local developer password is invalid.' };
+        }
       }
 
-      const userLookup = await window.UserModule.getUserByUsername(username || expectedUsername);
+      const userLookup = await window.UserModule.getUserByUsername(username);
       if (!userLookup || !userLookup.ok) {
-        const result = await this.ensureDeveloperUser();
-        if (!result || !result.ok) {
-          return result;
+        if (isDeveloperLogin) {
+          const result = await this.ensureDeveloperUser();
+          if (!result || !result.ok) {
+            return result;
+          }
+        } else {
+          return { ok: false, code: 'INVALID_USER', message: 'User is not valid or not active.' };
         }
       }
 
       return window.UserModule.login({
-        username: username || expectedUsername,
+        username,
         password
       });
     },
