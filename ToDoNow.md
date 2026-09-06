@@ -99,7 +99,8 @@
 
 ## F. Freeze-Bewertung
 - Status: OFFEN
-- Nachweis: 377/377 Node-Tests, vollständiger PHP-Lint mit PHP 8.4, JavaScript-Syntaxprüfungen, `git diff --check`, Produktionspaket und Secret-Scan bestanden. FTPS Deploy `34013190332` und CodeQL `34013190264` für Commit `410d4aca1dd264d7c2b59c4d0abbb24f76eb648e` bestanden.
+- Nachweis: 377/377 Node-Tests, vollständiger PHP-Lint mit PHP 8.4, JavaScript-Syntaxprüfungen, `git diff --check`, Produktionspaket und Secret-Scan bestanden. FTPS Deploy `34015306976` und CodeQL `34015306449` für Commit `8073d32e23ba8411643c758dcfcf36fe67205de1` bestanden.
+- CI-Fix 2026-09-06: FTPS Deploy `34014196091` war an einem Node.js-internen `SIGABRT` in `tests/app-bootstrap.test.js` gescheitert (nativer `fs.cpSync`-Fast-Path-Absturz beim Kopieren eines `.git`-Baums, bekannter Upstream-Bug `nodejs/node#63970`; PHP 8.3.6 im Log war nur Korrelation, keine Ursache). Behoben durch manuelle Verzeichniskopie statt `cpSync({recursive:true})`; siehe `STATUS.md`/`WORKFLOW.md` für Details.
 - Einschränkung: lokales Preflight bleibt wegen fehlender `pdo_mysql`-Erweiterung BLOCKIERT; die geforderten physischen Geräte-/Portabilitätsnachweise fehlen weiterhin. Daher kein Core-1.0-Freeze.
 
 ## Gesamtzustand

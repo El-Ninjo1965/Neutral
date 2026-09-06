@@ -22,6 +22,18 @@ Code-seitig umgesetzt und fokussiert syntaktisch geprüft:
 
 Diese Punkte sind `CODE-SEITIG ERLEDIGT`, aber noch nicht als produktive oder reale Device-LIVE-Abnahme bestätigt. Host-, Browser-, Deployment- und Betreiberabhängigkeiten bleiben offen.
 
+### Zwischenstand 2026-09-06 – CI-/FTPS-Fehler nach Doku-Commit behoben (SIGABRT in `tests/app-bootstrap.test.js`)
+
+Nach dem reinen Doku-Commit `1e76a64` schlug der automatisch ausgelöste FTPS Deploy [`34014196091`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34014196091) an der Stufe „Vollständige Node- und PHP-Tests ausführen“ fehl: `tests/app-bootstrap.test.js` brach mit `SIGABRT`/`ERR_TEST_FAILURE` ab. Vollständige Root-Cause-Analyse des Runner-Logs ergab einen `std::filesystem::filesystem_error` beim Iterieren von `.git/objects/52` – das ist ein **Node.js-interner nativer Absturz** in `fs.cpSync({recursive:true})` (bekannter Upstream-Bug `nodejs/node#63970`: der native Fast-Path nutzt einen C++-`directory_iterator`, dessen Ausnahme nicht in JavaScript abfangbar ist und `std::terminate()`/`SIGABRT` auslöst, wenn sich der kopierte Verzeichnisbaum währenddessen ändert). Die im Log sichtbare PHP-Version 8.3.6 war nachweislich **nur eine Korrelation, keine Ursache** – der Absturz liegt vollständig in Node-eigenem Code und ist von PHP unabhängig.
+
+`tests/app-bootstrap.test.js` kopierte an zwei Stellen (`rejects a dirty tracked source…`, `rejects a versioned encrypted private key…`) die gemeinsame Fixture `cleanSourceRoot` per `fs.cpSync(cleanSourceRoot, ..., {recursive:true})` – inklusive deren echtem `.git/objects`-Baum, der zuvor per `git init`/`git commit` in derselben Datei erzeugt wird. Fix in Commit `8073d32`: beide Stellen nutzen jetzt eine manuelle `copyDirectoryTreeSync()`-Rekursion (`fs.readdirSync` + `fs.copyFileSync`/`fs.symlinkSync` je Eintrag) statt des nativen `cpSync`-Fast-Path – dieselbe sichere Methode, die diese Datei bereits für die initiale Fixture-Erstellung verwendet. Kein Test wurde übersprungen, gelöscht oder abgeschwächt; PHP-Mindestversion wurde nicht angehoben.
+
+Lokale Verifikation: isolierter `tests/app-bootstrap.test.js` 3× hintereinander **18/18 bestanden**; vollständige Suite mit PHP 8.4.15 **377/377 bestanden**; PHP-Lint aller `Server/*.php`-Dateien fehlerfrei; `node --check` auf der geänderten Datei fehlerfrei; `git diff --check` sauber; Secret-Scan über den Diff ohne Treffer; Produktionspaket (`npm run package:production`) erfolgreich mit 103 Dateien gebaut.
+
+Nach Push von `8073d32` lief FTPS Deploy [`34015306976`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34015306976) vollständig erfolgreich durch (Tests, Paketbau, FTPS-Upload, produktiver Read-only-Smoke); CodeQL für denselben Commit war ebenfalls erfolgreich. `git fetch origin` bestätigt `HEAD == origin/main == 8073d32e23ba8411643c758dcfcf36fe67205de1` bei sauberem Arbeitsbaum.
+
+Dieser Fix betrifft ausschließlich Test-Fixture-Hygiene; er ändert keinen der in [`CORE-1.0.md`](CORE-1.0.md) verlangten offenen Live-/Portabilitätsnachweise. Weiterhin offen: reale Geräte-Abnahmen, Offline-/Warmstart-Liveabnahme, Neuinstallation, URL-Unterpfad-Abnahme und der lokale `pdo_mysql`-Preflight-Blocker.
+
 ### Zwischenstand 2026-09-06 – E/F-Freeze-Prüfung
 
 - Vollständige Node-Suite: **377/377 bestanden** mit PHP 8.4; vollständiger PHP-Lint, JavaScript-Syntaxprüfung, `git diff --check`, Produktionspaket und Secret-Scan bestanden.

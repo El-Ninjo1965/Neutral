@@ -1,5 +1,12 @@
 # NEUTRAL – Changelog
 
+## 2026-09-06 – CI-/FTPS-Fehler behoben: nativer Node-`SIGABRT` in `tests/app-bootstrap.test.js`
+
+- FTPS Deploy [`34014196091`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34014196091) für Commit `1e76a64` scheiterte an der Teststufe mit `SIGABRT`/`ERR_TEST_FAILURE`. Root Cause bewiesen (nicht vermutet): ein bekannter Upstream-Node.js-Bug (`nodejs/node#63970`) im nativen Fast-Path von `fs.cpSync({recursive:true})`, ausgelöst beim Kopieren des `.git`-Baums einer Test-Fixture in `tests/app-bootstrap.test.js`. Die im Log sichtbare PHP-Version 8.3.6 war nachweislich nur Korrelation, keine Ursache.
+- Fix: beide betroffenen `fs.cpSync(cleanSourceRoot, ..., {recursive:true})`-Aufrufe durch eine manuelle, dateiweise `copyDirectoryTreeSync()`-Kopie ersetzt (Commit `8073d32`). Kein Test übersprungen/geschwächt, keine PHP-Mindestversion geändert.
+- Lokal verifiziert: isolierter Test 3× 18/18 bestanden; vollständige Suite 377/377 (PHP 8.4.15); PHP-Lint, `node --check`, `git diff --check`, Secret-Scan und Produktionspaket-Build erfolgreich.
+- Neuer FTPS Deploy [`34015306976`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34015306976) und CodeQL [`34015306449`](https://github.com/El-Ninjo1965/Neutral/actions/runs/34015306449) für Commit `8073d32` erfolgreich; Produktion wieder auf aktuellstem `main`-Stand deploybar. Details siehe `STATUS.md`/`WORKFLOW.md`.
+
 ## 2026-09-06 – Settings-, Session- und User-App-Verträge
 
 - Application ID im Admin-Settings-UI readonly gemacht und im PHP-Settings-Service gegen direkte Manipulation geschützt; Application Name bleibt persistent änderbar.
