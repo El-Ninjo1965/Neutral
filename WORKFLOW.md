@@ -104,6 +104,23 @@ Fehlgeschlagene Tests werden nicht verschwiegen. Testbedingte Runtimeänderungen
 
 VORSCHLAG – noch nicht beschlossen/umgesetzt: Wenn `WORKFLOW.md` für praktische Überprüfung und Übergabe zu stark anwächst, ist die sinnvollste Fortsetzungsform eine dateiübergreifende Folge mit klarer Namenskonvention wie `WORKFLOW-YYYY-MM-DD.md` oder `WORKFLOW-<Thema>.md`, wobei die Hauptdatei die Kontinuität und die verknüpften Folgeblätter listet. Alte Einträge bleiben unverändert erhalten; keine frühere Historie wird gelöscht. Eine harte Zeichen- oder Zeilenbegrenzung ist derzeit keine belastbare Projektregel und wird erst nach einer konkreten Projektentscheidung eingeführt.
 
+## 10. Verbindliche Gesamtauftrag-Regeln für alle zukünftigen Agentenarbeiten
+
+- Ein Gesamtauftrag muss vollständig abgearbeitet werden; ein Teilblock darf nicht als Abschluss gelten.
+- Vor Beginn eines Gesamtauftrags wird der Auftrag in `ToDoNow.md` in konkrete Aufgaben zerlegt. `ToDoNow.md` ist während des Auftrags die operative Wahrheit.
+- `ToDoNow.md` muss mindestens die Statuswerte `OFFEN`, `IN ARBEIT`, `BLOCKIERT`, `CODE-SEITIG ERLEDIGT` und `LIVE BESTANDEN` enthalten.
+- Ein Punkt gilt nicht als erledigt, wenn notwendige Tests, Commit/Push oder erforderliche Liveprüfung fehlen.
+- Nach jedem abgeschlossenen zusammenhängenden Arbeitsblock sind sofort `ToDoNow.md` zu aktualisieren, relevante Markdown-Dokumente zu ergänzen, relevante Tests auszuführen, ein Commit zu erstellen und sofort nach `origin/main` zu pushen.
+- Commit/Push dürfen nicht bis zu einem späteren Zeitpunkt verschoben werden.
+- Erst nach erfolgreichem Push darf ein Block als abgeschlossen gemeldet werden.
+- Wenn Code produktiv relevant ist und der Auftrag Deployment vorsieht, ist der reguläre Deployment-Workflow abzuwarten und das Ergebnis zu dokumentieren.
+- Wenn ein Punkt blockiert ist, ist die Ursache zu dokumentieren, der Status auf `BLOCKIERT` zu setzen und unabhängige Aufgaben trotzdem weiterzuarbeiten.
+- Formulierungen wie `Arbeitsblock abgeschlossen`, `Done`, `STOPP` oder vergleichbare Abschlussmitteilungen sind unzulässig, solange noch Pflichtpunkte des Gesamtauftrags offen oder nur unverbindlich als extern blockiert dokumentiert sind.
+- Ein Abschlussbericht eines Gesamtauftrags muss alle erledigten Punkte, alle offenen Punkte, alle blockierten Punkte, Commit-SHAs, Pushstatus, Deploymentstatus, Testzahlen, `HEAD == origin/main`, und einen sauberen Arbeitsbaum enthalten.
+- Vor einem finalen STOP sind zwingend `git fetch origin`, `git rev-parse HEAD`, `git rev-parse origin/main`, `git status`, `git diff --check` und die Prüfung des aktuellen `ToDoNow.md` auszuführen; unbegründet offene Pflichtpunkte müssen dort nicht verbleiben.
+- Wenn ein Agent einen Auftrag nur teilweise erledigt, muss er ausdrücklich `GESAMTAUFTRAG NICHT ABGESCHLOSSEN` schreiben und danach ohne neuen Benutzerprompt mit dem nächst offenen Punkt weitermachen.
+- Diese Regeln gelten dauerhaft für alle zukünftigen Arbeiten im Repository.
+
 ### 2026-09-05 – Abschlussprüfung PHP-Mindestversion und persistenter Testnachweis
 
 - **Aufgabe:** Verbleibende aktive PHP-Mindestversionsangaben im Repository auf den tatsächlichen Core-Vertrag `PHP 8.1+` konsistent machen, die offene TODO-Klassifikation ergänzen und den aktuellen verifizierten Testnachweis im Repository persistieren.
