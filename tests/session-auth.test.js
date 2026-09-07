@@ -181,6 +181,67 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.equal(adminMe.body.user.username, 'dual-admin');
   });
 
+  test('1c. User and admin sessions remain independent across login/logout', async () => {
+    await createTestUser({ username: 'dual-logout-user', email: 'dual-logout-user@example.com', role: 'user' });
+    await createTestUser({ username: 'dual-logout-admin', email: 'dual-logout-admin@example.com', role: 'admin' });
+
+    const userLogin = await rawRequest('POST', '/api/auth/login', {
+      payload: { username: 'dual-logout-user', password: 'correct-horse-battery-staple' }
+    });
+    const adminLogin = await rawRequest('POST', '/api/auth/login', {
+      payload: { username: 'dual-logout-admin', password: 'correct-horse-battery-staple' },
+      headers: { 'x-framework-role': 'admin' }
+    });
+
+    const userMeBefore = await rawRequest('GET', '/api/auth/me', { cookies: { neutral_session: userLogin.cookies.neutral_session } });
+    const adminMeBefore = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+    assert.equal(userMeBefore.statusCode, 200);
+    assert.equal(adminMeBefore.statusCode, 200);
+
+    const userLogout = await rawRequest('POST', '/api/auth/logout', {
+      cookies: { neutral_session: userLogin.cookies.neutral_session },
+      headers: { 'x-csrf-token': userLogin.cookies.neutral_csrf }
+    });
+    assert.equal(userLogout.statusCode, 200);
+
+    const adminStillAuthenticated = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+    assert.equal(adminStillAuthenticated.statusCode, 200);
+    assert.equal(adminStillAuthenticated.body.user.username, 'dual-logout-admin');
+
+    const userReLogin = await rawRequest('POST', '/api/auth/login', {
+      payload: { username: 'dual-logout-user', password: 'correct-horse-battery-staple' }
+    });
+    assert.equal(userReLogin.statusCode, 200);
+
+    const adminStillAuthenticatedAfterUserRelogin = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+    assert.equal(adminStillAuthenticatedAfterUserRelogin.statusCode, 200);
+    assert.equal(adminStillAuthenticatedAfterUserRelogin.body.user.username, 'dual-logout-admin');
+
+    const adminLogout = await rawRequest('POST', '/api/auth/logout', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: {
+        'x-framework-role': 'admin',
+        'x-csrf-token': adminLogin.cookies.neutral_admin_csrf
+      }
+    });
+    assert.equal(adminLogout.statusCode, 200);
+
+    const userStillAuthenticated = await rawRequest('GET', '/api/auth/me', {
+      cookies: { neutral_session: userReLogin.cookies.neutral_session }
+    });
+    assert.equal(userStillAuthenticated.statusCode, 200);
+    assert.equal(userStillAuthenticated.body.user.username, 'dual-logout-user');
+  });
+
   test('2. Bootstrap admin is created from env values when no seeded admin exists', async () => {
     const username = process.env.CORE_BOOTSTRAP_USERNAME || 'bootstrap-login-user';
     const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-horse-battery-staple';

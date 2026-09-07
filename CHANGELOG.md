@@ -1,4 +1,12 @@
 
+## 2026-09-07 – Fix: PHP user/admin session separation completed in code
+
+- Root cause identified and fixed in the PHP auth layer: the active logout path could destroy the wrong scope, and admin identity resolution could incorrectly fall back to the user session.
+- Fix: logout now invalidates the currently active cookie scope instead of defaulting to the user singleton; admin and user identities resolve independently per cookie and CSRF namespace.
+- Regression coverage: `tests/session-auth.test.js` adds the concurrent admin/user login/logout scenario and confirms the correct `/api/auth/me` responses and CSRF behavior for both scopes.
+- Validation: full project suite passes under PHP 8.3, with PHP lint and JS syntax checks clean.
+- Current status: `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED` until a real operator device test confirms `LIVE BESTANDEN`.
+
 ## 2026-09-06 – Device-live confirmation and session-scope priority reset
 
 - Real device test on the target app: Tester login through the normal user app succeeded, and the UI confirmed `Signed in as Tester (user)`.

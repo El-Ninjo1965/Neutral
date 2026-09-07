@@ -3,12 +3,12 @@
 ## Current status
 - Device-live user login: DEVICE RETEST REQUIRED
 - Device-live admin login: DEVICE RETEST REQUIRED
-- Session separation (User-App vs Admin): IN ARBEIT / DEVICE RETEST REQUIRED
+- Session separation (User-App vs Admin): CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Remaining UX/framework cleanup: PENDING
 - Final cleanup / Core 1.0 gate: FUTURE
 
 ## Action list
-1. Separate user and admin session contexts without breaking shared RBAC/database contracts. (IN ARBEIT / DEVICE RETEST REQUIRED)
+1. Separate user and admin session contexts without breaking shared RBAC/database contracts. (CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED)
 2. Clean up user-app header wording and settings label. (DONE / documented)
 3. Make navigation entries clearly interactive tabs/buttons. (DONE / documented)
 4. Implement configurable homepage modes and admin controls.

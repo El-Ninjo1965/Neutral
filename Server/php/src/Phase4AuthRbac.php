@@ -1406,14 +1406,14 @@ final class Phase4AuthManager
 
         $expiresAt = strtotime((string) ($identity['expiresAt'] ?? ''));
         if ($expiresAt !== false && $expiresAt > 0 && $expiresAt < time()) {
-            $this->logout();
+            $this->logout($scope);
             return null;
         }
 
         $userId = (string) ($identity['userId'] ?? '');
         $user = $userId !== '' ? $this->users->getById($userId) : null;
         if (!$user || (string) ($user['status'] ?? 'inactive') !== 'active') {
-            $this->logout();
+            $this->logout($scope);
             return null;
         }
         $roles = is_array($user['roles'] ?? null) ? array_values($user['roles']) : ['user'];
@@ -1485,7 +1485,8 @@ final class Phase4AuthManager
 
     public function logout(?string $scope = null): void
     {
-        $this->startSession($scope);
+        $resolvedScope = $this->normalizeSessionScope($scope ?? $this->currentSessionScope());
+        $this->startSession($resolvedScope);
         $sessionId = session_id();
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
@@ -1498,6 +1499,21 @@ final class Phase4AuthManager
         }
     }
 
+    private function currentSessionScope(): string
+    {
+        $cookieName = trim((string) session_name());
+        if ($cookieName === '') {
+            return 'user';
+        }
+        if ($cookieName === $this->sessionCookieNameForScope('admin')) {
+            return 'admin';
+        }
+        if ($cookieName === $this->sessionCookieNameForScope('user')) {
+            return 'user';
+        }
+        return 'user';
+    }
+
     /**
      * @return array<string,mixed>|null
      */
@@ -1508,13 +1524,6 @@ final class Phase4AuthManager
         if ($sessionIdentity) {
             $sessionIdentity['via'] = 'session';
             return $sessionIdentity;
-        }
-        if ($resolvedScope === 'admin') {
-            $legacySessionIdentity = $this->identityFromSession('user');
-            if ($legacySessionIdentity) {
-                $legacySessionIdentity['via'] = 'session';
-                return $legacySessionIdentity;
-            }
         }
         return $this->bootstrapTokenIdentity($headers);
     }

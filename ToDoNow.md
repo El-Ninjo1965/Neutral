@@ -9,13 +9,9 @@
 - FUTURE
 
 ## Current device-live status (2026-09-07, authoritative)
-- User-App and Admin-Interface are not reliably separated in the current real device flow.
-- Last live evidence shows the following active issue:
-  - Admin login can still affect the normal User-App identity/session state.
-  - Login/logout still behaves inconsistently.
-  - Access to admin features can still return: `Access denied – Administrative access requires an authorized role.`
-- Therefore: `User/Admin session separation: DONE / LIVE BESTANDEN` is invalid for the current repository state.
-- Current status: P1 is `IN ARBEIT / DEVICE RETEST REQUIRED`.
+- The session-scoping root cause has been fixed in code and validated under PHP 8.3 with the project test suite.
+- Live device confirmation remains required before any claim of `LIVE BESTANDEN`.
+- Current code-side status: `P1 – User/Admin session separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`.
 
 ## Historical issues retained as evidence only
 These remain as evidence of earlier failures and prior root-cause analysis:
@@ -25,10 +21,10 @@ These remain as evidence of earlier failures and prior root-cause analysis:
 - `No authenticated user was returned by the server`
 
 ## Critical new requirement: separate user and admin session contexts
-- Status: IN ARBEIT / DEVICE RETEST REQUIRED
+- Status: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Requirement: User-App and Admin-Interface must keep independent parallel login contexts.
-- Verified live failure: admin login can still overwrite or influence the user login context; logout/login remains inconsistent.
-- Required validation: fresh real-device retest, then targeted auth/session regression tests before we can consider this resolved.
+- Verified code fix: admin/user logins remain separate, logout only invalidates the active scope, and `/api/auth/me` resolves the correct identity for each scope.
+- Required validation: real browser/iPad retest to upgrade the status to `LIVE BESTANDEN`.
 
 ## Required UI/UX documentation (not yet implemented)
 ### User-App Header

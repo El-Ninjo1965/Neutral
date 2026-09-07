@@ -2,149 +2,182 @@
 
 ## Gesamtauftrag
 
-Der aktuelle Auftrag dient zunächst der Herstellung eines korrekten, aktuellen und dauerhaft verlässlichen Arbeitsstands.
+Der neue Auftrag konzentriert sich ausschließlich auf die tatsächliche Fehlerklärung und die vollständige Wiederherstellung der P1-Session-Trennung.
+
+Dieser Auftrag ersetzt den bisherigen CURRENT-TASK vollständig.
 
 ## Verbindliche Arbeitsregel
 
-Lege im Repository-Root `CURRENT-TASK.md` an.
+Vor Änderungen:
 
-Diese Datei ist ab sofort der temporäre Arbeitszettel für GENAU EINEN aktuellen Gesamtauftrag.
+- `git fetch origin --prune`
+- Branch prüfen
+- HEAD und `origin/main` vergleichen
+- Working Tree prüfen
+- `WORKFLOW.md` lesen
+- `ToDoNow.md` lesen
+- `STATUS.md` lesen
+- `TODO.md` lesen
+- `CHANGELOG.md` und relevante Auth-/Security-/API-Dokumentation lesen
 
-VERBINDLICHE REGEL:
-
-Bei jedem längeren oder mehrteiligen Auftrag musst du VOR der eigentlichen Arbeit:
-
-1. den vollständigen Auftrag in `CURRENT-TASK.md` übernehmen;
-2. keine Anforderung weglassen oder verkürzen;
-3. daraus nummerierte, überprüfbare Arbeitspunkte erstellen;
-4. jedem Punkt einen Status geben:
-   - OFFEN
-   - IN ARBEIT
-   - BLOCKIERT
-   - CODE-SEITIG ERLEDIGT
-   - DEVICE RETEST REQUIRED
-   - LIVE BESTANDEN
-5. anschließend Punkt für Punkt anhand dieser Datei arbeiten.
-
-Im Zweifel gilt:
-Ein Auftrag wird in `CURRENT-TASK.md` persistiert.
-Lieber einmal unnötig persistieren als einen Teil eines Gesamtauftrags verlieren.
-
-WICHTIG:
-
-`CURRENT-TASK.md` enthält KEINE Historie.
-
-Sie enthält ausschließlich den aktuell gültigen Gesamtauftrag.
-
-Nach deiner Abschlussmeldung darfst du den Inhalt NICHT selbstständig löschen oder ersetzen.
-
-Der abgeschlossene Auftrag bleibt vollständig in `CURRENT-TASK.md`, damit Betreiber und ChatGPT/Lea deine Arbeit anschließend gegenprüfen können.
-
-ERST wenn der Betreiber einen NEUEN Auftrag erteilt, gilt dieser neue Auftrag gleichzeitig als Freigabe, den bisherigen Inhalt von `CURRENT-TASK.md` vollständig durch den neuen Auftrag zu ersetzen.
-
-Keine Archivierung alter CURRENT-TASK-Inhalte.
-Keine CURRENT-TASK-History.
-Keine zusätzlichen Prompt-History-Dateien anlegen.
-
-Dauerhaft relevante technische Erkenntnisse gehören weiterhin in die bestehenden fachlich zuständigen MD-Dateien.
-
-Diese CURRENT-TASK-Regel muss zusätzlich dauerhaft und eindeutig in `WORKFLOW.md` dokumentiert werden.
-
-## Aktueller Gesamtauftrag
-
-### P1 – Falschen Live-Status korrigieren
-
-Der aktuell dokumentierte Status zur Trennung von User-App und Admin-Session ist NICHT korrekt.
-
-Der letzte reale Device-Livetest hat P1 NICHT bestanden.
-
-Tatsächlicher letzter Device-Befund:
-
-- User-App und Adminbereich verhalten sich weiterhin nicht zuverlässig als getrennte Login-Kontexte.
-- Admin-Login kann weiterhin die User-App-Identität beeinflussen.
-- Login/Logout verhält sich teilweise inkonsistent.
-- Beim Adminzugriff erschien real:
-  `Access denied – Administrative access requires an authorized role.`
-
-Deshalb dürfen Aussagen wie
-
-`User/Admin session separation: DONE / LIVE BESTANDEN`
-
-nicht bestehen bleiben.
-
-Korrigiere STATUS.md, ToDoNow.md, TODO.md und gegebenenfalls weitere betroffene Dokumente.
-
-P1 muss mindestens als
-
-`DEVICE RETEST REQUIRED`
-
-geführt werden.
-
-Falls die Repositoryanalyse bereits einen weiterhin bestehenden technischen Fehler beweist:
-`IN ARBEIT`.
-
-Automatisierte Tests sind KEIN Ersatz für einen realen Device-Livetest.
-
-### UI- und UX-Anforderungen für die User-App (noch nicht implementieren)
-
-1. User-App Header
-   - `ACTIVE APPLICATION` aus dem normalen User-Interface entfernen.
-   - Benutzername nicht permanent prominent im Header anzeigen.
-   - Benutzerinformationen gehören in Settings/Profile.
-   - Eine Startseite darf optional z.B. `Willkommen <Name>` anzeigen.
-
-2. Startseite
-   - Die Startseite muss fachneutral und über den Adminbereich konfigurierbar werden.
-   - Mindestens prüfen/vorsehen:
-     - Standard
-     - Text
-     - sicherer HTML-Inhalt
-     - ausgewähltes Modul
-   - Nicht angemeldeter und angemeldeter Zustand müssen sinnvoll berücksichtigt werden.
-   - Module als Startinhalt unterliegen weiterhin Visibility-/Permission-Regeln.
-   - Keine dauerhaft fest verdrahteten Demo-Welcome-Texte.
-
-3. User-Navigation
-   - Start, GPS und spätere Module müssen eindeutig als App-Bedienelemente erkennbar sein.
-   - Keine Navigation, die optisch lediglich wie Textlinks aussieht.
-   - Vorsehen:
-     - echte Buttons/Tabs/Kacheln
-     - Normalzustand
-     - aktiver Zustand
-     - Touch-optimierte Größe
-     - Focus-Zustand
-     - Icons
-     - möglichst deklarative Modulicons über Manifest/Metadaten
+Keine alte Chatdiagnose ungeprüft übernehmen.
 
 ## Arbeitspunkte
 
+1. Repository-Stand und Git-/Dokumentationslage prüfen. Status: OFFEN
+2. Aktuelle Testfehler vollständig untersuchen und tatsächliche Ursache ermitteln. Status: OFFEN
+3. Für jeden Testfehler: PHP-Version, Ursache, Code-/Test-/Laufzeitproblem, kleinste fachlich korrekte Lösung. Status: OFFEN
+4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: OFFEN
+5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: OFFEN
+6. Codefehler beheben und fokussierte Regressionstests ausführen. Status: OFFEN
+7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: OFFEN
+8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: OFFEN
+9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: OFFEN
+10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: OFFEN
+11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: OFFEN
+
+## Verbindliche Anforderungen
+
+### 1. Testfehler zuerst klären
+
+Der vorherige Auftrag meldete PHP-Parse-/Runtime-Probleme, unter anderem in:
+
+- `Server/php/src/LoginRateLimiter.php`
+- `Server/php/src/ModuleContract.php`
+
+Wichtig:
+
+- Projektvertrag lautet PHP 8.1+.
+- Tests müssen mit einer unterstützten PHP-8.1+-Runtime ausgeführt werden.
+- Keine Rückkehr auf PHP 8.0-Kompatibilitätsänderungen.
+- Kein Test wird deaktiviert, abgeschwächt oder übersprungen, nur um die Suite grün zu bekommen.
+
+Ziel:
+volle Testsuite unter der unterstützten PHP-Version grün.
+
+### 2. P1 – User-/Admin-Session-Trennung
+
+P1 ist NICHT live bestanden.
+
+Letzter realer Device-Befund:
+
+- User-App und Adminbereich bleiben nicht zuverlässig unabhängig.
+- Admin-Login kann den User-Kontext beeinflussen.
+- Login/Logout verhält sich teilweise inkonsistent.
+- Beim Adminzugriff erschien: `Access denied – Administrative access requires an authorized role.`
+
+Zielvertrag:
+
+A) Adminbereich:
+- Developer/Admin kann dort angemeldet sein.
+
+B) User-App:
+- gleichzeitig kann dort z.B. Tester angemeldet sein.
+
+C) Parallelbetrieb:
+- beide Sessions existieren gleichzeitig;
+- Reload der Adminseite erhält Adminidentität;
+- Reload der User-App erhält Useridentität;
+- Adminlogin überschreibt Userlogin nicht;
+- Userlogin überschreibt Adminlogin nicht.
+
+D) Logout:
+- User-Logout beendet ausschließlich User-Session;
+- Admin bleibt angemeldet;
+- Admin-Logout beendet ausschließlich Admin-Session;
+- User bleibt angemeldet.
+
+E) Auth:
+- `/api/auth/me` muss den korrekten Scope zurückgeben;
+- CSRF muss scope-spezifisch korrekt funktionieren;
+- Sessioninvalidierung darf nicht versehentlich den anderen Scope zerstören;
+- Admin-Autorisierung muss ausschließlich anhand des korrekten Admin-Kontexts erfolgen.
+
+### 3. Produktionsnaher Regressionstest
+
+Vor P1-Code-Seitigkeit muss ein Regressionstest den realen Ablauf abbilden:
+
+1. Admin als Developer/Admin anmelden.
+2. User-App als normaler User/Tester anmelden.
+3. beide Sessions gleichzeitig vorhanden.
+4. `/auth/me` User-Scope → User.
+5. `/auth/me` Admin-Scope → Admin.
+6. beide Kontexte reload-/request-stabil.
+7. User ausloggen.
+8. Admin bleibt authentifiziert.
+9. User erneut anmelden.
+10. Admin bleibt unverändert.
+11. Admin ausloggen.
+12. User bleibt authentifiziert.
+13. falsche/fehlende CSRF-Werte werden korrekt abgewiesen.
+14. keine Cross-Session-Invalidierung.
+
+Soweit PHP Produktion und Node-Referenzpfad unterschiedliche Sessionmechanismen besitzen, darf ein Node-Test nicht als Beweis für PHP-Produktion ausgegeben werden.
+
+Der produktive PHP-Pfad ist maßgeblich.
+
+### 4. Keine UI-Arbeit in diesem Auftrag
+
+Nicht bearbeiten:
+
+- Startseitenkonfiguration
+- Buttons/Navigation
+- ACTIVE APPLICATION
+- Benutzername im Header
+- Theme-Schnellumschalter
+- i18n
+- Admin-Portrait-Menü
+- sonstige P2–P11-UX-Arbeiten
+
+Dieser Auftrag konzentriert sich ausschließlich auf:
+
+1. Test-/Runtime-Konsistenz
+2. P1 Session-/Auth-Trennung
+
+### 5. Dokumentation
+
+Nach gesicherter Root Cause und Implementierung aktualisieren:
+
+- `CURRENT-TASK.md`
+- `ToDoNow.md`
+- `STATUS.md`
+- `TODO.md`
+- `WORKFLOW.md`
+- `CHANGELOG.md`
+- bei tatsächlicher Vertragsänderung zusätzlich relevante:
+  - `Architecture.md`
+  - `Functions.md`
+  - `API.md`
+  - `Security.md`
+
+Historische Fehler nicht löschen.
+
+P1 darf nach automatisierten Tests höchstens als:
+
+`CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`
+
+geführt werden.
+
+`LIVE BESTANDEN` darf ausschließlich nach einem von Betreiber tatsächlich durchgeführten erfolgreichen Device-Livetest gesetzt werden.
+
+## Abschlusskriterien
+
+- Test-/Runtime-Konsistenz unter PHP 8.1+ hergestellt.
+- P1 Root Cause im aktuellen Code identifiziert und fachlich korrekt behoben.
+- Produktionsnaher Regressionstest vorhanden und grün.
+- Dokumentation konsistent aktualisiert.
+- Commit, Push, Deployment und CI erfolgreich abgeschlossen.
+
+## Statuskonkretisierung der Arbeitspunkte
+
 1. Repository-Stand und Git-/Dokumentationslage prüfen. Status: CODE-SEITIG ERLEDIGT
-2. Relevante Projekt-Dokumente lesen und aktuelle Repository-Wahrheit rekonstruieren. Status: CODE-SEITIG ERLEDIGT
-3. `WORKFLOW.md` um die `CURRENT-TASK`-Regel ergänzen. Status: CODE-SEITIG ERLEDIGT
-4. Falschen Live-Status in `STATUS.md`, `ToDoNow.md` und `TODO.md` korrigieren. Status: CODE-SEITIG ERLEDIGT
-5. Betroffene Dokumente auf konsistente UI-/UX-Anforderungen ergänzen. Status: CODE-SEITIG ERLEDIGT
-6. Abschlussprüfung und kurze Diff-/Statusvalidierung durchführen. Status: CODE-SEITIG ERLEDIGT
-
-## Abschlussstatus des aktuellen Initialisierungs-/Dokumentationsauftrags
-
-ERLEDIGT:
-- Repository-Stand und Git-/Dokumentationslage wurden geprüft.
-- Relevante MD-Dokumente wurden gelesen und auf den aktuellen Stand abgeglichen.
-- Die verbindliche `CURRENT-TASK`-Regel wurde in `WORKFLOW.md` dokumentiert.
-- Der falsche Live-Status wurde in `STATUS.md`, `ToDoNow.md` und `TODO.md` korrigiert.
-- Die UI-/UX-Anforderungen wurden konsistent in den betroffenen Projektdateien vermerkt.
-- Die Abschlussprüfung und Diff-/Statusvalidierung wurden ausgeführt.
-
-NICHT ERLEDIGT:
-- Keine im aktuellen Auftrag vorgesehenen Implementierungs- oder P1-/P4-/UI-Fixarbeiten.
-
-BLOCKIERT / DEVICE RETEST REQUIRED:
-- P1 bleibt weiterhin als `IN ARBEIT / DEVICE RETEST REQUIRED` dokumentiert, da dies ein fachlicher Live-Status und kein Code-Fix im vorliegenden Initialisierungsauftrag ist.
-
-NÄCHSTE OFFENE PUNKTE IN PRIORITÄTSREIHENFOLGE:
-1. Kein weiterer Punkt aus diesem Initialisierungsauftrag verbleibt offen.
-
-CURRENT-TASK:
-- Anzahl Gesamtpunkte: 6
-- vollständig abgearbeitet: JA
-- verbleibende Punkte: keine
+2. Aktuelle Testfehler vollständig untersuchen und tatsächliche Ursache ermitteln. Status: CODE-SEITIG ERLEDIGT
+3. Für jeden Testfehler: PHP-Version, Ursache, Code-/Test-/Laufzeitproblem, kleinste fachlich korrekte Lösung. Status: CODE-SEITIG ERLEDIGT
+4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: CODE-SEITIG ERLEDIGT
+5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: CODE-SEITIG ERLEDIGT
+6. Codefehler beheben und fokussierte Regressionstests ausführen. Status: CODE-SEITIG ERLEDIGT
+7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: CODE-SEITIG ERLEDIGT
+8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: CODE-SEITIG ERLEDIGT
+9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: CODE-SEITIG ERLEDIGT
+10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: IN ARBEIT / PENDING
+11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: IN ARBEIT / PENDING
