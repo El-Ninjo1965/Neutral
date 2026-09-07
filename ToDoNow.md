@@ -1,156 +1,21 @@
-# NEUTRAL – Consolidated rest work plan
+# NEUTRAL – ToDoNow
 
-## Status legend
-- DONE
-- IN PROGRESS
-- PENDING
-- BLOCKED
-- DEVICE RETEST REQUIRED
-- FUTURE
+## Current operational status
 
-## Current device-live status (2026-09-07, authoritative)
-- Device-Retest #1 (Commit `87bfc31`) is FAILED: a Developer/Admin login through the User-App still resulted in `Access denied` on the admin area instead of the separate admin login form.
-- Root cause (second iteration): `Server/public/admin.php` fell back to the User-App session cookie (`neutral_session`) when no admin-scope session existed, so any active User-App session was wrongly treated as an admin identity candidate.
-- Fix: `admin.php` now resolves identity exclusively from the admin-scope cookie (`neutral_admin_session`); the legacy fallback to `neutral_session` was removed.
-- New regression coverage confirms: a normal user session alone shows the admin login form (not Access Denied); a user-scope session with an admin role still requires the separate admin login; concurrent admin + user sessions show the correct admin UI.
-- Current code-side status: `P1 – User/Admin session separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`. A second real device retest by the operator is still required.
+- P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
+- Workflow reset: DONE / DOCUMENTED
+- P4 (configurable landing page): PENDING
+- Settings / Appearance separation: PENDING / not marked complete until the full feature task is complete
+- Theme / i18n / navigation / other feature work: PENDING
 
-## Historical issues retained as evidence only
-These remain as evidence of earlier failures and prior root-cause analysis:
-- `User is not valid or active`
-- `Set up the local developer account before logging in`
-- `Server authentication client is not available`
-- `No authenticated user was returned by the server`
-- `Access denied – Administrative access requires an authorized role.` (Device-Retest #1, 2026-09-07: User-App session fallback in `admin.php`)
+## Active priority list
 
-## Critical new requirement: separate user and admin session contexts
-- Status: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED (second iteration after failed Device-Retest #1)
-- Requirement: User-App and Admin-Interface must keep independent parallel login contexts.
-- Verified code fix: admin.php no longer falls back to the User-App session cookie; admin identity is resolved exclusively from the admin-scope cookie.
-- Required validation: a second real browser/iPad retest to upgrade the status to `LIVE BESTANDEN`.
+1. Keep the truth hierarchy and CURRENT-TASK capture contract in force for all future work.
+2. Keep historical device failures as evidence only; they do not overwrite the newest live operator result.
+3. Continue only with validated feature work after the workflow reset is complete.
+4. Do not treat partial or historical work as active project completion.
 
-## Required UI/UX documentation (not yet implemented)
-### User-App Header
-- Remove `ACTIVE APPLICATION` from the normal User interface.
-- Do not show the username permanently in the header.
-- Keep user details in Settings/Profile instead.
-- Optional welcome copy on the landing view may say `Willkommen <Name>`.
+## Historical evidence retained
 
-### Start page
-- The landing page must be neutral and configurable by the admin area.
-- Required modes to design for:
-  - Standard
-  - Text
-  - safe HTML content
-  - selected module
-- Non-authenticated and authenticated states must be handled deliberately.
-- Module-based landing content remains subject to visibility and permission rules.
-- No hard-coded demo welcome text should remain.
-
-### User navigation
-- Start, GPS and later modules must be clearly visible as app controls.
-- No navigation that only looks like text links.
-- Provide:
-  - real buttons/tabs/cards
-  - normal state
-  - active state
-  - touch-friendly size
-  - focus state
-  - icons
-  - declarative module icons via manifest metadata where possible
-
-## Priority work list
-
-### P1 – User/Admin session separation
-- Status: IN ARBEIT / DEVICE RETEST REQUIRED
-- Scope: fix the remaining cross-context login/session issue in the real browser flow; verify cookies, session scope resolution, and login/logout semantics with real device evidence.
-- Acceptance: parallel logins; independent logout; correct `/auth/me`; correct CSRF; session invalidation remains scoped.
-
-### P2 – User-App header cleanup
-- Status: DONE / DOCUMENTED
-- Verified: user header wording is consistent in both signed-in and signed-out states.
-- Completed: settings label is now `Settings` in the logged-out state to match the logged-in state.
-- Remaining work in this block: none for the current repo state.
-
-### P3 – Navigation as real buttons/tabs
-- Status: DONE / DOCUMENTED
-- Verified: navigation entries are rendered as real interactive buttons/tabs with active-state styling and touch-friendly sizing.
-- Remaining work in this block: none for the current repo state.
-
-### P4 – Configurable landing page
-- Status: PENDING
-- Replace hard-coded home content with a configurable homepage contract using safe persisted settings.
-- Required modes: Standard, Text/HTML, Module.
-- Validate permission checks for start-page modules.
-
-### P5 – i18n / language system
-- Status: PENDING
-- On first start, detect device language and use it if supported; otherwise default to English.
-- Allow persisted user override.
-- Avoid hardcoded English/German/Spanish-only assumptions; keep extensible package-based structure.
-
-### P6 – Permission catalog UX
-- Status: PENDING
-- Functional contract already exists; improve layout and responsive readability.
-- Keep permissions architecture intact; only improve display and sorting semantics.
-
-### P7 – Session overview
-- Status: PENDING
-- Keep single-session invalidation.
-- Add `End all other sessions` action with safeguards.
-- Verify RBAC, CSRF, audit, race conditions, and confirmation handling.
-
-### P8 – User settings device acceptance
-- Status: PENDING
-- After fix implementation: open settings, modify, save, reload, verify persistence, and re-test in a fresh session/device context.
-- Add/extend automated regression tests before final acceptance.
-
-### P9 – Light / Dark theme verification
-- Status: PENDING
-- Check switch, immediate render, reload, persistence, warm-start, and system theme alignment as applicable.
-
-### P10 – Navigation / GPS device test
-- Status: PENDING
-- Validate start, GPS, navigation back, permission prompts, permission denial, re-request flow, and role-specific module visibility.
-
-### P11 – Offline / airplane mode / warm start
-- Status: PENDING
-- Validate online load, offline use, reload offline, full restart offline, warm start, and recovery when connectivity returns.
-- This remains a key core contract.
-
-### GPS Pro
-- Status: FUTURE
-- Separate extended GPS-Pro module concept and map capability research is deferred.
-- Not in the current Core 1.0 scope.
-
-## Final cleanup and hardening
-- Status: FUTURE
-- Must happen only after session separation, UI tasks, i18n, settings, GPS, and offline/warm-start work are completed.
-- Scope: remove dead code and legacy workarounds only after reference checks, tests, and regression validation.
-
-## Core-1.0 freeze gate
-- Status: FUTURE
-- Freeze only after:
-  - all critical open tasks cleared;
-  - tests green;
-  - deployment green;
-  - device-live checks passed;
-  - offline contract passes;
-  - docs consistent;
-  - working tree clean;
-  - HEAD == origin/main.
-
-## Documentation update rule during execution
-After each completed block:
-- update ToDoNow.md
-- update STATUS.md
-- update WORKFLOW.md
-- update TODO.md
-- update CHANGELOG.md
-- when architecture changes materially, update Architecture.md and Functions.md
-- update CORE-1.0.md only when freeze-relevant criteria change
-
-## Execution rule
-- Begin immediately with priority 1 after the required docs commit/push.
-- Keep moving through each remaining self-executable block without waiting for additional prompts.
-- Only pause if there is a true external blocker that is not in the repository or codebase.
+- Earlier failed P1 device reports remain as historical evidence only.
+- They are not the current active status once the real operator live test is successful.

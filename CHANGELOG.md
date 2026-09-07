@@ -1,3 +1,9 @@
+## 2026-09-07 – Workflow reset: operational truth hierarchy and live status corrected
+
+- The project operating rules were reset so that the newest live operator finding, newest operator task, and `CURRENT-TASK.md` capture order are authoritative.
+- Historical task states and failed device reports remain as evidence only and no longer override the current operative truth.
+- P1 is recorded as `LIVE BESTANDEN` in the operational status; previous failed device tests remain archived as historical evidence only.
+- Feature work remains deferred until the next dedicated task; this change is limited to governance, task capture, and documentation consistency.
 
 ## 2026-09-07 – Fix: Admin-Bereich fiel weiterhin auf die User-App-Session zurück (Device-Retest #1 Fehlschlag behoben)
 

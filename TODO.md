@@ -1,20 +1,16 @@
 # NEUTRAL – TODO
 
 ## Current status
-- Device-live user login: DEVICE RETEST REQUIRED
-- Device-live admin login: DEVICE RETEST REQUIRED
-- Session separation (User-App vs Admin): CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED (second fix after Device-Retest #1 failure)
-- Remaining UX/framework cleanup: PENDING
-- Final cleanup / Core 1.0 gate: FUTURE
+
+- P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
+- Workflow reset: DONE
+- P4 configurable landing page: PENDING
+- Settings / Appearance separation: PENDING
+- Theme / i18n / navigation / other feature work: PENDING
 
 ## Action list
-1. Separate user and admin session contexts without breaking shared RBAC/database contracts. (CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED – second fix: removed admin.php fallback to the User-App session cookie)
-2. Clean up user-app header wording and settings label. (DONE / documented)
-3. Make navigation entries clearly interactive tabs/buttons. (DONE / documented)
-4. Implement configurable homepage modes and admin controls.
-5. Add i18n with device detection and persistent override.
-6. Improve permission catalog UX.
-7. Expand session overview with end-other-sessions semantics.
-8. Re-test settings persistence and theme flows on device.
-9. Validate offline / warm-start / GPS device flows.
-10. Final cleanup and hardening; then freeze assessment.
+
+1. Maintain the documented truth hierarchy and CURRENT-TASK capture process for all future work. Status: DONE
+2. Keep historical failures as evidence only; do not allow them to override newer live operator findings. Status: DONE
+3. Resume functional work only after the workflow reset has been fully captured and verified. Status: PENDING until the next feature task begins
+4. Keep P4, settings, and UI work explicitly deferred until the next feature task and validation cycle. Status: PENDING
