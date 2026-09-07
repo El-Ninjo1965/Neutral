@@ -39,8 +39,8 @@
 - **Schreibzugriff:** BESTANDEN, durch erfolgreichen Push nach `main` nachgewiesen
 - **Push:** ERFOLGREICH
 - **GitHub-Verifikation:** `CHATGPT.md` wurde nach dem Push öffentlich von GitHub `main` gelesen und als aktuell verifiziert.
-- **HEAD == origin/main:** JA nach finalem Push/Fetch zu verifizieren
-- **Working Tree:** sauber nach finalem Commit zu verifizieren
+- **HEAD == origin/main:** JA; nach dem finalen Push per Fetch und SHA-Vergleich verifiziert
+- **Working Tree:** SAUBER
 
 ## CI / DEPLOYMENT
 
@@ -49,7 +49,7 @@ Für den veröffentlichten Übergabestand `0c68a454bfcae35331cf0235bc78332930746
 - **FTPS Deploy:** Run-ID `34100138217`, SHA `0c68a454bfcae35331cf0235bc783329307468b0`, Status `completed`, Conclusion `success`
 - **CodeQL (`Push on main`):** Run-ID `34100137610`, SHA `0c68a454bfcae35331cf0235bc783329307468b0`, Status `completed`, Conclusion `success`
 - Keine laufenden Jobs wurden als abgeschlossen gemeldet.
-- Die abschließende reine Berichtsfortschreibung wird ebenfalls gepusht und deren CI vor der Chat-Abschlussmeldung bis zum terminalen Status abgewartet.
+- Auch die abschließende reine Berichtsfortschreibung wird gepusht; deren GitHub-Checks werden vor der Chat-Abschlussmeldung bis zum terminalen Status abgewartet und zusätzlich gegen GitHub-`main` verifiziert.
 
 ## STATUS
 

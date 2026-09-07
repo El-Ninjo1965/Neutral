@@ -18,7 +18,7 @@ Featurearbeit und insbesondere keine P4-Arbeit zulässig.
 8. Änderungen committen und mit der vorhandenen GitHub-Authentifizierung tatsächlich nach GitHub `main` übertragen. **Status: ERLEDIGT – Übergabestand nach `main` gepusht**
 9. Auf GitHub verifizieren, dass `CHATGPT.md` auf `main` aktuell vorhanden ist. **Status: ERLEDIGT – veröffentlichte Fassung per GitHub-Rohdatei geprüft**
 10. FTPS, CodeQL und sonstige erforderliche CI bis zum terminalen Status abwarten und dokumentieren. **Status: ERLEDIGT – FTPS und CodeQL für den veröffentlichten Übergabestand terminal erfolgreich**
-11. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren. **Status: ERLEDIGT – nach finaler Berichtsfortschreibung erneut zu prüfen**
+11. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren. **Status: ERLEDIGT**
 
 ## Capture-Prüfung
 
