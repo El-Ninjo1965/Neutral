@@ -13,12 +13,12 @@ Featurearbeit und insbesondere keine P4-Arbeit zulässig.
 3. Vorhandene GitHub-Authentifizierung für `El-Ninjo1965/Neutral` prüfen und den authentifizierten Schreibzugriff nachweisen; den Token niemals in URL, Log, Datei oder Ausgabe offenlegen. **Status: BLOCKIERT – weder `GH_TOKEN` noch eine Anmeldung in GitHub CLI oder ein Credential Helper ist vorhanden**
 4. Falls erforderlich, `origin` sicher auf `https://github.com/El-Ninjo1965/Neutral.git` einrichten. **Status: ERLEDIGT**
 5. Ausschließlich den Übergabe-/Dokumentationsstand bearbeiten; keine künstliche Testdatei erzeugen, keine Secrets committen und keine P4-Featurearbeit beginnen. **Status: ERLEDIGT**
-6. Erforderliche lokale Prüfungen ausführen und die Ergebnisse wahrheitsgemäß dokumentieren. **Status: IN ARBEIT**
-7. `CHATGPT.md` mit dem vollständigen Abschluss-/Statusbericht aktualisieren: Ausgangscommit, finaler Commit, geänderte Dateien, Tests, offene Punkte, Device-Retest, Push, FTPS, CodeQL, `HEAD`/`origin/main` und Working Tree. **Status: IN ARBEIT**
-8. Änderungen committen und mit der vorhandenen GitHub-Authentifizierung tatsächlich nach GitHub `main` übertragen. **Status: AUSSTEHEND**
-9. Auf GitHub verifizieren, dass `CHATGPT.md` auf `main` aktuell vorhanden ist. **Status: AUSSTEHEND**
-10. FTPS, CodeQL und sonstige erforderliche CI bis zum terminalen Status abwarten und dokumentieren. **Status: AUSSTEHEND**
-11. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren. **Status: AUSSTEHEND**
+6. Erforderliche lokale Prüfungen ausführen und die Ergebnisse wahrheitsgemäß dokumentieren. **Status: ERLEDIGT**
+7. `CHATGPT.md` mit dem vollständigen Abschluss-/Statusbericht aktualisieren: Ausgangscommit, finaler Commit, geänderte Dateien, Tests, offene Punkte, Device-Retest, Push, FTPS, CodeQL, `HEAD`/`origin/main` und Working Tree. **Status: ERLEDIGT**
+8. Änderungen committen und mit der vorhandenen GitHub-Authentifizierung tatsächlich nach GitHub `main` übertragen. **Status: LOKALER COMMIT ERSTELLT / PUSH DURCH FEHLENDE AUTHENTIFIZIERUNG BLOCKIERT**
+9. Auf GitHub verifizieren, dass `CHATGPT.md` auf `main` aktuell vorhanden ist. **Status: BLOCKIERT – Bericht kann ohne Schreibzugriff nicht veröffentlicht werden**
+10. FTPS, CodeQL und sonstige erforderliche CI bis zum terminalen Status abwarten und dokumentieren. **Status: BLOCKIERT – ohne Push werden keine Runs für den Berichtsstand ausgelöst**
+11. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren. **Status: BLOCKIERT – `origin/main` bleibt mangels Push auf dem Ausgangscommit**
 
 ## Capture-Prüfung
 
