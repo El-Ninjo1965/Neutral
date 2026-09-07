@@ -1,3 +1,10 @@
+## 2026-09-07 – Codex environment operating path made persistent
+
+- Documented Codex environment `Neutral` as the required secrets-safe operating environment for `El-Ninjo1965/Neutral` through project completion.
+- Recorded the verified GitHub path through `GH_TOKEN`, the canonical HTTPS `origin`, the GitHub Actions and direct Explicit-FTPS endpoints, required secret names, and the recovery sequence for replaceable sandboxes without storing secret values.
+- Added the environment preflight and Codex/ChatGPT handoff sequence to the binding workflow.
+- Preserved `P1 = LIVE BESTANDEN`, deferred P4, and made no application or feature changes.
+
 ## 2026-09-07 – Workflow reset: operational truth hierarchy and live status corrected
 
 - The project operating rules were reset so that the newest live operator finding, newest operator task, and `CURRENT-TASK.md` capture order are authoritative.
