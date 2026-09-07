@@ -25,7 +25,7 @@ Dieser Auftrag ist ausschließlich Dokumentationsarbeit. P1 bleibt
 11. Für reine Dokumentationsänderungen erforderliche Prüfungen ausführen und Ergebnisse in `CHATGPT.md` berichten. **Status: ERLEDIGT**
 12. Dokumentation committen und authentifiziert nach GitHub `main` pushen. **Status: ERLEDIGT**
 13. `CHATGPT.md` mit Ausgangscommit, finalem Stand, Änderungen, Tests, offenen Punkten, Device-Retest, Push, CI, `HEAD == origin/main` und Working Tree aktualisieren und auf GitHub `main` verifizieren. **Status: ERLEDIGT**
-14. FTPS, CodeQL und sonstige relevante CI bis zum terminalen Status abwarten. **Status: ERLEDIGT – CodeQL terminal erfolgreich; zwei FTPS-Läufe terminal fehlgeschlagen, jeweils erst nach erfolgreichem Upload am nicht erreichbaren öffentlichen Root**
+14. FTPS, CodeQL und sonstige relevante CI bis zum terminalen Status abwarten. **Status: ERLEDIGT – finaler CodeQL- und FTPS-Lauf terminal erfolgreich; zwei vorherige FTPS-Smoke-Fehlschläge blieben als Diagnoseevidenz erhalten**
 15. Abschließend sauberen Working Tree und `HEAD == origin/main` verifizieren. **Status: ERLEDIGT – nach finalem Berichts-Push erneut geprüft**
 
 ## Capture-Prüfung

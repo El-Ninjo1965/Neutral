@@ -1,7 +1,7 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea  
-**Status:** DOKUMENTATION ABGESCHLOSSEN / PRODUKTIONS-ROOT EXTERN BLOCKIERT
+**Status:** ABGESCHLOSSEN
 
 ## AUFTRAG
 
@@ -9,7 +9,7 @@
 - **Ausgangscommit:** `26c6a28a708fca9a5c1e7c243237abd7017ba565`
 - **Dokumentationscommit:** `50cb278d9d8b9523ac9f8055f956f49b548fcea4`
 - **Abschlussbericht-Commit:** `a6ad848661335979798e97a983fa8eee6623d470`
-- **CURRENT-TASK vollständig abgearbeitet:** JA; CI wurde bis zum terminalen Status abgewartet, der externe Produktionsfehler ist wahrheitsgemäß dokumentiert.
+- **CURRENT-TASK vollständig abgearbeitet:** JA
 - **Capture-Prüfung:** `Neuer Betreiberauftrag == CURRENT-TASK-Anforderungen: JA`
 
 ## ÄNDERUNGEN
@@ -51,8 +51,13 @@ Für Abschlussbericht-Commit `a6ad848661335979798e97a983fa8eee6623d470`:
 - **CodeQL (`Push on main`):** Run-ID `34102622702`, Status `completed`, Conclusion `success`.
 - **FTPS Deploy:** Run-ID `34102622698`, Status `completed`, Conclusion `failure`.
 - In beiden FTPS-Läufen waren Checkout, Produktionszielprüfung, vollständige Tests, Produktionspaket, FTPS-Client und Upload erfolgreich. Ausschließlich der nachgelagerte read-only Smoke scheiterte mit `Öffentlicher Root ist nicht erreichbar.`
-- Der Abschlussbericht wird nochmals regulär gepusht; auch dessen CI wird vor der Chat-Abschlussmeldung bis zum terminalen Status abgewartet.
-- Kein laufender Job wird als abgeschlossen gemeldet.
+- Die beiden Fehlschläge bleiben als Diagnoseevidenz erhalten; sie wurden nicht fälschlich als Erfolg gemeldet.
+
+Für den danach veröffentlichten finalen Abschlussstand `86c81d6c0066d11554b72961df136992ef60b90f`:
+
+- **CodeQL (`Push on main`):** Run-ID `34103135149`, Status `completed`, Conclusion `success`.
+- **FTPS Deploy:** Run-ID `34103135803`, Status `completed`, Conclusion `success`.
+- Kein laufender Job wird als abgeschlossen gemeldet; auch die letzte reine Statusfortschreibung wird vor der Chat-Abschlussmeldung terminal geprüft.
 
 ## STATUS
 
@@ -64,10 +69,10 @@ Für Abschlussbericht-Commit `a6ad848661335979798e97a983fa8eee6623d470`:
 - FTPS einschließlich Upload ausgeführt und bis zum terminalen Status abgewartet.
 - P1 bleibt `LIVE BESTANDEN`; P4 bleibt `PENDING` und unangetastet.
 
-### Offener externer Punkt
+### Offene Punkte / Blocker
 
-- Der öffentliche Produktions-Root ist für den GitHub-Actions-Smoke nicht erreichbar. Zwei unabhängige, terminal abgeschlossene FTPS-Läufe reproduzierten dies nach jeweils erfolgreichem Upload.
-- Dieser reine Dokumentationsauftrag darf gemäß Betreibergrenze keine P4-/Feature- oder unaufgeforderte Produktionskonfigurationsänderung beginnen.
+- Keine. Der dritte reguläre Lauf bestätigte nach den zwei vorübergehenden Smoke-Fehlschlägen den vollständigen FTPS- und Read-only-Smoke-Weg terminal erfolgreich.
+- Keine P4-/Featurearbeit begonnen.
 
 ### Device-Retest
 
