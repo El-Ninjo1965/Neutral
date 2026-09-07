@@ -33,7 +33,7 @@ Keine alte Chatdiagnose ungeprüft übernehmen.
 7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: ERLEDIGT (validiert mit `/usr/bin/php8.3` auf diesem Host; das systemweite `php` ist auf PHP 8.0 gesetzt)
 8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: ERLEDIGT
 9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: ERLEDIGT
-10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: IN ARBEIT / PENDING
+10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: ERLEDIGT
 11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: OFFEN / WAITING
 
 ## Verbindliche Anforderungen
