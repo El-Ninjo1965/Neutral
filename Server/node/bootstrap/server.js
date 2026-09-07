@@ -988,7 +988,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
   // login path; static tokens (x-admin-access-token/x-auth-token) remain a
   // separate bootstrap/recovery mechanism and are not replaced by this.
   // -------------------------------------------------------------------------
-  if (pathname === `${apiBase}/auth/login` && req && req.method === 'POST') {
+  if ((pathname === `${apiBase}/auth/login` || pathname === `${apiBase}/admin/auth/login`) && req && req.method === 'POST') {
     readJsonBody(req)
       .then(async (payload) => {
         const ip = clientIp(req);
@@ -1022,7 +1022,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
-  if (pathname === `${apiBase}/auth/logout` && req && req.method === 'POST') {
+  if ((pathname === `${apiBase}/auth/logout` || pathname === `${apiBase}/admin/auth/logout`) && req && req.method === 'POST') {
     const cookies = parseCookies(req);
     const cookieNames = resolveCookieNamesForRequest(req);
     const sessionId = cookies[cookieNames.cookieName] || cookies[authConfig.cookieName];
@@ -1043,7 +1043,7 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
-  if (pathname === `${apiBase}/auth/me` && req && req.method === 'GET') {
+  if ((pathname === `${apiBase}/auth/me` || pathname === `${apiBase}/admin/auth/me`) && req && req.method === 'GET') {
     const identity = resolveRequestIdentity(req);
     if (!identity.authenticated) {
       sendJson(res, 401, { ok: false, code: 'AUTH_REQUIRED', message: 'Not authenticated.' });

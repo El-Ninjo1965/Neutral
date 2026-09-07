@@ -284,7 +284,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.equal(result.statusCode, 401);
     assert.match(result.body, /Authentication required/i);
     assert.match(result.body, /id="loginBtn"/);
-    assert.match(result.body, /NeutralPublicPath\.api\('auth\/login'\)/);
+    assert.match(result.body, /NeutralPublicPath\.api\('admin\/auth\/login'\)/);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 
@@ -468,12 +468,13 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
 
   test('Fall E3: PHP logout requires a session and validates CSRF before mutation', () => {
     const source = fs.readFileSync(path.join(webrootDir, 'api', 'index.php'), 'utf8');
-    const logoutStart = source.indexOf("if ($route === 'auth/logout'");
-    const meStart = source.indexOf("if ($route === 'auth/me'", logoutStart);
+    const logoutStart = source.indexOf("if (($route === 'auth/logout' || $route === 'admin/auth/logout')");
+    const meStart = source.indexOf("if (($route === 'auth/me' || $route === 'admin/auth/me')", logoutStart);
     const logoutHandler = source.slice(logoutStart, meStart);
     assert.match(logoutHandler, /if \(!\$identity \|\|/);
     assert.match(logoutHandler, /Security::assertValidCsrfToken/);
     assert.ok(logoutHandler.indexOf('assertValidCsrfToken') < logoutHandler.indexOf('$authManager->logout()'));
+    assert.match(logoutHandler, /admin\/auth\/logout|auth\/logout/);
   });
 
   test('Fall F: public status omits runtime paths and database identifiers', async () => {

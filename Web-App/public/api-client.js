@@ -387,7 +387,8 @@ class ApiClient {
   }
 
   async login(username, password) {
-    const result = await this.post('/api/auth/login', { username, password });
+    const endpoint = this.sessionScope === 'admin' ? '/api/admin/auth/login' : '/api/auth/login';
+    const result = await this.post(endpoint, { username, password });
     const payload = this.extractEnvelopeData(result) || (result && result.ok && result.data && typeof result.data === 'object' ? result.data : null);
     const csrf = (payload && payload.csrfToken) || (result && result.data && result.data.csrfToken) || (typeof document !== 'undefined' ? this.getCookie(this.csrfCookieName) : null);
     if (csrf) {
@@ -397,13 +398,15 @@ class ApiClient {
   }
 
   async logout() {
-    const result = await this.post('/api/auth/logout', {});
+    const endpoint = this.sessionScope === 'admin' ? '/api/admin/auth/logout' : '/api/auth/logout';
+    const result = await this.post(endpoint, {});
     this.setCsrfToken(null);
     return result;
   }
 
   async me() {
-    return this.get('/api/auth/me');
+    const endpoint = this.sessionScope === 'admin' ? '/api/admin/auth/me' : '/api/auth/me';
+    return this.get(endpoint);
   }
 }
 

@@ -242,6 +242,49 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.equal(userStillAuthenticated.body.user.username, 'dual-logout-user');
   });
 
+  test('1d. Explicit admin auth routes remain isolated from the user session', async () => {
+    await createTestUser({ username: 'explicit-user', email: 'explicit-user@example.com', role: 'user' });
+    await createTestUser({ username: 'explicit-admin', email: 'explicit-admin@example.com', role: 'admin' });
+
+    const userLogin = await rawRequest('POST', '/api/auth/login', {
+      payload: { username: 'explicit-user', password: 'correct-horse-battery-staple' }
+    });
+    const adminLogin = await rawRequest('POST', '/api/admin/auth/login', {
+      payload: { username: 'explicit-admin', password: 'correct-horse-battery-staple' }
+    });
+
+    assert.equal(userLogin.statusCode, 200);
+    assert.equal(adminLogin.statusCode, 200);
+    assert.ok(userLogin.cookies.neutral_session);
+    assert.ok(userLogin.cookies.neutral_csrf);
+    assert.ok(adminLogin.cookies.neutral_admin_session);
+    assert.ok(adminLogin.cookies.neutral_admin_csrf);
+
+    const userMe = await rawRequest('GET', '/api/auth/me', { cookies: { neutral_session: userLogin.cookies.neutral_session } });
+    const adminMe = await rawRequest('GET', '/api/admin/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+
+    assert.equal(userMe.statusCode, 200);
+    assert.equal(userMe.body.user.username, 'explicit-user');
+    assert.equal(adminMe.statusCode, 200);
+    assert.equal(adminMe.body.user.username, 'explicit-admin');
+
+    const userLogout = await rawRequest('POST', '/api/auth/logout', {
+      cookies: { neutral_session: userLogin.cookies.neutral_session },
+      headers: { 'x-csrf-token': userLogin.cookies.neutral_csrf }
+    });
+    assert.equal(userLogout.statusCode, 200);
+
+    const adminStillAuthenticated = await rawRequest('GET', '/api/admin/auth/me', {
+      cookies: { neutral_admin_session: adminLogin.cookies.neutral_admin_session },
+      headers: { 'x-framework-role': 'admin' }
+    });
+    assert.equal(adminStillAuthenticated.statusCode, 200);
+    assert.equal(adminStillAuthenticated.body.user.username, 'explicit-admin');
+  });
+
   test('2. Bootstrap admin is created from env values when no seeded admin exists', async () => {
     const username = process.env.CORE_BOOTSTRAP_USERNAME || 'bootstrap-login-user';
     const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-horse-battery-staple';

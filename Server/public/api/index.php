@@ -318,7 +318,7 @@ if ($route === 'status') {
     ]);
 }
 
-if ($route === 'auth/login' && $method === 'POST') {
+if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'POST') {
     $payload = parse_json_body();
     $username = trim((string) ($payload['username'] ?? ''));
     $password = (string) ($payload['password'] ?? '');
@@ -374,7 +374,7 @@ if ($route === 'auth/login' && $method === 'POST') {
     ]);
 }
 
-if ($route === 'auth/logout' && $method === 'POST') {
+if (($route === 'auth/logout' || $route === 'admin/auth/logout') && $method === 'POST') {
     if (!$identity || (($identity['via'] ?? '') !== 'session')) {
         JsonResponse::error('Not authenticated.', 401);
     }
@@ -399,7 +399,7 @@ if ($route === 'auth/logout' && $method === 'POST') {
     JsonResponse::success(['loggedOut' => true]);
 }
 
-if ($route === 'auth/me' && $method === 'GET') {
+if (($route === 'auth/me' || $route === 'admin/auth/me') && $method === 'GET') {
     if (!$identity) {
         JsonResponse::error('Not authenticated.', 401);
     }

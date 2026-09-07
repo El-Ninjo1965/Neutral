@@ -92,11 +92,13 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
       loginButton.disabled = true;
       setMessage('Signing in...', 'info');
       try {
-        const response = await fetch(window.NeutralPublicPath.api('auth/login'), {
+        const response = await fetch(window.NeutralPublicPath.api('admin/auth/login'), {
           method: 'POST',
           credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
+            'x-framework-role': 'admin',
+            'x-session-scope': 'admin',
           },
           body: JSON.stringify({ username: username, password: password }),
         });
