@@ -23,9 +23,9 @@ Dieser Auftrag ist ausschließlich Dokumentationsarbeit. P1 bleibt
 9. `WORKFLOW.md` um die verpflichtende Prüfung der Umgebung `Neutral` vor jeder neuen Codex-Task ergänzen und den Übergabekanal beibehalten. **Status: ERLEDIGT**
 10. Sicherstellen, dass keine Secret-Werte, künstlichen Testdateien oder Featureänderungen entstanden sind. **Status: ERLEDIGT**
 11. Für reine Dokumentationsänderungen erforderliche Prüfungen ausführen und Ergebnisse in `CHATGPT.md` berichten. **Status: ERLEDIGT**
-12. Dokumentation committen und authentifiziert nach GitHub `main` pushen. **Status: AUSSTEHEND**
-13. `CHATGPT.md` mit Ausgangscommit, finalem Stand, Änderungen, Tests, offenen Punkten, Device-Retest, Push, CI, `HEAD == origin/main` und Working Tree aktualisieren und auf GitHub `main` verifizieren. **Status: AUSSTEHEND**
-14. FTPS, CodeQL und sonstige relevante CI bis zum terminalen Status abwarten. **Status: AUSSTEHEND**
+12. Dokumentation committen und authentifiziert nach GitHub `main` pushen. **Status: ERLEDIGT**
+13. `CHATGPT.md` mit Ausgangscommit, finalem Stand, Änderungen, Tests, offenen Punkten, Device-Retest, Push, CI, `HEAD == origin/main` und Working Tree aktualisieren und auf GitHub `main` verifizieren. **Status: IN ARBEIT**
+14. FTPS, CodeQL und sonstige relevante CI bis zum terminalen Status abwarten. **Status: IN ARBEIT – CodeQL erfolgreich; erster FTPS-Lauf scheiterte nach erfolgreichem Upload im Read-only-Smoke, erneuter Push löst einen neuen Lauf aus**
 15. Abschließend sauberen Working Tree und `HEAD == origin/main` verifizieren. **Status: AUSSTEHEND**
 
 ## Capture-Prüfung
