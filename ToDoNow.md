@@ -9,9 +9,11 @@
 - FUTURE
 
 ## Current device-live status (2026-09-07, authoritative)
-- The session-scoping root cause has been fixed in code and validated under PHP 8.3 with the project test suite.
-- Live device confirmation remains required before any claim of `LIVE BESTANDEN`.
-- Current code-side status: `P1 – User/Admin session separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`.
+- Device-Retest #1 (Commit `87bfc31`) is FAILED: a Developer/Admin login through the User-App still resulted in `Access denied` on the admin area instead of the separate admin login form.
+- Root cause (second iteration): `Server/public/admin.php` fell back to the User-App session cookie (`neutral_session`) when no admin-scope session existed, so any active User-App session was wrongly treated as an admin identity candidate.
+- Fix: `admin.php` now resolves identity exclusively from the admin-scope cookie (`neutral_admin_session`); the legacy fallback to `neutral_session` was removed.
+- New regression coverage confirms: a normal user session alone shows the admin login form (not Access Denied); a user-scope session with an admin role still requires the separate admin login; concurrent admin + user sessions show the correct admin UI.
+- Current code-side status: `P1 – User/Admin session separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`. A second real device retest by the operator is still required.
 
 ## Historical issues retained as evidence only
 These remain as evidence of earlier failures and prior root-cause analysis:
@@ -19,12 +21,13 @@ These remain as evidence of earlier failures and prior root-cause analysis:
 - `Set up the local developer account before logging in`
 - `Server authentication client is not available`
 - `No authenticated user was returned by the server`
+- `Access denied – Administrative access requires an authorized role.` (Device-Retest #1, 2026-09-07: User-App session fallback in `admin.php`)
 
 ## Critical new requirement: separate user and admin session contexts
-- Status: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- Status: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED (second iteration after failed Device-Retest #1)
 - Requirement: User-App and Admin-Interface must keep independent parallel login contexts.
-- Verified code fix: admin/user logins remain separate, logout only invalidates the active scope, and `/api/auth/me` resolves the correct identity for each scope.
-- Required validation: real browser/iPad retest to upgrade the status to `LIVE BESTANDEN`.
+- Verified code fix: admin.php no longer falls back to the User-App session cookie; admin identity is resolved exclusively from the admin-scope cookie.
+- Required validation: a second real browser/iPad retest to upgrade the status to `LIVE BESTANDEN`.
 
 ## Required UI/UX documentation (not yet implemented)
 ### User-App Header

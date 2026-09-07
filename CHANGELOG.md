@@ -1,4 +1,13 @@
 
+## 2026-09-07 – Fix: Admin-Bereich fiel weiterhin auf die User-App-Session zurück (Device-Retest #1 Fehlschlag behoben)
+
+- Realer iPad-Device-Retest #1 nach Commit `87bfc31` schlug fehl: Ein Login als Developer/Admin über die User-App führte im Adminbereich weiterhin zu `Access denied – Administrative access requires an authorized role.`, statt das separate Admin-Loginformular anzuzeigen. Für einen reinen Tester (ohne Adminrolle) erschien ebenfalls `Access denied`, statt korrekt das Admin-Loginformular zu zeigen, solange keine Admin-Session existiert.
+- Root Cause (bewiesen): `Server/public/admin.php` prüfte bei fehlender Admin-Session (`neutral_admin_session`) zusätzlich das Legacy-Cookie der User-App-Session (`neutral_session`) und akzeptierte dessen Identität als Kandidat für die Admin-Zugriffsprüfung. Dadurch wurde jede vorhandene, ganz normale User-App-Session (Tester oder Developer, unabhängig vom Adminbereich) fälschlich als "vorhandene aber nicht ausreichend berechtigte" Identität interpretiert und löste den `Access denied`-Zweig aus, statt das Admin-Loginformular zu zeigen.
+- Fix: `admin.php` liest die Identität jetzt ausschließlich aus dem Admin-Scope-Cookie (`neutral_admin_session`, konfigurierbar über `AUTH_ADMIN_SESSION_COOKIE_NAME`). Der Fallback auf `neutral_session` wurde vollständig entfernt. Eine User-App-Session hat damit keinerlei Einfluss mehr auf die Zugriffsentscheidung des Adminbereichs.
+- Regressionscoverage: `tests/admin-php-entry.test.js` erweitert um Fall B2 (reine User-Session → Admin-Loginformular, nicht Access Denied), Fall B3 (User-Session mit Admin-Rolle, aber ohne separate Admin-Session → weiterhin Admin-Loginformular) und Fall C3 (parallele Admin- und User-Session → korrekte Admin-UI). Bestehende Fälle B/C/C2 wurden auf das korrekte Admin-Scope-Cookie umgestellt, da sie echte Admin-Identitäten testen.
+- Validiert: vollständige Suite (392/392) unter PHP 8.3, PHP-Lint sauber, `node --check` sauber, `git diff --check` sauber, Produktionspaket-Build erfolgreich.
+- Status: `P1 – User/Admin session separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`. Kein `LIVE BESTANDEN`, bis der Betreiber den zweiten Device-Retest erfolgreich durchführt.
+
 ## 2026-09-07 – Fix: PHP user/admin session separation completed in code
 
 - Root cause identified and fixed in the PHP auth layer: the active logout path could destroy the wrong scope, and admin identity resolution could incorrectly fall back to the user session.

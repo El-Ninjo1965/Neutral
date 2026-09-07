@@ -65,9 +65,9 @@ function request(pathname, { port, cookies = {}, method = 'GET', body = '', head
   });
 }
 
-function createSessionIdentity(sessionSavePath, sessionId, identity) {
+function createSessionIdentity(sessionSavePath, sessionId, identity, cookieName = 'neutral_session') {
   const script = `
-session_name('neutral_session');
+session_name(getenv('NEUTRAL_TEST_COOKIE_NAME'));
 session_id(getenv('NEUTRAL_TEST_SESSION_ID'));
 session_start();
 $_SESSION['auth_identity'] = json_decode((string) getenv('NEUTRAL_TEST_IDENTITY_JSON'), true);
@@ -80,6 +80,7 @@ session_write_close();
   ], {
     env: {
       ...process.env,
+      NEUTRAL_TEST_COOKIE_NAME: cookieName,
       NEUTRAL_TEST_SESSION_ID: sessionId,
       NEUTRAL_TEST_IDENTITY_JSON: JSON.stringify(identity)
     },
@@ -287,7 +288,7 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 
-  test('Fall B: /admin.php with non-admin session returns 403 and no admin shell', async () => {
+  test('Fall B: /admin.php with non-admin ADMIN-SCOPE session returns 403 and no admin shell', async () => {
     createSessionIdentity(sessionSavePath, 'viewer-session', {
       userId: '102',
       username: 'viewer-user',
@@ -297,13 +298,57 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
       lastSeenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),
       status: 'active'
-    });
+    }, 'neutral_admin_session');
     const result = await request('/admin.php', {
       port: serverPort,
-      cookies: { neutral_session: 'viewer-session' }
+      cookies: { neutral_admin_session: 'viewer-session' }
     });
     assert.equal(result.statusCode, 403);
     assert.match(result.body, /Access denied/i);
+    assert.doesNotMatch(result.body, /id="appShell"/);
+  });
+
+  test('Fall B2: /admin.php with only a normal USER-SCOPE session (no admin session) shows the admin login form, not Access Denied', async () => {
+    createSessionIdentity(sessionSavePath, 'tester-user-session', {
+      userId: '103',
+      username: 'tester-user',
+      roles: ['user'],
+      permissions: [],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    }, 'neutral_session');
+    const result = await request('/admin.php', {
+      port: serverPort,
+      cookies: { neutral_session: 'tester-user-session' }
+    });
+    assert.equal(result.statusCode, 401, result.body);
+    assert.match(result.body, /Authentication required/i);
+    assert.match(result.body, /id="loginBtn"/);
+    assert.doesNotMatch(result.body, /Access denied/i);
+    assert.doesNotMatch(result.body, /id="appShell"/);
+  });
+
+  test('Fall B3: /admin.php with a normal USER-SCOPE session that has admin-role permissions still requires a separate admin login', async () => {
+    createSessionIdentity(sessionSavePath, 'developer-user-session', {
+      userId: '104',
+      username: 'developer-user',
+      roles: ['admin'],
+      permissions: ['admin.read', 'admin.write'],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    }, 'neutral_session');
+    const result = await request('/admin.php', {
+      port: serverPort,
+      cookies: { neutral_session: 'developer-user-session' }
+    });
+    assert.equal(result.statusCode, 401, result.body);
+    assert.match(result.body, /Authentication required/i);
+    assert.match(result.body, /id="loginBtn"/);
+    assert.doesNotMatch(result.body, /Access denied/i);
     assert.doesNotMatch(result.body, /id="appShell"/);
   });
 
@@ -317,10 +362,10 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
       lastSeenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),
       status: 'active'
-    });
+    }, 'neutral_admin_session');
     const result = await request('/admin.php', {
       port: serverPort,
-      cookies: { neutral_session: 'admin-session' }
+      cookies: { neutral_admin_session: 'admin-session' }
     });
     assert.equal(result.statusCode, 200, result.body);
     assert.match(result.body, /id="appShell"/);
@@ -328,6 +373,38 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.match(result.body, /src="\/Web-App\/public\/admin-init\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin\/navigation\.js"/);
     assert.match(result.body, /src="\/Web-App\/public\/admin\/shell\.js"/);
+  });
+
+  test('Fall C3: /admin.php with a valid admin session AND an independent non-admin user session shows the admin UI, not Access Denied', async () => {
+    createSessionIdentity(sessionSavePath, 'parallel-admin-session', {
+      userId: '105',
+      username: 'parallel-admin',
+      roles: ['admin'],
+      permissions: ['admin.read', 'admin.write'],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    }, 'neutral_admin_session');
+    createSessionIdentity(sessionSavePath, 'parallel-tester-session', {
+      userId: '106',
+      username: 'parallel-tester',
+      roles: ['user'],
+      permissions: [],
+      issuedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      status: 'active'
+    }, 'neutral_session');
+    const result = await request('/admin.php', {
+      port: serverPort,
+      cookies: {
+        neutral_admin_session: 'parallel-admin-session',
+        neutral_session: 'parallel-tester-session'
+      }
+    });
+    assert.equal(result.statusCode, 200, result.body);
+    assert.match(result.body, /id="appShell"/);
   });
 
   test('Fall C2: /admin.php cache-busts CSS and JS with the deployed manifest.json version', async () => {
@@ -340,10 +417,10 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
       lastSeenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),
       status: 'active'
-    });
+    }, 'neutral_admin_session');
     const result = await request('/admin.php', {
       port: deployedServerPort,
-      cookies: { neutral_session: 'deployed-admin-session' }
+      cookies: { neutral_admin_session: 'deployed-admin-session' }
     });
     assert.equal(result.statusCode, 200, result.body);
     // Root cause regression coverage: style.css and JS/CSS carry a 24h

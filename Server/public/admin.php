@@ -171,21 +171,13 @@ if ($publicConfigJson === false) {
     throw new RuntimeException('Public browser configuration could not be encoded.');
 }
 $adminCookieName = trim((string) ($runtime->config()->env()['AUTH_ADMIN_SESSION_COOKIE_NAME'] ?? 'neutral_admin_session'));
-$legacyCookieName = 'neutral_session';
-$identity = null;
-foreach (array_values(array_unique([$adminCookieName !== '' ? $adminCookieName : 'neutral_admin_session', $legacyCookieName])) as $cookieName) {
-    if ($cookieName === '') {
-        continue;
-    }
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
-    Security::ensureSessionStarted($cookieName);
-    $candidate = $_SESSION['auth_identity'] ?? null;
-    if (is_array($candidate)) {
-        $identity = $candidate;
-        break;
-    }
+if ($adminCookieName === '') {
+    $adminCookieName = 'neutral_admin_session';
+}
+Security::ensureSessionStarted($adminCookieName);
+$identity = $_SESSION['auth_identity'] ?? null;
+if (!is_array($identity)) {
+    $identity = null;
 }
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');

@@ -160,6 +160,47 @@ geführt werden.
 
 `LIVE BESTANDEN` darf ausschließlich nach einem von Betreiber tatsächlich durchgeführten erfolgreichen Device-Livetest gesetzt werden.
 
+## Device-Retest #1 – FEHLGESCHLAGEN (2026-09-07)
+
+Realer iPad-Test nach Commit `87bfc31` (FTPS Deploy erfolgreich) ergab einen weiterhin bestehenden kritischen Fehler:
+
+FALL A (Tester): User-App-Login als Tester, danach Adminbereich aufgerufen → `Access denied – Administrative access requires an authorized role.` Für einen reinen Tester ohne separate Admin-Session ist dieses Verhalten grundsätzlich korrekt möglich, ABER es muss zunächst das Admin-Loginformular erscheinen, solange keine Admin-Scope-Session existiert.
+
+FALL B (KRITISCH): Tester ausgeloggt, danach über die User-App als Developer/Admin angemeldet, danach Adminbereich aufgerufen. Kurz erschien das Admin-Loginformular, wurde aber sofort durch `Access denied` ersetzt. Ein Login über die USER-APP darf NICHT automatisch als Admin-Authentifizierung interpretiert werden; das ist ein separates Login.
+
+### Root Cause (bewiesen, Stand 2026-09-07 zweite Analyse)
+
+`Server/public/admin.php` prüfte beim Ermitteln der Identität nacheinander ZWEI Cookies: zuerst `neutral_admin_session`, und – falls dort keine Identität vorlag – fiel es zusätzlich auf das Legacy-Cookie `neutral_session` (die normale User-App-Session) zurück:
+
+```php
+foreach (array_values(array_unique([$adminCookieName, $legacyCookieName])) as $cookieName) {
+    ...
+    $candidate = $_SESSION['auth_identity'] ?? null;
+    if (is_array($candidate)) { $identity = $candidate; break; }
+}
+```
+
+Dadurch wurde eine ganz normale User-App-Session (z.B. Tester ODER Developer, angemeldet über die User-App, Cookie `neutral_session`) von `admin.php` als "vorhandene Authentifizierungs-Identität" behandelt. Da diese Identität in aller Regel keine ausreichende Admin-Rolle im Admin-Scope-Sinn trägt (bzw. selbst bei einer Developer-Rolle handelt es sich um die FALSCHE Scope-Session), führte das im Code direkt zum `render_access_denied_page()`-Zweig statt zum Admin-Loginformular.
+
+Das erklärt exakt Fall A und Fall B: Sobald IRGENDEINE User-App-Session (`neutral_session`) vorhanden war, hat `admin.php` diese fälschlich als Admin-Identitäts-Kandidat akzeptiert und zeigte `Access denied` an, statt das separate Admin-Loginformular zu präsentieren.
+
+### Fix (2026-09-07, zweite Iteration)
+
+`Server/public/admin.php` liest jetzt AUSSCHLIESSLICH das Admin-Scope-Cookie (`neutral_admin_session`, konfigurierbar über `AUTH_ADMIN_SESSION_COOKIE_NAME`). Der Fallback auf das User-App-Cookie `neutral_session` wurde vollständig entfernt. Eine vorhandene User-App-Session hat damit keinerlei Einfluss mehr auf die Identitätsauflösung des Adminbereichs:
+
+- keine Admin-Session vorhanden → Admin-Loginformular (401), unabhängig davon, ob eine User-App-Session existiert.
+- gültige Admin-Session ohne Admin-Rolle → `Access denied` (403).
+- gültige Admin-Session mit Admin-Rolle → Admin-UI (200), unabhängig von einer parallel bestehenden User-App-Session.
+
+### Neue Regressionstests (`tests/admin-php-entry.test.js`)
+
+- Fall B2: nur eine normale User-Scope-Session vorhanden (keine Admin-Session) → Admin-Loginformular, NICHT Access Denied.
+- Fall B3: User-Scope-Session mit `admin`-Rolle, aber ohne separate Admin-Scope-Session → weiterhin Admin-Loginformular, kein automatischer Admin-Zugriff.
+- Fall C3: gültige Admin-Scope-Session UND parallele unabhängige User-Scope-Session gleichzeitig vorhanden → Admin-UI wird korrekt angezeigt, keine Fehlinterpretation durch die User-Session.
+- Fall B/C/C2 wurden auf das korrekte Admin-Scope-Cookie (`neutral_admin_session`) umgestellt, da sie Admin-Identitäten testen.
+
+Alle 28 Tests in `tests/admin-php-entry.test.js` sowie die vollständige Suite (392/392) bestehen unter PHP 8.3.
+
 ## Abschlusskriterien
 
 - Test-/Runtime-Konsistenz unter PHP 8.1+ hergestellt.
@@ -167,17 +208,23 @@ geführt werden.
 - Produktionsnaher Regressionstest vorhanden und grün.
 - Dokumentation konsistent aktualisiert.
 - Commit, Push, Deployment und CI erfolgreich abgeschlossen.
+- Zweiter Device-Retest durch Betreiber steht noch aus (P1 bleibt `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`, NICHT `LIVE BESTANDEN`).
 
 ## Statuskonkretisierung der Arbeitspunkte
 
 1. Repository-Stand und Git-/Dokumentationslage prüfen. Status: CODE-SEITIG ERLEDIGT
 2. Aktuelle Testfehler vollständig untersuchen und tatsächliche Ursache ermitteln. Status: CODE-SEITIG ERLEDIGT
 3. Für jeden Testfehler: PHP-Version, Ursache, Code-/Test-/Laufzeitproblem, kleinste fachlich korrekte Lösung. Status: CODE-SEITIG ERLEDIGT
-4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: CODE-SEITIG ERLEDIGT
-5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: CODE-SEITIG ERLEDIGT
+4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: IN ARBEIT – zweite Root Cause (Legacy-Cookie-Fallback in `admin.php`) identifiziert und behoben; Device-Retest #1 war fehlgeschlagen, Fix jetzt code-seitig neu validiert.
+5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: CODE-SEITIG ERLEDIGT (erweitert um Fall B2/B3/C3)
 6. Codefehler beheben und fokussierte Regressionstests ausführen. Status: CODE-SEITIG ERLEDIGT
-7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: CODE-SEITIG ERLEDIGT
+7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: CODE-SEITIG ERLEDIGT (392/392 unter PHP 8.3)
 8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: CODE-SEITIG ERLEDIGT
 9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: CODE-SEITIG ERLEDIGT
 10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: IN ARBEIT / PENDING
 11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: IN ARBEIT / PENDING
+
+## P1 Gesamtstatus (nach zweitem Fix)
+
+- Status: **IN ARBEIT** (zurückgesetzt nach Device-Retest #1 Fehlschlag) → nach Fix und Testvalidierung wieder **CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**
+- `LIVE BESTANDEN` bleibt gesperrt bis ein Betreiber den zweiten Device-Retest erfolgreich durchführt.
