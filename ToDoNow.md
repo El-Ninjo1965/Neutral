@@ -8,47 +8,73 @@
 - DEVICE RETEST REQUIRED
 - FUTURE
 
-## Current device-live status (2026-09-06, authoritative)
-- Tester login via the normal User-App: DONE / LIVE BESTANDEN
-  - UI confirmation: `Signed in as Tester (user)`
-- Developer / Bootstrap Administrator login via the normal User-App: DONE / LIVE BESTANDEN
-  - UI confirmation: `Signed in as Bootstrap Administrator (admin)`
+## Current device-live status (2026-09-07, authoritative)
+- User-App and Admin-Interface are not reliably separated in the current real device flow.
+- Last live evidence shows the following active issue:
+  - Admin login can still affect the normal User-App identity/session state.
+  - Login/logout still behaves inconsistently.
+  - Access to admin features can still return: `Access denied – Administrative access requires an authorized role.`
+- Therefore: `User/Admin session separation: DONE / LIVE BESTANDEN` is invalid for the current repository state.
+- Current status: P1 is `IN ARBEIT / DEVICE RETEST REQUIRED`.
 
 ## Historical issues retained as evidence only
-These are not current failures; they remain part of the historical workflow and changelog evidence:
+These remain as evidence of earlier failures and prior root-cause analysis:
 - `User is not valid or active`
 - `Set up the local developer account before logging in`
 - `Server authentication client is not available`
 - `No authenticated user was returned by the server`
 
 ## Critical new requirement: separate user and admin session contexts
-- Status: DONE / LIVE BESTANDEN
+- Status: IN ARBEIT / DEVICE RETEST REQUIRED
 - Requirement: User-App and Admin-Interface must keep independent parallel login contexts.
-- Verified contract:
-  - Admin login does not overwrite User-App login.
-  - User login does not overwrite Admin login.
-  - Admin logout does not log out the User-App.
-  - User logout does not log out the Admin interface.
-  - `/api/auth/me` resolves the identity for the active scope.
-  - CSRF and session invalidation remain scope-aware.
-- Implementation direction: separate cookie namespaces (`neutral_session` vs `neutral_admin_session`) with scope-aware resolution and validation.
-- Required validation: targeted auth/session regression tests plus full suite; completed successfully under PHP 8.1.
+- Verified live failure: admin login can still overwrite or influence the user login context; logout/login remains inconsistent.
+- Required validation: fresh real-device retest, then targeted auth/session regression tests before we can consider this resolved.
+
+## Required UI/UX documentation (not yet implemented)
+### User-App Header
+- Remove `ACTIVE APPLICATION` from the normal User interface.
+- Do not show the username permanently in the header.
+- Keep user details in Settings/Profile instead.
+- Optional welcome copy on the landing view may say `Willkommen <Name>`.
+
+### Start page
+- The landing page must be neutral and configurable by the admin area.
+- Required modes to design for:
+  - Standard
+  - Text
+  - safe HTML content
+  - selected module
+- Non-authenticated and authenticated states must be handled deliberately.
+- Module-based landing content remains subject to visibility and permission rules.
+- No hard-coded demo welcome text should remain.
+
+### User navigation
+- Start, GPS and later modules must be clearly visible as app controls.
+- No navigation that only looks like text links.
+- Provide:
+  - real buttons/tabs/cards
+  - normal state
+  - active state
+  - touch-friendly size
+  - focus state
+  - icons
+  - declarative module icons via manifest metadata where possible
 
 ## Priority work list
 
 ### P1 – User/Admin session separation
-- Status: IN PROGRESS
-- Scope: inspect current PHP SessionRegistry + AuthManager; identify cookie/session namespace design; separate user and admin contexts without breaking shared role/auth database.
+- Status: IN ARBEIT / DEVICE RETEST REQUIRED
+- Scope: fix the remaining cross-context login/session issue in the real browser flow; verify cookies, session scope resolution, and login/logout semantics with real device evidence.
 - Acceptance: parallel logins; independent logout; correct `/auth/me`; correct CSRF; session invalidation remains scoped.
 
 ### P2 – User-App header cleanup
-- Status: DONE / LIVE BESTANDEN
+- Status: DONE / DOCUMENTED
 - Verified: user header wording is consistent in both signed-in and signed-out states.
 - Completed: settings label is now `Settings` in the logged-out state to match the logged-in state.
-- Remaining work in this block (if any): none; the user-facing contract is consistent.
+- Remaining work in this block: none for the current repo state.
 
 ### P3 – Navigation as real buttons/tabs
-- Status: DONE / LIVE BESTANDEN
+- Status: DONE / DOCUMENTED
 - Verified: navigation entries are rendered as real interactive buttons/tabs with active-state styling and touch-friendly sizing.
 - Remaining work in this block: none for the current repo state.
 

@@ -2,7 +2,7 @@
 
 **Status:** VERBINDLICHE ARBEITSREGELN
 
-**Geprüft:** 2026-09-05
+**Geprüft:** 2026-09-07
 **Dokumentationsordnung:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
 # VERBINDLICHE GLOBALE AGENTENREGEL
@@ -21,6 +21,50 @@ Diese Regel gilt dauerhaft und agentenübergreifend für alle zukünftigen Arbei
 - Wenn der aktuelle Stand nicht sauber oder nicht überprüfbar ist, darf der Agent nicht als „erledigt“ melden, sondern muss den tatsächlichen Stand ehrlich dokumentieren und den nächst offenen, überprüfbaren Punkt fortsetzen.
 
 Diese Regel ist die verbindliche Arbeitsgrundlage für alle nachfolgenden Agentensitzungen und ersetzt keine Projekt-Dokumentation, sondern ergänzt und konsolidiert sie.
+
+## Verbindliche CURRENT-TASK-Regel
+
+Lege im Repository-Root `CURRENT-TASK.md` an.
+
+Diese Datei ist ab sofort der temporäre Arbeitszettel für GENAU EINEN aktuellen Gesamtauftrag.
+
+VERBINDLICHE REGEL:
+
+Bei jedem längeren oder mehrteiligen Auftrag musst du VOR der eigentlichen Arbeit:
+
+1. den vollständigen Auftrag in `CURRENT-TASK.md` übernehmen;
+2. keine Anforderung weglassen oder verkürzen;
+3. daraus nummerierte, überprüfbare Arbeitspunkte erstellen;
+4. jedem Punkt einen Status geben:
+   - OFFEN
+   - IN ARBEIT
+   - BLOCKIERT
+   - CODE-SEITIG ERLEDIGT
+   - DEVICE RETEST REQUIRED
+   - LIVE BESTANDEN
+5. anschließend Punkt für Punkt anhand dieser Datei arbeiten.
+
+Im Zweifel gilt:
+Ein Auftrag wird in `CURRENT-TASK.md` persistiert.
+Lieber einmal unnötig persistieren als einen Teil eines Gesamtauftrags verlieren.
+
+WICHTIG:
+
+`CURRENT-TASK.md` enthält KEINE Historie.
+
+Sie enthält ausschließlich den aktuell gültigen Gesamtauftrag.
+
+Nach deiner Abschlussmeldung darfst du den Inhalt NICHT selbstständig löschen oder ersetzen.
+
+Der abgeschlossene Auftrag bleibt vollständig in `CURRENT-TASK.md`, damit Betreiber und ChatGPT/Lea deine Arbeit anschließend gegenprüfen können.
+
+ERST wenn der Betreiber einen NEUEN Auftrag erteilt, gilt dieser neue Auftrag gleichzeitig als Freigabe, den bisherigen Inhalt von `CURRENT-TASK.md` vollständig durch den neuen Auftrag zu ersetzen.
+
+Keine Archivierung alter CURRENT-TASK-Inhalte.
+Keine CURRENT-TASK-History.
+Keine zusätzlichen Prompt-History-Dateien anlegen.
+
+Dauerhaft relevante technische Erkenntnisse gehören weiterhin in die bestehenden fachlich zuständigen MD-Dateien.
 
 ## 1. Zweck
 

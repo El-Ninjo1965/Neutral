@@ -9,6 +9,13 @@
 
 # NEUTRAL – Changelog
 
+## 2026-09-07 – Documentation: Current-task initialization and repository status correction
+
+- The repository was re-checked against the current git state, documentation set, and live device findings.
+- The required `CURRENT-TASK.md` workflow record was created and the current task preserved as the active work ledger.
+- Status docs were corrected to reflect the actual open state: P1 remains `IN ARBEIT / DEVICE RETEST REQUIRED`, with no claim of a successful live user/admin session split.
+- This task was documentation-only and intentionally did not implement P1, P4, or UI changes beyond required status and workflow documentation.
+
 ## 2026-09-07 – Fix: User-App header wording normalized to `Settings`
 
 - User-App header and settings entry now use the same wording in both signed-in and signed-out states.
