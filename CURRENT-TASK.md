@@ -34,7 +34,7 @@ Keine alte Chatdiagnose ungeprüft übernehmen.
 8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: ERLEDIGT
 9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: ERLEDIGT
 10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: ERLEDIGT
-11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: OFFEN / WAITING
+11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: ERLEDIGT (FTPS + CodeQL für den aktuellen Push erfolgreich abgeschlossen)
 
 ## Verbindliche Anforderungen
 
