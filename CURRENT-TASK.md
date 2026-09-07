@@ -24,17 +24,17 @@ Keine alte Chatdiagnose ungeprüft übernehmen.
 
 ## Arbeitspunkte
 
-1. Repository-Stand und Git-/Dokumentationslage prüfen. Status: OFFEN
-2. Aktuelle Testfehler vollständig untersuchen und tatsächliche Ursache ermitteln. Status: OFFEN
-3. Für jeden Testfehler: PHP-Version, Ursache, Code-/Test-/Laufzeitproblem, kleinste fachlich korrekte Lösung. Status: OFFEN
-4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: OFFEN
-5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: OFFEN
-6. Codefehler beheben und fokussierte Regressionstests ausführen. Status: OFFEN
-7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: OFFEN
-8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: OFFEN
-9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: OFFEN
-10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: OFFEN
-11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: OFFEN
+1. Repository-Stand und Git-/Dokumentationslage prüfen. Status: ERLEDIGT
+2. Aktuelle Testfehler vollständig untersuchen und tatsächliche Ursache ermitteln. Status: ERLEDIGT
+3. Für jeden Testfehler: PHP-Version, Ursache, Code-/Test-/Laufzeitproblem, kleinste fachlich korrekte Lösung. Status: ERLEDIGT
+4. P1 User-/Admin-Session-Trennung anhand aktuellen Codes analysieren und Root Cause belegen. Status: ERLEDIGT
+5. Produkionsnahen Regressionstest für parallelen User/Admin-Login-/Logout-/Scope-Flow erstellen. Status: ERLEDIGT
+6. Codefehler beheben und fokussierte Regressionstests ausführen. Status: ERLEDIGT
+7. Vollständige `npm test`-Suite unter unterstützter PHP-8.1+-Runtime ausführen. Status: ERLEDIGT (validiert mit `/usr/bin/php8.3` auf diesem Host; das systemweite `php` ist auf PHP 8.0 gesetzt)
+8. PHP-Lint, relevante `node --check`, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaketbau durchführen. Status: ERLEDIGT
+9. Dokumentation aktualisieren (`CURRENT-TASK.md`, `ToDoNow.md`, `STATUS.md`, `TODO.md`, `WORKFLOW.md`, `CHANGELOG.md`, ggf. `Architecture.md`, `Functions.md`, `API.md`, `Security.md`). Status: ERLEDIGT
+10. Commit erstellen, pushen, `HEAD == origin/main` prüfen, Working Tree sauber prüfen. Status: IN ARBEIT / PENDING
+11. FTPS Deploy, CodeQL und alle relevanten CI-Jobs vollständig abwarten. Status: OFFEN / WAITING
 
 ## Verbindliche Anforderungen
 
