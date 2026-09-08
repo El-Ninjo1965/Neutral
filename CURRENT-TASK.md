@@ -26,9 +26,9 @@ unverändert `LIVE BESTANDEN`.
 15. Relevante Vertrags-, Status-, TODO- und Changelog-Dokumentation auf den tatsächlichen Endstand aktualisieren; P4 höchstens `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`. **Status: ERLEDIGT**
 16. Fokussierte Tests, vollständige `npm test`-Suite unter PHP 8.1+, PHP-Lint betroffener Dateien, `node --check` betroffener JS-Dateien, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaket ausführen. **Status: ERLEDIGT**
 17. `CHATGPT.md` mit vollständigem Abschlussbericht und konkreten Betreiber-Retestschritten aktualisieren. **Status: ERLEDIGT**
-18. Finalen Projektstand committen und authentifiziert nach GitHub `main` pushen. **Status: AUSSTEHEND**
-19. `CHATGPT.md` auf GitHub `main` verifizieren sowie `HEAD == origin/main` und sauberen Working Tree prüfen. **Status: AUSSTEHEND**
-20. FTPS, CodeQL und weitere erforderliche CI bis zum terminalen Status abwarten und wahrheitsgemäß dokumentieren. **Status: AUSSTEHEND**
+18. Finalen Projektstand committen und authentifiziert nach GitHub `main` pushen. **Status: ERLEDIGT**
+19. `CHATGPT.md` auf GitHub `main` verifizieren sowie `HEAD == origin/main` und sauberen Working Tree prüfen. **Status: ERLEDIGT**
+20. FTPS, CodeQL und weitere erforderliche CI bis zum terminalen Status abwarten und wahrheitsgemäß dokumentieren. **Status: ERLEDIGT**
 
 ## Verbindliche Design- und Persistenzentscheidung
 

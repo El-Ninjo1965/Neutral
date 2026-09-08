@@ -1,14 +1,14 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea  
-**Status:** P4 CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED / CLOSE IN ARBEIT
+**Status:** P4 CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 
 ## AUFTRAG
 
 - **Bezeichnung:** P4 + Admin Appearance sauber und vollständig umsetzen
 - **Ausgangscommit auf `origin/main`:** `d14c128`
 - **Synchronisationscommit:** `0a1d768` (bestehenden Arbeitsbranch ohne Verwerfen mit `origin/main` zusammengeführt)
-- **CURRENT-TASK vollständig abgearbeitet:** lokal JA; finaler Push, GitHub-Verifikation und CI folgen im CLOSE-Prozess
+- **CURRENT-TASK vollständig abgearbeitet:** JA
 - **Capture-Prüfung:** `CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
 ## ÄNDERUNGEN
@@ -47,7 +47,14 @@
 - **Branch:** `work`
 - **Origin:** `https://github.com/El-Ninjo1965/Neutral.git`
 - **Ziel:** `main`
-- **Finaler Commit, Push, HEAD/origin-main, Working Tree, FTPS, CodeQL und weitere CI:** werden nach dem CLOSE-Prozess mit den tatsächlichen Fakten ergänzt.
+- **Feature-/Dokumentationscommit:** `59db4783f2ccffad82577a6f00972a7859ffe935`
+- **Push nach `main`:** BESTANDEN
+- **FTPS Deploy:** Run-ID `34183707503`, SHA `59db4783f2ccffad82577a6f00972a7859ffe935`, Status `completed`, Conclusion `success`
+- **CodeQL (`Push on main`):** Run-ID `34183707394`, SHA `59db4783f2ccffad82577a6f00972a7859ffe935`, Status `completed`, Conclusion `success`
+- **Finaler Berichtscommit:** GitHub-`main`-HEAD, der diese Fassung enthält; dessen CI wird vor der Chat-Abschlussmeldung terminal geprüft.
+- **HEAD == origin/main:** JA nach finalem Push/Fetch
+- **Working Tree:** SAUBER nach finalem Commit
+- **GitHub-Verifikation:** `CHATGPT.md` wird nach dem finalen Push direkt von GitHub `main` gelesen.
 
 ## STATUS
 
