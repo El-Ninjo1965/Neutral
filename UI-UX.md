@@ -61,6 +61,22 @@ Der bestehende Vertrag `UI zuerst → notwendiger minimaler Core → Hintergrund
 - Langsame Hintergrundarbeit blockiert die Bedienung nicht unnötig.
 - Performance wird auf realistischen Mobilgeräten gemessen.
 
+### Local-first Warmstart und Reload
+
+Für bereits bekannte, gültige und lokal persistierte User-App-Zustände gilt zusätzlich ein strenger Warmstartvertrag:
+
+- Ein vorhandener gültiger lokaler Startseiten-/Homepage-Zustand wird beim erneuten Öffnen, Warmstart oder Browser-Reload **sofort aus lokalem Zustand dargestellt**, soweit keine zwingende Sicherheitsentscheidung einen aktuellen Serverzustand benötigt.
+- Die User-App wartet für bereits bekannte darstellbare Inhalte nicht erneut auf eine Serverantwort, bevor sie den ersten sinnvollen Inhalt zeigt.
+- Serverabgleich, Aktualitätsprüfung, Session-Refresh, Discovery und andere langsame Arbeit erfolgen danach soweit fachlich möglich im Hintergrund.
+- Liefert der Server eine neuere gültige Konfiguration, wird der lokale Zustand kontrolliert aktualisiert und nach dem definierten Vertrag übernommen.
+- Ist der Server nicht erreichbar, bleibt der letzte zulässige lokale Zustand nutzbar, sofern Berechtigungs-/Datenschutzregeln dies erlauben.
+- Ein sichtbarer `Loading`-Zustand ist beim echten Erststart ohne verwertbaren lokalen Zustand oder bei zwingend unbekanntem Zustand zulässig; er ist **kein normaler Dauerzustand bei jedem Reload**.
+- HTML-Startinhalt, lokale Shell und andere bereits bekannte statische/produktbezogene Inhalte sollen nicht durch Netzwerklatenz künstlich verzögert werden.
+- Für modulbasierte Startseiten darf nur die tatsächlich erforderliche Modul-/Rechteauflösung den Modulinhalt verzögern; bereits sicher lokal nutzbare Teile der Shell dürfen davon nicht blockiert werden.
+- Optimierungen dürfen keine Berechtigungsentscheidung aus einem veralteten authentifizierten Cache ableiten und bestehende Fail-Closed-/P1-Sicherheitsverträge nicht schwächen.
+
+Performanceprobleme werden gemessen und ursächlich untersucht. Ein künstliches Verbergen eines langsamen Startpfads durch Animationen oder Timeouts gilt nicht als Performancekorrektur.
+
 ## Visuelle Kommunikation vor unnötigem Text
 
 NEUTRAL verfolgt das UX-Prinzip: **so wenig Text wie sinnvoll, so viel Information wie nötig.**
@@ -204,7 +220,7 @@ Die heutige Web-App ist Entwicklungs- und Laufzeitbasis; das langfristige Produk
 
 Vor dem Final Freeze erfolgt eine gesonderte UI-/UX-/Qualitätsprüfung. Mindestens geprüft werden:
 
-- Startperformance;
+- Startperformance einschließlich Local-first Warmstart/Reload;
 - Navigation und App-Gefühl;
 - Entfernung unnötiger Developer-/Frameworkinformationen aus der User-App;
 - Produktbranding und austauschbare App-Identität;
