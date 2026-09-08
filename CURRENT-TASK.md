@@ -2,59 +2,40 @@
 
 ## Gesamtauftrag
 
-Dieser Auftrag behebt die operative Projektsteuerung und setzt die verbindliche Arbeitswahrheit für alle nachfolgenden Arbeiten wieder sauber und konsistent.
+Die heute verifizierte Codex-Arbeitsumgebung `Neutral` als dauerhaften,
+secretsicheren Betriebsweg für `El-Ninjo1965/Neutral` dokumentieren, damit neue
+Codex-Sitzungen Repository-, GitHub-, FTPS- und ENV-Zugänge zuerst über diesen
+Standardweg prüfen und nicht erneut die gesamte Zugangshistorie untersuchen.
 
-Wichtige Einschränkung: In diesem Auftrag wird keine Feature-Implementierung durchgeführt. Es gibt keine P4-/Startseiten-/Appearance-/Theme-/i18n-/Navigations- oder sonstigen Funktionsänderungen.
+Dieser Auftrag ist ausschließlich Dokumentationsarbeit. P1 bleibt
+`LIVE BESTANDEN`, P4 bleibt `PENDING`; keine P4- oder sonstige Featurearbeit.
 
-Der bisherige historische P1-Fixauftrag wird hier vollständig ersetzt. Der aktuelle operative Stand bleibt auf das Workflow-Reset fokussiert.
+## Nummerierte, überprüfbare Arbeitspunkte
 
-## Verbindliche Wahrheits-Hierarchie
+1. `CODEX.md`, `WORKFLOW.md` und die bestehende Betriebsdokumentation vollständig lesen. **Status: ERLEDIGT**
+2. Betreiberauftrag vollständig erfassen und gegen diese Arbeitsliste prüfen. **Status: ERLEDIGT**
+3. In `CONNECTIONS.md` die Umgebung `Neutral` als verbindliche Codex-Umgebung dokumentieren. **Status: ERLEDIGT**
+4. GitHub-Standardweg über `GH_TOKEN`, Konto `El-Ninjo1965`, Repository `El-Ninjo1965/Neutral`, Branch `main` und HTTPS-`origin` dokumentieren. **Status: ERLEDIGT**
+5. Die erforderlichen Secret-Namen und ihre Zwecke dokumentieren, ohne Secret-Werte zu speichern oder auszugeben. **Status: ERLEDIGT**
+6. GitHub-Actions-FTPS-Weg und direkten manuellen Explicit-FTPS-Weg einschließlich aktueller Hosts, Port, Benutzer und secretsicherem Zielpfad-Verweis dokumentieren; keine historischen FTP-Accounts wiederherstellen. **Status: ERLEDIGT**
+7. Start-/Wiederherstellungsablauf für neue austauschbare Sandboxes, fehlendes `origin` und scheinbar fehlenden GitHub-Schreibzugriff dokumentieren. **Status: ERLEDIGT**
+8. Vorrang der aktuellen DB-, Bootstrap-, Admin-, Auth- und ENV-Konfiguration sowie der P1-konformen Sessiontrennung dokumentieren. **Status: ERLEDIGT**
+9. `WORKFLOW.md` um die verpflichtende Prüfung der Umgebung `Neutral` vor jeder neuen Codex-Task ergänzen und den Übergabekanal beibehalten. **Status: ERLEDIGT**
+10. Sicherstellen, dass keine Secret-Werte, künstlichen Testdateien oder Featureänderungen entstanden sind. **Status: ERLEDIGT**
+11. Für reine Dokumentationsänderungen erforderliche Prüfungen ausführen und Ergebnisse in `CHATGPT.md` berichten. **Status: ERLEDIGT**
+12. Dokumentation committen und authentifiziert nach GitHub `main` pushen. **Status: ERLEDIGT**
+13. `CHATGPT.md` mit Ausgangscommit, finalem Stand, Änderungen, Tests, offenen Punkten, Device-Retest, Push, CI, `HEAD == origin/main` und Working Tree aktualisieren und auf GitHub `main` verifizieren. **Status: ERLEDIGT**
+14. FTPS, CodeQL und sonstige relevante CI bis zum terminalen Status abwarten. **Status: ERLEDIGT – finaler CodeQL- und FTPS-Lauf terminal erfolgreich; zwei vorherige FTPS-Smoke-Fehlschläge blieben als Diagnoseevidenz erhalten**
+15. Abschließend sauberen Working Tree und `HEAD == origin/main` verifizieren. **Status: ERLEDIGT – nach finalem Berichts-Push erneut geprüft**
 
-1. Neuester ausdrücklich mitgeteilter Betreiber-Live-Befund
-2. Neuester ausdrücklich erteilter Auftrag
-3. `CURRENT-TASK.md` – nach vollständiger Übernahme dieses neuesten Auftrags
-4. `WORKFLOW.md` + verbindliche Projektverträge, insbesondere `CORE-1.0.md` und `VISION.md`
-5. tatsächlicher aktueller Code + Tests
-6. `ToDoNow.md` / `STATUS.md` / `TODO.md`
-7. historische Evidenz
-8. alte Chatdiagnosen
+## Capture-Prüfung
 
-Wichtig:
+`Neuer Betreiberauftrag == CURRENT-TASK-Anforderungen: JA`
 
-- Ein neuer Betreiberauftrag steht solange über `CURRENT-TASK.md`, bis dieser neue Auftrag vollständig in `CURRENT-TASK.md` übernommen wurde.
-- Danach wird `CURRENT-TASK.md` die operative Arbeitswahrheit für genau diesen Auftrag.
-- Historische Informationen dürfen neuere Betreiberbefunde niemals überschreiben.
+## Sicherheits- und Arbeitsgrenzen
 
-## Nummerierte Checkliste
-
-1. Neuen Auftrag vollständig lesen und analysieren. Status: ERLEDIGT
-2. Veraltete operative Inhalte identifizieren und die aktuelle Wahrheits-Hierarchie festlegen. Status: ERLEDIGT
-3. `WORKFLOW.md` mit Capture/Execute/Verify/Close-Regeln ergänzen. Status: ERLEDIGT
-4. `CURRENT-TASK.md` mit diesem Workflow-Reset-Auftrag vollständig ersetzen. Status: ERLEDIGT
-5. `ToDoNow.md`, `STATUS.md`, `TODO.md` auf den aktuellen operativen Projektstand und P1-Live-Status bereinigen. Status: ERLEDIGT
-6. `CHANGELOG.md` mit kurzer historischer Abschlussnotiz ergänzen, ohne die operative Kette mit alter Historie zu verwechseln. Status: ERLEDIGT
-7. `git diff --check` und Git-/Dokumentationskonsistenz prüfen. Status: ERLEDIGT
-8. Commit/Push und Abschlussprüfung durchführen. Status: IN ARBEIT / ERLEDIGT nach Abschluss des Commits
-
-## Prüfungsfrage
-
-`Prompt vollständig in CURRENT-TASK abgebildet: JA`
-
-## Aktueller Projektstatus
-
-- P1: LIVE BESTANDEN
-- P4: PENDING
-- Settings/Appearance: noch nicht als vollständig erledigt markiert, solange der zugehörige Gesamtauftrag nicht abgeschlossen ist
-- Workflow-Reset: ERLEDIGT
-
-## Verbotene Arbeiten in diesem Auftrag
-
-- keine P4-Startseiten-Implementierung
-- keine Settings-/Appearance-Umsetzung
-- keine Theme-/i18n-/Navigation-/Feature-Verbesserungen
-- keine fremden Änderungen verwerfen
-- keine Historie in `CURRENT-TASK.md` aufnehmen
-
-## Abschlussregel
-
-Vor Abschluss muss `CURRENT-TASK.md` erneut vollständig gelesen werden. Wenn ein selbst ausführbarer Punkt offen ist, darf keine Abschlussmeldung erfolgen. Erst wenn die Checkliste vollständig und verifiziert ist, ist der Auftrag abgeschlossen.
+- Nur Namen, Zweck und Verwendung von Secrets dokumentieren; niemals Werte.
+- Secrets bleiben in der persistenten Codex-Umgebung beziehungsweise den dafür vorgesehenen Secret-/ENV-Strukturen.
+- Repository = dauerhafte nicht geheime Anleitung; Umgebung `Neutral` = dauerhafte Secrets; Sandbox = austauschbar.
+- Keine fremden Änderungen verwerfen oder Arbeitsstände blind resetten.
+- Keine P4-Featurearbeit beginnen.

@@ -13,6 +13,7 @@
 ## Active project state
 
 - Workflow reset and governance correction: DONE / DOCUMENTED
+- Codex environment `Neutral` and its secrets-safe GitHub/FTPS recovery path: DONE / DOCUMENTED
 - P4 configurable landing page: PENDING
 - Settings / Appearance separation: PENDING until the complete feature task is validated
 - Theme / i18n / navigation / other feature work: PENDING
