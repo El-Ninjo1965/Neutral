@@ -5,11 +5,11 @@
 
 # Aktueller Auftrag
 
-## Restfehler: weißer Initial-Paint/Flash der HTML-Homepage im Dark Mode
+## Restfehler: `Loading…` wird beim Dark-Warmstart kurz weiß dargestellt
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Homepage-/iframe-/srcdoc-, CSS-, Service-Worker- und Testdateien.
+Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Bootstrap-/Startup-, Theme-, Homepage-, Loading-/Placeholder-, CSS-, Service-Worker-, Cache-/Storage- und Testdateien.
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
@@ -17,87 +17,115 @@ Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.
 
 ## Neuer Betreiber-Device-Retest vom 2026-09-08
 
-Der letzte Safari/iPad-Fix ist **teilweise erfolgreich**:
+Der letzte iframe-Paint-Fix hat den sichtbaren Fehler weiter eingegrenzt.
 
-- Die HTML-Homepage `<h1>TEST</h1>` bleibt im Dark Mode jetzt nicht mehr dauerhaft als große weiße Fläche stehen.
-- Der endgültige gerenderte Zustand ist korrekt dunkel.
-- Beim Öffnen/Rendern/Reload ist auf dem realen iPad/Safari jedoch weiterhin ein **kurzer deutlich sichtbarer weißer Flash/weißes Aufblitzen** zu sehen, bevor der dunkle HTML-Inhalt erscheint.
+Auf dem realen iPad/Safari ist jetzt feststellbar:
 
-Damit ist der dauerhafte White-Canvas behoben, aber der **erste sichtbare Paint des isolierten HTML-Frames ist noch falsch**.
+- Der endgültige HTML-Homepage-Zustand im Dark Mode ist korrekt dunkel.
+- Der zuvor dauerhaft weiße iframe-Canvas ist behoben.
+- Der zuletzt behandelte iframe-Paintpfad soll nicht erneut als primäre Ursache angenommen werden.
+- Sichtbar ist stattdessen beim Reload/Warmstart kurz **`Loading…` auf einer weißen/hellen Fläche**, bevor die dunkle Homepage erscheint.
 
-Der Betreiber beschreibt es sinngemäß: „Ist jetzt zwar schwarz, aber blinkt weiß, als ob im Hintergrund etwas geladen wird.“
+Der Betreiber beschreibt ausdrücklich: **„Loading …. wird immer kurz weiß angezeigt.“**
+
+Damit liegt der verbleibende sichtbare Fehler vor bzw. außerhalb des finalen HTML-Frame-Paints: im Startup-/Placeholder-/Loading-Pfad.
 
 ## Bereits live bestätigt – nicht zurückbauen
 
-- Local-first Warmstart ohne früheres sichtbares `Loading`.
-- finaler HTML-Homepage-Zustand im Dark Mode ist jetzt dunkel.
+- Local-first Homepagecache existiert und der Warmstart ist grundsätzlich deutlich schneller als vor den P4-Fixes.
+- finaler HTML-Homepage-Zustand im Dark Mode ist dunkel.
+- dokumentinterner Theme-Adapter und iframe-Visibility-/Paint-Gating nicht unnötig zurückbauen.
 - Sonne-/Mond-Schnellumschaltung funktioniert.
-- Appearance/Theme-Block wurde aus normalen User-Settings entfernt bzw. diese Änderung des vorherigen Auftrags beibehalten.
+- Appearance/Theme ist aus normalen User-Settings entfernt.
 - Home-Icon und Home/GPS-Navigation funktionieren.
 - GPS Dark Mode funktioniert.
-- zentrales Buttonsystem nicht zurückbauen.
-- Login-Bereinigung nicht zurückbauen.
+- zentrales Buttonsystem und Login-Bereinigung nicht zurückbauen.
 - FTPS-/Smoke-Stabilisierung nicht zurückbauen.
 
-# Auftrag – First Paint / FOUC des sandboxed HTML-Frames beseitigen
+# Auftrag – Root Cause des weißen `Loading…`-Zwischenzustands
 
-Ermittle die tatsächliche Ursache des weißen Zwischen-Paints auf Safari/iPad und verhindere, dass ein unthematisierter iframe-/srcdoc-Zustand jemals sichtbar wird.
+Finde den exakten Renderpfad, der beim Warmstart/Reload `Loading…` erzeugt, und kläre zwei getrennte Fragen:
 
-Nicht einfach eine künstliche Verzögerung oder Animation darüberlegen.
+1. **Warum erscheint bei vorhandenem gültigem lokalem Homepagezustand überhaupt noch `Loading…`?**
+2. **Warum wird dieser Zustand im Dark Theme hell/weiß gepaintet, obwohl das persistierte Theme bereits bekannt sein sollte?**
+
+Nicht einfach `Loading…` per CSS verstecken, keinen Timeout verkürzen und keine Animation darüberlegen.
 
 Prüfe insbesondere:
 
-1. Reihenfolge von `createElement('iframe')`, DOM-Insertion, `srcdoc`-Zuweisung, Theme-Adapter-Anwendung und Sichtbarkeit.
-2. Ob das iframe zunächst leer/`about:blank` sichtbar in den DOM eingefügt wird und Safari diesen initial weiß zeichnet, bevor das thematisierte `srcdoc` committed ist.
-3. Ob `srcdoc` erst **vor** sichtbarer DOM-Insertion vollständig mit dem aktuellen Theme-Dokument aufgebaut werden kann.
-4. Ob der Frame bis zu seinem ersten thematisierten `load`/ready-Zustand unsichtbar bleiben muss und der umgebende Frameworkbereich währenddessen bereits den korrekten aktuellen Theme-Hintergrund zeigen kann.
-5. Falls Visibility-Gating verwendet wird: kein Layoutsprung, kein weißer Platzhalter, keine künstliche Wartezeit und kein erneutes altes `Loading`.
-6. Ob Theme-Hintergrund/`color-scheme` bereits auf dem iframe-Element selbst **vor dessen erster DOM-Insertion** gesetzt werden muss, zusätzlich zum dokumentinternen Adapter.
-7. Theme-Wechsel bei bereits vorhandenem Frame: kein weißer Zwischen-Paint beim Wechsel Light↔Dark.
-8. Warmstart/Reload: lokal vorhandener HTML-Inhalt muss weiterhin sofort erscheinen; der Fix darf die Local-first-Performance nicht zurückbauen.
-9. Safari/WebKit-spezifisches Paint-Verhalten berücksichtigen, aber möglichst standardsaubere Lösung ohne UA-Sniffing.
-10. Sandbox-/Security-Vertrag unverändert restriktiv halten.
+- initiales statisches HTML vor JavaScript-Bootstrap;
+- Zeitpunkt, zu dem `neutral.user.theme.v1` gelesen und auf `html/body` angewendet wird;
+- ob Dark Theme erst nach dem ersten Browser-Paint gesetzt wird;
+- initiale Klassen/Attribute auf `html`, `body`, App-Shell und Content-Host;
+- `Loading…`-Markup und dessen Default-CSS vor Laden der Hauptstyles;
+- Reihenfolge von CSS, Theme-Bootstrap, User-App-JavaScript, Homepagecache-Lesen und erstem Render;
+- ob der Warmstart zunächst immer einen generischen Loading-State rendert und erst danach synchron/lokal den Homepagecache liest;
+- ob IndexedDB/localStorage/anderer Storage tatsächlich synchron genug für den ersten sinnvollen Render verfügbar ist;
+- ob ein früher Inline-/Bootstrap-Theme-Hinweis nötig ist, damit Dark bereits **vor First Paint** feststeht;
+- CSP-/Security-Auswirkungen eines frühen Theme-Bootstraps;
+- Service-Worker-/Cache-Versionierung, damit alte Shell/CSS/JS nicht den Zwischenzustand verursachen;
+- Cold Start ohne lokalen Homepagezustand getrennt vom Warmstart mit gültigem lokalem Zustand.
 
-## Zielvertrag
+# Zielvertrag
 
-Bei bereits bekanntem Dark Theme und lokal vorhandenem HTML-Homepage-Inhalt darf während des gesamten sichtbaren Renderpfads **kein weißer Browser-/iframe-Zwischenzustand** erscheinen.
+## Warmstart mit gültigem lokalem Homepagezustand
 
-Erlaubter sichtbarer Ablauf:
+Wenn Theme und Homepage lokal bereits gültig bekannt sind, soll der sichtbare Ablauf sein:
 
-`Dark App-Surface → unmittelbar thematisierter Dark HTML-Inhalt`
+`bereits korrekt thematisierte App-Surface → lokaler Homepageinhalt`
+
+Im Idealfall erscheint **gar kein `Loading…`**, weil für den ersten sinnvollen Inhalt keine Netzantwort benötigt wird.
 
 Nicht erlaubt:
 
-`Dark App-Surface → weißer iframe/about:blank/srcdoc Flash → Dark HTML-Inhalt`
+`weiße/helle Loading-Fläche → Dark App → Dark Homepage`
 
-Für Light entsprechend konsistent.
+und ebenfalls nicht:
 
-Wenn der HTML-Inhalt selbst ausdrücklich einen weißen Hintergrund definiert, darf dieser natürlich sichtbar sein; der Auftrag betrifft ausschließlich den vom Framework/Browser erzeugten unthematisierten Zwischenzustand.
+`Dark Loading-Fläche für unnötige Zeit → lokaler Homepageinhalt`, wenn der lokale Inhalt unmittelbar verfügbar ist.
+
+## Echter Cold Start ohne verwertbaren lokalen Homepagezustand
+
+Falls ein Ladezustand fachlich wirklich notwendig ist, muss er vom **allerersten sichtbaren Paint** an das bereits lokal bekannte Theme respektieren. Ist noch kein Theme gespeichert, gilt der definierte Default.
+
+Kein weißer Flash in bekanntem Dark Theme.
+
+# Architekturhinweis
+
+Der bestehende verbindliche Vertrag in `UI-UX.md` bleibt maßgeblich:
+
+`UI zuerst → lokaler Zustand → Hintergrundinitialisierung`
+
+und insbesondere der Local-first-Warmstartvertrag. Der Fix soll diesen Vertrag tatsächlich im ersten sichtbaren Paint erfüllen und nicht nur nachträglich kosmetisch herstellen.
 
 # Tests
 
 Regressionstests zuerst ergänzen/anpassen.
 
-Mindestens soweit automatisiert möglich beweisen:
+Mindestens soweit automatisiert sinnvoll beweisen:
 
-- iframe erhält thematisiertes `srcdoc`/Theme-Setup vor dem ersten sichtbaren Zustand;
-- kein sichtbarer leerer/about:blank-Frame wird vor dem thematisierten Dokument erzeugt;
-- falls Load-/Visibility-Gating genutzt wird, besitzt der Wrapper währenddessen bereits die korrekte Theme-Surface und zeigt kein `Loading`/weißes Placeholder;
-- Dark-Warmstart behält korrekten Hintergrund während des gesamten Initialisierungspfads;
-- Light-Warmstart entsprechend;
-- Light↔Dark-Wechsel erzeugt keinen bewusst sichtbaren unthematisierten Zwischenzustand;
-- Administrator-CSS bleibt maßgeblich;
-- freies HTML wird weiterhin nicht heuristisch verändert;
-- Sandboxattribute bleiben mindestens gleich restriktiv;
-- Local-first Homepagecache und Warmstart bleiben erhalten;
+- persistiertes Dark Theme wird vor dem ersten sichtbaren User-App-Paint angewendet;
+- persistiertes Light Theme entsprechend;
+- Warmstart mit gültigem lokalem HTML-Homepagecache rendert nicht zuerst einen generischen sichtbaren `Loading…`-Zustand, wenn dieser technisch vermeidbar ist;
+- Cold Start ohne Homepagecache darf einen Loading-/Fallback-Zustand verwenden, dieser ist aber vom ersten Paint an theme-konform;
+- initiales statisches Markup/CSS erzeugt bei gespeichertem Dark Theme keinen weißen Surface-Flash;
+- Theme-Switch und Reload-Persistenz bleiben erhalten;
+- iframe-Dokumentadapter und iframe-Paint-Gating bleiben regressionsfrei;
+- Local-first Cache und Hintergrundrefresh bleiben erhalten;
+- Service Worker liefert die aktuelle Shell-/Asset-Version;
 - Appearance bleibt aus normalen User-Settings entfernt;
-- Home/GPS, GPS, Login, Theme-Switch, P1 Sessiontrennung, Auth/CSRF, Service Worker, Packaging/Base Path und FTPS-/Smoke-Stabilisierung bleiben grün.
+- Home/GPS, GPS, Login, Buttonsystem, P1 Sessiontrennung, Auth/CSRF, Packaging/Base Path und FTPS-/Smoke-Stabilisierung bleiben grün.
 
-Falls ein echter visueller Safari-Test in der Umgebung technisch nicht möglich ist, das ausdrücklich dokumentieren und DOM-/Lifecycle-Verträge so testen, dass der bekannte White-Flash-Pfad strukturell ausgeschlossen wird. Keine erfundene visuelle Bestätigung.
+Falls die Umgebung keinen echten Safari-First-Paint-Test erlaubt, DOM-/Bootstrap-/Load-Order-Verträge so testen, dass der bekannte helle Loading-Pfad strukturell ausgeschlossen wird. Keine erfundene visuelle Bestätigung.
 
 # Abschluss
 
-Dokumentiere Root Cause und exakte Paint-/Lifecycle-Korrektur in `CHATGPT.md`.
+Dokumentiere in `CHATGPT.md` exakt:
+
+- welcher Code/Markup den sichtbaren `Loading…`-Zustand erzeugt hat;
+- warum er trotz vorhandenem Local-first-Cache noch sichtbar wurde;
+- warum er vor Anwendung des Dark Themes hell gepaintet wurde;
+- wie der First-Paint-/Warmstartpfad jetzt funktioniert.
 
 Danach vollständig gemäß `WORKFLOW.md`:
 
@@ -120,13 +148,11 @@ Keine selbst ausführbaren offenen Punkte zurücklassen.
 
 ## Betreiber-Retest danach
 
-Nur noch kurz:
-
-1. Dark Mode aktivieren.
-2. HTML-Homepage `<h1>TEST</h1>` mehrfach öffnen/reloaden.
-3. Bestätigen, dass weder beim ersten Paint noch beim Reload ein weißer Flash erscheint.
-4. Light↔Dark über Header wechseln und ebenfalls auf Flash prüfen.
-5. Settings kurz prüfen: Appearance bleibt entfernt.
-6. Home/GPS/Warmstart kurz regressiv prüfen.
+1. Dark Theme aktivieren und einmal vollständig laden.
+2. Danach mehrfach Reload/Warmstart durchführen.
+3. Prüfen: kein weißes `Loading…`, kein heller Flash; lokaler Homepageinhalt erscheint unmittelbar bzw. ohne unnötigen sichtbaren Loading-State.
+4. echten Cold Start soweit praktikabel getrennt prüfen: notwendiger Loading-State muss theme-konform sein.
+5. Light↔Dark und Reload-Persistenz prüfen.
+6. Home/GPS/Settings/Warmstart kurz regressiv prüfen.
 
 Bis zum positiven realen iPad/Safari-Retest keine vollständige P4-Livefreigabe erfinden.
