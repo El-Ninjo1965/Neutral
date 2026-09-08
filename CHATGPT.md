@@ -52,7 +52,10 @@ Der vorherige Auftrag korrigierte also den **Dokument-Endzustand**, nicht die se
 - Implementierungs-CI terminal erfolgreich:
   - `FTPS Deploy`: Run `34225058917` – `success`, einschließlich Tests, Paketbau, Upload und read-only Produktions-Smoke.
   - `Push on main` / CodeQL: Run `34225058522` – `success`.
-- Der Bericht und die operative Abschlussmarkierung werden ebenfalls nach `main` übertragen. Vor der externen Abschlussmeldung werden deren CI, `HEAD == origin/main`, sauberer Working Tree und der GitHub-Blob von `CHATGPT.md` erneut verifiziert.
+- Bericht-Commit `66db34d` wurde nach `main` übertragen; auch dessen vollständige Folgeprüfung war terminal erfolgreich:
+  - `FTPS Deploy`: Run `34225648347` – `success`.
+  - `Push on main` / CodeQL: Run `34225648215` – `success`.
+- Die abschließende operative Statusmarkierung wird ebenfalls übertragen und vor der externen Abschlussmeldung erneut bis zu terminaler CI, `HEAD == origin/main`, sauberem Working Tree und identischem GitHub-Blob verifiziert.
 
 ## 7. Noch erforderlicher Betreiber-Retest
 

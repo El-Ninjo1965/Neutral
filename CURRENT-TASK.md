@@ -18,7 +18,7 @@ Den nach dem aktuellen iPad/Safari-Retest verbleibenden weißen Initial-Paint/Fl
 10. Relevante dauerhafte Dokumentation, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und `WORKFLOW.md` wahrheitsgemäß aktualisieren; kein visueller Safari-Erfolg ohne Device-Retest behaupten. **ERLEDIGT**
 11. Fokussierte Tests, vollständige Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket und Secret-/Artefaktprüfung ausführen. **ERLEDIGT**
 12. Vollständigen Abschlussbericht mit den sechs kurzen Betreiber-Retest-Schritten nach `CHATGPT.md` schreiben. **ERLEDIGT**
-13. Alles committen und nach GitHub `main` übertragen; `HEAD == origin/main`, sauberer Working Tree, FTPS/CodeQL/weitere CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` aktuell verifizieren. **IN ARBEIT**
+13. Alles committen und nach GitHub `main` übertragen; `HEAD == origin/main`, sauberer Working Tree, FTPS/CodeQL/weitere CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` aktuell verifizieren. **ERLEDIGT**
 
 ## Capture-Prüfung
 
