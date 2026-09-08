@@ -11,6 +11,8 @@ Die User-App ergänzt eine lokale Light/Dark-Auswahl unter `neutral.user.theme.v
 
 Die User-App lädt die zentrale Homepage-Projektion fehlertolerant parallel zum Core-Start und zur User-Session. Sie öffnet im Modulmodus nur ein aktives, sichtbares und berechtigtes Modul; im HTML-Modus übernimmt sie den bewusst unveränderten Administrator-Inhalt in den vorhandenen Sandbox-Frame. Die Produktidentität unterstützt konfigurierbaren Namen, kurzen Icon-Text und eine optionale Logo-URL.
 
+Ein Homepage-Modul bleibt im aktiven Bereich `Start`; die eigenständige Modulansicht wird nur durch die Navigation geöffnet. User-Login wird als einzelner Formular-Submit verarbeitet und durch eine Revisionsprüfung gegen eine gleichzeitig laufende Session-Wiederherstellung geschützt. GPS bewahrt Rohgenauigkeit und ISO-Zeit intern, formatiert beide jedoch über locale-fähige `Intl`-APIs menschenlesbar für die Anzeige.
+
 ## Status
 
 - **VORHANDEN**: implementiert und aufrufbar.

@@ -11,6 +11,8 @@
 - Core-Start, Homepage-Fetch und Wiederherstellung der User-Session sind getrennte Startpfade. Ein Fehler in einem Pfad darf die beiden anderen nicht verhindern.
 - Das Produktionspaket bindet lokale JavaScript- und CSS-URLs im User-Entry-Document an denselben Deployment-Commit wie den Service-Worker-Cache. Damit kann ein neuer Worker keinen alten HTTP-Cache-Inhalt in einen neuen Shell-Cache übernehmen.
 - Branding ist App-Metadatum (`iconText`, optional `logoUrl`) und kein unveränderliches Neutral-Element.
+- Ein als Homepage konfiguriertes Modul wird innerhalb des Navigationskontexts `Start` gerendert. Nur eine bewusste Auswahl im Modulmenü wechselt den aktiven Navigationskontext zum eigenständigen Modul.
+- Bis öffentliche Homepage-Projektion und – beim Modulmodus – Discovery aufgelöst sind, zeigt die Shell einen neutralen Ladezustand statt kurzzeitig einen fachlich falschen Defaultinhalt.
 
 ## Statuslegende
 

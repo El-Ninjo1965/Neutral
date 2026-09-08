@@ -4,7 +4,7 @@
 
 - P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
 - Workflow reset: DONE / DOCUMENTED
-- P4 (configurable landing page): DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN
+- P4 (configurable landing page): FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Theme / i18n / navigation / other feature work: PENDING
 

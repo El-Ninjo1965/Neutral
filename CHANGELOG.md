@@ -1,3 +1,13 @@
+## 2026-09-08 – P4 device follow-up: Start context, login race and readable GPS
+
+- Ein konfiguriertes GPS-Homepage-Modul bleibt nun beim Reload im aktiven `Start`-Kontext, statt die eigenständige Modulnavigation zu aktivieren. Bis Homepage und Discovery bereit sind, verhindert ein neutraler Ladezustand den falschen Welcome-Flash.
+- Gültiger HTML-Homepage-Inhalt wird ohne zusätzlichen statischen Welcome-/Neutral-Block gerendert.
+- Der programmatische Fokus auf den Modulcontainer wurde als Ursache des persistenten blauen Reload-Rahmens entfernt; echte Tastaturnavigation behält explizite `:focus-visible`-Indikatoren.
+- User-Login nutzt einen semantischen Formular-Submit. Eine Session-Revisionsprüfung verhindert, dass ein bereits laufender anonymer Restore die erfolgreiche Loginantwort überschreibt und dadurch einen zweiten Klick erforderlich macht.
+- `Show all functions` samt Alert wurde entfernt; persönliche Bereichsauswahl und serverseitige Berechtigungen bleiben getrennt. Angefasste Bereichstexte tragen stabile I18N-Schlüssel, ohne die vollständige I18N-Architektur vorwegzunehmen.
+- GPS zeigt Genauigkeit gerundet als `± … m` und Zeit localeabhängig über `Intl.DateTimeFormat`; präzise Rohwerte und ISO-Zeit bleiben intern unverändert.
+- Ausgeführt und dokumentiert durch Codex in der Umgebung `Neutral`. P1 bleibt `LIVE BESTANDEN`; P4 benötigt den erneuten Betreiber-Device-Retest.
+
 ## 2026-09-08 – P4 live regression: deterministic startup and deploy-bound user assets
 
 - Root Cause des Betreiber-Livefehlers beseitigt: unversionierte User-App-Assets konnten beim Installieren eines neuen Service Workers aus dem langlebigen HTTP-Cache übernommen werden; außerdem verhinderte ein Fehler im seriell davorliegenden Core-/Discovery-Start den Homepage-Fetch vollständig.

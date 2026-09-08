@@ -19,7 +19,7 @@ const read = (relativePath) => fs.readFileSync(path.join(projectRoot, relativePa
 test('User-App login submit calls the real server auth endpoint, not the local developer bootstrap', () => {
   const source = read('Web-App/public/user-app.js');
 
-  const submitBlock = source.match(/submit\.addEventListener\('click', async \(\) => \{[\s\S]*?\n  \};/);
+  const submitBlock = source.match(/loginForm\.addEventListener\('submit', async \(event\) => \{[\s\S]*?\n  \};/);
   assert.ok(submitBlock, 'login submit handler must exist');
   const handler = submitBlock[0];
 
@@ -27,6 +27,15 @@ test('User-App login submit calls the real server auth endpoint, not the local d
   assert.match(handler, /getServerApiClient\(\)/);
   assert.doesNotMatch(handler, /window\.LocalAuth\.login/);
   assert.doesNotMatch(handler, /LocalAuth/);
+});
+
+test('User-App login uses one form submit and protects session restore from login races', () => {
+  const source = read('Web-App/public/user-app.js');
+  assert.match(source, /<form[^>]*id="userLoginForm"/);
+  assert.match(source, /loginForm\.addEventListener\('submit'/);
+  assert.match(source, /submit\.disabled = true/);
+  assert.match(source, /sessionRevision/);
+  assert.match(source, /if \(revision !== sessionRevision\) return/);
 });
 
 test('User-App logout ends the real server session, not just local state', () => {

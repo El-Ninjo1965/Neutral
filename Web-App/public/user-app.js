@@ -114,6 +114,7 @@
     .replace(/'/g, '&#039;');
 
   let homepageConfig = null;
+  let homepageResolved = false;
 
   const getHomepageConfig = () => {
     const configManager = window.ConfigManager && typeof window.ConfigManager.get === 'function'
@@ -135,21 +136,26 @@
   };
 
   const loadHomepageConfig = async () => {
-    const client = getServerApiClient('user');
-    if (!client || typeof client.getHomepage !== 'function') return getHomepageConfig();
-    const result = await client.getHomepage();
-    const envelope = result?.data?.data || result?.data || {};
-    const received = envelope.homepage;
-    if (!result.ok || !received || typeof received !== 'object') return getHomepageConfig();
-    homepageConfig = {
-      mode: received.mode === 'module' ? 'module' : 'html',
-      content: typeof received.content === 'string' ? received.content : '',
-      moduleId: typeof received.moduleId === 'string' ? received.moduleId.trim() : ''
-    };
-    if (window.ConfigManager && typeof window.ConfigManager.set === 'function') {
-      window.ConfigManager.set('homepage', homepageConfig);
+    try {
+      const client = getServerApiClient('user');
+      if (!client || typeof client.getHomepage !== 'function') return getHomepageConfig();
+      const result = await client.getHomepage();
+      const envelope = result?.data?.data || result?.data || {};
+      const received = envelope.homepage;
+      if (!result.ok || !received || typeof received !== 'object') return getHomepageConfig();
+      homepageConfig = {
+        mode: received.mode === 'module' ? 'module' : 'html',
+        title: typeof received.title === 'string' ? received.title.trim() : '',
+        content: typeof received.content === 'string' ? received.content : '',
+        moduleId: typeof received.moduleId === 'string' ? received.moduleId.trim() : ''
+      };
+      if (window.ConfigManager && typeof window.ConfigManager.set === 'function') {
+        window.ConfigManager.set('homepage', homepageConfig);
+      }
+      return homepageConfig;
+    } finally {
+      homepageResolved = true;
     }
-    return homepageConfig;
   };
 
   // Real end-user login must go through the server-authenticated session
@@ -158,6 +164,7 @@
   // the identity confirmed by the server for this tab; it is not persisted to
   // localStorage and is re-derived on every reload via restoreServerSession().
   let serverUser = null;
+  let sessionRevision = 0;
 
   const getServerApiClient = (scope = 'user') => {
     const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
@@ -274,10 +281,12 @@
   // Restores an existing server session (e.g. after a page reload) via the
   // cookie-backed /api/auth/me endpoint. Never falls back to local storage.
   const restoreServerSession = async () => {
+    const revision = sessionRevision;
     const apiClient = getServerApiClient();
     if (!apiClient) return null;
     try {
       const sessionResult = await apiClient.me();
+      if (revision !== sessionRevision) return serverUser;
       const sessionData = extractServerAuthData(sessionResult);
       if (sessionResult.ok && sessionData && sessionData.user) {
         return applyServerUser(sessionData);
@@ -285,6 +294,7 @@
     } catch (error) {
       // No active server session; treat as anonymous.
     }
+    if (revision !== sessionRevision) return serverUser;
     clearServerUser();
     return null;
   };
@@ -479,7 +489,7 @@
         <span class="user-app-eyebrow">Account access</span>
         <h1>Sign in</h1>
         <p>Use your local workspace account to unlock available features.</p>
-        <div class="user-login-form">
+        <form id="userLoginForm" class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
             <input id="userLoginUsername" type="text" autocomplete="username" />
@@ -489,15 +499,20 @@
             <input id="userLoginPassword" type="password" autocomplete="current-password" />
           </div>
           <div class="user-login-actions">
-            <button type="button" id="userLoginSubmit" class="primary">Login</button>
+            <button type="submit" id="userLoginSubmit" class="primary">Login</button>
           </div>
           <div id="userLoginStatus" class="message info">Sign in with your configured account.</div>
-        </div>
+        </form>
       </section>
     `;
 
     const submit = document.getElementById('userLoginSubmit');
-    submit.addEventListener('click', async () => {
+    const loginForm = document.getElementById('userLoginForm');
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (submit.disabled) return;
+      submit.disabled = true;
+      sessionRevision += 1;
       const username = document.getElementById('userLoginUsername').value.trim();
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
@@ -506,6 +521,7 @@
       if (!apiClient) {
         status.className = 'message error';
         status.textContent = 'Server authentication client is not available.';
+        submit.disabled = false;
         return;
       }
 
@@ -518,6 +534,7 @@
       } catch (error) {
         status.className = 'message error';
         status.textContent = 'Authentication failed. Check your connection and try again.';
+        submit.disabled = false;
         return;
       }
 
@@ -528,6 +545,7 @@
           : (loginResult && loginResult.error ? loginResult.error : 'Authentication failed.');
         status.className = 'message error';
         status.textContent = serverError;
+        submit.disabled = false;
         return;
       }
 
@@ -535,6 +553,7 @@
       if (!user) {
         status.className = 'message error';
         status.textContent = 'No authenticated user was returned by the server.';
+        submit.disabled = false;
         return;
       }
 
@@ -571,8 +590,8 @@
           </select>
         </div>
         <div class="user-settings-card">
-          <h2>Functions</h2>
-          <p>Choose which features should remain visible in your current workspace menu.</p>
+          <h2 data-i18n-key="settings.areas">App areas</h2>
+          <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
             ${isDiscoveryPending() || state.discoveryState === 'error' ? `<p class="user-app-empty">${getDiscoveryMessage()}</p>` : modules.length ? modules.map((module) => `
               <label class="user-settings-toggle" for="module-toggle-${escapeHtml(module.id)}">
@@ -608,7 +627,6 @@
         </div>
         <div class="user-settings-actions">
           <button id="userSettingsSaveButton" type="button" class="primary">Save settings</button>
-          <button id="userSettingsResetButton" type="button" class="secondary">Show all functions</button>
         </div>
         <p id="userSettingsStatus" class="user-settings-status" aria-live="polite"></p>
       </section>
@@ -659,28 +677,9 @@
       });
     }
 
-    const resetButton = document.getElementById('userSettingsResetButton');
-    if (resetButton) {
-      resetButton.addEventListener('click', () => {
-        const moduleIds = getAvailableModulesForUser().map((module) => module.id);
-        const nextPreferences = saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy, theme: readUserTheme() });
-        const status = document.getElementById('userSettingsStatus');
-        if (status) {
-          if (nextPreferences.persisted) {
-            status.textContent = 'All functions are visible again.';
-            status.className = 'user-settings-status success';
-          } else {
-            status.textContent = 'Reset could not be saved. Local storage is unavailable or restricted.';
-            status.className = 'user-settings-status error';
-          }
-          if (nextPreferences.persisted) window.alert('All functions are visible again.');
-        }
-        renderUserSettings();
-      });
-    }
   };
 
-  const renderModule = (moduleId) => {
+  const renderModule = (moduleId, { asHomepage = false } = {}) => {
     const preferences = readUserPreferences();
     const module = window.NeutralUserModuleAccess.findVisibleModule(getModules(), moduleId, {
       currentUser: getCurrentUser(),
@@ -693,8 +692,10 @@
       return;
     }
 
-    state.activeView = `module:${moduleId}`;
-    state.activeModuleId = moduleId;
+    if (!asHomepage) {
+      state.activeView = `module:${moduleId}`;
+      state.activeModuleId = moduleId;
+    }
     content.innerHTML = `
       <section class="user-app-panel">
         <div id="moduleUserInterface"></div>
@@ -706,7 +707,6 @@
     } else {
       target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
     }
-    content.focus();
   };
 
   const renderModuleCards = () => {
@@ -733,9 +733,17 @@
   };
 
   const renderLandingPage = () => {
+    if (!homepageResolved) {
+      content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';
+      return;
+    }
     const homepage = getHomepageConfig();
     const appName = getAppName();
     if (homepage.mode === 'module') {
+      if (state.discoveryState === 'pending') {
+        content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';
+        return;
+      }
       const moduleId = homepage.moduleId;
       const preferences = readUserPreferences();
       const module = moduleId
@@ -745,9 +753,21 @@
         })
         : null;
       if (module) {
-        renderModule(module.id);
+        renderModule(module.id, { asHomepage: true });
         return;
       }
+    }
+
+    if (homepage.mode === 'html' && homepage.content) {
+      content.innerHTML = '<section class="user-app-panel"><div class="user-app-homepage-content"></div></section>';
+      const host = content.querySelector('.user-app-homepage-content');
+      const frame = document.createElement('iframe');
+      frame.className = 'user-app-homepage-frame';
+      frame.title = homepage.title || 'Start page content';
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
+      frame.srcdoc = homepage.content;
+      host.appendChild(frame);
+      return;
     }
 
     const heading = homepage.title ? homepage.title : appName;
@@ -767,16 +787,6 @@
       </section>
     `;
 
-    if (homepage.mode === 'html' && homepage.content) {
-      const host = content.querySelector('.user-app-homepage-content');
-      host.innerHTML = '';
-      const frame = document.createElement('iframe');
-      frame.className = 'user-app-homepage-frame';
-      frame.title = 'Start page content';
-      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
-      frame.srcdoc = homepage.content;
-      host.appendChild(frame);
-    }
 
     const homeModuleCards = content.querySelectorAll('[data-module-card]');
     homeModuleCards.forEach((button) => {

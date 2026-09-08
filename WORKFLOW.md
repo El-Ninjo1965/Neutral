@@ -93,6 +93,13 @@ PHASE D – CLOSE
 
 ## Historische Quellen
 
+## Arbeitsprotokoll 2026-09-08
+
+- Ausgeführt und dokumentiert durch Codex in der verbindlichen Umgebung `Neutral`.
+- Betreiber-Folgeauftrag zu P4 wurde nach Synchronisation mit `origin/main` vollständig in `CURRENT-TASK.md` erfasst.
+- Umfang blieb auf Start-/Reload-Semantik, Focus, User-Login, persönliche Bereichsauswahl und locale-fähige GPS-Anzeige begrenzt; die vollständige Architektur aus `I18N.md` wurde nicht implementiert.
+- Verifikation, GitHub-Übertragung und terminale CI-Ergebnisse werden im zugehörigen `CHATGPT.md`-Abschlussbericht festgehalten.
+
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 
 - `CHANGELOG.md`
