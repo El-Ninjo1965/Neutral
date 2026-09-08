@@ -57,10 +57,35 @@ test('module card open path sets the same view state as the nav button', () => {
   // leaving state.activeView on 'home'.
   const cardBlock = source.match(/data-module-card[\s\S]{0,400}?renderModule\(button\.dataset\.moduleCard\)/);
   assert.ok(cardBlock, 'module card click must call renderModule');
-  const renderModuleBody = source.match(/const renderModule = \(moduleId\) => \{[\s\S]*?\n  \};/);
+  const renderModuleBody = source.match(/const renderModule = \(moduleId, \{ asHomepage = false \} = \{\}\) => \{[\s\S]*?\n  \};/);
   assert.ok(renderModuleBody);
   assert.match(renderModuleBody[0], /state\.activeView = `module:\$\{moduleId\}`/);
   assert.match(renderModuleBody[0], /state\.activeModuleId = moduleId/);
+});
+
+test('configured module remains embedded in Start context without focus outline or module-tab transition', () => {
+  const source = read('Web-App/public/user-app.js');
+  const css = read('Web-App/public/style.css');
+  const landing = source.match(/const renderLandingPage = \(\) => \{[\s\S]*?\n  \};/);
+
+  assert.ok(landing);
+  assert.match(landing[0], /renderModule\(module\.id, \{ asHomepage: true \}\)/);
+  const configuredModuleBlock = landing[0].match(/if \(homepage\.mode === 'module'\) \{[\s\S]*?renderModule\(module\.id, \{ asHomepage: true \}\);[\s\S]*?\n    \}/);
+  assert.ok(configuredModuleBlock);
+  assert.doesNotMatch(configuredModuleBlock[0], /state\.activeView = `module:/);
+  assert.match(source, /if \(!asHomepage\) \{\s*state\.activeView = `module:/s);
+  assert.doesNotMatch(source, /content\.focus\(/);
+  assert.match(css, /:focus-visible/);
+});
+
+test('homepage stays in a neutral loading shell until central projection resolves', () => {
+  const source = read('Web-App/public/user-app.js');
+  const index = read('Web-App/public/index.html');
+
+  assert.match(source, /homepageResolved/);
+  assert.match(source, /if \(!homepageResolved\)/);
+  assert.match(source, /homepage\.mode === 'module'[\s\S]*state\.discoveryState === 'pending'/);
+  assert.doesNotMatch(index, /Welcome|Neutral Platform<\/h1>/);
 });
 
 test('static shell placeholder nav carries no fake active state', () => {
@@ -95,32 +120,75 @@ test('GPS consent has modal presentation and focus management', { skip: gpsRefer
   assert.match(css, /\.gps-confirmation-modal\s*\{[\s\S]*z-index/);
 });
 
-test('homepage config defaults to neutral content mode and stores central metadata', () => {
+test('homepage config defaults to neutral html mode and stores central metadata', () => {
   const configSource = read('Web-App/core/config-manager.js');
   const settingsSource = read('Server/node/services/settings-service.js');
 
-  assert.match(configSource, /this\.set\('homepage', \{\s*mode:\s*'content',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
-  assert.match(settingsSource, /const defaultHomepage = Object\.freeze\(\{\s*mode:\s*'content',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
+  assert.match(configSource, /this\.set\('homepage', \{\s*mode:\s*'html',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
+  assert.match(settingsSource, /const defaultHomepage = Object\.freeze\(\{\s*mode:\s*'html',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
   assert.match(settingsSource, /moduleId\s*:\s*''|moduleId\s*=\s*typeof candidate\.moduleId/);
 });
 
 test('user home view falls back to neutral content when configured module is invalid', () => {
   const source = read('Web-App/public/user-app.js');
 
-  assert.match(source, /if \(homepage\.mode === 'module'\) \{\s*const moduleId = homepage\.moduleId;/s);
-  assert.match(source, /state\.activeView = 'home';\s*state\.activeModuleId = null;\s*content\.innerHTML = `/s);
+  assert.match(source, /if \(homepage\.mode === 'module'\) \{[\s\S]*const moduleId = homepage\.moduleId;/s);
+  assert.match(source, /NeutralUserModuleAccess\.findVisibleModule\(getModules\(\), moduleId/);
   assert.match(source, /const heading = homepage\.title \? homepage\.title : appName;/);
-  assert.match(source, /const message = homepage\.content\s*\?\s*homepage\.content\s*:\s*'<p class="user-app-intro">Welcome to the workspace\.<\/p>'/);
+  assert.match(source, /const message = '<p class="user-app-intro">Welcome to the workspace\.<\/p>'/);
 });
 
-test('admin settings UI exposes the Startseite contract', () => {
-  const source = read('Web-App/public/admin/settings-view.js');
+test('configured HTML homepage has no fixed Welcome or product-title block', () => {
+  const source = read('Web-App/public/user-app.js');
+  const landing = source.match(/const renderLandingPage = \(\) => \{[\s\S]*?\n  \};/);
+  assert.ok(landing);
+  assert.match(landing[0], /if \(homepage\.mode === 'html' && homepage\.content\)/);
+  assert.doesNotMatch(landing[0], /Welcome[\s\S]*frame\.srcdoc/);
+});
 
-  assert.match(source, /<legend>Startseite<\/legend>/);
+test('admin Appearance UI exposes the Startseite contract while Settings does not', () => {
+  const source = read('Web-App/public/admin/appearance-view.js');
+  const settings = read('Web-App/public/admin/settings-view.js');
+
+  assert.match(source, /<legend>Global Start Page<\/legend>/);
   assert.match(source, /id="homepageMode"/);
-  assert.match(source, /id="homepageTitle"/);
   assert.match(source, /id="homepageContent"/);
   assert.match(source, /id="homepageModuleId"/);
+  assert.doesNotMatch(settings, /homepageMode|homepageModuleId|homepageContent/);
+});
+
+
+test('user startup loads central homepage config and renders trusted HTML without sanitization', () => {
+  const source = read('Web-App/public/user-app.js');
+  const apiClient = read('Web-App/public/api-client.js');
+  const phpApi = read('Server/public/api/index.php');
+
+  assert.match(apiClient, /getHomepage\(\)/);
+  assert.match(phpApi, /\$route === 'settings\/homepage'/);
+  assert.match(source, /loadHomepageConfig\(\)/);
+  assert.match(source, /homepage\.mode === 'html'/);
+  assert.match(source, /frame\.srcdoc = homepage\.content/);
+  assert.doesNotMatch(source, /getSafeHomepageContent/);
+  assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*restoreServerSession\(\)/s);
+  assert.doesNotMatch(source, /await window\.CoreStartup\.startBackground\(\);\s*}\s*await loadHomepageConfig\(\)/s);
+});
+
+test('user shell is product-facing and keeps branding replaceable', () => {
+  const source = read('Web-App/public/user-app.js');
+  const index = read('Web-App/public/index.html');
+  const appsRoot = path.join(projectRoot, 'Web-App/apps');
+  const appInfoPath = fs.readdirSync(appsRoot)
+    .map((name) => path.join(appsRoot, name, 'app-info.json'))
+    .find((candidate) => fs.existsSync(candidate));
+  assert.ok(appInfoPath, 'an application branding manifest is required');
+  const appInfo = JSON.parse(fs.readFileSync(appInfoPath, 'utf8'));
+
+  assert.doesNotMatch(`${source}\n${index}`, /Active application|Local workspace|Signed in as|userSettingsBackButton|user-app-count/);
+  assert.match(source, /label:\s*['"]Start['"]/);
+  assert.match(source, /branding\.iconText/);
+  assert.match(source, /branding\?\.logoUrl/);
+  assert.equal(appInfo.branding.iconText, Array.from(appInfo.name)[0].toUpperCase());
+  assert.equal(appInfo.branding.logoUrl, '');
 });
 
 test('local settings save surfaces both success and error status without admin hints', () => {
@@ -130,17 +198,26 @@ test('local settings save surfaces both success and error status without admin h
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
   assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = 'Settings saved successfully\.';\s*status\.className = 'user-settings-status success';\s*\} else \{\s*status\.textContent = 'Settings could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = 'All functions are visible again\.';\s*status\.className = 'user-settings-status success';\s*\} else \{\s*status\.textContent = 'Reset could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
   assert.match(css, /\.user-settings-status\.error\s*\{/);
   assert.doesNotMatch(source, /Settings saved successfully\.'[\s\S]{0,200}[Aa]dmin/);
 });
 
-test('local settings persist across navigation and reload via localStorage', () => {
+test('local feature visibility persists without a show-all control or permission mutation', () => {
   const source = read('Web-App/public/user-app.js');
 
   assert.match(source, /const USER_SETTINGS_KEY = 'neutral\.user\.preferences\.v1';/);
   assert.match(source, /localStorage\.setItem\(USER_SETTINGS_KEY, JSON\.stringify\(nextPreferences\)\);/);
   assert.match(source, /localStorage\.getItem\(USER_SETTINGS_KEY\)/);
-  assert.match(source, /Show all functions<\/button>/);
-  assert.doesNotMatch(source, /userSettingsResetButton[\s\S]{0,400}[Aa]dmin/);
+  assert.doesNotMatch(source, /Show all functions|userSettingsResetButton|All functions are visible again/);
+  assert.match(source, /data-i18n-key="settings\.areas"/);
+  assert.doesNotMatch(source, /data-user-setting-module[\s\S]{0,500}(permissions\s*=|setPermissions|updateRole)/);
+});
+
+test('GPS presents rounded accuracy and localized time while retaining raw values', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, () => {
+  const gpsSource = read('Web-App/app/modules/gps/index.js');
+  assert.match(gpsSource, /formatAccuracy/);
+  assert.match(gpsSource, /Math\.round/);
+  assert.match(gpsSource, /Intl\.DateTimeFormat/);
+  assert.match(gpsSource, /accuracy:\s*coords\.accuracy/);
+  assert.match(gpsSource, /toISOString\(\)/);
 });

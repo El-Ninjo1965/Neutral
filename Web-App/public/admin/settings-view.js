@@ -79,37 +79,6 @@ class AdminSettingsView {
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>User Interface</legend>
-        
-        <div class="form-group">
-          <label for="theme">Theme</label>
-          <select id="theme" name="theme">
-            <option value="">System Default</option>
-            <option value="light" ${this.getSetting('theme') === 'light' ? 'selected' : ''}>Light</option>
-            <option value="dark" ${this.getSetting('theme') === 'dark' ? 'selected' : ''}>Dark</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="language">Language</label>
-          <select id="language" name="language">
-            <option value="en" ${this.getSetting('language') === 'en' ? 'selected' : ''}>English</option>
-            <option value="de" ${this.getSetting('language') === 'de' ? 'selected' : ''}>Deutsch</option>
-            <option value="es" ${this.getSetting('language') === 'es' ? 'selected' : ''}>Español</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="timezone">Timezone</label>
-          <select id="timezone" name="timezone">
-            <option value="UTC" ${this.getSetting('timezone') === 'UTC' ? 'selected' : ''}>UTC</option>
-            <option value="Europe/Berlin" ${this.getSetting('timezone') === 'Europe/Berlin' ? 'selected' : ''}>Europe/Berlin (CET)</option>
-            <option value="Europe/London" ${this.getSetting('timezone') === 'Europe/London' ? 'selected' : ''}>Europe/London (GMT)</option>
-            <option value="America/New_York" ${this.getSetting('timezone') === 'America/New_York' ? 'selected' : ''}>America/New_York (EST)</option>
-          </select>
-        </div>
-      </fieldset>
 
       <fieldset>
         <legend>System Settings</legend>
@@ -142,32 +111,6 @@ class AdminSettingsView {
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>Startseite</legend>
-
-        <div class="form-group">
-          <label for="homepageMode">Start page mode</label>
-          <select id="homepageMode" name="homepageMode">
-            <option value="content" ${this.getHomepageSetting('mode', 'content') === 'content' ? 'selected' : ''}>Content</option>
-            <option value="module" ${this.getHomepageSetting('mode', 'content') === 'module' ? 'selected' : ''}>Module</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="homepageTitle">Page title</label>
-          <input type="text" id="homepageTitle" name="homepageTitle" value="${escapeHtmlSettings(this.getHomepageSetting('title', ''))}" />
-        </div>
-
-        <div class="form-group">
-          <label for="homepageContent">Page content</label>
-          <textarea id="homepageContent" name="homepageContent" rows="6">${escapeHtmlSettings(this.getHomepageSetting('content', ''))}</textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="homepageModuleId">Module ID</label>
-          <input type="text" id="homepageModuleId" name="homepageModuleId" value="${escapeHtmlSettings(this.getHomepageSetting('moduleId', ''))}" />
-        </div>
-      </fieldset>
 
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save Settings</button>
@@ -184,10 +127,6 @@ class AdminSettingsView {
     formDiv.appendChild(form);
   }
 
-  getHomepageSetting(key, defaultValue = null) {
-    const homepage = this.settings?.homepage || this.settings?.settings?.homepage || {};
-    return homepage[key] !== undefined ? homepage[key] : defaultValue;
-  }
 
   // Get a setting value
   getSetting(key, defaultValue = null) {
@@ -198,23 +137,13 @@ class AdminSettingsView {
   // Save settings
   async saveSettings(form) {
     const formData = new FormData(form);
-    const homepage = {
-      mode: formData.get('homepageMode') === 'module' ? 'module' : 'content',
-      title: String(formData.get('homepageTitle') || '').trim(),
-      content: String(formData.get('homepageContent') || '').trim(),
-      moduleId: String(formData.get('homepageModuleId') || '').trim()
-    };
     const data = {
       appName: formData.get('appName'),
-      homepage,
       settings: {
-        theme: formData.get('theme'),
-        language: formData.get('language'),
-        timezone: formData.get('timezone'),
+        ...(this.settings.settings || {}),
         logLevel: formData.get('logLevel'),
         backupEnabled: formData.get('backupEnabled') === 'on',
-        backupInterval: formData.get('backupInterval'),
-        homepage
+        backupInterval: formData.get('backupInterval')
       }
     };
 

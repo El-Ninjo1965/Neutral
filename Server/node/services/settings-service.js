@@ -4,7 +4,7 @@ const persistenceService = require('./persistence-service');
 const auditService = require('./audit-service');
 
 const defaultHomepage = Object.freeze({
-  mode: 'content',
+  mode: 'html',
   title: '',
   content: '',
   moduleId: ''
@@ -12,9 +12,9 @@ const defaultHomepage = Object.freeze({
 
 const normalizeHomepage = (value) => {
   const candidate = value && typeof value === 'object' ? value : {};
-  const mode = candidate.mode === 'module' ? 'module' : 'content';
+  const mode = candidate.mode === 'module' ? 'module' : 'html';
   const title = typeof candidate.title === 'string' ? candidate.title.trim() : '';
-  const content = typeof candidate.content === 'string' ? candidate.content.trim() : '';
+  const content = typeof candidate.content === 'string' ? candidate.content : '';
   const moduleId = typeof candidate.moduleId === 'string' ? candidate.moduleId.trim() : '';
 
   return {

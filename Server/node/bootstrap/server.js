@@ -944,6 +944,13 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
+  if (pathname === `${apiBase}/settings/homepage` || pathname === `${apiBase}/settings/homepage/`) {
+    if (req && req.method === 'GET') {
+      sendJson(res, 200, { ok: true, homepage: settingsService.getAll().homepage });
+    }
+    return true;
+  }
+
   // Settings API - /api/admin/settings
   if (pathname === `${apiBase}/admin/settings` || pathname === `${apiBase}/admin/settings/`) {
     if (req && req.method === 'GET') {

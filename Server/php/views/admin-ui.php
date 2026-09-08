@@ -86,6 +86,7 @@
         'Web-App/public/admin/users-view.js',
         'Web-App/public/admin/roles-view.js',
         'Web-App/public/admin/settings-view.js',
+        'Web-App/public/admin/appearance-view.js',
         'Web-App/public/admin/audit-view.js',
         'Web-App/public/admin/modules-view.js',
         'Web-App/public/admin/navigation.js',

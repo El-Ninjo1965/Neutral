@@ -298,6 +298,35 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(result2.body.settings.settings.theme, 'light');
   });
 
+  test('homepage HTML is preserved unchanged and can be read publicly', async () => {
+    const content = '  <style>body { color: red; }</style><img src="/hero.png"><script>window.started = true;</script>  ';
+    const saved = await requestJson('POST', '/api/admin/settings', {
+      homepage: { mode: 'html', moduleId: '', content },
+      settings: { homepage: { mode: 'html', moduleId: '', content } }
+    });
+    assert.equal(saved.statusCode, 200);
+    assert.equal(saved.body.settings.homepage.content, content);
+
+    const publicResult = await requestJson('GET', '/api/settings/homepage', null, null, null);
+    assert.equal(publicResult.statusCode, 200);
+    assert.equal(publicResult.body.homepage.mode, 'html');
+    assert.equal(publicResult.body.homepage.content, content);
+  });
+
+  test('homepage mode switches persist consistently', async () => {
+    const moduleResult = await requestJson('POST', '/api/admin/settings', {
+      homepage: { mode: 'module', moduleId: 'gps', content: '<p>kept</p>' }
+    });
+    assert.equal(moduleResult.body.settings.homepage.mode, 'module');
+    assert.equal(moduleResult.body.settings.homepage.moduleId, 'gps');
+
+    const htmlResult = await requestJson('POST', '/api/admin/settings', {
+      homepage: { mode: 'html', moduleId: 'gps', content: '<script>window.modeChanged=true</script>' }
+    });
+    assert.equal(htmlResult.body.settings.homepage.mode, 'html');
+    assert.equal(htmlResult.body.settings.homepage.content, '<script>window.modeChanged=true</script>');
+  });
+
   test('POST /api/admin/settings requires admin role', async () => {
     const result = await requestJson('POST', '/api/admin/settings', {
       appName: 'Unauthorized',

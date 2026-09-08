@@ -784,6 +784,7 @@ class AdminRouter {
       permissions: new AdminPermissionsView(apiClient),
       sessions: new AdminSessionsView(apiClient),
       settings: new AdminSettingsView(apiClient),
+      theme: new AdminAppearanceView(apiClient),
       audit: new AdminAuditView(apiClient),
       modules: new AdminModulesView(apiClient),
       dashboard: new AdminDashboardView(apiClient),
@@ -793,8 +794,7 @@ class AdminRouter {
       connections: new AdminInfrastructureView(apiClient, 'connections'),
       server: new AdminInfrastructureView(apiClient, 'server'),
       database: new AdminInfrastructureView(apiClient, 'database'),
-      diagnostics: new AdminDiagnosticsView(apiClient),
-      theme: new AdminSettingsView(apiClient)
+      diagnostics: new AdminDiagnosticsView(apiClient)
     };
   }
 

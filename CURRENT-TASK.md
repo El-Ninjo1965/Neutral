@@ -2,59 +2,37 @@
 
 ## Gesamtauftrag
 
-Dieser Auftrag behebt die operative Projektsteuerung und setzt die verbindliche Arbeitswahrheit für alle nachfolgenden Arbeiten wieder sauber und konsistent.
+Die am 2026-09-08 live bestätigten P4-Folgefehler ursächlich beheben: korrekte Startkontext-/Reload-Semantik ohne Default-Flash, HTML-Startseite ohne festen Welcome-Block, accessibility-konforme Fokusdarstellung, zuverlässiger Ein-Klick-User-Login, bereinigte persönliche Bereichsauswahl sowie menschenlesbare GPS-Werte. P1 bleibt unverändert `LIVE BESTANDEN`; die vollständige I18N-Architektur wird nicht implementiert.
 
-Wichtige Einschränkung: In diesem Auftrag wird keine Feature-Implementierung durchgeführt. Es gibt keine P4-/Startseiten-/Appearance-/Theme-/i18n-/Navigations- oder sonstigen Funktionsänderungen.
+## Nummerierte, überprüfbare Arbeitspunkte
 
-Der bisherige historische P1-Fixauftrag wird hier vollständig ersetzt. Der aktuelle operative Stand bleibt auf das Workflow-Reset fokussiert.
+1. `origin/main` vollständig synchronisieren und neue `CODEX.md`, `I18N.md` und `DOCUMENTATION.md` unverändert erhalten. **Status: ERLEDIGT**
+2. Alle in `CODEX.md` verlangten Verträge, Status-, Implementierungs- und Testdateien vollständig lesen. **Status: ERLEDIGT**
+3. Regressionstests zuerst für Startkontext, Reload, Default-Flash, HTML-Welcome-Block, Fokus, Ein-Klick-Login, Settings-Auswahl und GPS-Formatierung ergänzen/anpassen. **Status: ERLEDIGT**
+4. Modul-Homepage innerhalb des aktiven `Start`-Kontexts rendern, ohne zum Modul-Tab zu wechseln; eigenständige Modulnavigation weiterhin ermöglichen. **Status: ERLEDIGT**
+5. Initialen Default-Welcome-Flash verhindern, bis die zentrale Homepage-Projektion aufgelöst ist; Offline-/Fehlerfallback kontrolliert erhalten. **Status: ERLEDIGT**
+6. HTML-Modus ausschließlich mit dem konfigurierten Startinhalt rendern; Welcome/Neutral nur als tatsächlichen Fallback anzeigen. **Status: ERLEDIGT**
+7. Persistenten blauen GPS-Reload-Rahmen an seiner Focus-Ursache accessibility-konform beheben und Tastatur-`:focus-visible` erhalten. **Status: ERLEDIGT**
+8. User-Login so korrigieren, dass eine gültige Submit-Aktion genau einmal genügt; P1, sichere Session, Auth und CSRF unverändert lassen. **Status: ERLEDIGT**
+9. `Show all functions` samt Alert entfernen; individuelle persönliche Bereichsauswahl erhalten und strikt von Berechtigungen getrennt lassen. **Status: ERLEDIGT**
+10. Angefasste Settings-Texte nutzerorientiert und für den späteren zentralen I18N-Vertrag offen formulieren, ohne vollständige I18N-Architektur/Insellösung. **Status: ERLEDIGT**
+11. GPS-Genauigkeit nur sichtbar sinnvoll runden (`± … m`) und Rohpräzision intern erhalten. **Status: ERLEDIGT**
+12. GPS-Zeit sichtbar lokal/menschenlesbar über vorhandene `Intl`-/Locale-Fähigkeit formatieren und Roh-/ISO-Zeit intern erhalten. **Status: ERLEDIGT**
+13. P1, Auth/CSRF, Module Access, Offline-Fallback, Appearance, Theme und Modul-Lifecycle regressionsfrei halten. **Status: ERLEDIGT**
+14. Keine Scope-Ausweitung auf vollständige I18N-/Provider-/Sprachpaketarchitektur, Designsystem, Sync/Queue, Store-Wrapper oder neue Module. **Status: ERLEDIGT**
+15. Betroffene Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; P4 bleibt bis Betreiber-Retest unterhalb `LIVE BESTANDEN`. **Status: ERLEDIGT**
+16. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
+17. Vollständigen Abschlussbericht in `CHATGPT.md` mit Root Causes, Änderungen, Tests, Commits, CI und konkreten Betreiber-Retestschritten erstellen. **Status: ERLEDIGT**
+18. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: ERLEDIGT**
 
-## Verbindliche Wahrheits-Hierarchie
+## Capture-Prüfung
 
-1. Neuester ausdrücklich mitgeteilter Betreiber-Live-Befund
-2. Neuester ausdrücklich erteilter Auftrag
-3. `CURRENT-TASK.md` – nach vollständiger Übernahme dieses neuesten Auftrags
-4. `WORKFLOW.md` + verbindliche Projektverträge, insbesondere `CORE-1.0.md` und `VISION.md`
-5. tatsächlicher aktueller Code + Tests
-6. `ToDoNow.md` / `STATUS.md` / `TODO.md`
-7. historische Evidenz
-8. alte Chatdiagnosen
+`CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
-Wichtig:
+## Operative Wahrheiten und Grenzen
 
-- Ein neuer Betreiberauftrag steht solange über `CURRENT-TASK.md`, bis dieser neue Auftrag vollständig in `CURRENT-TASK.md` übernommen wurde.
-- Danach wird `CURRENT-TASK.md` die operative Arbeitswahrheit für genau diesen Auftrag.
-- Historische Informationen dürfen neuere Betreiberbefunde niemals überschreiben.
-
-## Nummerierte Checkliste
-
-1. Neuen Auftrag vollständig lesen und analysieren. Status: ERLEDIGT
-2. Veraltete operative Inhalte identifizieren und die aktuelle Wahrheits-Hierarchie festlegen. Status: ERLEDIGT
-3. `WORKFLOW.md` mit Capture/Execute/Verify/Close-Regeln ergänzen. Status: ERLEDIGT
-4. `CURRENT-TASK.md` mit diesem Workflow-Reset-Auftrag vollständig ersetzen. Status: ERLEDIGT
-5. `ToDoNow.md`, `STATUS.md`, `TODO.md` auf den aktuellen operativen Projektstand und P1-Live-Status bereinigen. Status: ERLEDIGT
-6. `CHANGELOG.md` mit kurzer historischer Abschlussnotiz ergänzen, ohne die operative Kette mit alter Historie zu verwechseln. Status: ERLEDIGT
-7. `git diff --check` und Git-/Dokumentationskonsistenz prüfen. Status: ERLEDIGT
-8. Commit/Push und Abschlussprüfung durchführen. Status: IN ARBEIT / ERLEDIGT nach Abschluss des Commits
-
-## Prüfungsfrage
-
-`Prompt vollständig in CURRENT-TASK abgebildet: JA`
-
-## Aktueller Projektstatus
-
-- P1: LIVE BESTANDEN
-- P4: PENDING
-- Settings/Appearance: noch nicht als vollständig erledigt markiert, solange der zugehörige Gesamtauftrag nicht abgeschlossen ist
-- Workflow-Reset: ERLEDIGT
-
-## Verbotene Arbeiten in diesem Auftrag
-
-- keine P4-Startseiten-Implementierung
-- keine Settings-/Appearance-Umsetzung
-- keine Theme-/i18n-/Navigation-/Feature-Verbesserungen
-- keine fremden Änderungen verwerfen
-- keine Historie in `CURRENT-TASK.md` aufnehmen
-
-## Abschlussregel
-
-Vor Abschluss muss `CURRENT-TASK.md` erneut vollständig gelesen werden. Wenn ein selbst ausführbarer Punkt offen ist, darf keine Abschlussmeldung erfolgen. Erst wenn die Checkliste vollständig und verifiziert ist, ist der Auftrag abgeschlossen.
+- Aktueller Livebefund: P4-Modul- und HTML-Inhalt funktionieren grundsätzlich, die in diesem Auftrag benannten UX-/Reload-Fehler sind live nachgewiesen.
+- P4 bleibt bis zum erneuten positiven Betreiber-Livetest unterhalb `LIVE BESTANDEN`.
+- P1 bleibt `LIVE BESTANDEN`; User-/Admin-Sessiontrennung wird nicht verändert.
+- Nutzerpräferenz zum Ausblenden von Bereichen ändert niemals serverseitige Rechte.
+- Keine vollständige I18N-Implementierung.

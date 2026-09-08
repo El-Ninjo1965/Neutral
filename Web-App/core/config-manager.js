@@ -65,6 +65,10 @@
             // Application Config
             this.set('app', {
                 name: 'Neutral Platform',
+                branding: {
+                    iconText: 'N',
+                    logoUrl: ''
+                },
                 version: '1.0.0',
                 environment: 'development',
                 debug: true,
@@ -179,7 +183,7 @@
             });
 
             this.set('homepage', {
-                mode: 'content',
+                mode: 'html',
                 title: '',
                 content: '',
                 moduleId: ''

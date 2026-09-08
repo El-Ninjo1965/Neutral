@@ -1,5 +1,9 @@
 {
   "id": "neutral-app",
   "name": "Neutral App",
-  "description": "Default neutral application shell for the framework runtime."
+  "description": "Default neutral application shell for the framework runtime.",
+  "branding": {
+    "iconText": "N",
+    "logoUrl": ""
+  }
 }
