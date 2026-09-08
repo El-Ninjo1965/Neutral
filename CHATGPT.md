@@ -55,7 +55,10 @@ Der synchrone Head-Bootstrap las den Theme-Key zwar korrekt **vor** dem Styleshe
 - Implementierungs-CI terminal erfolgreich:
   - `FTPS Deploy`: Run `34228804571` – `success`, einschließlich Tests, Paketbau, Upload und read-only Produktions-Smoke.
   - `Push on main` / CodeQL: Run `34228804096` – `success`.
-- Bericht und operative Abschlussmarkierung werden ebenfalls nach `main` übertragen. Vor der externen Abschlussmeldung werden deren CI, `HEAD == origin/main`, sauberer Working Tree und der GitHub-Blob von `CHATGPT.md` erneut verifiziert.
+- Bericht-Commit `84f3138` wurde nach `main` übertragen; auch dessen Folgeprüfung war terminal erfolgreich:
+  - `FTPS Deploy`: Run `34229356978` – `success`.
+  - `Push on main` / CodeQL: Run `34229356719` – `success`.
+- Die abschließende operative Statusmarkierung wird ebenfalls übertragen und vor der externen Abschlussmeldung erneut bis zu terminaler CI, `HEAD == origin/main`, sauberem Working Tree und identischem GitHub-Blob verifiziert.
 
 ## 7. Noch erforderlicher Betreiber-Retest
 

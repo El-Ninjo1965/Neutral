@@ -18,7 +18,7 @@ Den nach dem aktuellen Betreiber-Retest exakt lokalisierten weißen/hellen `Load
 10. Status-, TODO-, Changelog-, Architektur-/Funktions- und Workflow-Dokumentation wahrheitsgemäß aktualisieren; keine Safari-Livebestätigung erfinden. **ERLEDIGT**
 11. Fokussierte Tests, vollständige Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket und Secret-/Artefaktprüfung durchführen. **ERLEDIGT**
 12. Vollständigen Abschlussbericht mit sechs Betreiber-Retest-Schritten nach `CHATGPT.md` schreiben. **ERLEDIGT**
-13. Alles committen/pushen; `HEAD == origin/main`, sauberer Tree, FTPS/CodeQL/weitere CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` verifiziert. **IN ARBEIT**
+13. Alles committen/pushen; `HEAD == origin/main`, sauberer Tree, FTPS/CodeQL/weitere CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` verifiziert. **ERLEDIGT**
 
 ## Capture-Prüfung
 
