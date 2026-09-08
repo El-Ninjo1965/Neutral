@@ -9,6 +9,8 @@ NEUTRAL soll nicht nur technisch robust, modular und portabel sein, sondern als 
 
 Technische Möglichkeiten allein rechtfertigen keine zusätzliche Komplexität. Eine Verbesserung muss einen nachvollziehbaren Nutzen für Bedienbarkeit, Wartbarkeit, Sicherheit, Geschwindigkeit oder Wiederverwendbarkeit besitzen.
 
+Das eigentliche Ziel ist nicht die Zahl, sondern eine App, die sich für den Nutzer besonders gut anfühlt: schnell, klar, vertrauenswürdig, individuell passend und ohne unnötige Bedienhürden.
+
 ## 2. UI und UX
 
 - **UI (User Interface):** sichtbare Gestaltung – Farben, Typografie, Buttons, Karten, Formulare, Abstände, Icons, Layout und visuelle Zustände.
@@ -99,13 +101,18 @@ Jede Produkt-App soll auf den ersten Blick verständlich wirken.
 - Informationsdichte passt sich sinnvoll an Telefon, Tablet und Desktop an.
 - Die Oberfläche soll ruhig und verständlich bleiben, auch wenn der Funktionsumfang wächst.
 
-## 9. Navigation
+## 9. Navigation und App-Gefühl
 
-- Navigation bleibt vorhersehbar und möglichst flach.
-- Der Nutzer muss jederzeit erkennen können, wo er sich befindet und wie er zurückkommt.
-- Häufig benötigte Funktionen sollen mit möglichst wenigen Interaktionen erreichbar sein.
+Die User-App soll sich wie eine eigenständige App anfühlen und nicht wie eine Webseite, die lediglich in eine App-Hülle gedrückt wurde.
+
+- Navigation bleibt vorhersehbar, app-typisch und möglichst flach.
+- Der Nutzer muss jederzeit erkennen können, wo er sich befindet und wie er sinnvoll weiter- oder zurücknavigiert.
+- Ein generischer sichtbarer „Zurück“-Button auf jeder Seite ist ausdrücklich **kein** gewünschtes Standardmuster.
+- Zurücknavigation wird kontextbezogen, durch zentrale App-Navigation und – bei späteren nativen Store-Apps – soweit sinnvoll über die jeweilige Plattformnavigation gelöst.
 - Module integrieren sich in die zentrale Navigationslogik statt eigene konkurrierende Hauptnavigationen einzuführen.
+- Häufig benötigte Funktionen sollen mit möglichst wenigen Interaktionen erreichbar sein.
 - Sichtbarkeit und Navigation respektieren weiterhin die serverseitigen Modul-/Rechteverträge.
+- Browsertypische Seitennavigation, technische URL-Sprünge und sichtbar webseitige Hilfskonstruktionen sollen die User Experience nicht dominieren.
 
 ## 10. Progressive Disclosure
 
@@ -223,7 +230,26 @@ Diese Punkte sind mögliche spätere UX-Erweiterungen und noch keine Pflicht fü
 
 Sie werden nur umgesetzt, wenn der reale Funktionsumfang ihren Nutzen rechtfertigt.
 
-## 20. Qualitäts-/Hardening-Phase vor Final Freeze
+## 20. Store-App als verbindliches Langfristziel
+
+Die heutige Web-App ist eine Entwicklungs- und Laufzeitbasis, aber das langfristige Produktziel umfasst ausdrücklich eine installierbare Store-App.
+
+Deshalb müssen neue Architektur-, UI- und Modulententscheidungen bereits heute darauf geprüft werden, ob sie eine spätere Umwandlung in eine Store-App unnötig erschweren oder verhindern.
+
+Verbindliche Leitlinien:
+
+- Keine zentrale Funktion darf ausschließlich deshalb webgebunden entworfen werden, weil die aktuelle Laufzeit im Browser stattfindet.
+- Browser- und Plattformdetails werden möglichst hinter Core-Facaden, Capabilities, Services oder Adaptern gekapselt.
+- Module nutzen veröffentlichte Framework-/Core-Verträge statt direkte Abhängigkeiten von einer konkreten Browserhülle aufzubauen.
+- Navigation, Lifecycle, lokale Speicherung, Netzwerkstatus, Authentifizierungsclient, Gerätefunktionen und Notifications sollen so entkoppelt werden, dass später ein nativer Container bzw. Store-App-Adapter verwendet werden kann.
+- Direkte Nutzung von Browser-APIs ist nur zulässig, wenn noch kein universeller Adapter existiert; solche Stellen müssen lokal begrenzt und später ersetzbar bleiben.
+- Die User Experience soll bereits heute app-typisch sein, damit eine spätere Store-Version kein vollständiges UX-Neudesign benötigt.
+- Die spätere Store-App darf intern andere Adapter verwenden, soll aber die stabilen Modul-, Daten- und Nutzerverträge möglichst beibehalten.
+- Eine spätere native oder hybride Umsetzung ist kein Anlass, den fachlichen Core oder Produktmodule vollständig neu zu schreiben.
+
+Ein konkreter Store-Technikentscheid (z. B. nativer Wrapper, hybride Laufzeit oder andere Plattformstrategie) wird erst getroffen, wenn dafür genügend reale Anforderungen vorliegen. Das heutige Ziel ist Portabilität, nicht eine vorzeitige Festlegung auf ein bestimmtes Tool.
+
+## 21. Qualitäts-/Hardening-Phase vor Final Freeze
 
 Vor einem endgültigen Final Freeze soll eine gesonderte UI-/UX-/Qualitätsprüfung stattfinden.
 
@@ -234,11 +260,12 @@ Für jeden relevanten Bereich wird gefragt:
 3. Ist die Verbesserung universell für Neutral oder produktspezifisch?
 4. Verbessert sie die reale Nutzung ausreichend, um zusätzliche Komplexität zu rechtfertigen?
 5. Ist sie auf realistischen Mobilgeräten überprüft?
+6. Bleibt die Lösung mit dem langfristigen Store-App-Ziel kompatibel?
 
 Dabei werden mindestens geprüft:
 
 - Startperformance
-- Navigation
+- Navigation und App-Gefühl
 - visuelle Konsistenz
 - Designvererbung an Module
 - responsive Darstellung
@@ -248,9 +275,12 @@ Dabei werden mindestens geprüft:
 - Fehlertoleranz
 - wichtige Nutzerflüsse
 - subjektive und gemessene Reaktionsgeschwindigkeit
+- Store-Portabilität und Austauschbarkeit plattformspezifischer Adapter
 
-## 21. Grundsatz
+## 22. Grundsatz
 
-Das Ziel ist nicht, möglichst viele UI-Funktionen einzubauen. Das Ziel ist ein Framework, aus dem unterschiedliche Apps entstehen können, die trotz großer funktionaler Möglichkeiten **schnell, ruhig, konsistent, verständlich und hochwertig** wirken.
+Das Ziel ist nicht, möglichst viele UI-Funktionen einzubauen. Das Ziel ist ein Framework, aus dem unterschiedliche Apps entstehen können, die trotz großer funktionaler Möglichkeiten **schnell, ruhig, konsistent, verständlich, individuell passend und hochwertig** wirken.
 
 Neue Produktmodule sollen dieses Qualitätsniveau automatisch erben können, statt es jeweils neu entwickeln zu müssen.
+
+Für die User-App gilt ausdrücklich: **App-Erlebnis zuerst, Web-Technik nur als Implementierungsbasis.**
