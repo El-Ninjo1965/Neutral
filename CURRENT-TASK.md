@@ -2,23 +2,25 @@
 
 ## Gesamtauftrag
 
-Den positiv bestätigten P4-Warmstart-/First-Paint-Livebefund in der operativen Dokumentation abschließen und `Admin → Appearance` um den nach erneuter Codeprüfung funktionslosen bzw. missverständlichen sichtbaren Block `Theme & Layout` bereinigen. Die funktionierenden lokalen Admin- und User-Theme-Schalter sowie die vollständige Global-Start-Page-Funktion bleiben erhalten. Die zukünftigen Verträge aus `USER-UI-DESIGN.md` und `I18N.md` werden respektiert, aber nicht implementiert.
+`Admin → Appearance` unter Erhalt von P1/P4 zu einem produktiven User-UI-Designeditor ausbauen: bestehende Start Page erhalten, validierte getrennte Light-/Dark-Designtokens mit isolierter Live-Preview, Reset auf strukturierte Defaults sowie klar getrenntes Advanced Custom CSS implementieren. Den freigegebenen öffentlichen Designzustand versioniert und local-first in der User-App anwenden, ohne persönliche Admin-/User-Theme-Zustände, Security-, CSP-, Homepage-Warmstart- oder Offlineverträge zu schwächen. Keine I18N-, Remote-Font-, Branding-Upload-, Page-Builder-, pro-Modul- oder Store-App-Scope-Ausweitung.
 
 ## Prüfliste
 
-1. Verbindliche Umgebung und GitHub-Schreibweg secretsicher prüfen, `origin` herstellen und vollständig mit `origin/main` synchronisieren, ohne neuere Vertragsänderungen zu verlieren. **ERLEDIGT**
-2. Alle in `CODEX.md` genannten Pflichtdokumente sowie relevante Appearance-, Settings-, User-App-, Theme-, Homepage-, CSS-, Service-Worker-, Cache-/Storage- und Testdateien vollständig lesen. **ERLEDIGT**
-3. Repositoryweit erneut prüfen, ob `settings.theme` oder `settings.layout` produktive Consumer besitzen; lokale Admin-/User-Theme-Pfade und Homepage-Save-Semantik getrennt verifizieren. **ERLEDIGT**
-4. Regressionstests zuerst so anpassen, dass `Theme & Layout`, Theme-Select und Layout-Select in Appearance fehlen, während Global Start Page, HTML-/Modulmodus, Preview, Save/Reload und Erhalt anderer Settings abgesichert bleiben. **ERLEDIGT**
-5. Den sichtbaren `Theme & Layout`-Block und dessen Abfrage/Save-Verarbeitung aus `Admin → Appearance` entfernen, ohne persistierte Altwerte destruktiv zu migrieren oder andere Settings beim Homepage-Save zu löschen. **ERLEDIGT**
-6. Admin-Header-Theme und User-Header-Theme unverändert erhalten; keine halbfertige User-UI-Design- oder I18N-Implementierung beginnen. **ERLEDIGT**
-7. Bestehende P4-Abnahmelogik vollständig prüfen und P4 nur bei tatsächlich vollständigem Scope als `LIVE BESTANDEN` dokumentieren; P1 bleibt `LIVE BESTANDEN`, historische Befunde bleiben historische Evidenz. **ERLEDIGT**
-8. Status-, TODO-, ToDoNow-, CHANGELOG-, Workflow- und erforderliche Architektur-/Funktionsdokumentation wahrheitsgemäß aktualisieren, ohne Zukunftsfeatures als umgesetzt auszugeben. **ERLEDIGT**
-9. Fokussierte Appearance-/Homepage-/Theme-/Warmstart-/Regressionstests ausführen. **ERLEDIGT**
-10. Vollständige Test-Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung durchführen. **ERLEDIGT**
-11. Implementierung und Dokumentation committen und nach `main` pushen; erforderliche FTPS-, CodeQL- und weitere CI-Läufe bis zum terminalen Status abwarten. **ERLEDIGT**
-12. Vollständigen Abschlussbericht inklusive verbleibendem kurzem Betreiber-Kontrolltest in `CHATGPT.md` schreiben, committen/pushen und auf GitHub `main` verifizieren. **ERLEDIGT**
-13. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren; keine selbst ausführbaren Punkte offenlassen. **ERLEDIGT**
+1. Umgebung/GitHub secretsicher prüfen und vollständig mit `origin/main` synchronisieren; neuere Verträge erhalten. **ERLEDIGT**
+2. Alle in `CODEX.md` verlangten Dokumente und relevanten Appearance-/Settings-/API-/User-App-/Theme-/Token-/Homepage-/CSS-/Cache-/Storage-/Service-Worker-/Security-/Testdateien vollständig lesen. **ERLEDIGT**
+3. Bestehende Settings-, öffentliche Projektions-, CSS-Token-, CSP- und Local-first-Architektur analysieren und einen versionierten fail-closed Designvertrag festlegen. **ERLEDIGT**
+4. Tests zuerst für Appearance-Titel/Abschnitte, strukturierte Validierung/Projektion, Preview-Isolation/Light-Dark, Reset, Custom-CSS-Grenzen, User-App-Wirkung und Local-first-/Offlineverhalten ergänzen. **ERLEDIGT**
+5. Zentralen strukturierten Designvertrag mit erlaubten Light-/Dark-Farben sowie begrenzten Radius-/Geometrie-/Typografiewerten in Node und PHP implementieren; unbekannte/ungültige Werte fail-closed behandeln. **ERLEDIGT**
+6. Sichere öffentliche Designprojektion und Client-API ergänzen, die ausschließlich freigegebene Darstellungswerte ausliefert. **ERLEDIGT**
+7. Versionierten lokalen Designcache und nicht blockierenden Hintergrundrefresh implementieren; bekannten Dark-First-Paint und Homepage-Warmstart erhalten. **ERLEDIGT**
+8. User-App-Mapping auf bestehende zentrale CSS Custom Properties implementieren, sodass Header, Navigation, Buttons, Cards, Forms, Texte und Module erben. **ERLEDIGT**
+9. Appearance um `Start Page`, `User UI Design` und `Advanced Custom CSS` erweitern; sofortige isolierte Light-/Dark-Preview und konsistente Benennung `Appearance` umsetzen. **ERLEDIGT**
+10. Strukturierten Reset und getrenntes Custom-CSS-Clear implementieren; Start Page und persönliche Theme-Zustände unangetastet lassen. **ERLEDIGT**
+11. Custom CSS ausschließlich im User-App-Kontext mit Größenlimit und sicherem CSS-only Auslieferungs-/Anwendungsweg nach strukturierten Tokens implementieren; CSP/Auth/Admin-Isolation erhalten. **ERLEDIGT**
+12. P1/P4, Homepage, GPS, Login, Themes, Service Worker, Packaging/Base Path und FTPS-/Smoke regressionsfrei halten; keine ausgeschlossenen Zukunftsfeatures beginnen. **ERLEDIGT**
+13. Betroffene Architektur-, Funktions-, UI-/Design-, Status-, TODO-, ToDoNow-, CHANGELOG- und Workflow-Dokumentation wahrheitsgemäß aktualisieren. **ERLEDIGT**
+14. Fokussierte Tests, vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **ERLEDIGT**
+15. Commit/push nach `main`, terminale FTPS-/CodeQL-/sonstige CI, Abschlussbericht mit neun Retest-Schritten in `CHATGPT.md`, GitHub-Verifikation, `HEAD == origin/main` und sauberer Tree. **IN ARBEIT**
 
 ## Capture-Prüfung
 

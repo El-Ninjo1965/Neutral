@@ -2,6 +2,7 @@
 
 const persistenceService = require('./persistence-service');
 const auditService = require('./audit-service');
+const userUiDesign = require('../../../Web-App/public/user-ui-design');
 
 const defaultHomepage = Object.freeze({
   mode: 'html',
@@ -29,13 +30,16 @@ const getAll = () => {
   try {
     const data = persistenceService.loadAdminSettings();
     const homepage = normalizeHomepage(data.homepage || data.settings?.homepage || defaultHomepage);
+    const appearance = userUiDesign.normalize(data.appearance || data.settings?.appearance);
     return {
       appName: data.appName || 'Neutral App',
       appId: data.appId || 'neutral-app',
       homepage,
+      appearance,
       settings: {
         ...(data.settings || {}),
-        homepage: homepage
+        homepage: homepage,
+        appearance
       }
     };
   } catch (error) {
@@ -44,7 +48,8 @@ const getAll = () => {
       appName: 'Neutral App',
       appId: 'neutral-app',
       homepage: { ...defaultHomepage },
-      settings: { homepage: { ...defaultHomepage } }
+      appearance: userUiDesign.defaults(),
+      settings: { homepage: { ...defaultHomepage }, appearance: userUiDesign.defaults() }
     };
   }
 };
@@ -62,16 +67,21 @@ const update = (updates, actor = 'system') => {
         ? updates.homepage
         : (updates.settings && updates.settings.homepage !== undefined ? updates.settings.homepage : current.homepage)
     );
+    const appearanceValue = updates.appearance !== undefined || updates.settings?.appearance !== undefined
+      ? userUiDesign.normalize(updates.appearance ?? updates.settings.appearance, { strict: true })
+      : current.appearance;
     const settings = {
       ...current.settings,
       ...(updates.settings || {})
     };
     settings.homepage = homepageValue;
+    settings.appearance = appearanceValue;
 
     const updated = {
       appName: updates.appName !== undefined ? updates.appName : current.appName,
       appId: current.appId,
       homepage: homepageValue,
+      appearance: appearanceValue,
       settings
     };
 

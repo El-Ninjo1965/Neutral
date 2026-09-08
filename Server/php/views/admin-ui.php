@@ -81,6 +81,7 @@
         'Web-App/core/local-auth.js',
         'Web-App/core/app.js',
         'Web-App/public/api-client.js',
+        'Web-App/public/user-ui-design.js',
         'Web-App/public/master-ui.js',
         'Web-App/public/admin/common.js',
         'Web-App/public/admin/users-view.js',

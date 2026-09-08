@@ -119,6 +119,10 @@ Ein bereits serverseitig aktives Modul wird nach der Client-Discovery initialisi
 ### Vollständige Startmarken
 
 `navigation-start`, `dom-available`, `shell-visible`, `minimal-core-ready`, `ui-interactive`, `storage-ready`, `auth-status-known`, `module-discovery-complete` und `background-initialization-complete` bilden den P3-Codevertrag. Die Werte enthalten keine Identität, URL, Payload oder Secrets.
+## User UI Design V1
+
+`NeutralUserUiDesign` normalisiert einen versionierten Allowlist-Vertrag für getrennte Light-/Dark-Paletten, gemeinsame Radien/Contentbreite/Basisschriftgröße und begrenztes Custom CSS. Admin Appearance besitzt isolierte Preview, strukturierten Reset und CSS-Clear. Die öffentliche Projektion wird synchron local-first vor First Paint angewendet und unabhängig im Hintergrund erneuert; persönliche Themeauswahl bleibt lokal und unverändert.
+
 ## P4 global homepage configuration
 
 `Admin → Appearance` owns the global start page. Obsolete server-backed Theme/Layout controls are not presented because the current Admin and User themes are independent local header states and no productive layout consumer exists. Legacy settings are preserved when the homepage is saved.

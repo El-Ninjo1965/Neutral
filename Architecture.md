@@ -76,6 +76,7 @@ Client-Zugriffsvertrag und fällt bei fehlender oder ungültiger Konfiguration a
 den neutralen Startzustand zurück. Schreibzugriff verbleibt im geschützten
 Admin-/CSRF-Pfad.
 Historische `settings.theme`-/`settings.layout`-Werte bleiben kompatibel gespeichert, besitzen aber keinen produktiven UI-Consumer und werden deshalb nicht als Appearance-Steuerung angeboten. Admin- und User-Theme bleiben getrennte lokale Header-Zustände.
+Der versionierte `appearance`-Vertrag wird serverseitig allowlist-validiert und öffentlich getrennt von Adminsettings projiziert. Die User-App liest ausschließlich diese Projektion, cached sie als öffentlichen schema-versionierten Zustand und mappt sie auf zentrale CSS Custom Properties; Custom CSS folgt nur im User-Dokument über `textContent`.
 
 ## 2. Web-App
 

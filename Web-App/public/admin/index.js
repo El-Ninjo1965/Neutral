@@ -835,7 +835,7 @@ class AdminRouter {
       sessions: 'Session Overview',
       audit: 'Audit Log',
       settings: 'System Settings',
-      theme: 'Theme & Layout',
+      theme: 'Appearance',
       dashboard: 'Dashboard',
       modules: 'Module Administration',
       updates: 'Updates',

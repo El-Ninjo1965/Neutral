@@ -327,6 +327,31 @@ describe('Admin API Integration Tests', { concurrency: false }, () => {
     assert.equal(htmlResult.body.settings.homepage.content, '<script>window.modeChanged=true</script>');
   });
 
+  test('structured appearance is validated and projected publicly without other settings', async () => {
+    const appearance = {
+      schemaVersion: 1,
+      light: { primary: '#abcdef' },
+      dark: { primary: '#123456' },
+      geometry: { controlRadius: 9 },
+      typography: { baseFontSize: 17 },
+      customCss: '.user-app { letter-spacing: 1px; }'
+    };
+    const saved = await requestJson('POST', '/api/admin/settings', { appearance });
+    assert.equal(saved.statusCode, 200);
+    assert.equal(saved.body.settings.appearance.light.primary, '#abcdef');
+    const publicResult = await requestJson('GET', '/api/settings/appearance', null, null, null);
+    assert.equal(publicResult.statusCode, 200);
+    assert.equal(publicResult.body.appearance.dark.primary, '#123456');
+    assert.deepEqual(Object.keys(publicResult.body), ['ok', 'appearance']);
+  });
+
+  test('appearance rejects unknown tokens and unsafe custom CSS', async () => {
+    const unknown = await requestJson('POST', '/api/admin/settings', { appearance: { light: { unknown: '#ffffff' } } });
+    assert.equal(unknown.statusCode, 400);
+    const unsafe = await requestJson('POST', '/api/admin/settings', { appearance: { customCss: '</style><script>x</script>' } });
+    assert.equal(unsafe.statusCode, 400);
+  });
+
   test('POST /api/admin/settings requires admin role', async () => {
     const result = await requestJson('POST', '/api/admin/settings', {
       appName: 'Unauthorized',

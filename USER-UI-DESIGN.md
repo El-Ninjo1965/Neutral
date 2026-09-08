@@ -1,6 +1,14 @@
 # NEUTRAL – User-UI-Designvertrag
 
-**Status:** VERBINDLICHES LANGFRISTIGES ZIELBILD
+**Status:** V1 IMPLEMENTIERT / WEITERE AUSBAUSTUFEN GEPLANT
+
+## Implementierter V1-Vertrag (2026-09-08)
+
+V1 stellt in `Admin → Appearance` getrennte Light-/Dark-Farben für App-Hintergrund, Surface, Primary, Text, Muted und Border bereit. Gemeinsame validierte Werte steuern Control-/Surface-Radius, Content-Max-Width und Basisschriftgröße. Eine isolierte Live-Preview nutzt dasselbe Token-Mapping; strukturierter Reset und getrenntes Custom-CSS-Clear verändern weder Start Page noch persönliche Themezustände.
+
+Die öffentliche Projektion `/api/settings/appearance` enthält ausschließlich den normalisierten Designzustand. Ein schema-versionierter öffentlicher LocalStorage-Cache wird vor dem Hauptstylesheet gelesen und im Hintergrund aktualisiert. Unbekannte Tokens, ungültige Hexfarben, Werte außerhalb definierter Grenzen, inkompatible Versionen sowie HTML-/JavaScript-/Remote-Import-Muster werden abgewiesen. Custom CSS ist auf 20.000 Zeichen begrenzt, wird über `textContent` ausschließlich in der User-App nach dem strukturierten Design angewendet und schwächt CSP, Sandbox oder Auth nicht.
+
+V1 führt bewusst keine Remote Fonts ein; Typografie beschränkt sich auf die robuste Basisschriftgröße und den vorhandenen sicheren lokalen Font-Stack. Weitere Skalen, Statusfarben, Schatten und Designparameter bleiben Zukunftsausbau.
 
 ## Ziel
 

@@ -1,3 +1,11 @@
+## 2026-09-08 – Productive User UI Design editor and local-first appearance projection
+
+- Expanded Admin Appearance into Start Page, User UI Design and Advanced Custom CSS while retaining P1/P4 and the independent Admin/User theme toggles.
+- Added a versioned allowlisted design contract with separate Light/Dark palettes, bounded geometry and base typography, isolated immediate preview, structured reset and separate CSS clear.
+- Added authenticated persistence in Node/PHP plus a minimal public appearance projection; invalid colors, ranges, unknown properties and unsafe/oversized CSS fail closed.
+- User-App reads the last valid public design synchronously before stylesheet paint, applies central CSS variables, refreshes independently in the background and applies optional CSS via a User-App-only style element. Homepage warmstart remains independent.
+- Remote fonts, I18N, branding upload, page building and per-module design remain out of scope.
+
 ## 2026-09-08 – P4 live acceptance and Appearance control cleanup
 
 - The operator's final iPad/Safari retest confirmed repeated Dark warmstarts without white `Loading…`, without a light flash, and with immediate local homepage content. Together with the already confirmed module/HTML, theme, navigation and P1 paths, no required P4 acceptance point remains; P4 is now `LIVE BESTANDEN`.

@@ -301,6 +301,10 @@ class ApiClient {
     return this.get('/api/settings/homepage');
   }
 
+  async getAppearance() {
+    return this.get('/api/settings/appearance');
+  }
+
   async updateSettings(settingsData) {
     return this.post('/api/admin/settings', settingsData);
   }

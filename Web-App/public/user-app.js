@@ -14,6 +14,8 @@
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
   const USER_THEME_KEY = 'neutral.user.theme.v1';
+  const designContract = window.NeutralUserUiDesign || null;
+  let userUiDesign = designContract && (designContract.read() || designContract.defaults());
   const HOME_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.75 12 3l9 7.75v9a1.25 1.25 0 0 1-1.25 1.25h-5.5v-6h-4.5v6h-5.5A1.25 1.25 0 0 1 3 19.75v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
   const defaultUserPreferences = Object.freeze({
@@ -35,10 +37,23 @@
     }
   };
 
+  function applyUserUiDesign(theme = readUserTheme()) {
+    if (!designContract || !userUiDesign) return;
+    designContract.apply(document.documentElement, userUiDesign, theme);
+    let customStyle = document.getElementById('neutralUserCustomCss');
+    if (!customStyle) {
+      customStyle = document.createElement('style');
+      customStyle.id = 'neutralUserCustomCss';
+      document.head.appendChild(customStyle);
+    }
+    customStyle.textContent = userUiDesign.customCss || '';
+  }
+
   const applyUserTheme = (theme) => {
     const nextTheme = theme === 'dark' ? 'dark' : 'light';
     document.documentElement.dataset.userTheme = nextTheme;
     document.body.dataset.theme = nextTheme;
+    applyUserUiDesign(nextTheme);
     try {
       localStorage.setItem(USER_THEME_KEY, nextTheme);
       return true;
@@ -165,6 +180,20 @@
       homepageResolved = true;
       renderApp();
     }
+  };
+
+  const loadUserUiDesign = async () => {
+    const client = getServerApiClient('user');
+    if (!client || typeof client.getAppearance !== 'function' || !designContract) return userUiDesign;
+    const result = await client.getAppearance();
+    const envelope = result?.data?.data || result?.data || {};
+    if (!result.ok || !envelope.appearance) return userUiDesign;
+    const saved = designContract.write(envelope.appearance);
+    if (saved) {
+      userUiDesign = saved;
+      applyUserUiDesign();
+    }
+    return userUiDesign;
   };
 
   // Real end-user login must go through the server-authenticated session
@@ -853,6 +882,7 @@
         const initializationResults = await Promise.allSettled([
           startCore(),
           loadHomepageConfig(),
+          loadUserUiDesign(),
           restoreServerSession()
         ]);
         for (const result of initializationResults) {

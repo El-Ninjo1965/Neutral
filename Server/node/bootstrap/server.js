@@ -951,6 +951,13 @@ const routeApi = (url, res, modulesDir = appModulesDir, req = null) => {
     return true;
   }
 
+  if (pathname === `${apiBase}/settings/appearance` || pathname === `${apiBase}/settings/appearance/`) {
+    if (req && req.method === 'GET') {
+      sendJson(res, 200, { ok: true, appearance: settingsService.getAll().appearance });
+    }
+    return true;
+  }
+
   // Settings API - /api/admin/settings
   if (pathname === `${apiBase}/admin/settings` || pathname === `${apiBase}/admin/settings/`) {
     if (req && req.method === 'GET') {

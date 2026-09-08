@@ -6,6 +6,9 @@ const escapeHtmlAppearance = (value) => String(value ?? '')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;');
+const userUiDesignContract = typeof window !== 'undefined' && window.NeutralUserUiDesign
+  ? window.NeutralUserUiDesign
+  : (typeof require === 'function' ? require('../user-ui-design') : null);
 
 class AdminAppearanceView {
   constructor(apiClient) {
@@ -57,9 +60,16 @@ class AdminAppearanceView {
     return this.normalizeHomepage(this.settings.homepage || this.settings.settings?.homepage);
   }
 
+  getDesign() {
+    return userUiDesignContract.normalize(this.settings.appearance || this.settings.settings?.appearance);
+  }
+
   render() {
     const homepage = this.getHomepage();
     const startableModules = this.getStartableModules();
+    const design = this.getDesign();
+    const colorFields = [['background', 'App / page background'], ['surface', 'Surface / card background'], ['primary', 'Primary / accent'], ['text', 'Primary text'], ['muted', 'Muted text'], ['border', 'Border']];
+    const palette = (mode) => colorFields.map(([key, label]) => `<div class="form-group"><label for="design-${mode}-${key}">${label}</label><input type="color" id="design-${mode}-${key}" name="design.${mode}.${key}" value="${design[mode][key]}"></div>`).join('');
     this.container.innerHTML = `
       <div class="admin-appearance-view">
         <div class="section-header"><h2>Appearance</h2></div>
@@ -91,6 +101,26 @@ class AdminAppearanceView {
               <iframe id="homepagePreview" title="Start page preview" sandbox="allow-scripts allow-forms allow-popups"></iframe>
             </div>
           </fieldset>
+          <fieldset>
+            <legend>User UI Design</legend>
+            <p>Defines how the User-App looks. Each user's Light/Dark selection remains independent.</p>
+            <div class="appearance-design-grid"><section><h3>Light</h3>${palette('light')}</section><section><h3>Dark</h3>${palette('dark')}</section></div>
+            <div class="appearance-design-grid">
+              <div class="form-group"><label for="design-control-radius">Button / control radius (px)</label><input type="number" min="0" max="32" id="design-control-radius" name="design.geometry.controlRadius" value="${design.geometry.controlRadius}"></div>
+              <div class="form-group"><label for="design-surface-radius">Card / surface radius (px)</label><input type="number" min="0" max="48" id="design-surface-radius" name="design.geometry.surfaceRadius" value="${design.geometry.surfaceRadius}"></div>
+              <div class="form-group"><label for="design-content-width">Content max width (px)</label><input type="number" min="320" max="1920" id="design-content-width" name="design.geometry.contentMaxWidth" value="${design.geometry.contentMaxWidth}"></div>
+              <div class="form-group"><label for="design-font-size">Base font size (px)</label><input type="number" min="12" max="24" id="design-font-size" name="design.typography.baseFontSize" value="${design.typography.baseFontSize}"></div>
+            </div>
+            <div class="form-actions"><button type="button" class="btn btn-secondary" data-design-reset>Reset to Defaults</button></div>
+            <div class="form-group"><label for="designPreviewMode">Preview theme</label><select id="designPreviewMode"><option value="light">Light</option><option value="dark">Dark</option></select></div>
+            <div id="userUiDesignPreview" class="user-ui-design-preview" aria-label="User UI design preview"><header>App header</header><nav>Start · GPS</nav><article><h3>Example card</h3><p>Primary text</p><small>Muted supporting text</small><label>Input <input value="Example"></label><div><button type="button" class="preview-primary">Primary</button><button type="button">Secondary</button></div></article></div>
+          </fieldset>
+          <fieldset>
+            <legend>Advanced Custom CSS</legend>
+            <p><strong>Expert override.</strong> Applies only to the User-App after structured tokens. Maximum ${userUiDesignContract.MAX_CUSTOM_CSS} characters; HTML, JavaScript and remote imports are rejected.</p>
+            <div class="form-group"><label for="customCss">Custom CSS</label><textarea id="customCss" name="design.customCss" rows="8" maxlength="${userUiDesignContract.MAX_CUSTOM_CSS}">${escapeHtmlAppearance(design.customCss)}</textarea></div>
+            <button type="button" class="btn btn-secondary" data-css-clear>Clear Custom CSS</button>
+          </fieldset>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Appearance</button>
             <button type="button" class="btn btn-secondary" data-appearance-reload>Reload</button>
@@ -105,6 +135,16 @@ class AdminAppearanceView {
     const mode = this.container.querySelector('#homepageMode');
     const content = this.container.querySelector('#homepageContent');
     const preview = this.container.querySelector('#homepagePreview');
+    const designPreview = this.container.querySelector('#userUiDesignPreview');
+    const previewMode = this.container.querySelector('#designPreviewMode');
+    const designFromForm = () => this.readDesign(new FormData(form));
+    const refreshDesign = () => {
+      try {
+        const values = userUiDesignContract.variables(designFromForm(), previewMode.value);
+        for (const [name, value] of Object.entries(values)) designPreview.style.setProperty(name, value);
+        designPreview.dataset.theme = previewMode.value;
+      } catch (_) { /* Native constraints and save feedback handle incomplete edits. */ }
+    };
     const refresh = () => {
       const isHtml = mode.value === 'html';
       this.container.querySelector('[data-homepage-module]').hidden = isHtml;
@@ -114,6 +154,17 @@ class AdminAppearanceView {
     };
     mode.addEventListener('change', refresh);
     content.addEventListener('input', refresh);
+    form.addEventListener('input', refreshDesign);
+    previewMode.addEventListener('change', refreshDesign);
+    this.container.querySelector('[data-design-reset]').addEventListener('click', () => {
+      if (!AdminCommon.confirmAction('Reset structured User UI Design values to framework defaults?')) return;
+      const defaults = userUiDesignContract.defaults();
+      for (const mode of ['light', 'dark']) for (const [key, value] of Object.entries(defaults[mode])) form.elements.namedItem(`design.${mode}.${key}`).value = value;
+      for (const [key, value] of Object.entries(defaults.geometry)) form.elements.namedItem(`design.geometry.${key}`).value = value;
+      for (const [key, value] of Object.entries(defaults.typography)) form.elements.namedItem(`design.typography.${key}`).value = value;
+      refreshDesign();
+    });
+    this.container.querySelector('[data-css-clear]').addEventListener('click', () => { form.elements.namedItem('design.customCss').value = ''; refreshDesign(); });
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       this.save(form);
@@ -124,6 +175,15 @@ class AdminAppearanceView {
       AdminCommon.showAlert('Appearance reloaded', 'info');
     });
     refresh();
+    refreshDesign();
+  }
+
+  readDesign(data) {
+    const value = { schemaVersion: userUiDesignContract.SCHEMA_VERSION, light: {}, dark: {}, geometry: {}, typography: {}, customCss: String(data.get('design.customCss') || '') };
+    for (const mode of ['light', 'dark']) for (const key of ['background', 'surface', 'primary', 'text', 'muted', 'border']) value[mode][key] = data.get(`design.${mode}.${key}`);
+    for (const key of ['controlRadius', 'surfaceRadius', 'contentMaxWidth']) value.geometry[key] = Number(data.get(`design.geometry.${key}`));
+    value.typography.baseFontSize = Number(data.get('design.typography.baseFontSize'));
+    return userUiDesignContract.normalize(value, { strict: true });
   }
 
   async save(form) {
@@ -133,6 +193,11 @@ class AdminAppearanceView {
       moduleId: String(data.get('homepageModuleId') || '').trim(),
       content: String(data.get('homepageContent') || '')
     };
+    let appearance;
+    try { appearance = this.readDesign(data); } catch (error) {
+      AdminCommon.showAlert(`Invalid User UI Design: ${error.message}`, 'error');
+      return;
+    }
     if (homepage.mode === 'module' && !this.getStartableModules().some((module) => module.id === homepage.moduleId)) {
       AdminCommon.showAlert('Select an active startable module.', 'error');
       return;
@@ -141,9 +206,11 @@ class AdminAppearanceView {
       appName: this.settings.appName,
       appId: this.settings.appId,
       homepage,
+      appearance,
       settings: {
         ...(this.settings.settings || {}),
-        homepage
+        homepage,
+        appearance
       }
     });
     if (!result.ok) {

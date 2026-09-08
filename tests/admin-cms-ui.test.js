@@ -95,6 +95,9 @@ test('Settings and Appearance are separate views with distinct responsibilities'
   assert.match(appearance, /getAdminModules/);
   assert.match(appearance, /Global Start Page/);
   assert.match(appearance, /homepagePreview/);
+  assert.match(appearance, /User UI Design/);
+  assert.match(appearance, /Advanced Custom CSS/);
+  assert.match(appearance, /Reset to Defaults/);
   assert.doesNotMatch(appearance, /Theme &amp; Layout|name="theme"|name="layout"/);
   assert.doesNotMatch(appearance, /data\.get\(['"]theme['"]\)|data\.get\(['"]layout['"]\)/);
   assert.match(appearance, /\.\.\.\(this\.settings\.settings \|\| \{\}\),\s*homepage/s);
@@ -137,7 +140,10 @@ test('Appearance homepage save preserves unrelated and legacy settings without r
   const previousAdminCommon = global.AdminCommon;
   global.FormData = class {
     get(name) {
-      return { homepageMode: 'html', homepageModuleId: '', homepageContent: '<h1>Start</h1>' }[name] ?? null;
+      const defaults = require('../Web-App/public/user-ui-design').defaults();
+      const path = name.replace(/^design\./, '').split('.');
+      const designValue = path.reduce((value, key) => value && value[key], defaults);
+      return { homepageMode: 'html', homepageModuleId: '', homepageContent: '<h1>Start</h1>' }[name] ?? designValue ?? null;
     }
   };
   global.AdminCommon = {
@@ -156,6 +162,17 @@ test('Appearance homepage save preserves unrelated and legacy settings without r
   assert.equal(payload.settings.layout, 'compact');
   assert.deepEqual(payload.homepage, { mode: 'html', moduleId: '', content: '<h1>Start</h1>' });
   assert.deepEqual(payload.settings.homepage, payload.homepage);
+  assert.equal(payload.appearance.schemaVersion, 1);
+});
+
+test('Appearance title is consistent and preview uses the shared token mapping without styling admin shell', () => {
+  const router = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+  const appearance = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/appearance-view.js'), 'utf8');
+  assert.match(router, /theme:\s*'Appearance'/);
+  assert.doesNotMatch(router, /theme:\s*'Theme & Layout'/);
+  assert.match(appearance, /userUiDesignContract\.variables/);
+  assert.match(appearance, /designPreview\.style\.setProperty/);
+  assert.doesNotMatch(appearance, /document\.documentElement\.style\.setProperty/);
 });
 
 test('admin logout returns to the deployed root entry', () => {

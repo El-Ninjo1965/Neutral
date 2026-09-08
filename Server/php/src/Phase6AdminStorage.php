@@ -28,11 +28,14 @@ final class Phase6SettingsService
             $appId = $this->readValue($rows['core.app.id'] ?? null, 'neutral-app');
             $settings = $this->readObjectValue($rows['core.ui.settings'] ?? null);
            $homepage = $this->normalizeHomepage($settings['homepage'] ?? null);
+           $appearance = UserUiDesign::normalize($settings['appearance'] ?? null);
            $settings['homepage'] = $homepage;
+           $settings['appearance'] = $appearance;
            return [
                'appName' => is_string($appName) && $appName !== '' ? $appName : 'Neutral Platform',
                'appId' => is_string($appId) && $appId !== '' ? $appId : 'neutral-app',
                'homepage' => $homepage,
+               'appearance' => $appearance,
                'settings' => $settings,
            ];
        } catch (\Throwable $exception) {
@@ -53,7 +56,11 @@ final class Phase6SettingsService
        $homepage = $this->normalizeHomepage(
            $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
        );
+       $appearance = array_key_exists('appearance', $payload) || array_key_exists('appearance', $settings)
+           ? UserUiDesign::normalize($payload['appearance'] ?? $settings['appearance'], true)
+           : ($current['appearance'] ?? UserUiDesign::defaults());
        $settings['homepage'] = $homepage;
+       $settings['appearance'] = $appearance;
        $requestedAppId = array_key_exists('appId', $payload) ? trim((string) $payload['appId']) : $current['appId'];
        if ($requestedAppId !== $current['appId']) {
            throw new \RuntimeException('Application ID is a technical identity and cannot be changed.');
@@ -63,6 +70,7 @@ final class Phase6SettingsService
            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
            'appId' => $current['appId'],
            'homepage' => $homepage,
+           'appearance' => $appearance,
            'settings' => $settings,
        ];
 

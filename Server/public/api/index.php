@@ -576,6 +576,11 @@ if ($route === 'settings/homepage' && $method === 'GET') {
     JsonResponse::success(['homepage' => $settings['homepage'] ?? []]);
 }
 
+if ($route === 'settings/appearance' && $method === 'GET') {
+    $settings = $settingsService->getAll();
+    JsonResponse::success(['appearance' => $settings['appearance'] ?? \Neutral\Core\UserUiDesign::defaults()]);
+}
+
 if ($route === 'admin/settings' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success(['settings' => $settingsService->getAll()]);

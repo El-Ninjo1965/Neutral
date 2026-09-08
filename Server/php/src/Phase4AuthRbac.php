@@ -1105,12 +1105,15 @@ final class Phase4SettingsService
            'settings' => [],
        ]);
        $homepage = $this->normalizeHomepage($current['homepage'] ?? ($current['settings']['homepage'] ?? null));
+       $appearance = UserUiDesign::normalize($current['appearance'] ?? ($current['settings']['appearance'] ?? null));
        $settings = is_array($current['settings'] ?? null) ? $current['settings'] : [];
        $settings['homepage'] = $homepage;
+       $settings['appearance'] = $appearance;
        return [
            'appName' => trim((string) ($current['appName'] ?? 'Neutral Platform')) !== '' ? trim((string) ($current['appName'] ?? 'Neutral Platform')) : 'Neutral Platform',
            'appId' => trim((string) ($current['appId'] ?? 'neutral-app')) !== '' ? trim((string) ($current['appId'] ?? 'neutral-app')) : 'neutral-app',
            'homepage' => $homepage,
+           'appearance' => $appearance,
            'settings' => $settings,
        ];
     }
@@ -1132,11 +1135,16 @@ final class Phase4SettingsService
        $homepage = $this->normalizeHomepage(
            $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
        );
+       $appearance = array_key_exists('appearance', $payload) || array_key_exists('appearance', $settings)
+           ? UserUiDesign::normalize($payload['appearance'] ?? $settings['appearance'], true)
+           : ($current['appearance'] ?? UserUiDesign::defaults());
        $settings['homepage'] = $homepage;
+       $settings['appearance'] = $appearance;
        $next = [
            'appName' => trim((string) ($payload['appName'] ?? $current['appName'] ?? 'Neutral Platform')),
            'appId' => $current['appId'],
            'homepage' => $homepage,
+           'appearance' => $appearance,
            'settings' => $settings,
        ];
        $this->store->write(self::FILE, $next);

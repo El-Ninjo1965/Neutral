@@ -101,6 +101,17 @@ test('persisted theme selects semantic root tokens before stylesheet and first b
   assert.match(css, /:root\[data-user-theme="light"\][\s\S]*color-scheme:\s*light/s);
 });
 
+test('cached User UI design is applied before stylesheet paint and refreshed independently', () => {
+  const index = fs.readFileSync(path.join(projectRoot, 'Web-App/public/index.html'), 'utf8');
+  const source = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
+  assert.ok(index.indexOf('user-ui-design.js') < index.indexOf('style.css'));
+  assert.ok(index.indexOf('NeutralUserUiDesign.read()') < index.indexOf('style.css'));
+  assert.match(index, /neutralUserCustomCss/);
+  assert.match(source, /designContract\.apply\(document\.documentElement/);
+  assert.match(source, /customStyle\.textContent = userUiDesign\.customCss/);
+  assert.match(source, /loadUserUiDesign\(\)/);
+});
+
 test('valid public homepage cache renders before a delayed server refresh', () => {
   const source = read('Web-App/public/user-app.js');
   const index = read('Web-App/public/index.html');
@@ -274,7 +285,7 @@ test('user startup loads central homepage config and renders trusted HTML withou
   assert.match(source, /homepageDocument\.apply\(frame, homepage\.content, readUserTheme\(\)\)/);
   assert.match(source, /frame\.setAttribute\('sandbox', 'allow-scripts allow-forms allow-popups'\)/);
   assert.doesNotMatch(source, /getSafeHomepageContent/);
-  assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*restoreServerSession\(\)/s);
+  assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*loadUserUiDesign\(\),\s*restoreServerSession\(\)/s);
   assert.doesNotMatch(source, /await window\.CoreStartup\.startBackground\(\);\s*}\s*await loadHomepageConfig\(\)/s);
 });
 

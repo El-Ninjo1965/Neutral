@@ -244,3 +244,8 @@ Für jeden Bereich wird gefragt, welche reale Verbesserung noch fehlt, ob sie un
 Das Ziel ist nicht, möglichst viele UI-Funktionen einzubauen. Das Ziel ist ein Framework, aus dem unterschiedliche Apps entstehen können, die trotz großer funktionaler Möglichkeiten **schnell, ruhig, konsistent, verständlich und hochwertig** wirken.
 
 Neue Produktmodule sollen dieses Qualitätsniveau möglichst automatisch erben können, statt es jeweils neu entwickeln zu müssen.
+
+
+## User UI Design V1 (2026-09-08)
+
+Admin Appearance implementiert nun den strukturierten zentralen Designvertrag mit getrennten Light-/Dark-Paletten, gemeinsamen Geometrie-/Basistypografiewerten, isolierter Preview, Reset und optionalem begrenztem Custom CSS. Die User-App konsumiert dieselben Tokens local-first; Admin-Theme und persönliche User-Theme-Auswahl bleiben unabhängig.
