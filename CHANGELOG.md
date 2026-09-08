@@ -1,3 +1,10 @@
+## 2026-09-08 – P4 live acceptance and Appearance control cleanup
+
+- The operator's final iPad/Safari retest confirmed repeated Dark warmstarts without white `Loading…`, without a light flash, and with immediate local homepage content. Together with the already confirmed module/HTML, theme, navigation and P1 paths, no required P4 acceptance point remains; P4 is now `LIVE BESTANDEN`.
+- Repository-wide consumer review confirmed that the server-backed `settings.theme` and `settings.layout` values do not control the current Admin or User UI. Removed their misleading `Theme & Layout` fieldset from Admin Appearance while retaining legacy values in storage for compatibility.
+- Appearance now begins with Global Start Page. Its HTML/module modes, preview, reload and protected save remain intact, and saving merges the homepage into existing settings rather than deleting unrelated or legacy values.
+- Independent local Admin (`neutral-admin-theme`) and User (`neutral.user.theme.v1`) header theme controls remain unchanged. No future User UI design editor or I18N architecture was implemented.
+
 ## 2026-09-08 – Theme-correct bootstrap and Loading-free homepage warmstart
 
 - Root Cause of the remaining operator-visible flash: `index.html` always shipped a visible static `Loading…` panel before deferred JavaScript could synchronously read the homepage cache, and that panel used fixed Light colors. The early theme script set only `html[data-user-theme]`, while central Dark token overrides initially existed only on `body[data-theme]`, which is set later by `user-app.js`.

@@ -4,14 +4,14 @@
 
 - P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
 - Workflow reset: DONE
-- P4 configurable landing page: DARK-WARMSTART-LOADING-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Theme consistency and quick toggle: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 configurable landing page: LIVE BESTANDEN
+- Settings / Appearance separation: LIVE BESTANDEN; obsolete Theme/Layout controls removed code-side
+- Theme consistency and quick toggle: LIVE BESTANDEN
 - Full i18n / other feature work: PENDING
 
 ## Action list
 
 1. Maintain the documented truth hierarchy, `Neutral` environment preflight, and CURRENT-TASK capture process for all future work. Status: DONE
 2. Keep historical failures as evidence only; do not allow them to override newer live operator findings. Status: DONE
-3. Execute the focused iPad/Safari retest for Dark warmstart without white `Loading…`, separate theme-correct cold start, Light↔Dark persistence and Home/GPS/Settings regression. Status: PENDING / DEVICE RETEST REQUIRED
-4. Reconfirm that User-App and Admin identities remain separate during the P4 device retest. Status: PENDING / DEVICE RETEST REQUIRED
+3. Record the positive iPad/Safari Dark-warmstart retest and close P4 after confirming no remaining required P4 acceptance point. Status: DONE / LIVE BESTANDEN
+4. Remove obsolete Theme/Layout controls from Admin Appearance while preserving local header themes and homepage settings. Status: DONE CODE-SIDE / SHORT OPERATOR VISUAL CONTROL RECOMMENDED

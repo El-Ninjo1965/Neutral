@@ -4,17 +4,17 @@
 
 - P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
 - Workflow reset: DONE / DOCUMENTED
-- P4 (configurable landing page): DARK-WARMSTART-LOADING-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Theme consistency and quick toggle: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 (configurable landing page): LIVE BESTANDEN
+- Settings / Appearance separation: LIVE BESTANDEN; obsolete Theme/Layout controls removed code-side
+- Theme consistency and quick toggle: LIVE BESTANDEN
 - Full i18n / other feature work: PENDING
 
 ## Active priority list
 
 1. Keep the truth hierarchy and CURRENT-TASK capture contract in force for all future work.
 2. Keep historical device failures as evidence only; they do not overwrite the newest live operator result.
-3. Perform the documented six-step iPad/Safari retest after deployment: Dark warmstart without Loading flash, cold-start theme, persistence and Home/GPS/Settings.
-4. Keep P4 below `LIVE BESTANDEN` until the operator confirms module mode, HTML mode, mode switching, and unchanged P1 session separation.
+3. Preserve the operator-confirmed P4 live state: Dark warmstart has no white Loading or flash, and the previously confirmed module/HTML, theme, navigation and P1 paths remain authoritative.
+4. Perform only the short visual control that Admin Appearance now starts with Global Start Page and both local header theme toggles remain functional.
 
 ## Historical evidence retained
 

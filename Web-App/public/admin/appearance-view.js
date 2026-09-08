@@ -59,30 +59,11 @@ class AdminAppearanceView {
 
   render() {
     const homepage = this.getHomepage();
-    const ui = this.settings.settings || {};
     const startableModules = this.getStartableModules();
     this.container.innerHTML = `
       <div class="admin-appearance-view">
         <div class="section-header"><h2>Appearance</h2></div>
         <form id="appearanceForm" class="admin-form settings-form">
-          <fieldset>
-            <legend>Theme &amp; Layout</legend>
-            <div class="form-group">
-              <label for="theme">Theme</label>
-              <select id="theme" name="theme">
-                <option value="">System Default</option>
-                <option value="light" ${ui.theme === 'light' ? 'selected' : ''}>Light</option>
-                <option value="dark" ${ui.theme === 'dark' ? 'selected' : ''}>Dark</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="layout">Layout</label>
-              <select id="layout" name="layout">
-                <option value="default" ${ui.layout !== 'compact' ? 'selected' : ''}>Default</option>
-                <option value="compact" ${ui.layout === 'compact' ? 'selected' : ''}>Compact</option>
-              </select>
-            </div>
-          </fieldset>
           <fieldset>
             <legend>Global Start Page</legend>
             <div class="form-group">
@@ -162,8 +143,6 @@ class AdminAppearanceView {
       homepage,
       settings: {
         ...(this.settings.settings || {}),
-        theme: data.get('theme'),
-        layout: data.get('layout'),
         homepage
       }
     });

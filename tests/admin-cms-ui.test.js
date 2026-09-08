@@ -93,6 +93,11 @@ test('Settings and Appearance are separate views with distinct responsibilities'
   assert.match(appearance, /homepageModuleId/);
   assert.match(appearance, /homepageContent/);
   assert.match(appearance, /getAdminModules/);
+  assert.match(appearance, /Global Start Page/);
+  assert.match(appearance, /homepagePreview/);
+  assert.doesNotMatch(appearance, /Theme &amp; Layout|name="theme"|name="layout"/);
+  assert.doesNotMatch(appearance, /data\.get\(['"]theme['"]\)|data\.get\(['"]layout['"]\)/);
+  assert.match(appearance, /\.\.\.\(this\.settings\.settings \|\| \{\}\),\s*homepage/s);
   assert.match(router, /theme:\s*new AdminAppearanceView\(apiClient\)/);
   assert.doesNotMatch(router, /theme:\s*new AdminSettingsView/);
 });
@@ -109,6 +114,48 @@ test('Appearance derives valid homepage targets dynamically and preserves truste
   const html = '<style>body{color:red}</style><a href="/ok">Link</a><script>window.previewRan=true</script>';
   assert.equal(view.normalizeHomepage({ mode: 'html', content: html }).content, html);
   assert.equal(view.normalizeHomepage({ mode: 'module', moduleId: 'inactive' }).moduleId, '');
+});
+
+test('Appearance homepage save preserves unrelated and legacy settings without reading dead controls', async () => {
+  const AdminAppearanceView = require('../Web-App/public/admin/appearance-view.js');
+  let payload;
+  const view = new AdminAppearanceView({
+    updateSettings: async (next) => {
+      payload = next;
+      return { ok: true, settings: next };
+    }
+  });
+  view.settings = {
+    appName: 'Neutral',
+    appId: 'neutral-app',
+    settings: { theme: 'dark', layout: 'compact', language: 'de', homepage: {} }
+  };
+  view.modules = [{ id: 'gps', active: true, entry: 'index.js' }];
+  view.render = () => {};
+
+  const previousFormData = global.FormData;
+  const previousAdminCommon = global.AdminCommon;
+  global.FormData = class {
+    get(name) {
+      return { homepageMode: 'html', homepageModuleId: '', homepageContent: '<h1>Start</h1>' }[name] ?? null;
+    }
+  };
+  global.AdminCommon = {
+    unwrapData: (result) => result.settings,
+    showAlert: () => {}
+  };
+  try {
+    await view.save({});
+  } finally {
+    global.FormData = previousFormData;
+    global.AdminCommon = previousAdminCommon;
+  }
+
+  assert.equal(payload.settings.language, 'de');
+  assert.equal(payload.settings.theme, 'dark');
+  assert.equal(payload.settings.layout, 'compact');
+  assert.deepEqual(payload.homepage, { mode: 'html', moduleId: '', content: '<h1>Start</h1>' });
+  assert.deepEqual(payload.settings.homepage, payload.homepage);
 });
 
 test('admin logout returns to the deployed root entry', () => {

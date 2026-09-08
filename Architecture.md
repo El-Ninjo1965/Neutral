@@ -75,6 +75,7 @@ Homepage-Projektion, respektiert beim Modulstart den vorhandenen
 Client-Zugriffsvertrag und fällt bei fehlender oder ungültiger Konfiguration auf
 den neutralen Startzustand zurück. Schreibzugriff verbleibt im geschützten
 Admin-/CSRF-Pfad.
+Historische `settings.theme`-/`settings.layout`-Werte bleiben kompatibel gespeichert, besitzen aber keinen produktiven UI-Consumer und werden deshalb nicht als Appearance-Steuerung angeboten. Admin- und User-Theme bleiben getrennte lokale Header-Zustände.
 
 ## 2. Web-App
 

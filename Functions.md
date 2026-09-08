@@ -121,7 +121,7 @@ Ein bereits serverseitig aktives Modul wird nach der Client-Discovery initialisi
 `navigation-start`, `dom-available`, `shell-visible`, `minimal-core-ready`, `ui-interactive`, `storage-ready`, `auth-status-known`, `module-discovery-complete` und `background-initialization-complete` bilden den P3-Codevertrag. Die Werte enthalten keine Identität, URL, Payload oder Secrets.
 ## P4 global homepage configuration
 
-`Admin → Appearance` owns global presentation settings and the start page.
+`Admin → Appearance` owns the global start page. Obsolete server-backed Theme/Layout controls are not presented because the current Admin and User themes are independent local header states and no productive layout consumer exists. Legacy settings are preserved when the homepage is saved.
 Administrators choose either an active startable module from the runtime module
 catalog or trusted free HTML. The central settings contract stores the mode,
 module ID, and HTML unchanged; the public API exposes only that homepage
