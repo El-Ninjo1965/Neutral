@@ -5,127 +5,169 @@
 
 # Aktueller Auftrag
 
-## Restfehler: `Loading…` wird beim Dark-Warmstart kurz weiß dargestellt
+## P4 live abschließen + Admin → Appearance bereinigen
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Bootstrap-/Startup-, Theme-, Homepage-, Loading-/Placeholder-, CSS-, Service-Worker-, Cache-/Storage- und Testdateien.
+Lies vor Implementierung vollständig:
+
+- `WORKFLOW.md`
+- `DOCUMENTATION.md`
+- `CODEX.md`
+- `CURRENT-TASK.md`
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `CHANGELOG.md`
+- `UI-UX.md`
+- `USER-UI-DESIGN.md`
+- `I18N.md`
+- `VISION.md`
+- `CORE-1.0.md`
+- `Architecture.md`
+- `Functions.md`
+- `ModuleCreation.md`
+- alle relevanten Admin-Appearance-, Settings-, User-App-, Theme-, Homepage-, CSS-, Service-Worker-, Cache-/Storage- und Testdateien
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
 `CODEX.md == CURRENT-TASK-Anforderungen`
 
-## Neuer Betreiber-Device-Retest vom 2026-09-08
+# 1. Neuer Betreiber-Livebefund: P4-Warmstart jetzt positiv bestätigt
 
-Der letzte iframe-Paint-Fix hat den sichtbaren Fehler weiter eingegrenzt.
+Der Betreiber hat den letzten iPad/Safari-Retest nach dem Fix des statischen `Loading…`-Zwischenzustands durchgeführt.
 
-Auf dem realen iPad/Safari ist jetzt feststellbar:
+**Live bestätigt:**
 
-- Der endgültige HTML-Homepage-Zustand im Dark Mode ist korrekt dunkel.
-- Der zuvor dauerhaft weiße iframe-Canvas ist behoben.
-- Der zuletzt behandelte iframe-Paintpfad soll nicht erneut als primäre Ursache angenommen werden.
-- Sichtbar ist stattdessen beim Reload/Warmstart kurz **`Loading…` auf einer weißen/hellen Fläche**, bevor die dunkle Homepage erscheint.
+- Dark Theme aktiv.
+- mehrfacher Reload/Warmstart durchgeführt.
+- **kein weißes `Loading…` mehr sichtbar.**
+- **kein heller/weißer Flash mehr sichtbar.**
+- lokaler Homepageinhalt erscheint ohne den bisherigen sichtbaren Zwischenzustand.
 
-Der Betreiber beschreibt ausdrücklich: **„Loading …. wird immer kurz weiß angezeigt.“**
+Damit ist genau der bisher noch offene letzte Device-Retest-Punkt des P4-Warmstart-/First-Paint-Fixes positiv bestätigt.
 
-Damit liegt der verbleibende sichtbare Fehler vor bzw. außerhalb des finalen HTML-Frame-Paints: im Startup-/Placeholder-/Loading-Pfad.
+## Auftrag
 
-## Bereits live bestätigt – nicht zurückbauen
+Aktualisiere die operative Wahrheit in den Status-/Workflow-/TODO-/CHANGELOG-Dokumenten entsprechend.
 
-- Local-first Homepagecache existiert und der Warmstart ist grundsätzlich deutlich schneller als vor den P4-Fixes.
-- finaler HTML-Homepage-Zustand im Dark Mode ist dunkel.
-- dokumentinterner Theme-Adapter und iframe-Visibility-/Paint-Gating nicht unnötig zurückbauen.
-- Sonne-/Mond-Schnellumschaltung funktioniert.
-- Appearance/Theme ist aus normalen User-Settings entfernt.
-- Home-Icon und Home/GPS-Navigation funktionieren.
-- GPS Dark Mode funktioniert.
-- zentrales Buttonsystem und Login-Bereinigung nicht zurückbauen.
-- FTPS-/Smoke-Stabilisierung nicht zurückbauen.
+WICHTIG:
 
-# Auftrag – Root Cause des weißen `Loading…`-Zwischenzustands
+- Historische Fehlbefunde bleiben als Evidenz erhalten, dürfen aber nicht weiter als aktiver Status erscheinen.
+- P1 bleibt `LIVE BESTANDEN`.
+- P4 darf jetzt **nur dann** auf `LIVE BESTANDEN` gesetzt werden, wenn die bestehende Status-/Abnahmelogik nach dem aktuellen Betreiberbefund keine weiteren noch offenen P4-Pflichtpunkte enthält.
+- Falls innerhalb des definierten P4-Scopes noch ein echter Pflichtpunkt offen ist, benenne ihn präzise und markiere nicht pauschal alles als bestanden.
+- Nicht mit späteren Zukunftsfeatures wie vollständigem I18N oder User-UI-Design vermischen. Diese sind dokumentierte Folgearchitektur, nicht rückwirkende P4-Blocker, sofern CORE-/P4-Vertrag nichts anderes verlangt.
 
-Finde den exakten Renderpfad, der beim Warmstart/Reload `Loading…` erzeugt, und kläre zwei getrennte Fragen:
+# 2. Admin → Appearance: tote/missverständliche Controls entfernen
 
-1. **Warum erscheint bei vorhandenem gültigem lokalem Homepagezustand überhaupt noch `Loading…`?**
-2. **Warum wird dieser Zustand im Dark Theme hell/weiß gepaintet, obwohl das persistierte Theme bereits bekannt sein sollte?**
+Der Betreiber hat `Admin → Appearance` geprüft.
 
-Nicht einfach `Loading…` per CSS verstecken, keinen Timeout verkürzen und keine Animation darüberlegen.
+Aktuell enthält die Ansicht unter `Theme & Layout`:
 
-Prüfe insbesondere:
+- `Theme → System Default / Light / Dark`
+- `Layout → Default / Compact`
 
-- initiales statisches HTML vor JavaScript-Bootstrap;
-- Zeitpunkt, zu dem `neutral.user.theme.v1` gelesen und auf `html/body` angewendet wird;
-- ob Dark Theme erst nach dem ersten Browser-Paint gesetzt wird;
-- initiale Klassen/Attribute auf `html`, `body`, App-Shell und Content-Host;
-- `Loading…`-Markup und dessen Default-CSS vor Laden der Hauptstyles;
-- Reihenfolge von CSS, Theme-Bootstrap, User-App-JavaScript, Homepagecache-Lesen und erstem Render;
-- ob der Warmstart zunächst immer einen generischen Loading-State rendert und erst danach synchron/lokal den Homepagecache liest;
-- ob IndexedDB/localStorage/anderer Storage tatsächlich synchron genug für den ersten sinnvollen Render verfügbar ist;
-- ob ein früher Inline-/Bootstrap-Theme-Hinweis nötig ist, damit Dark bereits **vor First Paint** feststeht;
-- CSP-/Security-Auswirkungen eines frühen Theme-Bootstraps;
-- Service-Worker-/Cache-Versionierung, damit alte Shell/CSS/JS nicht den Zwischenzustand verursachen;
-- Cold Start ohne lokalen Homepagezustand getrennt vom Warmstart mit gültigem lokalem Zustand.
+Repositoryprüfung ergab:
 
-# Zielvertrag
+## Admin-Theme
 
-## Warmstart mit gültigem lokalem Homepagezustand
+Die Admin-UI besitzt bereits einen **eigenen funktionierenden lokalen Theme-State** über den Header-Schalter und `neutral-admin-theme`.
 
-Wenn Theme und Homepage lokal bereits gültig bekannt sind, soll der sichtbare Ablauf sein:
+## User-Theme
 
-`bereits korrekt thematisierte App-Surface → lokaler Homepageinhalt`
+Die User-App besitzt ebenfalls einen **eigenen funktionierenden lokalen Theme-State** über den Sonne-/Mond-Schalter und `neutral.user.theme.v1`.
 
-Im Idealfall erscheint **gar kein `Loading…`**, weil für den ersten sinnvollen Inhalt keine Netzantwort benötigt wird.
+## Globales `settings.theme`
 
-Nicht erlaubt:
+Das in `Admin → Appearance` gespeicherte `settings.theme` ist dadurch mindestens missverständlich/überholt und darf nicht als scheinbar wirksame User- oder Admin-Theme-Steuerung dargestellt werden, wenn kein produktiver Consumer existiert.
 
-`weiße/helle Loading-Fläche → Dark App → Dark Homepage`
+## `settings.layout`
 
-und ebenfalls nicht:
+Repositoryweite Prüfung ergab keinen produktiven Consumer, der `settings.layout = default|compact` für User-App oder Admin-UI tatsächlich ausliest und anwendet. Das Control ist damit aktuell funktionslos/vorbereitet, nicht real produktiv wirksam.
 
-`Dark Loading-Fläche für unnötige Zeit → lokaler Homepageinhalt`, wenn der lokale Inhalt unmittelbar verfügbar ist.
+## Auftrag
 
-## Echter Cold Start ohne verwertbaren lokalen Homepagezustand
+Entferne aus `Admin → Appearance` den gesamten derzeitigen sichtbaren Block **`Theme & Layout`**, sofern eine erneute vollständige Codeprüfung bestätigt, dass `settings.theme` und `settings.layout` keine heute erforderliche produktive Wirkung besitzen.
 
-Falls ein Ladezustand fachlich wirklich notwendig ist, muss er vom **allerersten sichtbaren Paint** an das bereits lokal bekannte Theme respektieren. Ist noch kein Theme gespeichert, gilt der definierte Default.
+Die Ansicht soll danach im aktuellen Scope im Wesentlichen mit **`Global Start Page`** beginnen.
 
-Kein weißer Flash in bekanntem Dark Theme.
+WICHTIG:
 
-# Architekturhinweis
+- den funktionierenden Admin-Theme-Schalter im Admin-Header **nicht entfernen**;
+- den funktionierenden User-Theme-Schalter im User-Header **nicht entfernen**;
+- keine Theme-/Layout-Funktionalität vortäuschen;
+- vorhandene gespeicherte Altwerte `settings.theme` / `settings.layout` müssen nicht destruktiv aus bestehenden Daten gelöscht werden, sofern dies unnötige Migration/Kompatibilitätsrisiken erzeugt;
+- aber neue Saves aus `Admin → Appearance` sollen diese toten Controls nicht mehr neu abfragen oder als aktive UI-Funktion führen;
+- beim Speichern der Homepage bestehende andere Settings nicht versehentlich löschen;
+- Global Start Page, Module-/HTML-Modus und Preview dürfen nicht regressieren.
 
-Der bestehende verbindliche Vertrag in `UI-UX.md` bleibt maßgeblich:
+# 3. Zukunftsvertrag nur respektieren, nicht jetzt implementieren
 
-`UI zuerst → lokaler Zustand → Hintergrundinitialisierung`
+Neu dokumentiert und verbindlich zu respektieren:
 
-und insbesondere der Local-first-Warmstartvertrag. Der Fix soll diesen Vertrag tatsächlich im ersten sichtbaren Paint erfüllen und nicht nur nachträglich kosmetisch herstellen.
+## `USER-UI-DESIGN.md`
+
+Langfristig soll `Admin → Appearance` die **User-UI-Gestaltung** über zentrale Design-Tokens konfigurieren können, inklusive Farben, Typografie, Buttons, Navigation, Karten/Formulare, Layoutparameter sowie Light-/Dark-Designwerte. Optional später Advanced Custom CSS.
+
+Dieser Auftrag implementiert diese neue Designverwaltung **noch nicht**, außer minimale strukturelle Vorbereitungen sind für die saubere Entfernung der toten Controls zwingend notwendig.
+
+Keine halbfertige Design-Editor-UI anlegen.
+
+## `I18N.md`
+
+Langfristig:
+
+- Erststart: Gerätesprache erkennen;
+- Fallback auf Basissprache;
+- spätere User-Auswahl über `Settings → Language`;
+- explizite User-Auswahl hat Vorrang und bleibt lokal/offline;
+- zentrale I18N-Schicht für Core und Module.
+
+Auch dies ist **nicht Teil dieses Auftrags**.
 
 # Tests
 
 Regressionstests zuerst ergänzen/anpassen.
 
-Mindestens soweit automatisiert sinnvoll beweisen:
+Mindestens prüfen:
 
-- persistiertes Dark Theme wird vor dem ersten sichtbaren User-App-Paint angewendet;
-- persistiertes Light Theme entsprechend;
-- Warmstart mit gültigem lokalem HTML-Homepagecache rendert nicht zuerst einen generischen sichtbaren `Loading…`-Zustand, wenn dieser technisch vermeidbar ist;
-- Cold Start ohne Homepagecache darf einen Loading-/Fallback-Zustand verwenden, dieser ist aber vom ersten Paint an theme-konform;
-- initiales statisches Markup/CSS erzeugt bei gespeichertem Dark Theme keinen weißen Surface-Flash;
-- Theme-Switch und Reload-Persistenz bleiben erhalten;
-- iframe-Dokumentadapter und iframe-Paint-Gating bleiben regressionsfrei;
-- Local-first Cache und Hintergrundrefresh bleiben erhalten;
-- Service Worker liefert die aktuelle Shell-/Asset-Version;
-- Appearance bleibt aus normalen User-Settings entfernt;
-- Home/GPS, GPS, Login, Buttonsystem, P1 Sessiontrennung, Auth/CSRF, Packaging/Base Path und FTPS-/Smoke-Stabilisierung bleiben grün.
+## Status / P4
 
-Falls die Umgebung keinen echten Safari-First-Paint-Test erlaubt, DOM-/Bootstrap-/Load-Order-Verträge so testen, dass der bekannte helle Loading-Pfad strukturell ausgeschlossen wird. Keine erfundene visuelle Bestätigung.
+- Dokumente spiegeln den neuen echten Livebefund korrekt wider;
+- historische `DEVICE RETEST REQUIRED`-Aussagen werden nur dort entfernt/ersetzt, wo der Betreiber sie tatsächlich positiv bestätigt hat;
+- P1 bleibt korrekt `LIVE BESTANDEN`;
+- keine Zukunftsfeatures fälschlich als implementiert markieren.
+
+## Appearance
+
+- `Theme & Layout` erscheint nicht mehr in `Admin → Appearance`;
+- `theme`-Select erscheint dort nicht mehr;
+- `layout`-Select erscheint dort nicht mehr;
+- `Global Start Page` bleibt vollständig funktionsfähig;
+- HTML-Modus bleibt funktionsfähig;
+- Module-Modus bleibt funktionsfähig;
+- Preview bleibt funktionsfähig;
+- Save/Reload bleibt funktionsfähig;
+- bestehende andere Settings werden beim Save nicht unbeabsichtigt entfernt;
+- Admin-Header-Theme bleibt unverändert funktionsfähig;
+- User-Header-Theme bleibt unverändert funktionsfähig.
+
+## Regression
+
+- Warmstart ohne `Loading…`/Flash-Codepfad bleibt erhalten;
+- Homepage Local-first Cache;
+- Home/GPS;
+- GPS;
+- Login;
+- Buttonsystem;
+- P1 User-/Admin-Sessiontrennung;
+- Auth/CSRF;
+- Service Worker;
+- Packaging/Base Path;
+- FTPS-/Smoke-Stabilisierung.
 
 # Abschluss
-
-Dokumentiere in `CHATGPT.md` exakt:
-
-- welcher Code/Markup den sichtbaren `Loading…`-Zustand erzeugt hat;
-- warum er trotz vorhandenem Local-first-Cache noch sichtbar wurde;
-- warum er vor Anwendung des Dark Themes hell gepaintet wurde;
-- wie der First-Paint-/Warmstartpfad jetzt funktioniert.
 
 Danach vollständig gemäß `WORKFLOW.md`:
 
@@ -136,7 +178,7 @@ Danach vollständig gemäß `WORKFLOW.md`:
 - `git diff --check`;
 - Produktionspaket;
 - Secret-/Artefaktprüfung;
-- relevante Status-/TODO-/CHANGELOG-Dokumentation wahrheitsgemäß aktualisieren;
+- relevante Status-/TODO-/CHANGELOG-/Workflow-Dokumentation wahrheitsgemäß aktualisieren;
 - Commit und Push nach `main`;
 - `HEAD == origin/main`;
 - Working Tree sauber;
@@ -148,11 +190,12 @@ Keine selbst ausführbaren offenen Punkte zurücklassen.
 
 ## Betreiber-Retest danach
 
-1. Dark Theme aktivieren und einmal vollständig laden.
-2. Danach mehrfach Reload/Warmstart durchführen.
-3. Prüfen: kein weißes `Loading…`, kein heller Flash; lokaler Homepageinhalt erscheint unmittelbar bzw. ohne unnötigen sichtbaren Loading-State.
-4. echten Cold Start soweit praktikabel getrennt prüfen: notwendiger Loading-State muss theme-konform sein.
-5. Light↔Dark und Reload-Persistenz prüfen.
-6. Home/GPS/Settings/Warmstart kurz regressiv prüfen.
+Nur kurzer visueller Kontrolltest:
 
-Bis zum positiven realen iPad/Safari-Retest keine vollständige P4-Livefreigabe erfinden.
+1. `Admin → Appearance` öffnen.
+2. Prüfen: `Theme & Layout` ist entfernt.
+3. `Global Start Page` ist weiterhin vorhanden.
+4. HTML-Inhalt speichern und User-App kurz prüfen.
+5. Admin-Header-Theme und User-Header-Theme kurz regressiv prüfen.
+
+Wenn P4 nach der bestehenden Abnahmelogik mit dem bereits bestätigten Warmstartbefund vollständig erfüllt ist, Status entsprechend auf `LIVE BESTANDEN` setzen; andernfalls den verbliebenen konkreten Pflichtpunkt benennen.
