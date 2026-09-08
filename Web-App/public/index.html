@@ -22,10 +22,9 @@
     <div class="user-app-shell">
       <header class="user-app-header shared-shell-header">
         <div class="user-app-identity shared-shell-brand">
-          <span id="userAppMark" class="user-app-mark shared-shell-mark" aria-hidden="true">N</span>
+          <span id="userAppMark" class="user-app-mark shared-shell-mark" aria-hidden="true"></span>
           <div>
             <span class="user-app-brand shared-shell-name"></span>
-            <span class="shared-shell-subtitle">Active application</span>
           </div>
         </div>
         <div id="userAppActions" class="user-app-actions shared-shell-actions"></div>
@@ -33,10 +32,7 @@
       <nav id="userAppNav" class="user-app-nav shared-shell-nav" aria-label="Application navigation"></nav>
       <main id="userAppContent" class="user-app-content" tabindex="-1" aria-busy="true">
         <section class="user-app-panel" data-initial-shell>
-          <span class="user-app-eyebrow">Starting</span>
-          <h1>Neutral</h1>
-          <p class="user-app-intro">The workspace is ready. Local services are loading in the background.</p>
-          <div class="user-app-status" role="status">Preparing offline-capable workspace…</div>
+          <div class="user-app-status" role="status">Loading…</div>
         </section>
       </main>
     </div>
@@ -76,6 +72,7 @@
     <script defer src="core/local-auth.js"></script>
     <script defer src="core/app.js"></script>
     <script defer src="api-client.js"></script>
+    <script defer src="homepage-cache.js"></script>
     <script defer src="user-module-access.js"></script>
     <script defer src="user-app.js"></script>
   </body>

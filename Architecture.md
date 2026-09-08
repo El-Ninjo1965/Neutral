@@ -5,6 +5,20 @@
 **Geprüft:** 2026-09-04
 **Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
 
+## P4-Auslieferungs- und Startvertrag
+
+### Zentraler User-Theme-Vertrag
+
+Framework- und Moduloberflächen verwenden die semantischen Tokens `--bg`, `--surface`, `--surface-secondary`, `--surface-tertiary`, `--text`, `--text-muted`, `--border`, `--line-strong` und `--primary`. Light/Dark werden zentral durch denselben persistenten User-Theme-State gesteuert; Module benötigen keine eigenen Dark-Mode-Sonderfarben. Freies Homepage-HTML wird nicht umgeschrieben, sein Frameworkcontainer bleibt theme-neutral transparent.
+
+- Der öffentliche PHP-Endpunkt liefert ausschließlich die zentrale Homepage-Projektion; die User-App wendet sie unabhängig von Auth- und Core-/Discovery-Fehlern an.
+- Core-Start, Homepage-Fetch und Wiederherstellung der User-Session sind getrennte Startpfade. Ein Fehler in einem Pfad darf die beiden anderen nicht verhindern.
+- Das Produktionspaket bindet lokale JavaScript- und CSS-URLs im User-Entry-Document an denselben Deployment-Commit wie den Service-Worker-Cache. Damit kann ein neuer Worker keinen alten HTTP-Cache-Inhalt in einen neuen Shell-Cache übernehmen.
+- Branding ist App-Metadatum (`iconText`, optional `logoUrl`) und kein unveränderliches Neutral-Element.
+- Ein als Homepage konfiguriertes Modul wird innerhalb des Navigationskontexts `Start` gerendert. Nur eine bewusste Auswahl im Modulmenü wechselt den aktiven Navigationskontext zum eigenständigen Modul.
+- Bis öffentliche Homepage-Projektion und – beim Modulmodus – Discovery aufgelöst sind, zeigt die Shell einen neutralen Ladezustand statt kurzzeitig einen fachlich falschen Defaultinhalt.
+- Die letzte validierte öffentliche Homepage-Projektion besitzt einen eigenen versionierten Local-Storage-Cache (`public-homepage`). Ein Warmstart darf daraus synchron rendern; der Serverabgleich aktualisiert ihn anschließend. Sessionidentitäten und permission-sensitive Katalogantworten gehören ausdrücklich nicht in diesen Cache.
+
 ## Statuslegende
 
 - **IST**: im aktuellen Repository nachweisbar implementiert.
@@ -52,6 +66,15 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 - Die konkrete Referenzmodulbasis besteht aus `GPS` als technischer Geräte-/Client-Referenz und `reference-notes` als zweitem fachlich unabhängigen Server-/Modulvertragsbeispiel unter `Web-App/app/modules/`; neue Produktkopien entfernen `reference-notes` als reine Vertragsreferenz automatisch.
 
 **Settings-/User-UI-Vertrag (2026-09-06):** User-Theme und Präferenzen werden lokal/offline versioniert gespeichert; Light ist der Erststart und Dark wird vor dem ersten sichtbaren Paint angewendet. Normale Module erhalten zentrale Navigation ohne technische Manifestbeschreibung oder generischen Back-Link. Die Application ID bleibt serverseitig unveränderbar, während der Application Name ein persistenter Anzeigename ist. Session-Invalidierung ist eine geschützte Einzelaktion; der Permission Catalog ist read-only.
+
+**P4-/Appearance-Vertrag (2026-09-08):** System-/Technikeinstellungen und
+Darstellung sind eigenständige Admin-Views. Die globale Startseite wird zentral
+als aktives, startbares Modul oder als unverändertes vertrauenswürdiges
+Administrator-HTML persistiert. Die User-App liest ausschließlich die öffentliche
+Homepage-Projektion, respektiert beim Modulstart den vorhandenen
+Client-Zugriffsvertrag und fällt bei fehlender oder ungültiger Konfiguration auf
+den neutralen Startzustand zurück. Schreibzugriff verbleibt im geschützten
+Admin-/CSRF-Pfad.
 
 ## 2. Web-App
 
@@ -180,6 +203,10 @@ UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → Mar
 Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin global geladenen Objekte sichern Bestandskompatibilität; nicht im Vertragskatalog gelistete Globals bleiben privat. Eine vollständige ESM-/Dependency-Injection-Migration wird nicht als verdeckte Breaking Change in P2 durchgeführt.
 
 ## Startperformance – P3 IST
+
+### Zentrale User-App-Steuerelemente – IST
+
+Primary-, Secondary-, Navigations- und Icon-Aktionen teilen den zentralen `.ui-button`-Vertrag und dessen semantische Light-/Dark-Tokens. Module können diesen veröffentlichten visuellen Vertrag erben, statt eigene globale Buttonsysteme zu erzeugen. Die Home-Aktion ist ein lokales Inline-SVG mit textuellem Accessible Name; dies begründet ausdrücklich keine allgemeine Modul-Icon-Architektur. Freies Homepage-HTML bleibt unverändert im Sandbox-Frame, während dessen Einbettung den aktiven User-Theme-Farbraum für den Browsercanvas auswählt.
 
 Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.
 

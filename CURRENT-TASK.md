@@ -2,59 +2,26 @@
 
 ## Gesamtauftrag
 
-Dieser Auftrag behebt die operative Projektsteuerung und setzt die verbindliche Arbeitswahrheit für alle nachfolgenden Arbeiten wieder sauber und konsistent.
+Den aktuellen Betreiber-Folgebefund in der User-App ursächlich bearbeiten: das zentrale Button-/Navigationsdesign besonders im Light Mode verfeinern, `Start` durch ein barrierefreies lokales Home-Icon ersetzen, die weiße Fläche der freien HTML-Homepage im Dark Mode bis zur tatsächlichen Quelle verfolgen und die anonyme Login-Seite von redundanter Framework-/Developer-Sprache bereinigen. Die live bestätigten Warmstart-, Theme-, GPS-, HTML-, Navigations- und FTPS-Stabilisierungen bleiben erhalten; P4 bleibt bis zum Betreiber-Retest unterhalb `LIVE BESTANDEN`.
 
-Wichtige Einschränkung: In diesem Auftrag wird keine Feature-Implementierung durchgeführt. Es gibt keine P4-/Startseiten-/Appearance-/Theme-/i18n-/Navigations- oder sonstigen Funktionsänderungen.
+## Prüfliste
 
-Der bisherige historische P1-Fixauftrag wird hier vollständig ersetzt. Der aktuelle operative Stand bleibt auf das Workflow-Reset fokussiert.
+1. Umgebung/Repository/GitHub-Zugriff secretsicher prüfen, vollständig mit `origin/main` synchronisieren und alle neueren Betreiberverträge erhalten. **ERLEDIGT**
+2. Alle in `CODEX.md` verlangten Pflichtdokumente sowie relevante User-App-, Theme-, Designsystem-, Navigation-, Login-, Homepage-, CSS- und Testdateien vollständig lesen. **ERLEDIGT**
+3. Regressionstests vor der Implementierung ergänzen/anpassen: gemeinsamer Buttonvertrag, zentrale Light-/Dark-Tokens, klare Zustände, Touch/Fokus, Home-Icon/A11y/Startlogik, HTML-Fläche/HTML-Unverändertheit/Warmstart und reduzierte Loginansicht bei unveränderter Fehlerdarstellung. **ERLEDIGT**
+4. Zentrales Button-/Navigationssystem über gemeinsame Tokens und Varianten für Primary, Secondary, Navigation und Icon-Buttons verfeinern; Light-Kontrast erhöhen, Dark-Qualität erhalten und Höhe, Radius, Border, Padding, Touch, Pointer-Hover und `:focus-visible` konsistent machen. **ERLEDIGT**
+5. Header-Actions, Login und Navigation in dieselbe ruhige Hierarchie einordnen; persönliche `App areas` funktional erhalten und keine vollständige Designsystem-Neugestaltung beginnen. **ERLEDIGT**
+6. Sichtbaren `Start`-Text durch ein lokales, nicht-Emoji Home-Symbol in touchgerechter Fläche ersetzen; accessible name/Title `Start`, Fokus, aktiven Zustand und bestehende Start-/Route-/Homepage-Logik erhalten; `GPS` bleibt Text. **ERLEDIGT**
+7. Den exakten gespeicherten Homepagewert und vollständigen Render-/CSS-Pfad prüfen und die große weiße Dark-Mode-Fläche eindeutig Framework oder freiem Admin-HTML/CSS zuordnen. **ERLEDIGT**
+8. Falls Frameworkursache: zentral beheben und `<h1>TEST</h1>` ohne künstlichen weißen Vollflächenblock darstellen; falls Inhaltsursache: freien Inhalt unverändert lassen und Root Cause klar dokumentieren. Keine heuristische HTML-Manipulation. **ERLEDIGT**
+9. Loginseite auf Produktkern reduzieren: technische/redundante Standardtexte entfernen, Username-/Password-Labels, Login-Aktion, Accessibility und echte Fehler-/Statusmeldungen erhalten; Authentifizierungslogik unverändert lassen. **ERLEDIGT**
+10. Bestehende Theme-Schnellumschaltung/-Persistenz/Offline, GPS, HTML-Homepage, Local-first-Warmstart, Login, P1-Sessiontrennung, Auth/CSRF, Service Worker, Packaging/Base Path und FTPS-/Smoke-Stabilisierung regressionsfrei halten. **ERLEDIGT**
+11. Keine Scope-Ausweitung auf vollständige I18N-/Übersetzungs-, allgemeine Modul-Icon-, Sync-/Queue-, Admin- oder sonstige P4-Featurearchitektur. **ERLEDIGT**
+12. Root Causes und neue allgemeine Verträge wahrheitsgemäß in betroffener dauerhafter Dokumentation, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und `WORKFLOW.md` aktualisieren; keine erfundene Live-Bestätigung. **ERLEDIGT**
+13. Fokussierte Tests, vollständige Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung gemäß `WORKFLOW.md` durchführen. **ERLEDIGT**
+14. Vollständigen Abschlussbericht inklusive sechs Punkte umfassendem Betreiber-Device-Retest nach `CHATGPT.md` schreiben. **ERLEDIGT**
+15. Alle Änderungen committen und nach GitHub `main` übertragen; `HEAD == origin/main`, sauberer Working Tree, FTPS/CodeQL/weitere erforderliche CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` aktuell verifizieren. **ERLEDIGT**
 
-## Verbindliche Wahrheits-Hierarchie
+## Capture-Prüfung
 
-1. Neuester ausdrücklich mitgeteilter Betreiber-Live-Befund
-2. Neuester ausdrücklich erteilter Auftrag
-3. `CURRENT-TASK.md` – nach vollständiger Übernahme dieses neuesten Auftrags
-4. `WORKFLOW.md` + verbindliche Projektverträge, insbesondere `CORE-1.0.md` und `VISION.md`
-5. tatsächlicher aktueller Code + Tests
-6. `ToDoNow.md` / `STATUS.md` / `TODO.md`
-7. historische Evidenz
-8. alte Chatdiagnosen
-
-Wichtig:
-
-- Ein neuer Betreiberauftrag steht solange über `CURRENT-TASK.md`, bis dieser neue Auftrag vollständig in `CURRENT-TASK.md` übernommen wurde.
-- Danach wird `CURRENT-TASK.md` die operative Arbeitswahrheit für genau diesen Auftrag.
-- Historische Informationen dürfen neuere Betreiberbefunde niemals überschreiben.
-
-## Nummerierte Checkliste
-
-1. Neuen Auftrag vollständig lesen und analysieren. Status: ERLEDIGT
-2. Veraltete operative Inhalte identifizieren und die aktuelle Wahrheits-Hierarchie festlegen. Status: ERLEDIGT
-3. `WORKFLOW.md` mit Capture/Execute/Verify/Close-Regeln ergänzen. Status: ERLEDIGT
-4. `CURRENT-TASK.md` mit diesem Workflow-Reset-Auftrag vollständig ersetzen. Status: ERLEDIGT
-5. `ToDoNow.md`, `STATUS.md`, `TODO.md` auf den aktuellen operativen Projektstand und P1-Live-Status bereinigen. Status: ERLEDIGT
-6. `CHANGELOG.md` mit kurzer historischer Abschlussnotiz ergänzen, ohne die operative Kette mit alter Historie zu verwechseln. Status: ERLEDIGT
-7. `git diff --check` und Git-/Dokumentationskonsistenz prüfen. Status: ERLEDIGT
-8. Commit/Push und Abschlussprüfung durchführen. Status: IN ARBEIT / ERLEDIGT nach Abschluss des Commits
-
-## Prüfungsfrage
-
-`Prompt vollständig in CURRENT-TASK abgebildet: JA`
-
-## Aktueller Projektstatus
-
-- P1: LIVE BESTANDEN
-- P4: PENDING
-- Settings/Appearance: noch nicht als vollständig erledigt markiert, solange der zugehörige Gesamtauftrag nicht abgeschlossen ist
-- Workflow-Reset: ERLEDIGT
-
-## Verbotene Arbeiten in diesem Auftrag
-
-- keine P4-Startseiten-Implementierung
-- keine Settings-/Appearance-Umsetzung
-- keine Theme-/i18n-/Navigation-/Feature-Verbesserungen
-- keine fremden Änderungen verwerfen
-- keine Historie in `CURRENT-TASK.md` aufnehmen
-
-## Abschlussregel
-
-Vor Abschluss muss `CURRENT-TASK.md` erneut vollständig gelesen werden. Wenn ein selbst ausführbarer Punkt offen ist, darf keine Abschlussmeldung erfolgen. Erst wenn die Checkliste vollständig und verifiziert ist, ist der Auftrag abgeschlossen.
+`CODEX.md == CURRENT-TASK-Anforderungen: JA`

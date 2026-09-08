@@ -56,7 +56,7 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
       'package.json': JSON.stringify({ version: '1.0.0' }),
       '.htaccess': 'DirectoryIndex Web-App/public/index.html\n',
       '.env.example': 'DB_PASSWORD=\n',
-      'Web-App/public/index.html': '<meta name="neutral-base-path" content="">\n<base href="/">\n',
+      'Web-App/public/index.html': '<meta name="neutral-base-path" content="">\n<base href="/">\n<link rel="stylesheet" href="style.css">\n<script src="user-app.js"></script>\n',
       'Web-App/public/public-path.js': 'globalThis.NeutralPublicPath = {};\n',
       'Web-App/public/service-worker.js': "'use strict';\n/* self.__NEUTRAL_DEPLOY_STAMP__ placeholder */\n",
       'Server/php/bootstrap.php': '<?php\n',
@@ -82,10 +82,10 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.equal(fs.existsSync(path.join(stagingRoot, 'Server', 'node')), false);
     assert.equal(fs.existsSync(path.join(stagingRoot, 'manifest.json')), true);
     assert.equal(fs.existsSync(path.join(stagingRoot, 'SHA256SUMS')), true);
-    assert.match(
-      fs.readFileSync(path.join(stagingRoot, 'Web-App/public/index.html'), 'utf8'),
-      /content="\/nested"/
-    );
+    const packagedIndex = fs.readFileSync(path.join(stagingRoot, 'Web-App/public/index.html'), 'utf8');
+    assert.match(packagedIndex, /content="\/nested"/);
+    assert.match(packagedIndex, /href="style\.css\?v=0123456789abcdef0123456789abcdef01234567"/);
+    assert.match(packagedIndex, /src="user-app\.js\?v=0123456789abcdef0123456789abcdef01234567"/);
   });
 
   test('shared-host root routes the DirectoryIndex assets to their deployed files', () => {
@@ -97,6 +97,7 @@ describe('Manual deployment manifest diffing', { concurrency: false }, () => {
     assert.match(routing, /Web-App\/public\/style\.css/);
     assert.match(routing, /\^user-app\\\.js\$/);
     assert.match(routing, /Web-App\/public\/user-app\.js/);
+    assert.match(routing, /Web-App\/public\/homepage-cache\.js/);
     assert.match(routing, /\^user-module-access\\\.js\$/);
     assert.match(routing, /Web-App\/public\/user-module-access\.js/);
     assert.match(routing, /\^public-path\\\.js\$/);

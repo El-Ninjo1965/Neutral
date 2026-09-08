@@ -27,6 +27,32 @@ Historische Informationen dürfen neuere Betreiberbefunde niemals überschreiben
 
 `CURRENT-TASK.md` enthält immer genau einen aktuellen Gesamtauftrag und keine Historie.
 
+## Codex-Umgebung vor jeder Task
+
+Vor dem Capture jedes neuen Codex-Auftrags muss zuerst bestätigt werden, dass
+die Task in der verbindlichen Codex-Umgebung `Neutral` für
+`El-Ninjo1965/Neutral` läuft. Danach gilt der secretsichere Startablauf aus
+[`CONNECTIONS.md`](CONNECTIONS.md): Repository prüfen, `GH_TOKEN` nur auf
+Vorhandensein prüfen, `origin` gegebenenfalls reparieren, Fetch ausführen und
+erst dann `CODEX.md` lesen und den Auftrag nach `CURRENT-TASK.md` übernehmen.
+
+Eine austauschbare Sandbox muss nicht bereits ein Remote oder eine persistente
+GitHub-CLI-Anmeldung besitzen. Das allein ist kein Projekt- oder Zugangsfehler.
+Bevor fehlender Schreibzugriff gemeldet oder die Zugangshistorie untersucht wird,
+müssen Umgebung `Neutral`, `GH_TOKEN`, GitHub-Authentifizierung,
+Repositoryzuordnung und Berechtigung tatsächlich geprüft werden. Secret-Werte
+dürfen dabei niemals ausgegeben, dokumentiert oder committed werden.
+
+Der Übergabekanal bleibt verbindlich:
+
+- `CODEX.md`: ChatGPT/Lea → Codex;
+- `CURRENT-TASK.md`: operative Arbeitsliste von Codex;
+- `CHATGPT.md`: Codex → ChatGPT/Lea.
+
+Jeder Auftrag wird vollständig erfasst und ausgeführt; der Abschlussbericht wird
+nach GitHub übertragen und die erforderliche CI vor der Abschlussmeldung bis zum
+terminalen Status abgewartet.
+
 Bei jedem neuen Auftrag gilt:
 
 PHASE A – CAPTURE
@@ -66,6 +92,16 @@ PHASE D – CLOSE
 24. erst danach Abschlussantwort
 
 ## Historische Quellen
+
+## Arbeitsprotokoll 2026-09-08
+
+- Ausgeführt und dokumentiert durch Codex in der verbindlichen Umgebung `Neutral`.
+- Betreiber-Folgeauftrag zu P4 wurde nach Synchronisation mit `origin/main` vollständig in `CURRENT-TASK.md` erfasst.
+- Umfang blieb auf Start-/Reload-Semantik, Focus, User-Login, persönliche Bereichsauswahl und locale-fähige GPS-Anzeige begrenzt; die vollständige Architektur aus `I18N.md` wurde nicht implementiert.
+- Verifikation, GitHub-Übertragung und terminale CI-Ergebnisse werden im zugehörigen `CHATGPT.md`-Abschlussbericht festgehalten.
+- Folgetask durch Codex: Live-Warmstartverzögerung auf fehlende lokale Homepagepersistenz zurückgeführt, öffentlichen versionierten Local-first-Cache und zentrale app-typische Navigation implementiert; keine permission-sensitiven Daten und keine neue Sync-/I18N-Architektur aufgenommen.
+- Folgetask durch Codex: User-Oberflächen an zentrale Light/Dark-Tokens gebunden, gemeinsamen persistenten Header-Toggle ergänzt und FTPS-Revisionsverifikation nach historischen post-upload HTTP-Mismatches durch serialisierte Deployments plus begrenzten Backoff stabilisiert.
+- Folgetask durch Codex: zentralen Endnutzer-Buttonvertrag verfeinert, Start durch barrierefreies lokales Home-SVG ersetzt, Logintext reduziert und den unabhängigen Homepage-iframe-Canvas ohne Änderung des Administrator-HTMLs an das aktive Farbschema gebunden; Betreiber-Retest bleibt offen.
 
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 

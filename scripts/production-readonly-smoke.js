@@ -64,6 +64,25 @@ async function readResponse(fetchImpl, baseUrl, route) {
   return { status: response.status, body: await response.text() };
 }
 
+async function readCurrentDeploymentManifest({ fetchImpl, publicBase, expectedSourceCommit, expectedBasePath, attempts = 1, backoffMs = [], sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), write = () => {} }) {
+  requireCondition(Number.isInteger(attempts) && attempts >= 1 && attempts <= 5, 'Revision-Retry-Konfiguration ist ungültig.');
+  requireCondition(backoffMs.slice(0, attempts - 1).every((delay) => Number.isFinite(delay) && delay >= 0 && delay <= 15_000), 'Revision-Backoff-Konfiguration ist ungültig.');
+  requireCondition(backoffMs.slice(0, attempts - 1).reduce((total, delay) => total + delay, 0) <= 30_000, 'Revision-Backoff-Gesamtdauer ist zu groß.');
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const response = await readResponse(fetchImpl, publicBase, '/manifest.json');
+    requireCondition(response.status === 200, 'Deploymentmanifest ist nicht erreichbar.');
+    const manifest = parseJson(response.body, 'Deploymentmanifest');
+    requireCondition(manifest.sourceDirty === false, 'Deploymentmanifest stammt nicht aus einem sauberen Commit.');
+    requireCondition(manifest.basePath === expectedBasePath, 'Deploymentmanifest und gebauter Basispfad stimmen nicht überein.');
+    if (manifest.sourceCommit === expectedSourceCommit) return { response, manifest, attempt };
+    if (attempt === attempts) break;
+    const delay = Number(backoffMs[attempt - 1] || 0);
+    write(JSON.stringify({ revisionPending: true, attempt, nextDelayMs: delay }));
+    await sleep(delay);
+  }
+  throw new Error('Öffentliche Installation entspricht nicht der deployten Revision.');
+}
+
 function parseJson(body, label) {
   try {
     return JSON.parse(body);
@@ -83,6 +102,9 @@ async function runSmoke({
   expectedSourceCommit,
   expectedViewerModules = [],
   expectedModules = [],
+  revisionAttempts = 1,
+  revisionBackoffMs = [],
+  sleep,
   fetchImpl = fetch,
   write = console.log,
 }) {
@@ -98,7 +120,6 @@ async function runSmoke({
   results.status = await readResponse(fetchImpl, publicBase, '/api/v1/status');
   results.modules = await readResponse(fetchImpl, publicBase, '/api/v1/modules');
   results.internal = await readResponse(fetchImpl, publicBase, '/Server/php/bootstrap.php');
-  results.manifest = await readResponse(fetchImpl, publicBase, '/manifest.json');
 
   requireCondition(results.root.status === 200, 'Öffentlicher Root ist nicht erreichbar.');
   requireCondition(results.rewrite.status === 200, 'SPA-Rewrite ist nicht erreichbar.');
@@ -164,11 +185,17 @@ async function runSmoke({
     write(JSON.stringify({ httpsEnforced: false, httpStatus: httpResponse.status, note: 'HTTPS-Anforderung NICHT erfüllt: HTTP liefert keine Weiterleitung (Edge/Hosting).' }));
   }
 
-  requireCondition(results.manifest.status === 200, 'Deploymentmanifest ist nicht erreichbar.');
-  const deploymentManifest = parseJson(results.manifest.body, 'Deploymentmanifest');
-  requireCondition(deploymentManifest.sourceDirty === false, 'Deploymentmanifest stammt nicht aus einem sauberen Commit.');
-  requireCondition(deploymentManifest.sourceCommit === expectedSourceCommit, 'Öffentliche Installation entspricht nicht der deployten Revision.');
-  requireCondition(deploymentManifest.basePath === target.basePath, 'Deploymentmanifest und gebauter Basispfad stimmen nicht überein.');
+  const deployment = await readCurrentDeploymentManifest({
+    fetchImpl,
+    publicBase,
+    expectedSourceCommit,
+    expectedBasePath: target.basePath,
+    attempts: revisionAttempts,
+    backoffMs: revisionBackoffMs,
+    sleep,
+    write,
+  });
+  results.manifest = deployment.response;
 
   for (const expectedModule of expectedModules) {
     requireCondition(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(expectedModule.id), 'Lokaler Modulkatalog enthält eine ungültige Kennung.');
@@ -219,10 +246,12 @@ if (require.main === module) {
     expectedSourceCommit: process.env.GITHUB_SHA,
     expectedViewerModules: viewerModules,
     expectedModules: local.modules,
+    revisionAttempts: Number(process.env.NEUTRAL_SMOKE_REVISION_ATTEMPTS || 1),
+    revisionBackoffMs: String(process.env.NEUTRAL_SMOKE_REVISION_BACKOFF_MS || '').split(',').map(Number),
   }).catch((error) => {
     console.error(`Production smoke failed: ${error.message}`);
     process.exitCode = 1;
   });
 }
 
-module.exports = { normalizeBaseUrl, runSmoke, validateDeploymentTarget };
+module.exports = { normalizeBaseUrl, readCurrentDeploymentManifest, runSmoke, validateDeploymentTarget };
