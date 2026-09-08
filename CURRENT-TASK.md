@@ -17,8 +17,8 @@ Den positiv bestätigten P4-Warmstart-/First-Paint-Livebefund in der operativen 
 9. Fokussierte Appearance-/Homepage-/Theme-/Warmstart-/Regressionstests ausführen. **ERLEDIGT**
 10. Vollständige Test-Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung durchführen. **ERLEDIGT**
 11. Implementierung und Dokumentation committen und nach `main` pushen; erforderliche FTPS-, CodeQL- und weitere CI-Läufe bis zum terminalen Status abwarten. **ERLEDIGT**
-12. Vollständigen Abschlussbericht inklusive verbleibendem kurzem Betreiber-Kontrolltest in `CHATGPT.md` schreiben, committen/pushen und auf GitHub `main` verifizieren. **IN ARBEIT**
-13. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren; keine selbst ausführbaren Punkte offenlassen. **IN ARBEIT**
+12. Vollständigen Abschlussbericht inklusive verbleibendem kurzem Betreiber-Kontrolltest in `CHATGPT.md` schreiben, committen/pushen und auf GitHub `main` verifizieren. **ERLEDIGT**
+13. Abschließend `HEAD == origin/main` und einen sauberen Working Tree verifizieren; keine selbst ausführbaren Punkte offenlassen. **ERLEDIGT**
 
 ## Capture-Prüfung
 

@@ -43,7 +43,8 @@
 - Implementierungscommit `4c8c626` (`fix: remove obsolete Appearance controls`) wurde nach GitHub `main` übertragen.
 - CodeQL / `Push on main`: Run `34282252971` – terminal `success`.
 - FTPS Deploy: Run `34282253189` – terminal `success`, einschließlich Test-, Paket-, Upload- und Read-only-Smoke-Pfad.
-- Dieser Abschlussbericht wird anschließend ebenfalls nach `main` übertragen. Dessen eigene FTPS-/CodeQL-Läufe werden vor der externen Abschlussmeldung bis zum terminalen Status abgewartet; danach werden `HEAD == origin/main`, sauberer Working Tree und der GitHub-Blob dieser Datei verifiziert.
+- Berichtcommit `d97eba0` wurde ebenfalls nach `main` übertragen. CodeQL / `Push on main` Run `34282751925` und FTPS Deploy Run `34282753416` erreichten terminal `success`.
+- Die abschließende Checklist-Markierung wird als letzter Dokumentationscommit übertragen und vor der externen Abschlussmeldung erneut auf terminale CI, `HEAD == origin/main`, sauberen Working Tree und identischen GitHub-Blob geprüft.
 
 ## 6. Kurzer Betreiber-Kontrolltest
 
