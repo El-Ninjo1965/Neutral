@@ -104,6 +104,7 @@ PHASE D – CLOSE
 - Folgetask durch Codex: zentralen Endnutzer-Buttonvertrag verfeinert, Start durch barrierefreies lokales Home-SVG ersetzt, Logintext reduziert und den unabhängigen Homepage-iframe-Canvas ohne Änderung des Administrator-HTMLs an das aktive Farbschema gebunden; Betreiber-Retest bleibt offen.
 - Folgetask durch Codex: nach negativem iPad/Safari-Retest den unzureichenden iframe-Element-Ansatz durch dokumenteigene, von nachfolgendem Administrator-CSS überschreibbare Light-/Dark-Defaults ersetzt und den redundanten Themeblock aus normalen User Settings entfernt; Sandbox, Cache und Header-Persistenz bleiben erhalten.
 - Folgetask durch Codex: nach bestätigtem dunklem Endzustand den verbleibenden Safari-Initial-Flash strukturell ausgeschlossen: thematisierter Frame/`srcdoc` vor Insertion, revisionsgebundener Load-Reveal und durchgehend thematisierter, layoutstabiler Wrapper ohne Delay, Animation oder Loading.
+- Folgetask durch Codex: Betreiber lokalisierte den letzten hellen Flash im statischen `Loading…` vor dem iframe. Pauschalen Shell-Status entfernt, persistiertes Theme vor dem render-blocking CSS auf Root-Tokens wirksam gemacht und echten Cold-Start-Status an semantische Tokens gebunden; Cache-/iframe-Verträge bleiben erhalten.
 
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 

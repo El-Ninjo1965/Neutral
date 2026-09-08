@@ -40,10 +40,12 @@
   --button-focus: #174db7;
 }
 
+:root[data-user-theme="light"],
 body[data-theme="light"] {
   color-scheme: light;
 }
 
+:root[data-user-theme="dark"],
 body[data-theme="dark"] {
   --bg: #0b1220;
   --bg-strong: #101b2d;
@@ -1566,7 +1568,7 @@ body[data-page="admin"] .gps-actions .gps-primary-action {
 .form-field label { color: #183b2d; font-weight: 700; }
 .form-field input { width: 100%; padding: 12px 14px; border: 1px solid #cfe0d8; border-radius: 8px; background: #f9fbfa; }
 .user-login-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-.user-app-status { margin-top: 18px; padding: 10px 12px; border-radius: 8px; background: #edf9f2; color: #176b52; border: 1px solid #d8ecdf; }
+.user-app-status { margin-top: 18px; padding: 10px 12px; border-radius: 8px; background: var(--surface-tertiary); color: var(--text); border: 1px solid var(--border); }
 .user-module-list { display: grid; gap: 10px; }
 .user-module-card { display: flex; justify-content: space-between; align-items: center; padding: 18px; border: 1px solid #d9e2dd; border-radius: 6px; text-align: left; }
 .user-module-card:hover { border-color: #176b52; }

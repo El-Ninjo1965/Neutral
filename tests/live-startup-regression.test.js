@@ -78,14 +78,27 @@ test('configured module remains embedded in Start context without focus outline 
   assert.match(css, /:focus-visible/);
 });
 
-test('homepage stays in a neutral loading shell until central projection resolves', () => {
+test('cold start may render a theme-token loading state only after bootstrap resolves no local homepage', () => {
   const source = read('Web-App/public/user-app.js');
   const index = read('Web-App/public/index.html');
+  const css = read('Web-App/public/style.css');
 
   assert.match(source, /homepageResolved/);
-  assert.match(source, /if \(!homepageResolved\)/);
+  assert.match(source, /if \(!homepageResolved\)[\s\S]*user-app-status[\s\S]*Loading…/);
   assert.match(source, /homepage\.mode === 'module'[\s\S]*state\.discoveryState === 'pending'/);
-  assert.doesNotMatch(index, /Welcome|Neutral Platform<\/h1>/);
+  assert.doesNotMatch(index, /Loading…|user-app-status|Welcome|Neutral Platform<\/h1>/);
+  assert.match(css, /\.user-app-status\s*\{[^}]*background:\s*var\(--surface-tertiary\)[^}]*color:\s*var\(--text\)[^}]*border:[^;]*var\(--border\)/s);
+});
+
+test('persisted theme selects semantic root tokens before stylesheet and first body paint', () => {
+  const index = read('Web-App/public/index.html');
+  const css = read('Web-App/public/style.css');
+  const bootstrap = index.indexOf("localStorage.getItem('neutral.user.theme.v1')");
+  const stylesheet = index.indexOf('href="style.css"');
+  assert.ok(bootstrap > -1 && bootstrap < stylesheet);
+  assert.match(index, /document\.documentElement\.dataset\.userTheme = theme === 'dark' \? 'dark' : 'light'/);
+  assert.match(css, /:root\[data-user-theme="dark"\][\s\S]*--surface:\s*#111b2d/s);
+  assert.match(css, /:root\[data-user-theme="light"\][\s\S]*color-scheme:\s*light/s);
 });
 
 test('valid public homepage cache renders before a delayed server refresh', () => {
@@ -95,6 +108,7 @@ test('valid public homepage cache renders before a delayed server refresh', () =
   const userScript = index.indexOf('user-app.js');
 
   assert.ok(cacheScript > -1 && cacheScript < userScript);
+  assert.doesNotMatch(index, /Loading…|user-app-status/);
   assert.match(source, /homepageCache\.read\(\)/);
   assert.match(source, /homepageResolved = homepageConfig !== null/);
   assert.match(source, /homepageCache\.write\(homepageConfig\)/);

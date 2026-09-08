@@ -1,6 +1,6 @@
 # NEUTRAL – Status
 
-**Status:** SAFARI-FIRST-PAINT-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
+**Status:** DARK-WARMSTART-LOADING-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
 **Geprüft:** 2026-09-08
 **Reference:** Repository + live operator confirmation + workflow reset documentation
 
@@ -14,7 +14,7 @@
 
 - Workflow reset and governance correction: DONE / DOCUMENTED
 - Codex environment `Neutral` and its secrets-safe GitHub/FTPS recovery path: DONE / DOCUMENTED
-- P4 configurable landing page: SAFARI-FIRST-PAINT-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 configurable landing page: DARK-WARMSTART-LOADING-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Full i18n / other future feature work: PENDING
 - Historical failures and older task states: retained as evidence only, not operative truth
@@ -32,6 +32,7 @@
 - Der aktuelle Betreiber-Retest bestätigte Warmstart, Theme-Switch, GPS, HTML und touchbare Navigation live. Das Folgepaket vereinheitlicht Buttons/Header-Actions, ersetzt den sichtbaren Starttext barrierefrei durch ein lokales Home-SVG, reduziert die Loginansicht und bindet den unabhängigen `srcdoc`-Canvas explizit an den aktuellen Theme-Farbraum. Der gespeicherte freie HTML-Inhalt wird weiterhin nicht verändert. Device-Retest bleibt erforderlich.
 - Der folgende iPad/Safari-Retest widerlegte diese reine iframe-Element-Lösung: `<h1>TEST</h1>` blieb auf großem weißem Canvas. Der neue dokumenteigene Adapter liefert vor der unveränderten Administratorquelle explizite Light-/Dark-Defaults für `html`/`body`; Administrator-CSS folgt später und behält Vorrang. Der redundante normale User-Settings-Themeblock ist entfernt, während der persistente Header-Toggle bestehen bleibt. Device-Retest erforderlich.
 - Der nächste iPad/Safari-Retest bestätigte den final dunklen HTML-Zustand, zeigte aber noch einen kurzen weißen Initial-Paint. Root Cause war der weiterhin sichtbare anfängliche iframe-Browsing-Context vor dem Commit des thematisierten `srcdoc`. Der Frame wird jetzt vor Insertion vollständig vorbereitet und erst nach seinem revisionsgebundenen thematisierten Load sichtbar; der Wrapper zeichnet ohne Loading oder Layoutsprung durchgehend die Theme-Surface. Device-Retest erforderlich.
+- Der aktuelle Betreiber-Retest lokalisierte den verbliebenen hellen Flash außerhalb des iframe: Das statische `index.html` zeigte immer `Loading…` mit festen Light-Farben, bevor deferred Scripts den synchronen Homepagecache lasen; zentrale Dark-Tokens wurden erst am später gesetzten Body aktiv. Die statische Shell ist nun loadingfrei und `:root` erhält das persistierte Theme vor dem render-blocking CSS. Nur der echte cachelose Cold Start rendert danach einen tokenbasierten Status. Device-Retest erforderlich.
 
 ## Historical evidence retained
 

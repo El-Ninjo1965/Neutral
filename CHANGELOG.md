@@ -1,3 +1,11 @@
+## 2026-09-08 – Theme-correct bootstrap and Loading-free homepage warmstart
+
+- Root Cause of the remaining operator-visible flash: `index.html` always shipped a visible static `Loading…` panel before deferred JavaScript could synchronously read the homepage cache, and that panel used fixed Light colors. The early theme script set only `html[data-user-theme]`, while central Dark token overrides initially existed only on `body[data-theme]`, which is set later by `user-app.js`.
+- The render-blocking stylesheet now consumes the synchronously selected root theme, so semantic Dark/Light tokens are established before body First Paint. The static content host is an empty, layout-stable themed surface and no longer invents a Loading state before local cache resolution.
+- A true cold start can still render the dynamic accessible `Loading…` status, now using semantic surface/text/border tokens after the theme has been applied. No status is hidden, delayed, animated or timeout-shortened.
+- Existing Local-first cache, iframe document defaults/load gate, Theme persistence, Service Worker versioning and security contracts remain unchanged.
+- Executed and documented by Codex in `Neutral`; visual success requires the focused iPad/Safari retest.
+
 ## 2026-09-08 – Remove Safari HTML-homepage first-paint flash
 
 - The iPad retest confirmed the document-level Dark defaults fixed the persistent white canvas but exposed a separate first-paint FOUC: Safari could paint the iframe's initial unthemed browsing context before the prepared `srcdoc` committed.
