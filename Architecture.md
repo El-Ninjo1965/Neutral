@@ -204,6 +204,10 @@ Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin gl
 
 ## Startperformance – P3 IST
 
+### Zentrale User-App-Steuerelemente – IST
+
+Primary-, Secondary-, Navigations- und Icon-Aktionen teilen den zentralen `.ui-button`-Vertrag und dessen semantische Light-/Dark-Tokens. Module können diesen veröffentlichten visuellen Vertrag erben, statt eigene globale Buttonsysteme zu erzeugen. Die Home-Aktion ist ein lokales Inline-SVG mit textuellem Accessible Name; dies begründet ausdrücklich keine allgemeine Modul-Icon-Architektur. Freies Homepage-HTML bleibt unverändert im Sandbox-Frame, während dessen Einbettung den aktiven User-Theme-Farbraum für den Browsercanvas auswählt.
+
 Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.
 
 `CoreStartup.start()` ist die minimale READY-Phase und wartet nicht auf IndexedDB oder Module. `startBackground()` ist die deduplizierte Hintergrundkette für Storage, Clientfacaden und Discovery; ihre Phasen emittieren Status und bleiben bei Einzelproblemen diagnostizierbar. Nur storageabhängige Funktionen warten auf `startup:storage-ready` bzw. die Hintergrund-Promise.

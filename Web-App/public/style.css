@@ -27,6 +27,17 @@
   --code-bg: #0f172a;
   --code-text: #e2e8f0;
   --radius: 18px;
+  --button-height: 44px;
+  --button-radius: 11px;
+  --button-border-width: 1px;
+  --button-padding-inline: 15px;
+  --button-secondary-background: #f7f9fd;
+  --button-secondary-border: #aebdd2;
+  --button-secondary-text: #26384f;
+  --button-active-background: #285fca;
+  --button-active-border: #204fae;
+  --button-active-text: #ffffff;
+  --button-focus: #174db7;
 }
 
 body[data-theme="light"] {
@@ -61,6 +72,13 @@ body[data-theme="dark"] {
   --overlay: rgba(3, 7, 18, 0.7);
   --code-bg: #08111f;
   --code-text: #dbe7ff;
+  --button-secondary-background: #17263d;
+  --button-secondary-border: #506584;
+  --button-secondary-text: #e4edfb;
+  --button-active-background: #547bd5;
+  --button-active-border: #86a8fa;
+  --button-active-text: #ffffff;
+  --button-focus: #a6bdff;
   color-scheme: dark;
 }
 
@@ -1760,4 +1778,87 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
 
 .admin-appearance-view [hidden] {
   display: none !important;
+}
+
+/* Shared end-user control contract. Product modules inherit these variants. */
+.ui-button {
+  display: inline-flex;
+  min-height: var(--button-height);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px var(--button-padding-inline);
+  border: var(--button-border-width) solid var(--button-secondary-border);
+  border-radius: var(--button-radius);
+  background: var(--button-secondary-background);
+  color: var(--button-secondary-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.15;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(20, 40, 68, 0.08);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.ui-button--secondary,
+.ui-button--navigation,
+.ui-button--icon {
+  background: var(--button-secondary-background);
+  border-color: var(--button-secondary-border);
+  color: var(--button-secondary-text);
+}
+
+.ui-button--primary,
+.user-app-action.ui-button--primary {
+  background: var(--primary);
+  border-color: var(--primary-strong);
+  color: var(--surface);
+}
+
+.ui-button--navigation {
+  min-width: var(--button-height);
+  padding-inline: 16px;
+  border-radius: var(--button-radius);
+  box-shadow: none;
+}
+
+.ui-button--icon {
+  width: var(--button-height);
+  min-width: var(--button-height);
+  padding-inline: 0;
+}
+
+.user-app-nav-item.active {
+  background: var(--button-active-background);
+  border-color: var(--button-active-border);
+  color: var(--button-active-text);
+  box-shadow: 0 3px 9px rgba(28, 72, 153, 0.2);
+}
+
+.user-app-nav-icon {
+  display: block;
+  width: 21px;
+  height: 21px;
+}
+
+.ui-button:focus-visible {
+  outline: 3px solid var(--button-focus);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-button:hover {
+    border-color: var(--primary);
+    background: var(--surface-tertiary);
+    color: var(--text);
+  }
+
+  .ui-button--primary:hover,
+  .user-app-action.ui-button--primary:hover,
+  .user-app-nav-item.active:hover {
+    background: var(--primary-strong);
+    border-color: var(--primary-strong);
+    color: var(--surface);
+  }
 }

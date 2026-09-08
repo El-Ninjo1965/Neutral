@@ -14,6 +14,7 @@
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
   const USER_THEME_KEY = 'neutral.user.theme.v1';
+  const HOME_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.75 12 3l9 7.75v9a1.25 1.25 0 0 1-1.25 1.25h-5.5v-6h-4.5v6h-5.5A1.25 1.25 0 0 1 3 19.75v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
@@ -416,12 +417,12 @@
     if (!actions) return;
     const currentUser = getCurrentUser();
     const settingsLabel = 'Settings';
-    const settingsButton = `<button id="userSettingsButton" class="user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
+    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
     const nextTheme = readUserTheme() === 'dark' ? 'light' : 'dark';
-    const themeButton = `<button id="userThemeToggle" class="user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
+    const themeButton = `<button id="userThemeToggle" class="ui-button ui-button--icon user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
 
     if (!currentUser) {
-      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="user-app-action" type="button">Login</button>`;
+      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ui-button--primary user-app-action" type="button">Login</button>`;
       const loginButton = document.getElementById('userLoginButton');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
@@ -446,7 +447,7 @@
 
     actions.innerHTML = `
       ${themeButton}${settingsButton}
-      <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
+      <button id="userLogoutButton" class="ui-button ui-button--secondary user-app-link" type="button">Logout</button>
     `;
     const logoutButton = document.getElementById('userLogoutButton');
     if (logoutButton) {
@@ -480,15 +481,18 @@
     if (!nav) return;
     const modules = getVisibleModules();
     const items = [
-      { id: 'home', label: 'Start' },
+      { id: 'home', label: 'Start', icon: HOME_ICON },
       ...modules.map((module) => ({ id: `module:${module.id}`, label: getModuleDisplayName(module) }))
     ];
     nav.innerHTML = items.map((item) => `
       <button
         type="button"
-        class="user-app-nav-item ${state.activeView === item.id ? 'active' : ''}"
+        class="ui-button ui-button--navigation user-app-nav-item ${state.activeView === item.id ? 'active' : ''}"
         data-user-nav="${escapeHtml(item.id)}"
-      >${escapeHtml(item.label)}</button>
+        aria-label="${escapeHtml(item.label)}"
+        title="${escapeHtml(item.label)}"
+        ${state.activeView === item.id ? 'aria-current="page"' : ''}
+      >${item.icon || escapeHtml(item.label)}</button>
     `).join('');
     nav.querySelectorAll('[data-user-nav]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -505,9 +509,7 @@
     state.activeModuleId = null;
     content.innerHTML = `
       <section class="user-app-panel">
-        <span class="user-app-eyebrow">Account access</span>
-        <h1>Sign in</h1>
-        <p>Use your local workspace account to unlock available features.</p>
+        <h1>Login</h1>
         <form id="userLoginForm" class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
@@ -518,9 +520,9 @@
             <input id="userLoginPassword" type="password" autocomplete="current-password" />
           </div>
           <div class="user-login-actions">
-            <button type="submit" id="userLoginSubmit" class="primary">Login</button>
+            <button type="submit" id="userLoginSubmit" class="ui-button ui-button--primary primary">Login</button>
           </div>
-          <div id="userLoginStatus" class="message info">Sign in with your configured account.</div>
+          <div id="userLoginStatus" class="message" role="status" aria-live="polite"></div>
         </form>
       </section>
     `;
@@ -784,6 +786,9 @@
       frame.className = 'user-app-homepage-frame';
       frame.title = homepage.title || 'Start page content';
       frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
+      // The embedding element controls the user-agent canvas scheme without
+      // rewriting trusted administrator HTML or overriding its own CSS.
+      frame.style.colorScheme = readUserTheme();
       frame.srcdoc = homepage.content;
       host.appendChild(frame);
       return;

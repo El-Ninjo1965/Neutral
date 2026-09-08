@@ -1,3 +1,11 @@
+## 2026-09-08 – User-App visual cleanup after operator device retest
+
+- Added a shared end-user button contract with central height, radius, border, spacing, Light/Dark, active, pointer-hover and keyboard-focus tokens; header actions and primary/navigation/icon variants now share that contract.
+- Replaced the visible `Start` label with a local inline SVG home symbol while retaining the `Start` accessible name, tooltip, route and active-state behavior. `GPS` remains a text navigation item.
+- Root Cause of the large light HTML homepage rectangle: the sandboxed `srcdoc` iframe advertised `light dark` without selecting the active app theme, so its independent user-agent canvas could remain light in Dark Mode. The embedding iframe now selects the current local theme through `color-scheme`; stored administrator HTML remains byte-for-byte unchanged and its explicit CSS still wins.
+- Reduced the anonymous login view to Login, Username, Password and the action. Empty-state explanation text and workspace/framework terminology were removed; live status and error reporting and the server-auth flow remain unchanged.
+- Executed and documented by Codex in `Neutral`; the code-side result requires the specified operator device retest before P4 may be called live passed.
+
 ## 2026-09-08 – Central Dark Theme and stable FTPS revision verification
 
 - User-App, Header-Actions, Navigation, Settings, Inputs, GPS and Homepage-Container inherit semantic surface/text/muted/border/primary tokens in Light and Dark instead of component-local Light colors.

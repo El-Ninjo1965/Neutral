@@ -43,7 +43,7 @@ test('navigation shows Start instead of the app name', () => {
 test('navigation derives active state from the current view', () => {
   const source = read('Web-App/public/user-app.js');
 
-  assert.match(source, /class="user-app-nav-item \$\{state\.activeView === item\.id \? 'active' : ''\}"/);
+  assert.match(source, /class="ui-button ui-button--navigation user-app-nav-item \$\{state\.activeView === item\.id \? 'active' : ''\}"/);
   assert.match(source, /state\.activeView = nextView/);
   assert.match(source, /state\.activeView = `module:\$\{moduleId\}`/);
   assert.doesNotMatch(source, /class="user-app-nav-item active"/);
@@ -104,11 +104,28 @@ test('valid public homepage cache renders before a delayed server refresh', () =
 });
 
 test('central navigation has touch-sized button affordance in both themes', () => {
+  const source = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
-  assert.match(css, /\.user-app-nav-item \{[^}]*min-height:\s*44px[^}]*border:\s*1px[^}]*border-radius:/s);
+  assert.match(source, /class="ui-button ui-button--navigation user-app-nav-item/);
+  assert.match(css, /--button-height:\s*44px/);
+  assert.match(css, /\.ui-button\s*\{[^}]*min-height:\s*var\(--button-height\)[^}]*border:\s*var\(--button-border-width\)/s);
+  assert.match(css, /\.ui-button--navigation\s*\{/);
   assert.match(css, /\.user-app-nav-item\.active \{[^}]*background:[^}]*color:/s);
-  assert.match(css, /html\[data-user-theme="dark"\] \.user-app-nav-item\.active/);
-  assert.match(css, /\.user-app-nav-item:focus-visible/);
+  assert.match(css, /--button-secondary-background:/);
+  assert.match(css, /--button-active-background:/);
+  assert.match(css, /\.ui-button:focus-visible/);
+});
+
+test('Start navigation uses a local accessible home icon without changing its route', () => {
+  const source = read('Web-App/public/user-app.js');
+  const homeIcon = source.match(/const HOME_ICON = `([\s\S]*?)`;/);
+  assert.ok(homeIcon, 'local home icon constant must exist');
+  assert.match(homeIcon[1], /<svg/);
+  assert.doesNotMatch(homeIcon[1], /https?:|<img|emoji/i);
+  assert.match(source, /id: 'home', label: 'Start', icon: HOME_ICON/);
+  assert.match(source, /aria-label="\$\{escapeHtml\(item\.label\)\}"/);
+  assert.match(source, /title="\$\{escapeHtml\(item\.label\)\}"/);
+  assert.match(source, /data-user-nav="\$\{escapeHtml\(item\.id\)\}"/);
 });
 
 test('header theme toggle shares the persistent Settings theme state', () => {
@@ -122,11 +139,13 @@ test('header theme toggle shares the persistent Settings theme state', () => {
 });
 
 test('user and GPS surfaces inherit central theme tokens', () => {
+  const source = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
   assert.match(css, /\.gps-location-card,[\s\S]*background:\s*var\(--surface\)/);
   assert.match(css, /\.user-app-link,[\s\S]*background:\s*var\(--surface\)/);
   assert.match(css, /\.user-settings-toggle small,[\s\S]*color:\s*var\(--text-muted\)/);
   assert.match(css, /\.user-app-homepage-frame[^}]*background:\s*transparent/);
+  assert.match(source, /frame\.style\.colorScheme = readUserTheme\(\)/);
 });
 
 test('static shell placeholder nav carries no fake active state', () => {
@@ -230,6 +249,19 @@ test('user shell is product-facing and keeps branding replaceable', () => {
   assert.match(source, /branding\?\.logoUrl/);
   assert.equal(appInfo.branding.iconText, Array.from(appInfo.name)[0].toUpperCase());
   assert.equal(appInfo.branding.logoUrl, '');
+});
+
+test('anonymous login stays product-facing while preserving labels, action and real error status', () => {
+  const source = read('Web-App/public/user-app.js');
+  const login = source.match(/const showLoginForm = \(\) => \{[\s\S]*?\n  \};/);
+  assert.ok(login);
+  assert.match(login[0], /<h1>Login<\/h1>/);
+  assert.match(login[0], /<label for="userLoginUsername">Username<\/label>/);
+  assert.match(login[0], /<label for="userLoginPassword">Password<\/label>/);
+  assert.match(login[0], /type="submit"[^>]*>Login<\/button>/);
+  assert.doesNotMatch(login[0], /Account access|local workspace account|configured account/i);
+  assert.match(login[0], /status\.textContent = serverError/);
+  assert.match(login[0], /Authentication failed\. Check your connection and try again\./);
 });
 
 test('local settings save surfaces both success and error status without admin hints', () => {
