@@ -18,8 +18,8 @@ Dark Theme zentral und konsistent fertigstellen, eine persistente Light/Dark-Sch
 10. Keine Scope-Ausweitung auf vollständige I18N, neue Sync-/Queue-, Modul-, Admin- oder Designsystemarchitektur. **ERLEDIGT**
 11. Status/TODO/CHANGELOG/Workflow und Verträge wahrheitsgemäß aktualisieren; Theme bleibt bis Device-Retest unterhalb LIVE BESTANDEN. **ERLEDIGT**
 12. Fokussierte und vollständige Verifikation gemäß WORKFLOW durchführen. **ERLEDIGT**
-13. Vollständigen Bericht nach `CHATGPT.md` schreiben. **IN ARBEIT**
-14. Commit/Push main, CI/FTPS/CodeQL terminal, CHATGPT GitHub-Verifikation, HEAD==origin/main, sauberer Tree. **AUSSTEHEND**
+13. Vollständigen Bericht nach `CHATGPT.md` schreiben. **ERLEDIGT**
+14. Commit/Push main, CI/FTPS/CodeQL terminal, CHATGPT GitHub-Verifikation, HEAD==origin/main, sauberer Tree. **IN ARBEIT**
 
 ## Capture-Prüfung
 

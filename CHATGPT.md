@@ -1,99 +1,75 @@
 # NEUTRAL – Abschlussbericht Codex → ChatGPT/Lea
 
 **Datum:** 2026-09-08  
-**Auftrag:** Local-first Warmstart-Performance und zentrale App-Navigation  
-**Status:** **P4 WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**  
-**P1:** **LIVE BESTANDEN**
+**Auftrag:** Dark Theme, Theme-Schnellumschaltung und stabile FTPS-Verifikation  
+**Status:** **CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED** · **P1 LIVE BESTANDEN**
 
-## Synchronisation und Capture
+## Synchronisation / Capture
 
-- Zuerst wurde `origin/main` (`744db4b`) synchronisiert.
-- Die neueren verbindlichen Fassungen von `CODEX.md` und `UI-UX.md`, insbesondere der Local-first-Warmstart-/Reload-Vertrag, wurden vollständig aus `origin/main` übernommen und nicht durch ältere lokale Fassungen ersetzt.
-- Die divergierte lokale Arbeitslinie wurde ohne Reset im Merge-Commit `d1e9bfc` integriert.
-- Der vollständige Auftrag wurde vor Implementierung in `CURRENT-TASK.md` erfasst. Prüfung: `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
+`origin/main` (`679da3f`) wurde zuerst synchronisiert; der neue `CODEX.md`-Auftrag wurde über Merge `f9d6dff` unverändert übernommen. Danach wurde der vollständige Auftrag in `CURRENT-TASK.md` erfasst (`CODEX.md == CURRENT-TASK-Anforderungen: JA`).
 
-## Root Cause der circa zweisekündigen Loading-Phase
+## Root Cause Theme
 
-Die Homepageprojektion wurde bei jedem Reload ausschließlich über `/api/settings/homepage` vom Server bezogen. `homepageConfig` existierte nur im flüchtigen Arbeitsspeicher und `homepageResolved` startete immer mit `false`. Der erste sinnvolle Homepage-Render wartete daher bei jedem Aufruf erneut auf den Netzwerk-/PHP-Pfad. Service Worker, Session-Restore und Modul-Discovery waren nicht die Ursache der bereits bekannten HTML-Homepage-Wartezeit; sie liefen bereits unabhängig. Es gab schlicht keinen zulässigen synchronen lokalen Homepagezustand.
+Die globale Tokenbasis existierte, die später angefügten User-App-/GPS-Regeln verwendeten jedoch erneut feste Light-Farben (`#fff`, helle Flächen, feste Text-/Borderfarben). Diese Regeln übersteuerten bzw. umgingen den zentralen Themevertrag. Deshalb blieben Header-Actions, GPS-Karte, Settings-Texte und Container im Dark Theme hell oder kontrastarm.
 
-Der Delay wurde nicht versteckt, animiert oder durch einen kürzeren Timeout kaschiert. Der Datenfluss wurde Local-first geändert.
+### Korrektur
 
-## Implementierung
+- Zentrale User-Surface-Regeln verwenden nun `--bg`, `--surface`, `--surface-secondary`, `--surface-tertiary`, `--text`, `--text-muted`, `--border`, `--line-strong` und `--primary`.
+- Header-Actions, Navigation, Settings, Inputs, GPS-Flächen/-Texte/-Buttons und der Frameworkcontainer des HTML-Inhalts erben diese Tokens.
+- Freies Administrator-HTML wird nicht umgeschrieben; der umgebende Frameworkcontainer ist transparent/theme-neutral.
+- Der kompakte Sonne-/Mond-Button im Header ist touchgerecht, beschriftet und nutzt exakt `readUserTheme()`/`applyUserTheme()` sowie `neutral.user.theme.v1` wie die Settings-Auswahl. Es gibt keinen zweiten Theme-State; Wechsel ist sofort, persistent und offline.
 
-### Öffentlicher Homepage-Warmstartcache
+## Root Cause FTPS-Fehlmeldungen
 
-- Neues zentrales `NeutralHomepageCache` mit Storage-Key `neutral.public.homepage.v1`, `schemaVersion: 1` und festem Scope `public-homepage`.
-- Persistiert wird ausschließlich die bereits öffentlich lesbare Homepageprojektion (`mode`, `title`, `content`, `moduleId`).
-- Gültiges HTML wird beim Warmstart synchron vor dem Serverrefresh gelesen und kann beim ersten User-App-Render unmittelbar erscheinen.
-- Nach erfolgreichem Serverfetch ersetzt die neue Projektion den älteren Cache kontrolliert und rendert sofort neu.
-- Offline bleibt die letzte gültige öffentliche Projektion verfügbar.
-- Kaltstart ohne gültigen Cache behält den ehrlichen Loading-/Fallback-Pfad.
-- Leere, malformed, inkompatibel versionierte oder nicht als `public-homepage` markierte Records werden verworfen.
-- Es werden keine Sessionidentitäten, Rollen, Permissions oder authentifizierten Modulkataloge in diesem Cache gespeichert.
+Die GitHub-Historie wurde geprüft. Unter den letzten Läufen waren u. a.:
 
-Der Modulmodus verwendet ebenfalls die lokal bekannte öffentliche Homepageauswahl, rendert das Modul aber weiterhin erst aus der vorhandenen permission-aware Modul-Discovery. Viewer-/Access-Fail-Closed wurde nicht aufgeweicht.
+- Run `34204392812` / Commit `f4437b4`: Upload erfolgreich, anschließend Revision-Smoke mit alter öffentlicher Revision fehlgeschlagen.
+- Run `34197224914`: gleicher Revisions-Mismatch nach Upload.
+- Run `34197320536`: öffentlicher Root im Smoke kurzfristig nicht erreichbar.
+- Kurz darauf folgende Runs waren erfolgreich.
 
-### Messbarkeit
+Damit waren mindestens zwei wiederkehrende Failures post-upload HTTP-Propagation/Cache-Zustände, keine Git-/Build-/Uploadfehler. Außerdem starteten einzelne Main-Deployments nahezu gleichzeitig und konnten öffentlich sichtbare Mischzustände erzeugen.
 
-- `homepage-local-ready` markiert den synchron verfügbaren lokalen Homepagezustand.
-- `homepage-refresh-ready` markiert die gültige Serveraktualisierung.
-- Tests sichern zusätzlich die Reihenfolge Cache-Read → erster Render → verzögerter Serverrefresh.
+### Korrektur
 
-### Zentrale Navigation
+- Produktionsdeployments sind durch `concurrency.group: neutral-production-ftps` mit `cancel-in-progress: false` serialisiert.
+- Der Smoke läuft weiterhin ausschließlich nach erfolgreichem Upload.
+- Nur ein gültiges, aber noch altes `sourceCommit` erhält begrenzte Wiederholungen: vier Versuche mit 2s/5s/10s Backoff im Workflow.
+- Code erzwingt maximal fünf Versuche, maximal 15s pro Pause und maximal 30s Gesamtdauer.
+- Permanenter Revision-Mismatch bleibt FAILURE.
+- Uploadfehler, unerreichbares Manifest, falsche URL/Base Path, Dirty-Manifest, Redirect-, Security-, Viewer- und Modulvertragsfehler werden nicht durch Retry kaschiert.
+- Diagnoseausgabe enthält nur Versuch und nächste Wartezeit, keine Secrets.
 
-- `Start`, `GPS` und spätere sichtbare Produktbereiche verwenden weiterhin zentral `.user-app-nav-item`.
-- Die zentrale Klasse besitzt jetzt mindestens 44px Touchhöhe, sichtbaren Rahmen, Fläche, Radius und Shadow.
-- Der aktive Zustand verwendet eine klare gefüllte Darstellung statt eines bloßen Textlink-Unterstrichs.
-- Hover ist nur Ergänzung; Bedienbarkeit hängt nicht davon ab.
-- `:focus-visible` bleibt accessibility-konform sichtbar.
-- Light- und Dark-Theme besitzen jeweils explizite Normal-, Hover- und Active-Farben.
-- Keine Modul-eigenen Navigationsstile und keine automatische Veränderung des freien Administrator-HTMLs wurden eingeführt.
+## Tests
 
-## Tests und Verifikation
-
-- Fokussierte Homepage-/Warmstart-/Navigation-/P4-/Login-/Packaging-Tests: 61/61 bestanden.
-- Vollständige Suite: 412/412 bestanden, 0 Fehler, 0 übersprungen.
-- PHP-Lint aller Server-PHP-Dateien: bestanden.
-- JavaScript-Syntaxprüfung: bestanden.
+- Fokussierte Theme-/FTPS-/P4-/Packaging-Tests: 58/58 bestanden.
+- Gesamtsuite: 416/416 bestanden, 0 Fehler, 0 übersprungen.
+- PHP-Lint: bestanden.
+- JavaScript-Syntax: bestanden.
 - `git diff --check`: bestanden.
-- Produktionspaket: erfolgreich, 105 Dateien, Base Path `""`; `homepage-cache.js` ist Entry-, Rewrite-, Service-Worker- und Package-Bestandteil.
-- Secretprüfung: keine Token-, FTPS-, DB- oder sonstigen Secret-Werte eingebracht.
-- Keine künstliche Testdatei, neue Sync-/Queue-Architektur oder vollständige I18N-Implementierung.
-- Ein Screenshot konnte mangels ausführbarem Browser in dieser Containerumgebung nicht erzeugt werden; Playwright-CDN/Snap-Chromium stehen hier nicht zur Verfügung. Es wurde kein Artefakt committed.
+- Produktionspaket: erfolgreich, 105 Dateien.
+- Secretprüfung: keine Secret-Werte eingebracht.
+- Screenshot konnte mangels ausführbarem Browser in der Containerumgebung nicht erstellt werden; kein Artefakt committed.
 
-## Dokumentation
+## GitHub / CI
 
-Aktualisiert wurden `Architecture.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, `WORKFLOW.md`, `CURRENT-TASK.md` und dieser Bericht. Die neue `UI-UX.md` und `CODEX.md` wurden nicht überschrieben.
+Implementierungscommit: `2539745` (`fix: unify dark theme and stabilize deploy smoke`).
 
-## GitHub und CI
+Eigener Abschlussdeploy mit korrigiertem Workflow:
 
-Implementierungscommit: `719a90f` (`fix: make homepage warmstarts local-first`).
+- FTPS Deploy Run `34210138068`: **SUCCESS**.
+- Push on main / CodeQL Run `34210137946`: **SUCCESS**.
 
-Terminale Ergebnisse nach Push auf `main`:
-
-- FTPS Deploy Run `34205494123`: **SUCCESS**.
-- Push on main / CodeQL Run `34205494188`: **SUCCESS**.
-
-Der Abschlussbericht wird ebenfalls nach `main` übertragen; dessen CI wird vor der externen Abschlussmeldung vollständig abgewartet. Danach wird `CHATGPT.md` per GitHub-Blob-Hash verifiziert.
+Der Bericht wird ebenfalls nach `main` übertragen; dessen CI wird terminal abgewartet und `CHATGPT.md` anschließend per GitHub-Blob-Hash verifiziert.
 
 ## Betreiber-Retest
 
-1. HTML-Startseite einmal online laden.
-2. Mehrfach reloaden und App neu öffnen: der bekannte HTML-Inhalt soll ohne sichtbare circa zweisekündige Loading-Phase unmittelbar erscheinen.
-3. Verbindung deaktivieren und denselben Offline-Warmstart prüfen.
-4. Wieder online gehen, Homepage serverseitig ändern und prüfen, dass der lokale Inhalt zunächst erscheint und anschließend kontrolliert auf die neue Serverversion aktualisiert wird.
-5. `Module → GPS` setzen und warmstarten: `Start` bleibt aktiv; GPS erscheint so früh wie der permission-aware lokale Discoveryzustand es sicher erlaubt.
-6. `Start` und `GPS` per Touch prüfen: beide müssen eindeutig wie App-Navigationsaktionen wirken, Active-Zustand klar.
-7. Light-/Dark-Theme und Tastaturfokus prüfen.
-8. Persönliche `App areas`-Auswahl prüfen; ausgeblendete oder nicht erlaubte Bereiche dürfen nicht erscheinen.
-9. User-App und Admin parallel öffnen und P1-Sessiontrennung bestätigen.
+1. Header-Schnellumschaltung Sonne/Mond in anonymer und angemeldeter User-App testen; Reload und Offline prüfen.
+2. Settings → Appearance prüfen: Auswahl zeigt denselben Zustand und schaltet denselben State.
+3. Dark prüfen: Header-Actions, Start/GPS-Navigation, GPS-Karte, GPS-Texte/Buttons, Settings-Karten/Labels/Inputs sowie HTML-Frameworkfläche.
+4. Light erneut prüfen.
+5. Tastaturfokus und Touchgrößen prüfen.
+6. Warmstart, HTML-Homepage, GPS, App areas und Login kurz regressiv prüfen.
+7. User-/Admin-Sessiontrennung erneut bestätigen.
 
-Bis zu diesem positiven Test bleibt P4 **WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**. Die zuvor positiv getesteten P4-/GPS-/HTML-/Loginpunkte und P1 bleiben erhalten.
-
-## Scope
-
-Nicht implementiert: vollständige I18N-/Sprachpaket-/Providerarchitektur, Sync-Engine, Offline-Queue, Store-App-Wrapper, neues Produktmodul, Admin-Redesign oder vollständiger Designsystemersatz.
-
-## Abschlussdokumentationslauf
-
-Auch der erste Berichtslauf endete terminal erfolgreich: FTPS Deploy Run `34206023852` und Push on main / CodeQL Run `34206023656` jeweils **SUCCESS**. Der nachfolgende reine Checklist-Abschlusslauf wird vor der externen Antwort ebenfalls bis zum terminalen Status abgewartet.
+Keine vollständige I18N-, Sync-/Queue-, Modul-, Admin- oder neue Designsystemarchitektur wurde begonnen. Theme/P4 bleibt bis zum positiven Device-Retest unterhalb `LIVE BESTANDEN`; P1 bleibt `LIVE BESTANDEN`.
