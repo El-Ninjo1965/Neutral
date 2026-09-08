@@ -1,3 +1,11 @@
+## 2026-09-08 – Local-first homepage warmstart and app navigation
+
+- Root Cause der live beobachteten circa zweisekündigen Loading-Phase: Die öffentliche Homepageprojektion existierte nur im Arbeitsspeicher und wurde bei jedem Reload ausschließlich über den Server geladen. Der erste sinnvolle Render wartete daher trotz bereits bekannten Inhalts immer auf den Netzwerkpfad.
+- Ein minimaler schema-versionierter `public-homepage`-Cache stellt gültiges HTML beim Warmstart synchron bereit, aktualisiert sich nach erfolgreichem Serverrefresh und funktioniert offline. Inkompatible, leere oder nicht öffentliche Records werden nicht verwendet; Session- und Berechtigungsdaten werden nicht persistiert.
+- Die Performance-Marken `homepage-local-ready` und `homepage-refresh-ready` machen lokalen First Render und Serverrefresh getrennt messbar.
+- Die zentrale User-App-Navigation besitzt nun touchgerechte 44px-Aktionen mit Rahmen, Fläche, eindeutigem aktiven Zustand sowie Light-/Dark-, Hover- und `:focus-visible`-Darstellung. Module erben den zentralen Stil automatisch.
+- Ausgeführt und dokumentiert durch Codex in der Umgebung `Neutral`; bestehende live bestätigte P4-/GPS-/HTML-/P1-Fixes bleiben erhalten. Neuer Betreiber-Retest erforderlich.
+
 ## 2026-09-08 – P4 device follow-up: Start context, login race and readable GPS
 
 - Ein konfiguriertes GPS-Homepage-Modul bleibt nun beim Reload im aktiven `Start`-Kontext, statt die eigenständige Modulnavigation zu aktivieren. Bis Homepage und Discovery bereit sind, verhindert ein neutraler Ladezustand den falschen Welcome-Flash.

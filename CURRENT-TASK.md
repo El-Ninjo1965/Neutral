@@ -2,37 +2,35 @@
 
 ## Gesamtauftrag
 
-Die am 2026-09-08 live bestätigten P4-Folgefehler ursächlich beheben: korrekte Startkontext-/Reload-Semantik ohne Default-Flash, HTML-Startseite ohne festen Welcome-Block, accessibility-konforme Fokusdarstellung, zuverlässiger Ein-Klick-User-Login, bereinigte persönliche Bereichsauswahl sowie menschenlesbare GPS-Werte. P1 bleibt unverändert `LIVE BESTANDEN`; die vollständige I18N-Architektur wird nicht implementiert.
+Die beim Betreiber live beobachtete circa zweisekündige `Loading`-Phase bei jedem Warmstart/Reload ursächlich beheben und die zentrale User-App-Navigation app-typisch/touchgerecht gestalten. Der neue Local-first-Vertrag aus `UI-UX.md` ist verbindlich. Bereits live bestätigte P4-, GPS-, HTML-, Login- und P1-Fixes bleiben erhalten; keine vollständige I18N- oder neue Sync-/Offline-Queue-Architektur.
 
 ## Nummerierte, überprüfbare Arbeitspunkte
 
-1. `origin/main` vollständig synchronisieren und neue `CODEX.md`, `I18N.md` und `DOCUMENTATION.md` unverändert erhalten. **Status: ERLEDIGT**
-2. Alle in `CODEX.md` verlangten Verträge, Status-, Implementierungs- und Testdateien vollständig lesen. **Status: ERLEDIGT**
-3. Regressionstests zuerst für Startkontext, Reload, Default-Flash, HTML-Welcome-Block, Fokus, Ein-Klick-Login, Settings-Auswahl und GPS-Formatierung ergänzen/anpassen. **Status: ERLEDIGT**
-4. Modul-Homepage innerhalb des aktiven `Start`-Kontexts rendern, ohne zum Modul-Tab zu wechseln; eigenständige Modulnavigation weiterhin ermöglichen. **Status: ERLEDIGT**
-5. Initialen Default-Welcome-Flash verhindern, bis die zentrale Homepage-Projektion aufgelöst ist; Offline-/Fehlerfallback kontrolliert erhalten. **Status: ERLEDIGT**
-6. HTML-Modus ausschließlich mit dem konfigurierten Startinhalt rendern; Welcome/Neutral nur als tatsächlichen Fallback anzeigen. **Status: ERLEDIGT**
-7. Persistenten blauen GPS-Reload-Rahmen an seiner Focus-Ursache accessibility-konform beheben und Tastatur-`:focus-visible` erhalten. **Status: ERLEDIGT**
-8. User-Login so korrigieren, dass eine gültige Submit-Aktion genau einmal genügt; P1, sichere Session, Auth und CSRF unverändert lassen. **Status: ERLEDIGT**
-9. `Show all functions` samt Alert entfernen; individuelle persönliche Bereichsauswahl erhalten und strikt von Berechtigungen getrennt lassen. **Status: ERLEDIGT**
-10. Angefasste Settings-Texte nutzerorientiert und für den späteren zentralen I18N-Vertrag offen formulieren, ohne vollständige I18N-Architektur/Insellösung. **Status: ERLEDIGT**
-11. GPS-Genauigkeit nur sichtbar sinnvoll runden (`± … m`) und Rohpräzision intern erhalten. **Status: ERLEDIGT**
-12. GPS-Zeit sichtbar lokal/menschenlesbar über vorhandene `Intl`-/Locale-Fähigkeit formatieren und Roh-/ISO-Zeit intern erhalten. **Status: ERLEDIGT**
-13. P1, Auth/CSRF, Module Access, Offline-Fallback, Appearance, Theme und Modul-Lifecycle regressionsfrei halten. **Status: ERLEDIGT**
-14. Keine Scope-Ausweitung auf vollständige I18N-/Provider-/Sprachpaketarchitektur, Designsystem, Sync/Queue, Store-Wrapper oder neue Module. **Status: ERLEDIGT**
-15. Betroffene Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; P4 bleibt bis Betreiber-Retest unterhalb `LIVE BESTANDEN`. **Status: ERLEDIGT**
-16. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
-17. Vollständigen Abschlussbericht in `CHATGPT.md` mit Root Causes, Änderungen, Tests, Commits, CI und konkreten Betreiber-Retestschritten erstellen. **Status: ERLEDIGT**
-18. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: ERLEDIGT**
+1. Vollständig mit `origin/main` synchronisieren und neuere `CODEX.md`-/`UI-UX.md`-Verträge unverändert übernehmen. **Status: ERLEDIGT**
+2. Alle in `CODEX.md` geforderten Verträge, Status-, User-App-, Startup-, Cache-, Service-Worker-, Navigation-, Modul- und Testpfade vollständig lesen. **Status: ERLEDIGT**
+3. Root Cause der sichtbaren Warmstartwartezeit im tatsächlichen Homepage-/Startup-/Storage-Datenfluss bestimmen und dokumentieren; nicht durch Animation, Timeout oder Verstecken kaschieren. **Status: ERLEDIGT**
+4. Regressionstests zuerst ergänzen: gültige lokale HTML-Homepage rendert vor Serverrefresh; Refresh aktualisiert Cache; Offline-Warmstart; Erststart; invalider/inkompatibler Cache. **Status: ERLEDIGT**
+5. Einen minimalen versionierten, ausschließlich öffentlichen Homepage-Cache implementieren; keine Session-/Permission-/authentifizierten Katalogdaten als öffentliche Wahrheit persistieren. **Status: ERLEDIGT**
+6. HTML-Warmstart sofort aus gültigem lokalen Stand rendern und Serverprojektion danach im Hintergrund abgleichen. **Status: ERLEDIGT**
+7. Modul-Warmstart so früh wie sicher ermöglichen, ohne Permission-/Viewer-Fail-Closed oder Startkontext zu schwächen; Discovery-/Serverrefresh im Hintergrund erhalten. **Status: ERLEDIGT**
+8. Kaltstart ohne gültigen Cache sowie Online-/Offline-Fehler kontrolliert auf Loading/Fallback führen. **Status: ERLEDIGT**
+9. Messbare Startup-Instrumentierung bzw. belastbare Tests für Local-first Render vor verzögertem Serverrefresh ergänzen. **Status: ERLEDIGT**
+10. Zentrale Navigation (`Start`, GPS, spätere erlaubte Bereiche) als klar erkennbare touchgerechte App-Aktionen mit eindeutigem Active-, Hover- und `:focus-visible`-Zustand gestalten. **Status: ERLEDIGT**
+11. Navigation zentral/theme-kompatibel halten; keine Modul-eigenen Navigationsstile und keine Änderungen an freiem HTML-Inhalt. **Status: ERLEDIGT**
+12. Persönliche `App areas`-Auswahl, ausgeblendete/nicht erlaubte Bereiche, P1, Auth/CSRF, Appearance, GPS, HTML, Offline, Service Worker, Packaging und Base Path regressionsfrei halten. **Status: ERLEDIGT**
+13. Keine Scope-Ausweitung auf vollständige I18N-/Providerarchitektur, Sync-/Offline-Queue, Store-Wrapper, neue Module, Admin-Redesign oder Designsystemersatz. **Status: ERLEDIGT**
+14. Relevante Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; keine erfundene Live-Bestätigung. **Status: ERLEDIGT**
+15. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
+16. Vollständigen Abschlussbericht mit Root Cause, Änderungen, Tests, Commits, CI und konkretem Betreiber-Retest in `CHATGPT.md` erstellen. **Status: IN ARBEIT**
+17. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: AUSSTEHEND**
 
 ## Capture-Prüfung
 
 `CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
-## Operative Wahrheiten und Grenzen
+## Operative Wahrheit und Grenzen
 
-- Aktueller Livebefund: P4-Modul- und HTML-Inhalt funktionieren grundsätzlich, die in diesem Auftrag benannten UX-/Reload-Fehler sind live nachgewiesen.
-- P4 bleibt bis zum erneuten positiven Betreiber-Livetest unterhalb `LIVE BESTANDEN`.
-- P1 bleibt `LIVE BESTANDEN`; User-/Admin-Sessiontrennung wird nicht verändert.
-- Nutzerpräferenz zum Ausblenden von Bereichen ändert niemals serverseitige Rechte.
-- Keine vollständige I18N-Implementierung.
+- Live bestätigt bleiben: GPS/HTML-P4-Inhalt, Startkontext, kein Welcome-Flash, GPS-Formatierung/Share, bereinigte Settings und P1.
+- Aktuell offen und live nachgewiesen: Warmstart zeigt ungefähr zwei Sekunden `Loading`; zentrale Navigation wirkt zu sehr wie Textlinks/Tabs.
+- Öffentliche Homepage darf lokal gecacht werden; authentifizierte Berechtigungsdaten dürfen nicht als anonymer Fallback persistiert werden.
+- P4 bleibt bis erneutem Betreiber-Retest unterhalb `LIVE BESTANDEN`.

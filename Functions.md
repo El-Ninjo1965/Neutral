@@ -13,6 +13,8 @@ Die User-App lädt die zentrale Homepage-Projektion fehlertolerant parallel zum 
 
 Ein Homepage-Modul bleibt im aktiven Bereich `Start`; die eigenständige Modulansicht wird nur durch die Navigation geöffnet. User-Login wird als einzelner Formular-Submit verarbeitet und durch eine Revisionsprüfung gegen eine gleichzeitig laufende Session-Wiederherstellung geschützt. GPS bewahrt Rohgenauigkeit und ISO-Zeit intern, formatiert beide jedoch über locale-fähige `Intl`-APIs menschenlesbar für die Anzeige.
 
+`NeutralHomepageCache` persistiert ausschließlich eine schema-versionierte öffentliche Homepageprojektion. Gültiges HTML kann beim Warmstart synchron vor dem Netzwerkrefresh erscheinen; inkompatible, leere oder nicht als öffentlich markierte Records werden verworfen. Die Performance-Marken `homepage-local-ready` und `homepage-refresh-ready` trennen lokalen First Render vom Serverabgleich.
+
 ## Status
 
 - **VORHANDEN**: implementiert und aufrufbar.

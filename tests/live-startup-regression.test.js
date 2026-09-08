@@ -88,6 +88,29 @@ test('homepage stays in a neutral loading shell until central projection resolve
   assert.doesNotMatch(index, /Welcome|Neutral Platform<\/h1>/);
 });
 
+test('valid public homepage cache renders before a delayed server refresh', () => {
+  const source = read('Web-App/public/user-app.js');
+  const index = read('Web-App/public/index.html');
+  const cacheScript = index.indexOf('homepage-cache.js');
+  const userScript = index.indexOf('user-app.js');
+
+  assert.ok(cacheScript > -1 && cacheScript < userScript);
+  assert.match(source, /homepageCache\.read\(\)/);
+  assert.match(source, /homepageResolved = homepageConfig !== null/);
+  assert.match(source, /homepageCache\.write\(homepageConfig\)/);
+  assert.match(source, /mark\('homepage-local-ready'\)/);
+  assert.match(source, /mark\('homepage-refresh-ready'\)/);
+  assert.match(source, /finally \{\s*homepageResolved = true;\s*renderApp\(\);/s);
+});
+
+test('central navigation has touch-sized button affordance in both themes', () => {
+  const css = read('Web-App/public/style.css');
+  assert.match(css, /\.user-app-nav-item \{[^}]*min-height:\s*44px[^}]*border:\s*1px[^}]*border-radius:/s);
+  assert.match(css, /\.user-app-nav-item\.active \{[^}]*background:[^}]*color:/s);
+  assert.match(css, /html\[data-user-theme="dark"\] \.user-app-nav-item\.active/);
+  assert.match(css, /\.user-app-nav-item:focus-visible/);
+});
+
 test('static shell placeholder nav carries no fake active state', () => {
   const source = read('Web-App/public/index.html');
 

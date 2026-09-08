@@ -13,6 +13,7 @@
 - Branding ist App-Metadatum (`iconText`, optional `logoUrl`) und kein unveränderliches Neutral-Element.
 - Ein als Homepage konfiguriertes Modul wird innerhalb des Navigationskontexts `Start` gerendert. Nur eine bewusste Auswahl im Modulmenü wechselt den aktiven Navigationskontext zum eigenständigen Modul.
 - Bis öffentliche Homepage-Projektion und – beim Modulmodus – Discovery aufgelöst sind, zeigt die Shell einen neutralen Ladezustand statt kurzzeitig einen fachlich falschen Defaultinhalt.
+- Die letzte validierte öffentliche Homepage-Projektion besitzt einen eigenen versionierten Local-Storage-Cache (`public-homepage`). Ein Warmstart darf daraus synchron rendern; der Serverabgleich aktualisiert ihn anschließend. Sessionidentitäten und permission-sensitive Katalogantworten gehören ausdrücklich nicht in diesen Cache.
 
 ## Statuslegende
 

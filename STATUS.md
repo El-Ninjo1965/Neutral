@@ -1,6 +1,6 @@
 # NEUTRAL – Status
 
-**Status:** P4 FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
+**Status:** P4 WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
 **Geprüft:** 2026-09-08
 **Reference:** Repository + live operator confirmation + workflow reset documentation
 
@@ -14,7 +14,7 @@
 
 - Workflow reset and governance correction: DONE / DOCUMENTED
 - Codex environment `Neutral` and its secrets-safe GitHub/FTPS recovery path: DONE / DOCUMENTED
-- P4 configurable landing page: FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 configurable landing page: WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Theme / i18n / navigation / other feature work: PENDING
 - Historical failures and older task states: retained as evidence only, not operative truth
@@ -27,6 +27,7 @@
 - Root Cause des aktuellen Livefehlers: Die produktiv ausgelieferten, nicht versionierten User-App-Assets konnten trotz neuer Service-Worker-Version aus dem 24-Stunden-HTTP-Cache stammen. Außerdem lag der Homepage-Fetch seriell hinter dem Core-/Discovery-Start; dessen Fehler verhinderte den Fetch vollständig. Das Produktionspaket versioniert nun alle lokalen CSS-/JS-Referenzen mit dem Deployment-Commit und die drei unabhängigen Startpfade laufen über `Promise.allSettled`.
 - Die User-App öffnet danach ein erlaubtes konfiguriertes Modul oder rendert das unveränderte Administrator-HTML. Automatisierte Regressionen sind grün; der nachgewiesene Livefehler bleibt bis zum positiven Betreiber-Retest die operative Wahrheit.
 - Betreiber-Livebefund vom 2026-09-08 bestätigte Modul- und HTML-Modus grundsätzlich, zeigte aber Folgefehler bei Reload-/Startkontext, Default-Flash, statischem HTML-Welcome, Fokusrahmen, Login-Race, Settings-Reset und GPS-Darstellung. Diese Pfade sind code-seitig korrigiert und benötigen erneut den Device-Retest.
+- Der anschließende Betreiber-Retest bestätigte diese Folgefixes live. Neuer Livebefund war eine circa zweisekündige Loading-Phase bei jedem Warmstart sowie eine zu schwache Textlink-Affordance der zentralen Navigation. Root Cause der Wartezeit war die ausschließlich serverseitig geladene Homepageprojektion; der neue öffentliche, schema-versionierte Local-first-Cache und die zentrale Buttonnavigation sind code-seitig umgesetzt und benötigen den nächsten Device-Retest.
 
 ## Historical evidence retained
 

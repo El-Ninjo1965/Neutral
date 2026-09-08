@@ -113,8 +113,10 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  let homepageConfig = null;
-  let homepageResolved = false;
+  const homepageCache = window.NeutralHomepageCache || null;
+  let homepageConfig = homepageCache && typeof homepageCache.read === 'function' ? homepageCache.read() : null;
+  let homepageResolved = homepageConfig !== null;
+  if (homepageResolved && window.CorePerformance) window.CorePerformance.mark('homepage-local-ready');
 
   const getHomepageConfig = () => {
     const configManager = window.ConfigManager && typeof window.ConfigManager.get === 'function'
@@ -152,9 +154,14 @@
       if (window.ConfigManager && typeof window.ConfigManager.set === 'function') {
         window.ConfigManager.set('homepage', homepageConfig);
       }
+      if (homepageCache && typeof homepageCache.write === 'function') {
+        homepageCache.write(homepageConfig);
+      }
+      if (window.CorePerformance) window.CorePerformance.mark('homepage-refresh-ready');
       return homepageConfig;
     } finally {
       homepageResolved = true;
+      renderApp();
     }
   };
 
