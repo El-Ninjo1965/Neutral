@@ -5,152 +5,99 @@
 
 # Aktueller Auftrag
 
-## Zwei verbleibende Device-Retest-Punkte: HTML-Dark-Frame + redundante Theme-Settings
+## Restfehler: weißer Initial-Paint/Flash der HTML-Homepage im Dark Mode
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Settings-, Homepage-/iframe-, CSS- und Testdateien.
+Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Homepage-/iframe-/srcdoc-, CSS-, Service-Worker- und Testdateien.
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
 `CODEX.md == CURRENT-TASK-Anforderungen`
 
-## Betreiber-Device-Retest vom 2026-09-08
+## Neuer Betreiber-Device-Retest vom 2026-09-08
 
-### Live bestätigt – nicht zurückbauen
+Der letzte Safari/iPad-Fix ist **teilweise erfolgreich**:
 
-- Local-first Warmstart funktioniert ohne sichtbares früheres `Loading`.
-- Sonne-/Mond-Schnellumschaltung im Header funktioniert und wechselt Theme unmittelbar.
-- Home-Icon anstelle von `Start` ist live sichtbar und wird vom Betreiber als Verbesserung akzeptiert.
-- Home/GPS-Navigation ist als App-Navigation erkennbar.
-- überarbeitetes Buttonsystem im Dark Mode ist konsistent genug für den aktuellen Stand.
-- GPS-Darstellung im Dark Mode ist sauber und lesbar.
-- Login-/Header-Actions funktionieren.
-- FTPS-Stabilisierung nicht zurückbauen.
+- Die HTML-Homepage `<h1>TEST</h1>` bleibt im Dark Mode jetzt nicht mehr dauerhaft als große weiße Fläche stehen.
+- Der endgültige gerenderte Zustand ist korrekt dunkel.
+- Beim Öffnen/Rendern/Reload ist auf dem realen iPad/Safari jedoch weiterhin ein **kurzer deutlich sichtbarer weißer Flash/weißes Aufblitzen** zu sehen, bevor der dunkle HTML-Inhalt erscheint.
 
-Es verbleiben zwei konkrete Punkte.
+Damit ist der dauerhafte White-Canvas behoben, aber der **erste sichtbare Paint des isolierten HTML-Frames ist noch falsch**.
 
-# Arbeitspaket A – HTML-Homepage bleibt auf iPad/Safari im Dark Mode weiß
+Der Betreiber beschreibt es sinngemäß: „Ist jetzt zwar schwarz, aber blinkt weiß, als ob im Hintergrund etwas geladen wird.“
 
-Der letzte Fix ist auf dem realen Betreibergerät **nicht erfolgreich**.
+## Bereits live bestätigt – nicht zurückbauen
 
-Live-Screenshot nach aktuellem Deploy:
+- Local-first Warmstart ohne früheres sichtbares `Loading`.
+- finaler HTML-Homepage-Zustand im Dark Mode ist jetzt dunkel.
+- Sonne-/Mond-Schnellumschaltung funktioniert.
+- Appearance/Theme-Block wurde aus normalen User-Settings entfernt bzw. diese Änderung des vorherigen Auftrags beibehalten.
+- Home-Icon und Home/GPS-Navigation funktionieren.
+- GPS Dark Mode funktioniert.
+- zentrales Buttonsystem nicht zurückbauen.
+- Login-Bereinigung nicht zurückbauen.
+- FTPS-/Smoke-Stabilisierung nicht zurückbauen.
 
-- App selbst ist eindeutig im Dark Theme.
-- gespeicherter Homepageinhalt ist weiterhin das schlichte `<h1>TEST</h1>`.
-- trotzdem zeigt der sandboxed HTML-Homepage-Bereich weiterhin eine große weiße rechteckige Fläche.
+# Auftrag – First Paint / FOUC des sandboxed HTML-Frames beseitigen
 
-Der vorherige Ansatz, dem `srcdoc`-iframe beim Erstellen den aktuellen lokalen `color-scheme` zu geben, reicht auf dem realen iPad/Safari also nicht aus.
+Ermittle die tatsächliche Ursache des weißen Zwischen-Paints auf Safari/iPad und verhindere, dass ein unthematisierter iframe-/srcdoc-Zustand jemals sichtbar wird.
 
-## Auftrag
-
-Untersuche den tatsächlichen Safari/WebKit-Rendervertrag für sandboxed `iframe[srcdoc]` im Dark Theme und behebe die Frameworkursache robust.
-
-WICHTIG:
-
-- Nicht erneut nur denselben `color-scheme`-Ansatz umformulieren.
-- Der reale Device-Befund widerlegt die Annahme, dass dieser Ansatz allein genügt.
-- Freies Administrator-HTML darf weiterhin nicht heuristisch verändert, sanitisiert oder inhaltlich umgeschrieben werden.
-- Explizit vom Administrator gesetztes CSS/Background muss weiterhin Vorrang haben.
+Nicht einfach eine künstliche Verzögerung oder Animation darüberlegen.
 
 Prüfe insbesondere:
 
-- Safari/WebKit-Verhalten von `iframe[srcdoc]`, `color-scheme` und transparentem iframe canvas;
-- ob das iframe-Dokument ohne eigene `html/body`-Background-Regel standardmäßig einen weißen Canvas erzeugt;
-- ob ein frameworkseitiges neutrales Dokumentgerüst um den freien Body-Inhalt technisch notwendig ist;
-- ob Theme-Information über CSS Custom Properties, `prefers-color-scheme`, `meta name=color-scheme`, dokumenteigene Styles oder einen anderen sicheren Mechanismus in den isolierten Browsing Context übertragen werden muss;
-- ob `srcdoc` als kompletter Dokumentinhalt oder Body-Fragment behandelt wird und welche Fälle unterstützt werden müssen;
-- Warmstart und Theme-Wechsel nach bereits gerendertem iframe: der Frame muss bei Light↔Dark korrekt mitwechseln;
-- Sandbox-/Security-Vertrag darf nicht geschwächt werden.
+1. Reihenfolge von `createElement('iframe')`, DOM-Insertion, `srcdoc`-Zuweisung, Theme-Adapter-Anwendung und Sichtbarkeit.
+2. Ob das iframe zunächst leer/`about:blank` sichtbar in den DOM eingefügt wird und Safari diesen initial weiß zeichnet, bevor das thematisierte `srcdoc` committed ist.
+3. Ob `srcdoc` erst **vor** sichtbarer DOM-Insertion vollständig mit dem aktuellen Theme-Dokument aufgebaut werden kann.
+4. Ob der Frame bis zu seinem ersten thematisierten `load`/ready-Zustand unsichtbar bleiben muss und der umgebende Frameworkbereich währenddessen bereits den korrekten aktuellen Theme-Hintergrund zeigen kann.
+5. Falls Visibility-Gating verwendet wird: kein Layoutsprung, kein weißer Platzhalter, keine künstliche Wartezeit und kein erneutes altes `Loading`.
+6. Ob Theme-Hintergrund/`color-scheme` bereits auf dem iframe-Element selbst **vor dessen erster DOM-Insertion** gesetzt werden muss, zusätzlich zum dokumentinternen Adapter.
+7. Theme-Wechsel bei bereits vorhandenem Frame: kein weißer Zwischen-Paint beim Wechsel Light↔Dark.
+8. Warmstart/Reload: lokal vorhandener HTML-Inhalt muss weiterhin sofort erscheinen; der Fix darf die Local-first-Performance nicht zurückbauen.
+9. Safari/WebKit-spezifisches Paint-Verhalten berücksichtigen, aber möglichst standardsaubere Lösung ohne UA-Sniffing.
+10. Sandbox-/Security-Vertrag unverändert restriktiv halten.
 
 ## Zielvertrag
 
-Für freien Homepageinhalt ohne explizite Hintergrundgestaltung, z. B.:
+Bei bereits bekanntem Dark Theme und lokal vorhandenem HTML-Homepage-Inhalt darf während des gesamten sichtbaren Renderpfads **kein weißer Browser-/iframe-Zwischenzustand** erscheinen.
 
-`<h1>TEST</h1>`
+Erlaubter sichtbarer Ablauf:
 
-muss der Framework-Renderpfad im Dark Theme einen zum App-Theme passenden neutralen Hintergrund/Text-Farbraum bereitstellen und im Light Theme entsprechend hell darstellen.
+`Dark App-Surface → unmittelbar thematisierter Dark HTML-Inhalt`
 
-Wenn der Administrator dagegen ausdrücklich z. B. `body { background: white; }` oder eine äquivalente eigene Gestaltung setzt, muss diese eigene Gestaltung sichtbar bleiben.
+Nicht erlaubt:
 
-Der Framework-Theme-Adapter darf also **Defaults bereitstellen, aber keine explizite Administratorgestaltung überschreiben**.
+`Dark App-Surface → weißer iframe/about:blank/srcdoc Flash → Dark HTML-Inhalt`
 
-Bevorzugt eine standardsaubere, Safari-kompatible Lösung entwickeln und durch Tests absichern. Keine UA-Sniffing-Sonderlösung, sofern nicht zwingend erforderlich und begründet.
+Für Light entsprechend konsistent.
 
-# Arbeitspaket B – Appearance/Theme aus User-Settings entfernen
-
-Der Betreiber hat den aktuellen Settings-Screenshot geprüft.
-
-Der gesamte Block:
-
-- `Appearance`
-- Erklärung `Choose the theme used by this app. It is stored locally and works offline.`
-- `Theme`
-- Light/Dark-Select
-
-ist jetzt redundant, weil die User-App bereits den unmittelbar erreichbaren Sonne-/Mond-Schnellumschalter im Header besitzt.
-
-## Auftrag
-
-Entferne den **Appearance/Theme-Block aus den normalen User-Settings**.
-
-WICHTIG:
-
-- Theme-Funktionalität selbst bleibt vollständig erhalten.
-- Header-Sonne/Mond bleibt der normale User-Zugriff für Light/Dark.
-- derselbe persistente lokale Theme-State bleibt erhalten.
-- Theme-Persistenz, Offline-Funktion und sofortiger Wechsel bleiben erhalten.
-- keine Serverabhängigkeit hinzufügen.
-- keine Admin-/Developer-Theme-Konfiguration entfernen, falls eine solche separat existiert und fachlich benötigt wird; Auftrag betrifft die normale User-Settings-Seite.
-- nach Entfernen keine leeren Container, Überschriften oder unnötigen Abstände hinterlassen.
-
-Die User-Settings sollen dadurch kompakter werden und mit `App areas`, `Privacy and sharing` usw. beginnen, soweit dies dem bestehenden Aufbau entspricht.
+Wenn der HTML-Inhalt selbst ausdrücklich einen weißen Hintergrund definiert, darf dieser natürlich sichtbar sein; der Auftrag betrifft ausschließlich den vom Framework/Browser erzeugten unthematisierten Zwischenzustand.
 
 # Tests
 
 Regressionstests zuerst ergänzen/anpassen.
 
-## HTML iframe / Theme
+Mindestens soweit automatisiert möglich beweisen:
 
-Mindestens beweisen:
+- iframe erhält thematisiertes `srcdoc`/Theme-Setup vor dem ersten sichtbaren Zustand;
+- kein sichtbarer leerer/about:blank-Frame wird vor dem thematisierten Dokument erzeugt;
+- falls Load-/Visibility-Gating genutzt wird, besitzt der Wrapper währenddessen bereits die korrekte Theme-Surface und zeigt kein `Loading`/weißes Placeholder;
+- Dark-Warmstart behält korrekten Hintergrund während des gesamten Initialisierungspfads;
+- Light-Warmstart entsprechend;
+- Light↔Dark-Wechsel erzeugt keinen bewusst sichtbaren unthematisierten Zwischenzustand;
+- Administrator-CSS bleibt maßgeblich;
+- freies HTML wird weiterhin nicht heuristisch verändert;
+- Sandboxattribute bleiben mindestens gleich restriktiv;
+- Local-first Homepagecache und Warmstart bleiben erhalten;
+- Appearance bleibt aus normalen User-Settings entfernt;
+- Home/GPS, GPS, Login, Theme-Switch, P1 Sessiontrennung, Auth/CSRF, Service Worker, Packaging/Base Path und FTPS-/Smoke-Stabilisierung bleiben grün.
 
-- `<h1>TEST</h1>` erhält im Dark Theme einen neutralen Dark-Default statt weißem UA-Canvas;
-- derselbe Inhalt erhält im Light Theme einen passenden Light-Default;
-- Theme-Wechsel aktualisiert einen bereits vorhandenen HTML-Homepage-Frame korrekt;
-- explizites Administrator-CSS für Background/Text bleibt maßgeblich und wird nicht überschrieben;
-- freier Inhalt wird nicht semantisch verändert;
-- sandbox/security-Attribute bleiben unverändert bzw. mindestens gleich restriktiv;
-- Local-first Warmstart/Cache bleibt erhalten;
-- vollständiges HTML-Dokument und einfaches HTML-Fragment werden nach bestehendem Vertrag korrekt behandelt oder der tatsächlich unterstützte Vertrag wird sauber definiert und getestet.
-
-## User Settings
-
-- Appearance/Theme-Block erscheint nicht mehr in normalen User-Settings;
-- Header-Theme-Switch bleibt vorhanden und funktionsfähig;
-- Theme-State bleibt nach Reload persistent;
-- Offline-Theme bleibt funktionsfähig;
-- `App areas` und `Privacy and sharing` bleiben unverändert funktionsfähig;
-- keine leere Appearance-Struktur bleibt im DOM sichtbar.
-
-## Regression
-
-- Home-Icon und Home-Navigation;
-- GPS;
-- Buttonsystem Light/Dark;
-- Login;
-- P1 User-/Admin-Sessiontrennung;
-- Auth/CSRF;
-- HTML-Homepage;
-- Warmstart;
-- Service Worker;
-- Packaging/Base Path;
-- FTPS-/Smoke-Stabilisierung.
+Falls ein echter visueller Safari-Test in der Umgebung technisch nicht möglich ist, das ausdrücklich dokumentieren und DOM-/Lifecycle-Verträge so testen, dass der bekannte White-Flash-Pfad strukturell ausgeschlossen wird. Keine erfundene visuelle Bestätigung.
 
 # Abschluss
 
-Dokumentiere die tatsächliche Root Cause des Safari/iPad-White-Frame-Problems in `CHATGPT.md`. Keine bloße Vermutung als bestätigt darstellen.
-
-Aktualisiere dauerhafte Dokumentation nur, wenn ein neuer allgemeiner Vertrag entsteht.
+Dokumentiere Root Cause und exakte Paint-/Lifecycle-Korrektur in `CHATGPT.md`.
 
 Danach vollständig gemäß `WORKFLOW.md`:
 
@@ -173,12 +120,13 @@ Keine selbst ausführbaren offenen Punkte zurücklassen.
 
 ## Betreiber-Retest danach
 
-`CHATGPT.md` soll nur die noch nötigen kurzen Schritte nennen:
+Nur noch kurz:
 
-1. Dark aktivieren und HTML-Homepage `<h1>TEST</h1>` prüfen: keine künstliche große weiße Frameworkfläche.
-2. Light aktivieren und denselben Inhalt prüfen.
-3. Settings öffnen: Appearance/Theme-Block ist entfernt; App areas/Privacy bleiben vorhanden.
-4. Theme über Header wechseln, Reload durchführen und Persistenz bestätigen.
-5. Home/GPS/Warmstart kurz regressiv prüfen.
+1. Dark Mode aktivieren.
+2. HTML-Homepage `<h1>TEST</h1>` mehrfach öffnen/reloaden.
+3. Bestätigen, dass weder beim ersten Paint noch beim Reload ein weißer Flash erscheint.
+4. Light↔Dark über Header wechseln und ebenfalls auf Flash prüfen.
+5. Settings kurz prüfen: Appearance bleibt entfernt.
+6. Home/GPS/Warmstart kurz regressiv prüfen.
 
-Bis zum positiven realen Device-Retest keine vollständige P4-Livefreigabe erfinden.
+Bis zum positiven realen iPad/Safari-Retest keine vollständige P4-Livefreigabe erfinden.
