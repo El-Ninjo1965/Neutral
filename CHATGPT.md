@@ -71,7 +71,11 @@ Eine direkte Live-API-Abfrage aus dieser Sandbox wurde vom vorgeschalteten CONNE
 - Erster Implementierungs-CI-Lauf terminal erfolgreich:
   - `FTPS Deploy`: Run `34214340128` – `success`.
   - `Push on main` / CodeQL: Run `34214339451` – `success`.
-- Der abschließende Bericht und die operative Checkliste werden in einem eigenen Dokumentationscommit ebenfalls nach `main` übertragen; dessen terminale CI und die GitHub-Blob-Verifikation sind Bestandteil der finalen Abschlussprüfung.
+- Abschlussbericht-Commit: `05e09dee09ce77ec326ba8d67312bbc640a14d40` (`docs: report user app visual cleanup`), nach `main` übertragen.
+- CI des Bericht-Commits terminal erfolgreich:
+  - `FTPS Deploy`: Run `34214970804` – `success`.
+  - `Push on main` / CodeQL: Run `34214970801` – `success`.
+- Die abschließende operative Statusmarkierung wird ebenfalls committed und nach `main` übertragen. Erst nach deren terminaler CI, `HEAD == origin/main`, sauberem Working Tree und GitHub-Blob-Verifikation erfolgt die externe Abschlussmeldung.
 
 ## 6. Betreiber-Device-Retest
 

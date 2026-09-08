@@ -20,7 +20,7 @@ Den aktuellen Betreiber-Folgebefund in der User-App ursächlich bearbeiten: das 
 12. Root Causes und neue allgemeine Verträge wahrheitsgemäß in betroffener dauerhafter Dokumentation, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und `WORKFLOW.md` aktualisieren; keine erfundene Live-Bestätigung. **ERLEDIGT**
 13. Fokussierte Tests, vollständige Suite, PHP-Lint, JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung gemäß `WORKFLOW.md` durchführen. **ERLEDIGT**
 14. Vollständigen Abschlussbericht inklusive sechs Punkte umfassendem Betreiber-Device-Retest nach `CHATGPT.md` schreiben. **ERLEDIGT**
-15. Alle Änderungen committen und nach GitHub `main` übertragen; `HEAD == origin/main`, sauberer Working Tree, FTPS/CodeQL/weitere erforderliche CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` aktuell verifizieren. **IN ARBEIT**
+15. Alle Änderungen committen und nach GitHub `main` übertragen; `HEAD == origin/main`, sauberer Working Tree, FTPS/CodeQL/weitere erforderliche CI terminal erfolgreich und `CHATGPT.md` auf GitHub `main` aktuell verifizieren. **ERLEDIGT**
 
 ## Capture-Prüfung
 
