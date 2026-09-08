@@ -1,286 +1,176 @@
 # NEUTRAL – UI/UX-Zielbild
 
-**Status:** VERBINDLICHES LANGFRISTIGES DESIGN- UND UX-ZIELBILD  
-**Einordnung:** Ergänzt `VISION.md`, `Architecture.md` und `ModuleCreation.md`. Umsetzung erfolgt ausschließlich über gesonderte freigegebene Aufgaben.
+**Status:** VERBINDLICHES LANGFRISTIGES DESIGN- UND UX-ZIELBILD
 
-## 1. Qualitätsziel
+## Grundprinzipien
 
-NEUTRAL soll nicht nur technisch robust, modular und portabel sein, sondern als Grundlage für unterschiedliche Produkt-Apps eine außergewöhnlich hochwertige User Experience ermöglichen. Angestrebtes Qualitätsniveau ist 9,5/10 oder höher; die Zahl ist kein formales Releasekriterium, sondern beschreibt den Anspruch an Konsistenz, Geschwindigkeit, Verständlichkeit, Fehlertoleranz und visuelle Qualität.
+NEUTRAL soll als Grundlage unterschiedlicher Produkt-Apps eine außergewöhnlich hochwertige User Experience ermöglichen. Ziel ist keine Punktzahl, sondern eine App, die sich schnell, klar, vertrauenswürdig, individuell passend und ohne unnötige Bedienhürden anfühlt.
 
-Technische Möglichkeiten allein rechtfertigen keine zusätzliche Komplexität. Eine Verbesserung muss einen nachvollziehbaren Nutzen für Bedienbarkeit, Wartbarkeit, Sicherheit, Geschwindigkeit oder Wiederverwendbarkeit besitzen.
+**UI** bezeichnet die sichtbare Gestaltung. **UX** bezeichnet die gesamte Nutzungserfahrung einschließlich Orientierung, Geschwindigkeit, Rückmeldung und Fehlertoleranz.
 
-Das eigentliche Ziel ist nicht die Zahl, sondern eine App, die sich für den Nutzer besonders gut anfühlt: schnell, klar, vertrauenswürdig, individuell passend und ohne unnötige Bedienhürden.
+## Produktdesign und zentrales Designsystem
 
-## 2. UI und UX
+Das Grunddesign einer konkreten Produkt-App wird typischerweise beim Setup festgelegt und bleibt danach grundsätzlich stabil. Unterschiedliche Produkt-Apps dürfen unterschiedliche Farben, Typografie, Buttonformen, Radien, Abstände und Layouts besitzen. Admin/Developer dürfen Appearance später gezielt korrigieren oder überarbeiten.
 
-- **UI (User Interface):** sichtbare Gestaltung – Farben, Typografie, Buttons, Karten, Formulare, Abstände, Icons, Layout und visuelle Zustände.
-- **UX (User Experience):** gesamte Nutzungserfahrung – Verständlichkeit, Orientierung, Geschwindigkeit, Rückmeldung, Fehlertoleranz, Erreichbarkeit wichtiger Aktionen und subjektive Reaktionsfähigkeit.
+Das Framework stellt die gemeinsame Designsprache bereit. Zentrale Design-Tokens bzw. äquivalente Variablen sollen Farben, Hintergründe, Typografie, Abstände, Radien, Rahmen, Schatten, Buttons, Formulare, Karten, Zustände und responsive Layoutparameter abbilden.
 
-Beide werden getrennt bewertet, müssen aber als ein konsistentes Produkterlebnis zusammenwirken.
+**Module liefern ihre Fachfunktion, nicht ihr eigenes unabhängiges Produktdesign.** Module verwenden veröffentlichte UI-Komponenten und Designverträge des Frameworks. Modulspezifisches CSS ist nur für fachlich spezielle Darstellung vorgesehen und ergänzt das Framework, statt dessen globale Designsprache unnötig zu überschreiben.
 
-## 3. Produktdesign wird beim Setup festgelegt
+Custom CSS kann als Expertenfunktion für Administrator/Developer vorgesehen werden, ist aber nicht der primäre Weg der normalen Designkonfiguration.
 
-NEUTRAL ist ein Framework für viele unterschiedliche Apps. Deshalb muss das Framework visuell flexibel sein, während eine konkrete Produkt-App nach ihrer Einrichtung grundsätzlich ein stabiles und konsistentes Erscheinungsbild besitzt.
+## Geschwindigkeit
 
-- Grunddesign wird typischerweise beim Setup bzw. bei der Einrichtung einer Produkt-App festgelegt.
-- Unterschiedliche Produkt-Apps dürfen unterschiedliche Farben, Typografie, Buttonformen, Radien, Abstände, Layouts und andere visuelle Eigenschaften besitzen.
-- Nach dem Setup wird das Design im Normalbetrieb nicht laufend verändert.
-- Admin/Developer dürfen Appearance später korrigieren oder gezielt anpassen, insbesondere bei Designproblemen, Konflikten oder einer bewussten Produktüberarbeitung.
-- Designkonfiguration ist eine Betreiber-/Produktentscheidung, keine beliebige Endnutzer-Spielerei.
-- Persönliche User-Präferenzen wie Light/Dark können davon getrennt existieren, sofern der jeweilige Produktvertrag sie zulässt.
-
-## 4. Zentrales Designsystem
-
-Das Framework stellt die gemeinsame Designsprache bereit. Ziel ist ein zentraler, versionierbarer Designvertrag statt unabhängiger Gestaltung jedes Moduls.
-
-Langfristig sollen zentrale Design-Tokens bzw. äquivalente Variablen mindestens abbilden können:
-
-- Farben und semantische Farbrollen
-- Hintergründe und Oberflächen
-- Typografie und Schriftfamilien
-- Schriftgrößen und Hierarchie
-- Abstände
-- Radien
-- Rahmen
-- Schatten
-- Buttons und Aktionszustände
-- Formulare und Eingabefelder
-- Karten/Container
-- Fokus-, Hover-, Active-, Disabled- und Fehlerzustände
-- responsive Layoutparameter
-
-Die konkrete technische Implementierung wird separat entworfen. Dieses Dokument schreibt das Ziel fest, nicht eine bestimmte CSS-Technik.
-
-## 5. Module übernehmen das Framework-Design
-
-Verbindliches Zielprinzip:
-
-**Module liefern ihre Fachfunktion, nicht ihr eigenes unabhängiges Produktdesign.**
-
-- Module verwenden die zentralen UI-Komponenten, Design-Tokens, CSS-Variablen oder sonstigen veröffentlichten Designverträge des Frameworks.
-- Module definieren keine eigenen Produktfarben, Standardschriftarten, allgemeinen Buttonstile oder globalen Abstände, wenn dafür ein Frameworkvertrag existiert.
-- Änderungen am zentralen Produktdesign sollen sich automatisch konsistent auf Module auswirken.
-- Modulspezifisches CSS ist erlaubt, wenn eine fachlich spezielle Darstellung erforderlich ist, die das Framework nicht sinnvoll allgemein bereitstellen kann.
-- Modulspezifisches CSS ergänzt das Framework und überschreibt nicht unnötig dessen globale Designsprache.
-- Ein Modul darf keine fremden Module oder private Framework-CSS-Interna manipulieren.
-
-Dieses Prinzip soll später als verbindlicher UI-Vertrag auch in `ModuleCreation.md` konkretisiert werden.
-
-## 6. Erweiterte Appearance-Konfiguration
-
-Langfristiges Ziel für Admin/Developer:
-
-- zentrale Appearance-Konfiguration für die wesentlichen Designparameter;
-- Produktdesign beim Setup komfortabel festlegen;
-- spätere kontrollierte Korrekturen ermöglichen;
-- optional ein fortgeschrittener Custom-CSS-Bereich für Developer/Administrator.
-
-Custom CSS ist eine Expertenfunktion. Es darf nicht die primäre Methode für normale Designkonfiguration sein. Der bevorzugte Weg sind zentrale strukturierte Designparameter, damit Konsistenz und Updatefähigkeit erhalten bleiben.
-
-## 7. Geschwindigkeit und wahrgenommene Performance
-
-Der bestehende Vision-Vertrag `UI zuerst → notwendiger minimaler Core → Hintergrundinitialisierung` bleibt verbindlich.
-
-UX-Ziel:
+Der bestehende Vertrag `UI zuerst → notwendiger minimaler Core → Hintergrundinitialisierung` bleibt verbindlich.
 
 - App-Shell und lokal verfügbare Oberfläche erscheinen möglichst sofort.
 - Netzwerk, Serverauthentifizierung, Synchronisation, Datenbankinitialisierung und Modul-Discovery blockieren den ersten sichtbaren Zustand nicht unnötig.
-- Wiederkehrende Nutzer sollen nicht unnötig erneut anmelden müssen, solange eine gültige sichere Sessionstrategie dies erlaubt.
 - Passwörter werden nicht dauerhaft im Client gespeichert.
-- Langsame Hintergrundarbeit besitzt verständliche Zustände und blockiert nicht unnötig die Bedienung.
-- Performance wird auf realistischen Mobilgeräten gemessen und nicht nur subjektiv beurteilt.
+- Langsame Hintergrundarbeit blockiert die Bedienung nicht unnötig.
+- Performance wird auf realistischen Mobilgeräten gemessen.
 
-## 8. Visuelle Hierarchie und Konsistenz
+## Visuelle Kommunikation vor unnötigem Text
 
-Jede Produkt-App soll auf den ersten Blick verständlich wirken.
+NEUTRAL verfolgt das UX-Prinzip: **so wenig Text wie sinnvoll, so viel Information wie nötig.**
 
-- Hauptaktionen sind visuell eindeutig wichtiger als Nebenaktionen.
-- Titel, Inhalt, Status und Aktionen besitzen konsistente Hierarchien.
-- Gleiche Funktionen sehen und verhalten sich überall gleich.
-- Abstände, Komponenten, Dialoge, Formulare und Navigationsmuster werden nicht pro Modul neu erfunden.
-- Informationsdichte passt sich sinnvoll an Telefon, Tablet und Desktop an.
-- Die Oberfläche soll ruhig und verständlich bleiben, auch wenn der Funktionsumfang wächst.
+- International verständliche Symbole und etablierte visuelle Muster werden bevorzugt, wenn ihre Bedeutung eindeutig ist.
+- Wiederkehrende Zustände verwenden frameworkweit dieselbe Symbolsprache.
+- Module erfinden für gleiche Systemzustände keine eigenen Symbole.
+- Kurze Tooltips, Hilfen oder eine zentrale Legende erklären Symbole bei Bedarf, statt dauerhaft lange Erklärungstexte anzuzeigen.
+- Text bleibt dort erhalten, wo ein Symbol mehrdeutig wäre, bei kritischen Entscheidungen oder wo Accessibility/Verständlichkeit ihn erfordert.
+- Farbe unterstützt die Bedeutung, ist aber niemals der einzige Informationsträger.
+- Symbole benötigen geeignete semantische/Screenreader-Beschriftungen.
+- Übersetzbare Texte bleiben für alle tatsächlich sprachabhängigen Inhalte vorgesehen.
 
-## 9. Navigation und App-Gefühl
+Der Hauptnutzen dieses Prinzips ist bessere UX, schnellere Erfassbarkeit und geringere Sprachbarrieren. Eine relevante Reduzierung von App-Größe oder Datenvolumen durch weniger UI-Text wird ausdrücklich nicht als technischer Hauptgrund angenommen.
 
-Die User-App soll sich wie eine eigenständige App anfühlen und nicht wie eine Webseite, die lediglich in eine App-Hülle gedrückt wurde.
+## Einheitliche Sync-Statussprache
 
-- Navigation bleibt vorhersehbar, app-typisch und möglichst flach.
-- Der Nutzer muss jederzeit erkennen können, wo er sich befindet und wie er sinnvoll weiter- oder zurücknavigiert.
-- Ein generischer sichtbarer „Zurück“-Button auf jeder Seite ist ausdrücklich **kein** gewünschtes Standardmuster.
-- Zurücknavigation wird kontextbezogen, durch zentrale App-Navigation und – bei späteren nativen Store-Apps – soweit sinnvoll über die jeweilige Plattformnavigation gelöst.
-- Module integrieren sich in die zentrale Navigationslogik statt eigene konkurrierende Hauptnavigationen einzuführen.
-- Häufig benötigte Funktionen sollen mit möglichst wenigen Interaktionen erreichbar sein.
-- Sichtbarkeit und Navigation respektieren weiterhin die serverseitigen Modul-/Rechteverträge.
-- Browsertypische Seitennavigation, technische URL-Sprünge und sichtbar webseitige Hilfskonstruktionen sollen die User Experience nicht dominieren.
+Synchronisierbare Objekte sollen ihren Zustand kompakt und ohne wiederholte Erklärungstexte zeigen. Der Core soll dafür langfristig eine gemeinsame Statuskomponente bereitstellen, die alle Module verwenden.
 
-## 10. Progressive Disclosure
+Zielzustände:
 
-Komplexität wird nur dann gezeigt, wenn sie benötigt wird.
+- **Synchronisiert:** eindeutiges positives Symbol, z. B. Haken/Marker; Farbe darf unterstützend grün sein.
+- **Lokal gespeichert / Synchronisierung ausstehend:** eigenes eindeutiges Pending-Symbol bzw. bewusst definierter visueller Zustand.
+- **Synchronisierung läuft:** einheitliches Aktivitäts-/Sync-Symbol.
+- **Synchronisierung fehlgeschlagen / Aufmerksamkeit nötig:** eindeutiges Warnsymbol.
+- **Nicht synchronisierbar bzw. Sync nicht relevant:** kein Sync-Statussymbol.
 
-- Standardansichten zeigen die für den aktuellen Zweck wichtigsten Informationen und Aktionen.
-- Erweiterte Optionen, seltene Einstellungen und technische Details werden nachgelagert angeboten.
-- Eine Funktion soll nicht deshalb kompliziert wirken, weil intern viele Möglichkeiten existieren.
-- Expertenfunktionen dürfen leistungsfähig sein, ohne die normale Bedienung zu überladen.
+Die endgültigen Icons werden im Designsystem festgelegt. Bedeutung darf nicht ausschließlich durch grün/orange/rot vermittelt werden.
 
-## 11. Kontextbezogene Aktionen
+## Offline-First aus Nutzersicht
 
-Aktionen sollen möglichst dort angeboten werden, wo ihr Kontext verständlich ist.
+Ein Nutzer darf fachliche Arbeit grundsätzlich auch ohne aktuelle Internetverbindung durchführen, soweit die Funktion keinen zwingend aktuellen Serverzustand benötigt.
 
-- Bearbeiten, Löschen, Teilen, Speichern oder ähnliche Aktionen erscheinen beim betreffenden Objekt oder in einem klar zugeordneten Aktionsbereich.
-- Unnötige globale Menüs und lange Wege werden vermieden.
-- Gefährliche/destruktive Aktionen benötigen angemessene Schutzmechanismen.
+Beispielziel für Daten und Medien:
 
-## 12. Feedback- und Systemzustände
+`Aktion/Fotografie → lokal sicher speichern → persistente Sync-Queue → bei geeigneter Verbindung übertragen → Serverbestätigung → lokalen Sync-Status aktualisieren`
 
-Der Nutzer soll jederzeit verstehen können, was die App gerade tut.
+- Offline erzeugte Daten und Medien bleiben lokal erhalten.
+- Wenn die App geöffnet ist und die Verbindung zurückkehrt, kann die Queue automatisch abgearbeitet werden.
+- Eine spätere Store-App soll Betriebssystem-Hintergrundmechanismen für opportunistische Synchronisierung verwenden können.
+- Das Betriebssystem entscheidet bei geschlossener App über tatsächliche Hintergrundausführung; sofortige Ausführung wird nicht garantiert.
+- Spätestens beim nächsten geeigneten App-Start wird ausstehende Synchronisation wieder aufgenommen.
+- Für datenintensive Medien sollen Optionen wie `WLAN + Mobilfunk`, `nur WLAN` oder `manuell` möglich sein, wenn das Produkt dies benötigt.
+- Module implementieren nicht jeweils eigene Sync-Engines; sie nutzen einen universellen Core-Sync-/Background-Vertrag.
 
-Mindestens relevante Zustände:
+## Navigation und App-Gefühl
 
-- Laden
-- gespeichert
-- noch nicht gespeichert
-- offline
-- synchronisiert
-- Synchronisation ausstehend
-- Konflikt
-- Fehler
-- keine Berechtigung
-- leerer Datenbestand
-- Hintergrundarbeit
+Die User-App soll sich wie eine eigenständige App anfühlen und nicht wie eine Webseite in einer App-Hülle.
 
-Statusmeldungen sollen informativ sein, ohne die Oberfläche unnötig zu dominieren.
+- Navigation ist vorhersehbar, app-typisch und möglichst flach.
+- Ein generischer sichtbarer „Zurück“-Button auf jeder Seite ist kein gewünschtes Standardmuster.
+- Zurücknavigation wird kontextbezogen, zentral und später soweit sinnvoll über Plattformnavigation gelöst.
+- Module integrieren sich in die zentrale Navigation.
+- Browsertypische Seitennavigation, technische URL-Sprünge und sichtbar webseitige Hilfskonstruktionen dominieren die UX nicht.
 
-## 13. Empty States
+## Progressive Disclosure und kontextbezogene Aktionen
 
-Leere Ansichten sind ein definierter UX-Zustand und kein unbehandelter Sonderfall.
+Standardansichten zeigen die wichtigsten Informationen und Aktionen. Erweiterte Optionen, seltene Einstellungen und technische Details werden erst bei Bedarf gezeigt. Expertenfunktionen dürfen leistungsfähig sein, ohne normale Nutzer zu überladen.
 
-Statt leerer Flächen oder bedeutungsloser Tabellen soll eine leere Ansicht – soweit sinnvoll – erklären:
+Aktionen erscheinen möglichst dort, wo ihr Kontext verständlich ist. Unnötige globale Menüs und lange Wege werden vermieden. Destruktive Aktionen erhalten angemessene Schutzmechanismen.
 
-- warum noch keine Daten vorhanden sind;
-- was der Nutzer als Nächstes tun kann;
-- welche Hauptaktion den Zustand beendet.
+## Feedback, Empty States und Fehlertoleranz
 
-## 14. Fehlertoleranz und Recovery
+Der Nutzer muss relevante Zustände verstehen können: Laden, gespeichert, offline, Sync ausstehend/laufend/erfolgreich/fehlgeschlagen, Konflikt, Fehler, fehlende Berechtigung, leerer Datenbestand und Hintergrundarbeit.
 
-- Benutzeraktionen dürfen bei Netzabbrüchen oder temporären Fehlern nicht unnötig verloren gehen.
-- Wo fachlich sinnvoll: Entwürfe, Wiederaufnahme, Retry oder Undo vorsehen.
-- Destruktive Aktionen werden angemessen bestätigt oder rückgängig machbar gestaltet.
-- Fehlertexte erklären die Auswirkung und möglichst den nächsten sinnvollen Schritt.
-- Technische Rohfehler werden normalen Nutzern nicht als primäre UX präsentiert.
+Leere Ansichten erklären – soweit nötig und möglichst knapp – warum keine Daten vorhanden sind und welche Hauptaktion sinnvoll ist.
 
-## 15. Micro-UX
+Benutzeraktionen dürfen bei Netzabbrüchen oder temporären Fehlern nicht unnötig verloren gehen. Wo fachlich sinnvoll werden Entwürfe, Wiederaufnahme, Retry oder Undo vorgesehen. Technische Rohfehler werden normalen Nutzern nicht als primäre UX präsentiert.
 
-Kleine Interaktionen tragen wesentlich zur wahrgenommenen Qualität bei.
-
-Zu berücksichtigen sind insbesondere:
+## Micro-UX
 
 - unmittelbare Reaktion auf Touch/Klick;
 - sinnvolle Ladeindikatoren statt eingefrorener Oberfläche;
 - stabile Layouts ohne unnötige Sprünge;
-- Fokusführung;
-- Tastaturverhalten;
+- sinnvolle Fokusführung und Tastaturbehandlung;
 - ausreichend große Touch-Ziele;
-- sinnvolle Übergänge/Animationen, aber keine Animation um ihrer selbst willen;
-- Vermeidung unnötiger Warte- und Bestätigungsdialoge.
+- Übergänge/Animationen nur mit erkennbarem UX-Nutzen;
+- unnötige Warte- und Bestätigungsdialoge vermeiden.
 
-## 16. Accessibility
+## Accessibility
 
-Accessibility wird als Qualitätsmerkmal behandelt, nicht als nachträglicher Zusatz.
-
-Zielpunkte:
+Accessibility ist Qualitätsmerkmal und kein nachträglicher Zusatz.
 
 - ausreichender Kontrast;
-- skalierbare und lesbare Schrift;
+- skalierbare, lesbare Schrift;
 - ausreichende Touch-/Klickflächen;
 - sichtbare Fokuszustände;
 - semantische Struktur;
-- Tastaturbedienbarkeit, soweit für die Weboberfläche relevant;
-- Screenreader-kompatible Beschriftungen bei interaktiven Elementen;
-- Information nicht ausschließlich über Farbe vermitteln.
+- Tastaturbedienbarkeit, soweit relevant;
+- Screenreader-kompatible Beschriftungen;
+- Information niemals ausschließlich über Farbe.
 
 Ein konkreter WCAG-Zielstandard und eine Prüfmatrix werden vor der finalen Qualitäts-/Hardening-Phase festgelegt.
 
-## 17. Responsive Informationsdichte
+## Responsive Informationsdichte
 
 Mobile-first bedeutet nicht, Tablet/Desktop künstlich wie ein Telefon zu behandeln.
 
 - Telefon: klare Priorisierung, große Touchziele, reduzierte Informationsdichte.
 - Tablet: zusätzlichen Platz für Kontext und effizientere Bedienung nutzen.
 - Desktop: höhere Informationsdichte zulassen, ohne mobile Verträge zu brechen.
-- Responsive Verhalten wird zentral und komponentenbezogen definiert, nicht unabhängig pro Modul improvisiert.
+- Responsive Verhalten wird zentral definiert und nicht pro Modul improvisiert.
 
-## 18. Onboarding
+## Onboarding, Favoriten und Suche
 
-Onboarding ist optional und soll nur eingesetzt werden, wenn es echten Nutzen bringt.
+Onboarding wird nur eingesetzt, wenn es echten Nutzen bringt: kurze kontextbezogene Hinweise statt dauernder Tutorials.
 
-- keine dauernden Tutorials;
-- kurze kontextbezogene Hinweise bei erstmaliger Nutzung komplexer Funktionen;
-- neue Module können einen einmaligen Einstieg anbieten;
-- erfahrene Nutzer dürfen nicht durch wiederholte Hilfen ausgebremst werden.
+Favoriten, Quick Actions, zentrale Suche und optional eine Command-Palette bleiben mögliche spätere UX-Erweiterungen. Sie werden nur umgesetzt, wenn der reale Funktionsumfang ihren Nutzen rechtfertigt.
 
-## 19. Favoriten, Quick Actions und Suche
+## Store-App als verbindliches Langfristziel
 
-Diese Punkte sind mögliche spätere UX-Erweiterungen und noch keine Pflicht für Core 1.0:
+Die heutige Web-App ist Entwicklungs- und Laufzeitbasis; das langfristige Produktziel umfasst ausdrücklich Store-Apps.
 
-- Favoriten für häufig verwendete Module/Funktionen;
-- konfigurierbare Quick Actions;
-- zentrale Suche über Module/Funktionen/Inhalte;
-- optional eine Command-Palette für Power User.
+- Neue Architektur-, UI- und Modulentscheidungen werden auf spätere Store-Portabilität geprüft.
+- Browser-/Plattformdetails werden möglichst hinter Core-Facaden, Capabilities, Services oder Adaptern gekapselt.
+- Module nutzen veröffentlichte Framework-/Core-Verträge.
+- Navigation, Lifecycle, Storage, Netzwerkstatus, Authentifizierung, Gerätefunktionen, Background Tasks und Notifications bleiben adapterfähig.
+- Direkte Browser-API-Nutzung bleibt lokal begrenzt und ersetzbar, wenn noch kein Coreadapter existiert.
+- Eine spätere Store-App soll keinen vollständigen Rewrite des fachlichen Cores oder der Produktmodule erfordern.
+- Die konkrete Store-Technik wird erst bei ausreichenden realen Anforderungen entschieden.
 
-Sie werden nur umgesetzt, wenn der reale Funktionsumfang ihren Nutzen rechtfertigt.
+## Qualitäts-/Hardening-Phase vor Final Freeze
 
-## 20. Store-App als verbindliches Langfristziel
+Vor dem Final Freeze erfolgt eine gesonderte UI-/UX-/Qualitätsprüfung. Mindestens geprüft werden:
 
-Die heutige Web-App ist eine Entwicklungs- und Laufzeitbasis, aber das langfristige Produktziel umfasst ausdrücklich eine installierbare Store-App.
+- Startperformance;
+- Navigation und App-Gefühl;
+- visuelle Konsistenz;
+- Designvererbung an Module;
+- visuelle Kommunikation und Symbolsprache;
+- responsive Darstellung;
+- Accessibility;
+- Offline-/Sync-Zustände;
+- Empty States;
+- Fehlertoleranz;
+- wichtige Nutzerflüsse;
+- subjektive und gemessene Reaktionsgeschwindigkeit;
+- Store-Portabilität.
 
-Deshalb müssen neue Architektur-, UI- und Modulententscheidungen bereits heute darauf geprüft werden, ob sie eine spätere Umwandlung in eine Store-App unnötig erschweren oder verhindern.
+Für jeden Bereich wird gefragt, welche reale Verbesserung noch fehlt, ob sie universell oder produktspezifisch ist und ob ihr Nutzen zusätzliche Komplexität rechtfertigt.
 
-Verbindliche Leitlinien:
+## Grundsatz
 
-- Keine zentrale Funktion darf ausschließlich deshalb webgebunden entworfen werden, weil die aktuelle Laufzeit im Browser stattfindet.
-- Browser- und Plattformdetails werden möglichst hinter Core-Facaden, Capabilities, Services oder Adaptern gekapselt.
-- Module nutzen veröffentlichte Framework-/Core-Verträge statt direkte Abhängigkeiten von einer konkreten Browserhülle aufzubauen.
-- Navigation, Lifecycle, lokale Speicherung, Netzwerkstatus, Authentifizierungsclient, Gerätefunktionen und Notifications sollen so entkoppelt werden, dass später ein nativer Container bzw. Store-App-Adapter verwendet werden kann.
-- Direkte Nutzung von Browser-APIs ist nur zulässig, wenn noch kein universeller Adapter existiert; solche Stellen müssen lokal begrenzt und später ersetzbar bleiben.
-- Die User Experience soll bereits heute app-typisch sein, damit eine spätere Store-Version kein vollständiges UX-Neudesign benötigt.
-- Die spätere Store-App darf intern andere Adapter verwenden, soll aber die stabilen Modul-, Daten- und Nutzerverträge möglichst beibehalten.
-- Eine spätere native oder hybride Umsetzung ist kein Anlass, den fachlichen Core oder Produktmodule vollständig neu zu schreiben.
+Das Ziel ist nicht, möglichst viele UI-Funktionen einzubauen. Das Ziel ist ein Framework, aus dem unterschiedliche Apps entstehen können, die trotz großer funktionaler Möglichkeiten **schnell, ruhig, konsistent, verständlich und hochwertig** wirken.
 
-Ein konkreter Store-Technikentscheid (z. B. nativer Wrapper, hybride Laufzeit oder andere Plattformstrategie) wird erst getroffen, wenn dafür genügend reale Anforderungen vorliegen. Das heutige Ziel ist Portabilität, nicht eine vorzeitige Festlegung auf ein bestimmtes Tool.
-
-## 21. Qualitäts-/Hardening-Phase vor Final Freeze
-
-Vor einem endgültigen Final Freeze soll eine gesonderte UI-/UX-/Qualitätsprüfung stattfinden.
-
-Für jeden relevanten Bereich wird gefragt:
-
-1. Was verhindert aktuell ein Qualitätsniveau von 9,5/10?
-2. Ist das Problem technisch, visuell oder UX-bezogen?
-3. Ist die Verbesserung universell für Neutral oder produktspezifisch?
-4. Verbessert sie die reale Nutzung ausreichend, um zusätzliche Komplexität zu rechtfertigen?
-5. Ist sie auf realistischen Mobilgeräten überprüft?
-6. Bleibt die Lösung mit dem langfristigen Store-App-Ziel kompatibel?
-
-Dabei werden mindestens geprüft:
-
-- Startperformance
-- Navigation und App-Gefühl
-- visuelle Konsistenz
-- Designvererbung an Module
-- responsive Darstellung
-- Accessibility
-- Offline-/Sync-Zustände
-- Empty States
-- Fehlertoleranz
-- wichtige Nutzerflüsse
-- subjektive und gemessene Reaktionsgeschwindigkeit
-- Store-Portabilität und Austauschbarkeit plattformspezifischer Adapter
-
-## 22. Grundsatz
-
-Das Ziel ist nicht, möglichst viele UI-Funktionen einzubauen. Das Ziel ist ein Framework, aus dem unterschiedliche Apps entstehen können, die trotz großer funktionaler Möglichkeiten **schnell, ruhig, konsistent, verständlich, individuell passend und hochwertig** wirken.
-
-Neue Produktmodule sollen dieses Qualitätsniveau automatisch erben können, statt es jeweils neu entwickeln zu müssen.
-
-Für die User-App gilt ausdrücklich: **App-Erlebnis zuerst, Web-Technik nur als Implementierungsbasis.**
+Neue Produktmodule sollen dieses Qualitätsniveau möglichst automatisch erben können, statt es jeweils neu entwickeln zu müssen.
