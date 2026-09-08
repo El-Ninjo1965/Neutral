@@ -1,72 +1,63 @@
 # NEUTRAL – CODEX ABSCHLUSSBERICHT
 
 **Richtung:** Codex → ChatGPT/Lea
-**Auftrag:** Weißer `Loading…`-Zwischenzustand beim Dark-Warmstart
+**Auftrag:** P4 live abschließen und `Admin → Appearance` bereinigen
 **Datum:** 2026-09-08
-**Status:** CODE-SEITIG ERLEDIGT / BETREIBER-DEVICE-RETEST ERFORDERLICH
+**Status:** P4 `LIVE BESTANDEN` · APPEARANCE-BEREINIGUNG CODE-SEITIG ABGESCHLOSSEN
 
-## 1. Übergabe und Scope
+## 1. Übergabe und Synchronisation
 
-- Die Sandbox wurde secretsicher mit `origin/main` synchronisiert. Der neuere Betreiberauftrag wurde vollständig aus `CODEX.md` nach `CURRENT-TASK.md` übernommen und mit `CODEX.md == CURRENT-TASK-Anforderungen: JA` geprüft.
-- Der aktuelle Livebefund hatte Vorrang: Nicht mehr der iframe-Endzustand oder dessen Load-Gate, sondern ein vorgelagerter sichtbarer statischer `Loading…`-Zustand war der verbliebene helle Flash.
-- Der Scope blieb auf Shell-First-Paint, frühen Theme-Bootstrap und echten Cold-Start-Status. iframe-Adapter/-Gate, Cache, Theme, Settings, Home/GPS, GPS, Login, Buttons, P1 und FTPS wurden nicht zurückgebaut.
+- Die Sandbox wurde zuerst auf den aktuellen Stand von GitHub `main` (`cc90867`) synchronisiert. Die neueren verbindlichen Fassungen von `CODEX.md`, `USER-UI-DESIGN.md` und `I18N.md` wurden vollständig erhalten.
+- Der Auftrag wurde vor Implementierungsarbeit vollständig nach `CURRENT-TASK.md` übernommen und mit `CODEX.md == CURRENT-TASK-Anforderungen: JA` geprüft.
+- Der Scope blieb auf den P4-Liveabschluss und die Entfernung der toten Appearance-Controls begrenzt. Weder der künftige User-UI-Designeditor noch die vollständige I18N-Architektur wurden begonnen.
 
-## 2. Exakte Root Cause
+## 2. P4-Liveabschluss
 
-### Warum erschien bei gültigem lokalem Homepagecache noch `Loading…`?
+- Der neue Betreiberbefund bestätigt auf dem realen iPad/Safari bei aktivem Dark Theme und mehreren Reloads/Warmstarts: kein weißes `Loading…`, kein heller/weißer Flash und unmittelbares Erscheinen des lokalen Homepageinhalts.
+- Frühere negative Device-Befunde bleiben in der zeitlichen P4-Evidenz erhalten, sind aber kein aktiver Status mehr.
+- Die bereits vorher bestätigten Pflichtpfade umfassen Modul- und HTML-Modus, Moduswechsel, unverändertes Administrator-HTML, Local-first-Warmstart, Dark/Light-Umschaltung, Home/GPS-Navigation und die unveränderte P1-Sessiontrennung.
+- Die Abnahmelogik aus den geltenden P4-/Core-Verträgen enthält damit keinen weiteren offenen P4-Pflichtpunkt. Vollständige I18N und der zukünftige User-UI-Designeditor sind Folgearchitektur und keine rückwirkenden P4-Blocker.
+- Operative Wahrheit: **P4 = LIVE BESTANDEN** und **P1 = LIVE BESTANDEN**.
 
-`Web-App/public/index.html` enthielt innerhalb von `#userAppContent` immer bereits statisches sichtbares Markup mit `<div class="user-app-status">Loading…</div>`. Dieses HTML konnte der Browser zeichnen, bevor die vielen deferred Shell-Skripte ausgeführt waren. Erst `homepage-cache.js` und danach `user-app.js` lasen synchron den gültigen Local-first-Cache und ersetzten das statische Markup durch die Homepage. Das Loading war daher kein notwendiger Netzwerk- oder Storagezustand, sondern ein pauschaler, vor dem Cache-Read ausgelieferter Shell-Placeholder.
+## 3. Appearance-Codeprüfung und Änderung
 
-### Warum war dieser Zustand im Dark Theme hell?
+- Die erneute repositoryweite Prüfung fand keinen produktiven Consumer, der `settings.theme` auf die aktuelle Admin- oder User-Oberfläche anwendet. Admin und User verwenden stattdessen ihre getrennten lokalen Zustände `neutral-admin-theme` beziehungsweise `neutral.user.theme.v1`.
+- Ebenso existiert kein produktiver Consumer für `settings.layout = default|compact`.
+- Deshalb wurde der vollständige sichtbare Block `Theme & Layout` einschließlich beider Selects aus `Admin → Appearance` entfernt. Die Ansicht beginnt nun fachlich mit `Global Start Page`.
+- Der Save-Pfad fragt `theme` und `layout` nicht mehr aus dem Formular ab. Er führt jedoch weiterhin das vollständige bestehende `settings`-Objekt mit und ersetzt ausschließlich `homepage`. Vorhandene Altwerte und andere Settings werden deshalb weder gelöscht noch auf `null` gesetzt.
+- Global Start Page, HTML-/Modulmodus, dynamische Liste startbarer Module, Preview, Reload und geschützter Save bleiben erhalten.
+- Admin-Header-Theme und User-Header-Theme wurden nicht verändert.
 
-Der synchrone Head-Bootstrap las den Theme-Key zwar korrekt **vor** dem Stylesheet und setzte `html[data-user-theme]`. Die zentralen Dark-Tokens (`--surface`, `--text`, `--border` usw.) wurden zu diesem Zeitpunkt jedoch nur über `body[data-theme="dark"]` überschrieben. Dieses Body-Attribut setzt erst das deferred `user-app.js`. Zusätzlich verwendete `.user-app-status` feste helle Grün-/Weißwerte statt semantischer Tokens. Somit konnte Safari den statischen Loadingblock vor User-App-Ausführung mit Light-Defaults painten.
+## 4. Regressionstests
 
-## 3. Neuer First-Paint-/Warmstartpfad
-
-- Das statische `#userAppContent` ist jetzt leer, aber weiterhin layoutstabil und `aria-busy="true"`. Es behauptet vor Kenntnis des lokalen Zustands keinen generischen sichtbaren Ladebedarf.
-- Der bestehende synchrone Head-Bootstrap bleibt vor dem render-blocking `style.css` und setzt aus `neutral.user.theme.v1` `html[data-user-theme]` auf `dark` oder den definierten Default `light`.
-- Die semantischen Theme-Tokens reagieren nun bereits auf `:root[data-user-theme]`. Dadurch stehen Dark- oder Light-Surface, Text und Color-Scheme beim ersten Body-/Shell-Paint fest, ohne auf deferred JavaScript zu warten.
-- Wenn `user-app.js` startet, ist der Homepagecache bereits synchron gelesen. Bei gültigem lokalen HTML rendert der erste Runtime-Render unmittelbar die lokale Homepage; das frühere statische `Loading…` existiert nicht mehr.
-- Beim echten Cold Start ohne verwertbaren Cache erzeugt ausschließlich `renderLandingPage()` nach `applyUserTheme()` den zugänglichen Laufzeitstatus. `.user-app-status` verwendet nun `var(--surface-tertiary)`, `var(--text)` und `var(--border)` und ist deshalb ab seinem ersten sichtbaren Paint theme-konform.
-- Kein Loading wurde per CSS versteckt. Es gibt keinen neuen Timeout, keine Animation, keine Verzögerung und keine Verkürzung fachlicher Hintergrundarbeit.
-
-## 4. Erhaltene Verträge
-
-- Local-first Cache und Hintergrundrefresh bleiben unverändert; es werden keine Session-/Berechtigungsdaten lokal ergänzt.
-- iframe-Dokumentadapter und revisionsgebundenes iframe-Load-Gate bleiben unverändert aktiv.
-- Service Worker und deploy-gestempelte Shellassets liefern die aktualisierte HTML-/CSS-Version.
-- Appearance bleibt aus normalen User Settings entfernt; Header-Themewechsel und Reloadpersistenz bleiben erhalten.
-- Home/GPS, GPS, Login, Buttonsystem, P1-Sessiontrennung, Auth/CSRF, Packaging/Base Path und FTPS-/Smoke-Stabilisierung blieben grün.
-
-## 5. Verifikation
-
-- Fokuspaket für Bootstrap/Loading, Homepagecache/-Dokument, iframe-Gate, Service Worker, Packaging und User-Auth: **87/87 bestanden**.
-- Vollständige Suite: **427/427 bestanden**, 0 Fehler, 0 übersprungen.
+- Der Appearance-Vertrag prüft jetzt ausdrücklich das Fehlen von `Theme & Layout`, `name="theme"`, `name="layout"` und entsprechender `FormData`-Abfragen.
+- Ein neuer Save-Test beweist, dass Homepage-HTML exakt übertragen wird und fremde sowie historische Settings (`language`, `theme`, `layout`) unverändert erhalten bleiben.
+- Fokussiertes Paket aus Appearance, Settings API, Homepage, Theme/Warmstart, Service Worker, Packaging, Auth und FTPS-Smoke: **148/148 bestanden**.
+- Vollständige Suite: **428/428 bestanden**, 0 Fehler, 0 übersprungen.
 - PHP-Lint: **36 Dateien bestanden**.
-- JavaScript-Syntaxcheck: bestanden.
-- `git diff --check`: bestanden.
-- Produktionspaket: erfolgreich, **106 Payload-Dateien**, Base Path `""`.
-- Secret-Pattern-Prüfung: bestanden; keine Zugangswerte aufgenommen.
-- Ein echter Safari-First-Paint-Test war in der Sandbox mangels Safari/iPad sowie Chromium/Chrome/Browserdriver nicht möglich. Die DOM-, Bootstrap- und CSS-Load-Order-Verträge schließen den bekannten statischen hellen Loadingpfad strukturell aus; eine visuelle Livebestätigung wird nicht erfunden.
+- JavaScript-Syntaxcheck, `git diff --check`, Secret-Pattern-Prüfung und Produktionspaket bestanden; das Paket enthält **106 Dateien** bei Base Path `""`.
+- In der Sandbox steht kein Chromium-/Chrome-Browser zur Verfügung. Daher wurde keine künstliche visuelle Bestätigung erzeugt; der verbleibende kurze Kontrolltest ist unten benannt.
 
-## 6. GitHub, FTPS und CodeQL
+## 5. GitHub und CI
 
-- Implementierungscommit: `0eaca99` (`fix: remove warmstart loading flash`), nach GitHub `main` übertragen.
-- Implementierungs-CI terminal erfolgreich:
-  - `FTPS Deploy`: Run `34228804571` – `success`, einschließlich Tests, Paketbau, Upload und read-only Produktions-Smoke.
-  - `Push on main` / CodeQL: Run `34228804096` – `success`.
-- Bericht-Commit `84f3138` wurde nach `main` übertragen; auch dessen Folgeprüfung war terminal erfolgreich:
-  - `FTPS Deploy`: Run `34229356978` – `success`.
-  - `Push on main` / CodeQL: Run `34229356719` – `success`.
-- Die abschließende operative Statusmarkierung wird ebenfalls übertragen und vor der externen Abschlussmeldung erneut bis zu terminaler CI, `HEAD == origin/main`, sauberem Working Tree und identischem GitHub-Blob verifiziert.
+- Implementierungscommit `4c8c626` (`fix: remove obsolete Appearance controls`) wurde nach GitHub `main` übertragen.
+- CodeQL / `Push on main`: Run `34282252971` – terminal `success`.
+- FTPS Deploy: Run `34282253189` – terminal `success`, einschließlich Test-, Paket-, Upload- und Read-only-Smoke-Pfad.
+- Dieser Abschlussbericht wird anschließend ebenfalls nach `main` übertragen. Dessen eigene FTPS-/CodeQL-Läufe werden vor der externen Abschlussmeldung bis zum terminalen Status abgewartet; danach werden `HEAD == origin/main`, sauberer Working Tree und der GitHub-Blob dieser Datei verifiziert.
 
-## 7. Noch erforderlicher Betreiber-Retest
+## 6. Kurzer Betreiber-Kontrolltest
 
-1. Dark Theme aktivieren und einmal vollständig laden.
-2. Danach mehrfach Reload/Warmstart durchführen.
-3. Prüfen: kein weißes `Loading…`, kein heller Flash; lokaler Homepageinhalt erscheint unmittelbar beziehungsweise ohne unnötigen sichtbaren Loading-State.
-4. Echten Cold Start soweit praktikabel getrennt prüfen: Ein notwendiger Loading-State muss theme-konform sein.
-5. Light↔Dark und Reload-Persistenz prüfen.
-6. Home, GPS, Settings und Warmstart kurz regressiv prüfen.
+Dies ist kein verbleibender P4-Blocker, sondern die kurze visuelle Kontrolle der neu bereinigten Adminansicht:
 
-Bis diese sechs realen iPad/Safari-Schritte positiv bestätigt sind, bleibt P4 `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`.
+1. `Admin → Appearance` öffnen.
+2. Prüfen: `Theme & Layout` ist entfernt.
+3. Prüfen: `Global Start Page` ist weiterhin vorhanden.
+4. HTML-Inhalt speichern und die User-App kurz prüfen.
+5. Admin-Header-Theme und User-Header-Theme kurz regressiv prüfen.
+
+## 7. Ergebnis
+
+- Keine selbst ausführbaren fachlichen Punkte offen.
+- Keine Secret-Werte, künstlichen Testdateien oder generierten Paketartefakte committed.
+- Keine P4-fremde I18N- oder User-UI-Designimplementierung begonnen.
+- P4 und P1 bleiben entsprechend der aktuellen realen Betreiberbefunde `LIVE BESTANDEN`.
