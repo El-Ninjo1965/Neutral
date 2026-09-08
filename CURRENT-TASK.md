@@ -22,8 +22,8 @@ Die am 2026-09-08 live bestätigten P4-Folgefehler ursächlich beheben: korrekte
 14. Keine Scope-Ausweitung auf vollständige I18N-/Provider-/Sprachpaketarchitektur, Designsystem, Sync/Queue, Store-Wrapper oder neue Module. **Status: ERLEDIGT**
 15. Betroffene Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; P4 bleibt bis Betreiber-Retest unterhalb `LIVE BESTANDEN`. **Status: ERLEDIGT**
 16. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
-17. Vollständigen Abschlussbericht in `CHATGPT.md` mit Root Causes, Änderungen, Tests, Commits, CI und konkreten Betreiber-Retestschritten erstellen. **Status: IN ARBEIT**
-18. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: AUSSTEHEND**
+17. Vollständigen Abschlussbericht in `CHATGPT.md` mit Root Causes, Änderungen, Tests, Commits, CI und konkreten Betreiber-Retestschritten erstellen. **Status: ERLEDIGT**
+18. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: IN ARBEIT**
 
 ## Capture-Prüfung
 

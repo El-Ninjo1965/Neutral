@@ -1,102 +1,121 @@
 # NEUTRAL – Abschlussbericht Codex → ChatGPT/Lea
 
 **Datum:** 2026-09-08  
-**Auftrag:** P4-Live-Regression ursächlich beheben und normale User-App gemäß `UI-UX.md` bereinigen  
-**Operativer Status:** **P4 DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN**  
+**Auftrag:** P4-Device-Retest-Folgefehler und User-UX bereinigen  
+**Status:** **P4 FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**  
 **P1:** **LIVE BESTANDEN**
 
-## 1. Synchronisation und Vertragsübernahme
+## 1. Synchronisation und Capture
 
-- Ausgangspunkt der lokalen Arbeitslinie: `e34a44b`.
-- Vor der Arbeit wurde `origin/main` (`443412f`) geholt. Da beide Linien divergiert waren, wurde kein Reset durchgeführt, sondern sauber gemergt.
-- Die neueren verbindlichen Fassungen von `CODEX.md` und `UI-UX.md` wurden bei der Konfliktauflösung vollständig aus `origin/main` übernommen und nicht überschrieben.
-- Merge-Commit: `f31332e`.
-- Der vollständige Auftrag wurde vor Implementierungsbeginn nach `CURRENT-TASK.md` übernommen; die Capture-Prüfung lautet: `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
+- Die Sandbox wurde zuerst mit `origin/main` synchronisiert.
+- Ausgangs-`origin/main`: `eae8b35098484a0eba1d5b8574adfe2b049fc68c`.
+- Die neue verbindliche `I18N.md`, die aktualisierte `DOCUMENTATION.md` und der neue Betreiberauftrag in `CODEX.md` wurden vollständig aus `origin/main` übernommen und nicht durch ältere lokale Fassungen ersetzt.
+- Der divergierte lokale Stand wurde ohne Reset über Merge-Commit `8314044` integriert; danach bestand gegenüber `origin/main` vor Implementierung kein inhaltlicher Unterschied außer der gemeinsamen Historie.
+- Der Gesamtauftrag wurde vor Implementierung vollständig nach `CURRENT-TASK.md` übernommen. Capture-Ergebnis: `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
 
-## 2. Nachgewiesene Root Cause
+## 2. Root Causes und Korrekturen
 
-Der Betreiberbefund hatte Vorrang vor vorherigen grünen Tests. Im realen Produktionspfad bestanden zwei gekoppelte Delivery-/Startup-Fehler:
+### Startkontext und Reload
 
-1. **Veraltete produktive User-Assets:** Das Service-Worker-Cache-Namensschema war zwar an den Deployment-Commit gebunden, die lokalen CSS-/JS-Referenzen in `Web-App/public/index.html` waren aber unversioniert. Beim Installieren eines neuen Workers konnte der Browser diese Requests weiterhin aus seinem 24-Stunden-HTTP-Cache beantworten. Dadurch konnte der neue Cache erneut ein altes `user-app.js` enthalten, das die neue Homepage-Projektion überhaupt nicht anwendete.
-2. **Serielle Fehlerkopplung im Startpfad:** `loadHomepageConfig()` lag hinter `CoreStartup.start()` und `CoreStartup.startBackground()` im selben `try`. Jeder Core-, IndexedDB- oder Discovery-Fehler übersprang deshalb Homepage-Fetch und Session-Restore vollständig. Sichtbar blieb unabhängig von korrekt gespeicherten Modul-/HTML-Werten der neutrale Default.
+Root Cause: Der Homepagepfad rief denselben `renderModule()`-Pfad wie eine bewusste Modulnavigation auf. Dieser setzte `state.activeView = module:*`, `activeModuleId` und fokussierte anschließend den gesamten Content-Container. Damit wurde die konfigurierte Homepage beim Reload semantisch zur eigenständigen Modulansicht.
 
-Das erklärt konsistent, warum Admin-Speichern und isolierte API-/Node-Tests erfolgreich sein konnten, während beide P4-Modi live wirkungslos blieben.
+Korrektur:
 
-## 3. Korrektur
+- `renderModule(moduleId, { asHomepage: true })` rendert das Modul als Inhalt von `Start`, ohne den aktiven Navigationskontext zu verändern.
+- Eine bewusste Auswahl im Modulmenü verwendet weiterhin die eigenständige Modulansicht.
+- Bis die öffentliche Homepageprojektion geladen ist, zeigt die Shell nur einen neutralen Ladezustand.
+- Im Modulmodus bleibt dieser Ladezustand auch bis zum Abschluss der Discovery bestehen. Dadurch erscheint vor gültigem GPS-Inhalt kein falscher Welcome-Default.
 
-- Das Produktionspaket ergänzt jetzt denselben validierten Deployment-Commit als `?v=` an alle lokalen CSS-/JavaScript-Referenzen des User-Entry-Documents. Service-Worker- und HTTP-Cache können dadurch nicht mehr eine alte User-App in einen neuen Deploy übernehmen.
-- Core-Start/Discovery, öffentliche Homepage-Projektion und User-Session-Restore laufen als unabhängige Tasks über `Promise.allSettled`. Ein Fehlerpfad verhindert die übrigen nicht mehr.
-- Modulmodus bleibt strikt access-aware: Nur aktive, für den aktuellen Benutzer sichtbare Module werden geöffnet; ungültige/nicht zugängliche Ziele fallen neutral zurück.
-- HTML-Modus übernimmt den bewussten Trusted-Admin-HTML-Vertrag unverändert in den vorhandenen Sandbox-Frame.
-- PHP-nahe Persistenzcoverage prüft `module → html`, GPS-Modul-ID und bytegetreuen HTML-Inhalt. Packaging-Coverage prüft die tatsächlich ausgelieferten versionierten `style.css`- und `user-app.js`-URLs.
+### Blauer GPS-Rahmen
 
-## 4. User-App / Branding
+Root Cause: `renderModule()` rief nach jedem Modulrender `content.focus()` auf. Der fokussierbare Main-Container behielt dadurch den Browser-Fokusrahmen, bis eine weitere Pointeraktion stattfand.
 
-Entfernt wurden die technischen bzw. Developer-orientierten sichtbaren Elemente:
+Korrektur:
 
-- Username-/Session-Badge im Header,
-- `Active application`,
-- `Local workspace`,
-- Modulzahl,
-- technische Start-/Workspace-/Offline-Loading-Erklärungen,
-- generischer Zurück-Button in Settings,
-- Loginstatus auf der Startseite.
+- Der erzwungene Containerfokus wurde entfernt.
+- Echte Tastaturnavigation behält explizite `:focus-visible`-Indikatoren auf Navigation, Karten, Aktionen und GPS-Buttons. Fokusaccessibility wurde nicht global deaktiviert.
 
-Die zentrale Navigation (`Start` plus permission-aware sichtbare Module) bleibt klar und touchfähig. Settings und Login/Logout bleiben erreichbar, ohne P1-, Auth-, CSRF- oder Sessionlogik zu verändern.
+### HTML-Homepage
 
-Der minimale universelle Brandingvertrag umfasst:
+Root Cause: Der allgemeine Welcome-/Produkttitelblock wurde immer vor dem HTML-Frame aufgebaut. Der Frame ersetzte nur den inneren Inhaltscontainer, nicht den statischen Headingblock.
 
-- Application Name aus dem bestehenden App-/Config-Vertrag,
-- `branding.iconText`,
-- optionale `branding.logoUrl`,
-- Generator-Anpassung auf den Anfangsbuchstaben des erzeugten Produktnamens.
+Korrektur:
 
-Es gibt kein im User-Markup unveränderlich verdrahtetes Neutral-`N` mehr.
+- Gültiger HTML-Inhalt besitzt einen eigenen frühen Renderpfad und bestimmt den vollständigen Startseiteninhalt.
+- Welcome/Produktname erscheint ausschließlich als kontrollierter Fallback ohne gültigen HTML- oder zugänglichen Modulinhaltsvertrag.
 
-## 5. Tests und Verifikation
+### Login mit zwei Klicks
 
-- Fokussierte P4/PHP/Packaging/PHP-Entry-Tests: bestanden.
-- Vollständige Suite: `401/401` bestanden, `0` Fehler, `0` übersprungen.
+Root Cause: Beim App-Start lief `restoreServerSession()` parallel. Wenn der Nutzer währenddessen anmeldete, konnte eine ältere anonyme `/auth/me`-Antwort nach dem erfolgreichen Login eintreffen, `serverUser` wieder löschen und die Ansicht erneut rendern. Dies erzeugte den beobachteten Eindruck, der erste Login habe nicht funktioniert.
+
+Korrektur:
+
+- Login ist jetzt ein semantischer Formular-Submit; Klick und Enter verwenden exakt denselben Handler.
+- Während eines laufenden Submits wird der Submitbutton deaktiviert.
+- Eine `sessionRevision` bindet Restore-Ergebnisse an den Zustand, in dem sie gestartet wurden. Eine vor dem Login gestartete Antwort darf die neuere Loginidentität nicht mehr überschreiben.
+- User-/Admin-Cookies, serverseitige Authentifizierung, CSRF und P1 wurden nicht verändert.
+
+### Settings und GPS
+
+- `Show all functions` und der zugehörige Browser-Alert wurden vollständig entfernt.
+- Die individuelle persönliche Sichtbarkeitsauswahl bleibt erhalten und verändert keine serverseitige Berechtigung.
+- Der sichtbare Bereich heißt nutzerorientiert `App areas`; angefasste Texte besitzen stabile `data-i18n-key`-Marker, ohne eine eigene Übersetzungsengine oder die vollständige `I18N.md`-Architektur zu implementieren.
+- GPS zeigt Genauigkeit locale-fähig und gerundet als `± … m`.
+- GPS-Zeit wird über `Intl.DateTimeFormat` lokal und menschenlesbar angezeigt.
+- Rohgenauigkeit und ISO-Zeit bleiben für Logik, Persistenz und Diagnose unverändert erhalten.
+
+## 3. Tests und lokale Verifikation
+
+- Fokussierte User-App-/Login-/GPS-Regressionen: 32/32 bestanden.
+- Vollständige Suite: 406/406 bestanden, 0 Fehler, 0 übersprungen.
 - PHP-Lint aller Server-PHP-Dateien: bestanden.
-- JavaScript-Syntaxprüfung für `Web-App`, `Server`, `scripts` und `tests`: bestanden.
-- Produktionspaket: erfolgreich, 104 Dateien, Base Path `""`.
+- JavaScript-Syntaxprüfung aller relevanten Projektdateien: bestanden.
 - `git diff --check`: bestanden.
-- Diff-basierte Secret-Prüfung: keine Secret-Werte eingebracht; lediglich der erwartete leere Fixture-Key `DB_PASSWORD=` ist vorhanden.
-- Screenshotversuch wurde durchgeführt, konnte aber wegen eines durch die Umgebung blockierten Playwright-Browserdownloads (HTTP 403) nicht abgeschlossen werden. Es wurde keine Screenshot-/Testdatei ins Repository geschrieben.
+- Produktionspaket: erfolgreich, 104 Dateien, Base Path `""`.
+- Secretprüfung: keine Token-, FTPS-, DB- oder sonstigen Secret-Werte in Änderungen oder Commit aufgenommen. Der gefundene Quelltextbegriff `password` ist ausschließlich die erwartete lokale Passwortfeldvariable.
+- Keine künstliche Testdatei und keine neue Produkt-/I18N-Architektur wurden erzeugt.
+- Screenshotprüfung wurde versucht. Die Umgebung besitzt keinen ausführbaren Browser; Playwright-CDN und Snap-basierter Chromium-Bezug waren durch die Umgebung blockiert. Es wurde kein Screenshotartefakt in das Repository geschrieben.
 
-## 6. GitHub / Deployment / CI
+## 4. Dokumentation
 
-Implementierungscommit: `866d557` (`fix: restore P4 homepage in production`).
+Aktualisiert wurden:
 
-Für diesen Commit wurden nach Push auf `main` alle erforderlichen Workflows bis zum terminalen Status abgewartet:
+- `CURRENT-TASK.md`: vollständige operative Liste und Abschlussstatus,
+- `Architecture.md`: Startkontext- und Ladevertrag,
+- `Functions.md`: Login-Race-, Homepage- und GPS-Formatierungsverhalten,
+- `STATUS.md`, `TODO.md`, `ToDoNow.md`: tatsächlicher P4-Folgefix-/Device-Retest-Status,
+- `CHANGELOG.md`: Root Causes und Änderungen,
+- `WORKFLOW.md`: datiertes Arbeitsprotokoll mit Ausführendem Codex.
 
-- FTPS Deploy, Run `34187895001`: **SUCCESS** (`deploy`: SUCCESS, `report`: SUCCESS).
-- Push on main / CodeQL, Run `34187894164`: **SUCCESS** (`Analyze (javascript-typescript)`: SUCCESS, `Analyze (actions)`: SUCCESS).
+`I18N.md`, `DOCUMENTATION.md`, `CODEX.md` und `UI-UX.md` wurden nicht überschrieben.
 
-Die Produktionsauslieferung erfolgte damit über den verbindlichen FTPS-GitHub-Actions-Weg. Es wurden keine Zugangswerte ausgegeben oder versioniert.
+## 5. GitHub, Deployment und CI
 
-## 7. Bewusster Status und offener externer Schritt
+Implementierungscommit: `3b666dd` (`fix: refine P4 start and user experience`).
 
-Keine selbst ausführbare Entwicklungs-, Test-, Push- oder CI-Arbeit bleibt offen. Einzig der physische Betreiber-/Device-Livetest ist extern und kann nicht durch Codex simuliert werden. Daher bleibt P4 ausdrücklich:
+Nach Push auf `main` wurden die erforderlichen Workflows bis terminal abgewartet:
 
-`DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`
+- FTPS Deploy Run `34198466106`: **SUCCESS**.
+- Push on main / CodeQL Run `34198465658`: **SUCCESS**.
 
-P4 darf erst nach positiver realer Betreiberbestätigung auf `LIVE BESTANDEN` gesetzt werden. P1 bleibt `LIVE BESTANDEN`.
+Die Dokumentationsübergabe wird ebenfalls nach `main` übertragen; der dadurch ausgelöste reine Dokumentationslauf wird vor der externen Abschlussmeldung terminal abgewartet. `CHATGPT.md` wird anschließend per GitHub-Blob-Hash gegen die lokale Datei verifiziert.
 
-## 8. Konkreter Betreiber-Retest
+## 6. Externer Betreiber-Retest
 
-1. `Admin → Appearance → Module → GPS` speichern; User-App neu laden; GPS muss unmittelbar Startziel sein.
-2. `Admin → Appearance → Text / HTML` wählen, klar sichtbaren HTML-Inhalt speichern; User-App neu laden; dieser Inhalt muss statt des neutralen Defaults erscheinen.
-3. Wieder auf `Module → GPS` wechseln und erneut laden; Wechsel und Persistenz müssen stabil bleiben.
-4. Prüfen, dass kein `Tester`-/Username-Badge, kein `Active Application`, kein `Local Workspace`, keine Modulzahl und kein generischer Zurück-Button sichtbar sind.
-5. Prüfen, dass `Start` und alle erlaubten Module in der Navigation sichtbar und bedienbar bleiben, nicht erlaubte Module dagegen verborgen bleiben.
-6. Produktname sowie Standard-Icon prüfen; optional konfigurierte Logo-URL in einer Produktkopie prüfen.
-7. Parallel User-App und Admin öffnen und erneut bestätigen, dass User-/Admin-Session sowie Logout getrennt bleiben.
+Keine selbst ausführbare Entwicklungs- oder Verifikationsarbeit bleibt offen. Der folgende echte Device-Test bleibt absichtlich extern:
 
-## 9. Scope
+1. `Appearance → Module → GPS` speichern und User-App neu laden.
+2. Prüfen: `Start` bleibt aktiv; GPS erscheint als Inhalt von `Start`; der GPS-Modultab wird nicht automatisch aktiv.
+3. Prüfen: Vor GPS erscheint kein alter Welcome-/Neutral-Inhalt.
+4. GPS bewusst über seinen Navigationseintrag öffnen und neu laden; kein persistenter blauer Containerrahmen darf erscheinen. Per Tastatur müssen Bedienfelder weiterhin sichtbar fokussierbar sein.
+5. `Appearance → Text / HTML` mit `<h1>TEST</h1>` speichern und neu laden; ausschließlich der konfigurierte Inhalt darf erscheinen, ohne festen Welcome-/Neutral-Block.
+6. User abmelden, Passwort eingeben und Login genau einmal klicken bzw. Enter drücken; die authentifizierte Ansicht muss mit einer Aktion erscheinen.
+7. Settings öffnen: kein `Show all functions`; persönliche App-Areas-Auswahl speichern und prüfen, dass nur die Navigation angepasst wird.
+8. GPS prüfen: Genauigkeit als gerundetes `± … m`, Zeitpunkt lokal und lesbar.
+9. User-App und Admin parallel öffnen und P1-Sessiontrennung erneut bestätigen.
 
-Keine Sync-Engine, Offline-Queue, Store-Wrapper, kein vollständiges Designsystem und kein neues Produktmodul wurden begonnen. Die Arbeit ist auf Root-Cause-Fix, notwendige User-App-Bereinigung, minimalen Brandingvertrag, Regressionstests und Dokumentation begrenzt.
+P4 darf erst nach diesem positiven Betreiberbefund `LIVE BESTANDEN` werden. Bis dahin bleibt der Status **FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**. P1 bleibt **LIVE BESTANDEN**.
 
-## 10. Abschlussdokumentations-Workflow
+## 7. Scope
 
-Auch der erste Abschlussdokumentationscommit wurde vollständig ausgeliefert: FTPS Deploy Run `34188961230` und Push-on-main/CodeQL Run `34188961273` endeten beide mit **SUCCESS**. Diese Ergänzung schließt die operative Arbeitsliste; der durch sie ausgelöste reine Dokumentationslauf wird vor der externen Abschlussmeldung ebenfalls bis terminal abgewartet.
+Nicht implementiert wurden die vollständige I18N-/Sprachpaket-/Providerarchitektur, ein neues Designsystem, Sync-Engine, Offline-Queue, Store-App-Wrapper oder neue Produktmodule.
