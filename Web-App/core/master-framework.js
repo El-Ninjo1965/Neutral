@@ -294,6 +294,7 @@
         name: appName,
         version: normalizeString(appDefinition.version, '1.0.0'),
         description: normalizeString(appDefinition.description, ''),
+        branding: isPlainObject(appDefinition.branding) ? { ...appDefinition.branding } : {},
         active: !!appDefinition.active,
         status: normalizeString(appDefinition.status, appDefinition.active ? 'active' : 'inactive'),
         modules: Array.isArray(appDefinition.modules) ? [...appDefinition.modules] : [],

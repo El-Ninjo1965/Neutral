@@ -45,7 +45,7 @@ const CORE_SCRIPTS = [
 ];
 
 const PUBLIC_SCRIPTS = [
-    'public-path.js', 'user-module-access.js', 'api-client.js', 'user-app.js', 'style.css'
+    'public-path.js', 'user-module-access.js', 'api-client.js', 'homepage-cache.js', 'user-app.js', 'style.css'
 ];
 
 const shellUrls = (base) => {
@@ -68,7 +68,7 @@ const scopeBase = () => {
 const isStaticAsset = (pathname) => (
     /\/core\/[a-z0-9-]+\.js$/.test(pathname)
     || /\/Web-App\/public\/[a-z0-9-]+\.(js|css)$/.test(pathname)
-    || /\/(public-path|api-client|user-app|user-module-access|style)\.(js|css)$/.test(pathname)
+    || /\/(public-path|api-client|homepage-cache|user-app|user-module-access|style)\.(js|css)$/.test(pathname)
     || /\/Web-App\/app\/modules\/[a-z0-9-]+\/index\.js$/.test(pathname)
 );
 

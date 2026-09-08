@@ -1,3 +1,43 @@
+## 2026-09-08 – Local-first homepage warmstart and app navigation
+
+- Root Cause der live beobachteten circa zweisekündigen Loading-Phase: Die öffentliche Homepageprojektion existierte nur im Arbeitsspeicher und wurde bei jedem Reload ausschließlich über den Server geladen. Der erste sinnvolle Render wartete daher trotz bereits bekannten Inhalts immer auf den Netzwerkpfad.
+- Ein minimaler schema-versionierter `public-homepage`-Cache stellt gültiges HTML beim Warmstart synchron bereit, aktualisiert sich nach erfolgreichem Serverrefresh und funktioniert offline. Inkompatible, leere oder nicht öffentliche Records werden nicht verwendet; Session- und Berechtigungsdaten werden nicht persistiert.
+- Die Performance-Marken `homepage-local-ready` und `homepage-refresh-ready` machen lokalen First Render und Serverrefresh getrennt messbar.
+- Die zentrale User-App-Navigation besitzt nun touchgerechte 44px-Aktionen mit Rahmen, Fläche, eindeutigem aktiven Zustand sowie Light-/Dark-, Hover- und `:focus-visible`-Darstellung. Module erben den zentralen Stil automatisch.
+- Ausgeführt und dokumentiert durch Codex in der Umgebung `Neutral`; bestehende live bestätigte P4-/GPS-/HTML-/P1-Fixes bleiben erhalten. Neuer Betreiber-Retest erforderlich.
+
+## 2026-09-08 – P4 device follow-up: Start context, login race and readable GPS
+
+- Ein konfiguriertes GPS-Homepage-Modul bleibt nun beim Reload im aktiven `Start`-Kontext, statt die eigenständige Modulnavigation zu aktivieren. Bis Homepage und Discovery bereit sind, verhindert ein neutraler Ladezustand den falschen Welcome-Flash.
+- Gültiger HTML-Homepage-Inhalt wird ohne zusätzlichen statischen Welcome-/Neutral-Block gerendert.
+- Der programmatische Fokus auf den Modulcontainer wurde als Ursache des persistenten blauen Reload-Rahmens entfernt; echte Tastaturnavigation behält explizite `:focus-visible`-Indikatoren.
+- User-Login nutzt einen semantischen Formular-Submit. Eine Session-Revisionsprüfung verhindert, dass ein bereits laufender anonymer Restore die erfolgreiche Loginantwort überschreibt und dadurch einen zweiten Klick erforderlich macht.
+- `Show all functions` samt Alert wurde entfernt; persönliche Bereichsauswahl und serverseitige Berechtigungen bleiben getrennt. Angefasste Bereichstexte tragen stabile I18N-Schlüssel, ohne die vollständige I18N-Architektur vorwegzunehmen.
+- GPS zeigt Genauigkeit gerundet als `± … m` und Zeit localeabhängig über `Intl.DateTimeFormat`; präzise Rohwerte und ISO-Zeit bleiben intern unverändert.
+- Ausgeführt und dokumentiert durch Codex in der Umgebung `Neutral`. P1 bleibt `LIVE BESTANDEN`; P4 benötigt den erneuten Betreiber-Device-Retest.
+
+## 2026-09-08 – P4 live regression: deterministic startup and deploy-bound user assets
+
+- Root Cause des Betreiber-Livefehlers beseitigt: unversionierte User-App-Assets konnten beim Installieren eines neuen Service Workers aus dem langlebigen HTTP-Cache übernommen werden; außerdem verhinderte ein Fehler im seriell davorliegenden Core-/Discovery-Start den Homepage-Fetch vollständig.
+- Das Produktionspaket versioniert lokale CSS-/JavaScript-Verweise nun mit dem Deployment-Commit. Core-Start, Homepage-Fetch und User-Session-Restore laufen unabhängig über `Promise.allSettled`.
+- PHP-Persistenztests sichern Modulmodus und bytegetreuen HTML-Inhalt; Packaging-Tests sichern die tatsächlichen versionierten User-Assets.
+- Die normale User-App wurde von Username-Badge, technischen Workspace-/Discovery-Texten, Modulzahl und generischem Zurück-Button bereinigt. Navigation bleibt sichtbar und permission-aware; Produktname, Icon-Text und optionale Logo-URL bilden einen minimalen Brandingvertrag.
+- P1 bleibt `LIVE BESTANDEN`; P4 bleibt bis zum positiven Betreiber-Livetest `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`.
+
+## 2026-09-08 – P4 global homepage and Admin Appearance separation
+
+- Split `Admin → Settings` and `Admin → Appearance` into independent technical and presentation views.
+- Added central persistence and a public read-only projection for global homepage mode, module target, and trusted administrator HTML; writes remain protected by existing admin auth and CSRF controls.
+- Added dynamic active/startable module selection, trusted HTML/inline-style/link/image/JavaScript preview and rendering, mode switching, startup loading, access-aware module opening, and robust default fallback.
+- Added Node/PHP API, admin UI, startup, persistence, P1, and packaging regression coverage. P4 remains `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`; P1 remains `LIVE BESTANDEN`.
+
+## 2026-09-07 – Codex environment operating path made persistent
+
+- Documented Codex environment `Neutral` as the required secrets-safe operating environment for `El-Ninjo1965/Neutral` through project completion.
+- Recorded the verified GitHub path through `GH_TOKEN`, the canonical HTTPS `origin`, the GitHub Actions and direct Explicit-FTPS endpoints, required secret names, and the recovery sequence for replaceable sandboxes without storing secret values.
+- Added the environment preflight and Codex/ChatGPT handoff sequence to the binding workflow.
+- Preserved `P1 = LIVE BESTANDEN`, deferred P4, and made no application or feature changes.
+
 ## 2026-09-07 – Workflow reset: operational truth hierarchy and live status corrected
 
 - The project operating rules were reset so that the newest live operator finding, newest operator task, and `CURRENT-TASK.md` capture order are authoritative.

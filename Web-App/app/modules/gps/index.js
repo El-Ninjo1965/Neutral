@@ -803,7 +803,17 @@
             diagnostics.consentRequired = permissionRequested;
             diagnostics.consentShown = showConsentModal;
             syncDiagnostics();
-            const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${position.accuracy ?? '—'}</dd></div><div><dt>Zeitpunkt</dt><dd>${position.timestamp ?? '—'}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
+            const formatAccuracy = (accuracy) => {
+                const numeric = Number(accuracy);
+                if (!Number.isFinite(numeric)) return '—';
+                return `± ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(Math.round(numeric))} m`;
+            };
+            const formatTimestamp = (timestamp) => {
+                const date = new Date(timestamp);
+                if (Number.isNaN(date.getTime())) return '—';
+                return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+            };
+            const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>Zeitpunkt</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
             const shareDisabled = !position || !allowedToUse || !active;
             const browserDeniedMessage = 'Standortzugriff nicht erlaubt. Bitte Standortzugriff für diese Seite in den Browser- bzw. Geräteeinstellungen aktivieren.';
             const infoMessage = message || (state.permissionState === 'denied'

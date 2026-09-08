@@ -276,6 +276,11 @@ function updateApplicationMetadata(stagingRoot, appId, appName) {
   appInfo.id = appId;
   appInfo.name = appName;
   appInfo.description = `${appName} application shell based on Neutral.`;
+  appInfo.branding = {
+    ...(appInfo.branding && typeof appInfo.branding === 'object' ? appInfo.branding : {}),
+    iconText: Array.from(appName)[0].toUpperCase(),
+    logoUrl: ''
+  };
   writeJson(appInfoPath, appInfo);
 
   const packagePath = path.join(stagingRoot, 'package.json');
@@ -319,6 +324,12 @@ function updateApplicationMetadata(stagingRoot, appId, appName) {
     `$1${JSON.stringify(appName)}`,
     'Web-App/core/config-manager.js'
   );
+  config = replaceRequiredPattern(
+    config,
+    /(branding:\s*\{\s*iconText:\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/,
+    `$1${JSON.stringify(Array.from(appName)[0].toUpperCase())}`,
+    'Web-App/core/config-manager.js'
+  );
   fs.writeFileSync(configPath, config);
 
   updateOperationalDefaults(stagingRoot, sourceAppId, sourceAppName, appId, appName);
@@ -336,6 +347,7 @@ function updateOperationalDefaults(stagingRoot, sourceAppId, sourceAppName, appI
     'Web-App/core/master-framework.js',
     'Web-App/public/admin/index.js',
     'Web-App/public/admin/settings-view.js',
+    'Web-App/public/admin/appearance-view.js',
     'Web-App/public/master-ui.js',
     'Web-App/public/user-app.js'
   ];

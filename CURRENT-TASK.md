@@ -2,59 +2,35 @@
 
 ## Gesamtauftrag
 
-Dieser Auftrag behebt die operative Projektsteuerung und setzt die verbindliche Arbeitswahrheit für alle nachfolgenden Arbeiten wieder sauber und konsistent.
+Die beim Betreiber live beobachtete circa zweisekündige `Loading`-Phase bei jedem Warmstart/Reload ursächlich beheben und die zentrale User-App-Navigation app-typisch/touchgerecht gestalten. Der neue Local-first-Vertrag aus `UI-UX.md` ist verbindlich. Bereits live bestätigte P4-, GPS-, HTML-, Login- und P1-Fixes bleiben erhalten; keine vollständige I18N- oder neue Sync-/Offline-Queue-Architektur.
 
-Wichtige Einschränkung: In diesem Auftrag wird keine Feature-Implementierung durchgeführt. Es gibt keine P4-/Startseiten-/Appearance-/Theme-/i18n-/Navigations- oder sonstigen Funktionsänderungen.
+## Nummerierte, überprüfbare Arbeitspunkte
 
-Der bisherige historische P1-Fixauftrag wird hier vollständig ersetzt. Der aktuelle operative Stand bleibt auf das Workflow-Reset fokussiert.
+1. Vollständig mit `origin/main` synchronisieren und neuere `CODEX.md`-/`UI-UX.md`-Verträge unverändert übernehmen. **Status: ERLEDIGT**
+2. Alle in `CODEX.md` geforderten Verträge, Status-, User-App-, Startup-, Cache-, Service-Worker-, Navigation-, Modul- und Testpfade vollständig lesen. **Status: ERLEDIGT**
+3. Root Cause der sichtbaren Warmstartwartezeit im tatsächlichen Homepage-/Startup-/Storage-Datenfluss bestimmen und dokumentieren; nicht durch Animation, Timeout oder Verstecken kaschieren. **Status: ERLEDIGT**
+4. Regressionstests zuerst ergänzen: gültige lokale HTML-Homepage rendert vor Serverrefresh; Refresh aktualisiert Cache; Offline-Warmstart; Erststart; invalider/inkompatibler Cache. **Status: ERLEDIGT**
+5. Einen minimalen versionierten, ausschließlich öffentlichen Homepage-Cache implementieren; keine Session-/Permission-/authentifizierten Katalogdaten als öffentliche Wahrheit persistieren. **Status: ERLEDIGT**
+6. HTML-Warmstart sofort aus gültigem lokalen Stand rendern und Serverprojektion danach im Hintergrund abgleichen. **Status: ERLEDIGT**
+7. Modul-Warmstart so früh wie sicher ermöglichen, ohne Permission-/Viewer-Fail-Closed oder Startkontext zu schwächen; Discovery-/Serverrefresh im Hintergrund erhalten. **Status: ERLEDIGT**
+8. Kaltstart ohne gültigen Cache sowie Online-/Offline-Fehler kontrolliert auf Loading/Fallback führen. **Status: ERLEDIGT**
+9. Messbare Startup-Instrumentierung bzw. belastbare Tests für Local-first Render vor verzögertem Serverrefresh ergänzen. **Status: ERLEDIGT**
+10. Zentrale Navigation (`Start`, GPS, spätere erlaubte Bereiche) als klar erkennbare touchgerechte App-Aktionen mit eindeutigem Active-, Hover- und `:focus-visible`-Zustand gestalten. **Status: ERLEDIGT**
+11. Navigation zentral/theme-kompatibel halten; keine Modul-eigenen Navigationsstile und keine Änderungen an freiem HTML-Inhalt. **Status: ERLEDIGT**
+12. Persönliche `App areas`-Auswahl, ausgeblendete/nicht erlaubte Bereiche, P1, Auth/CSRF, Appearance, GPS, HTML, Offline, Service Worker, Packaging und Base Path regressionsfrei halten. **Status: ERLEDIGT**
+13. Keine Scope-Ausweitung auf vollständige I18N-/Providerarchitektur, Sync-/Offline-Queue, Store-Wrapper, neue Module, Admin-Redesign oder Designsystemersatz. **Status: ERLEDIGT**
+14. Relevante Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; keine erfundene Live-Bestätigung. **Status: ERLEDIGT**
+15. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
+16. Vollständigen Abschlussbericht mit Root Cause, Änderungen, Tests, Commits, CI und konkretem Betreiber-Retest in `CHATGPT.md` erstellen. **Status: ERLEDIGT**
+17. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: ERLEDIGT**
 
-## Verbindliche Wahrheits-Hierarchie
+## Capture-Prüfung
 
-1. Neuester ausdrücklich mitgeteilter Betreiber-Live-Befund
-2. Neuester ausdrücklich erteilter Auftrag
-3. `CURRENT-TASK.md` – nach vollständiger Übernahme dieses neuesten Auftrags
-4. `WORKFLOW.md` + verbindliche Projektverträge, insbesondere `CORE-1.0.md` und `VISION.md`
-5. tatsächlicher aktueller Code + Tests
-6. `ToDoNow.md` / `STATUS.md` / `TODO.md`
-7. historische Evidenz
-8. alte Chatdiagnosen
+`CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
-Wichtig:
+## Operative Wahrheit und Grenzen
 
-- Ein neuer Betreiberauftrag steht solange über `CURRENT-TASK.md`, bis dieser neue Auftrag vollständig in `CURRENT-TASK.md` übernommen wurde.
-- Danach wird `CURRENT-TASK.md` die operative Arbeitswahrheit für genau diesen Auftrag.
-- Historische Informationen dürfen neuere Betreiberbefunde niemals überschreiben.
-
-## Nummerierte Checkliste
-
-1. Neuen Auftrag vollständig lesen und analysieren. Status: ERLEDIGT
-2. Veraltete operative Inhalte identifizieren und die aktuelle Wahrheits-Hierarchie festlegen. Status: ERLEDIGT
-3. `WORKFLOW.md` mit Capture/Execute/Verify/Close-Regeln ergänzen. Status: ERLEDIGT
-4. `CURRENT-TASK.md` mit diesem Workflow-Reset-Auftrag vollständig ersetzen. Status: ERLEDIGT
-5. `ToDoNow.md`, `STATUS.md`, `TODO.md` auf den aktuellen operativen Projektstand und P1-Live-Status bereinigen. Status: ERLEDIGT
-6. `CHANGELOG.md` mit kurzer historischer Abschlussnotiz ergänzen, ohne die operative Kette mit alter Historie zu verwechseln. Status: ERLEDIGT
-7. `git diff --check` und Git-/Dokumentationskonsistenz prüfen. Status: ERLEDIGT
-8. Commit/Push und Abschlussprüfung durchführen. Status: IN ARBEIT / ERLEDIGT nach Abschluss des Commits
-
-## Prüfungsfrage
-
-`Prompt vollständig in CURRENT-TASK abgebildet: JA`
-
-## Aktueller Projektstatus
-
-- P1: LIVE BESTANDEN
-- P4: PENDING
-- Settings/Appearance: noch nicht als vollständig erledigt markiert, solange der zugehörige Gesamtauftrag nicht abgeschlossen ist
-- Workflow-Reset: ERLEDIGT
-
-## Verbotene Arbeiten in diesem Auftrag
-
-- keine P4-Startseiten-Implementierung
-- keine Settings-/Appearance-Umsetzung
-- keine Theme-/i18n-/Navigation-/Feature-Verbesserungen
-- keine fremden Änderungen verwerfen
-- keine Historie in `CURRENT-TASK.md` aufnehmen
-
-## Abschlussregel
-
-Vor Abschluss muss `CURRENT-TASK.md` erneut vollständig gelesen werden. Wenn ein selbst ausführbarer Punkt offen ist, darf keine Abschlussmeldung erfolgen. Erst wenn die Checkliste vollständig und verifiziert ist, ist der Auftrag abgeschlossen.
+- Live bestätigt bleiben: GPS/HTML-P4-Inhalt, Startkontext, kein Welcome-Flash, GPS-Formatierung/Share, bereinigte Settings und P1.
+- Aktuell offen und live nachgewiesen: Warmstart zeigt ungefähr zwei Sekunden `Loading`; zentrale Navigation wirkt zu sehr wie Textlinks/Tabs.
+- Öffentliche Homepage darf lokal gecacht werden; authentifizierte Berechtigungsdaten dürfen nicht als anonymer Fallback persistiert werden.
+- P4 bleibt bis erneutem Betreiber-Retest unterhalb `LIVE BESTANDEN`.

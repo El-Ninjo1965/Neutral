@@ -466,6 +466,16 @@ describe('Admin PHP entry protection', { concurrency: false }, () => {
     assert.equal(unsupported.statusCode, 404, unsupported.body);
   });
 
+  test('Fall E4: public homepage config exposes only the global homepage contract', async () => {
+    const result = await request('/api/settings/homepage', { port: serverPort });
+    assert.equal(result.statusCode, 200, result.body);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(Object.keys(payload.data), ['homepage']);
+    assert.deepEqual(Object.keys(payload.data.homepage).sort(), ['content', 'mode', 'moduleId', 'title']);
+    assert.equal(payload.data.homepage.mode, 'html');
+    assert.doesNotMatch(result.body, /password|secret|database/i);
+  });
+
   test('Fall E3: PHP logout requires a session and validates CSRF before mutation', () => {
     const source = fs.readFileSync(path.join(webrootDir, 'api', 'index.php'), 'utf8');
     const logoutStart = source.indexOf("if (($route === 'auth/logout' || $route === 'admin/auth/logout')");
