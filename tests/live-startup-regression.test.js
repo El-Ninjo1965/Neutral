@@ -132,10 +132,30 @@ test('user startup loads central homepage config and renders trusted HTML withou
 
   assert.match(apiClient, /getHomepage\(\)/);
   assert.match(phpApi, /\$route === 'settings\/homepage'/);
-  assert.match(source, /await loadHomepageConfig\(\)/);
+  assert.match(source, /loadHomepageConfig\(\)/);
   assert.match(source, /homepage\.mode === 'html'/);
   assert.match(source, /frame\.srcdoc = homepage\.content/);
   assert.doesNotMatch(source, /getSafeHomepageContent/);
+  assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*restoreServerSession\(\)/s);
+  assert.doesNotMatch(source, /await window\.CoreStartup\.startBackground\(\);\s*}\s*await loadHomepageConfig\(\)/s);
+});
+
+test('user shell is product-facing and keeps branding replaceable', () => {
+  const source = read('Web-App/public/user-app.js');
+  const index = read('Web-App/public/index.html');
+  const appsRoot = path.join(projectRoot, 'Web-App/apps');
+  const appInfoPath = fs.readdirSync(appsRoot)
+    .map((name) => path.join(appsRoot, name, 'app-info.json'))
+    .find((candidate) => fs.existsSync(candidate));
+  assert.ok(appInfoPath, 'an application branding manifest is required');
+  const appInfo = JSON.parse(fs.readFileSync(appInfoPath, 'utf8'));
+
+  assert.doesNotMatch(`${source}\n${index}`, /Active application|Local workspace|Signed in as|userSettingsBackButton|user-app-count/);
+  assert.match(source, /label:\s*['"]Start['"]/);
+  assert.match(source, /branding\.iconText/);
+  assert.match(source, /branding\?\.logoUrl/);
+  assert.equal(appInfo.branding.iconText, Array.from(appInfo.name)[0].toUpperCase());
+  assert.equal(appInfo.branding.logoUrl, '');
 });
 
 test('local settings save surfaces both success and error status without admin hints', () => {

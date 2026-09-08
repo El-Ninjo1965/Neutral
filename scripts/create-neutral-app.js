@@ -276,6 +276,11 @@ function updateApplicationMetadata(stagingRoot, appId, appName) {
   appInfo.id = appId;
   appInfo.name = appName;
   appInfo.description = `${appName} application shell based on Neutral.`;
+  appInfo.branding = {
+    ...(appInfo.branding && typeof appInfo.branding === 'object' ? appInfo.branding : {}),
+    iconText: Array.from(appName)[0].toUpperCase(),
+    logoUrl: ''
+  };
   writeJson(appInfoPath, appInfo);
 
   const packagePath = path.join(stagingRoot, 'package.json');
@@ -317,6 +322,12 @@ function updateApplicationMetadata(stagingRoot, appId, appName) {
     config,
     /(this\.set\('app',\s*\{\s*name:\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/,
     `$1${JSON.stringify(appName)}`,
+    'Web-App/core/config-manager.js'
+  );
+  config = replaceRequiredPattern(
+    config,
+    /(branding:\s*\{\s*iconText:\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/,
+    `$1${JSON.stringify(Array.from(appName)[0].toUpperCase())}`,
     'Web-App/core/config-manager.js'
   );
   fs.writeFileSync(configPath, config);

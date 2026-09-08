@@ -2,61 +2,54 @@
 
 ## Gesamtauftrag
 
-P4 und `Admin → Appearance` vollständig umsetzen. `Settings` und `Appearance`
-werden fachlich und technisch getrennt; die globale Startseite wird zentral in
-Appearance konfiguriert. P1 und die getrennten User-/Admin-Sessions bleiben
-unverändert `LIVE BESTANDEN`.
+Die durch den Betreiber am 2026-09-08 live nachgewiesene P4-Regression im realen
+Produktionspfad ursächlich beheben und die normale User-App gemäß dem aktuellen
+verbindlichen `UI-UX.md` von Developer-/Framework-UI bereinigen. Neuere
+`UI-UX.md`- und `CODEX.md`-Änderungen von `origin/main` bleiben vollständig
+erhalten. P1 und die getrennten User-/Admin-Sessions dürfen nicht zurückgebaut
+werden.
 
 ## Nummerierte, überprüfbare Arbeitspunkte
 
-1. Repository synchronisieren, Git-Stand prüfen und alle in `CODEX.md` verpflichtend genannten Verträge, Statusdateien, Codepfade und relevanten Tests vollständig lesen. **Status: ERLEDIGT**
-2. Bestehenden Settings-, Appearance-, Registry-, Persistenz-, API-, Startup-, Router-, Navigation-, Offline- und Auth/CSRF-Datenfluss vollständig analysieren. **Status: ERLEDIGT**
-3. Regressionstests zuerst ergänzen: Settings und Appearance sind unterschiedliche Views; nur Appearance enthält die globale Startseiten-Konfiguration. **Status: ERLEDIGT**
-4. `Admin → Settings` auf ausschließlich System-/Technikeinstellungen begrenzen, ohne bestehende funktionierende Einstellungen zu verlieren. **Status: ERLEDIGT**
-5. Eigenständige `Admin → Appearance`-View für Theme, Layout und globale Startseiten-Konfiguration umsetzen; kein gemeinsames Copy/Paste-Rendering mit Settings. **Status: ERLEDIGT**
-6. Modulmodus umsetzen: dynamische Auswahl aller aktivierten und als Startziel verfügbaren Module aus der bestehenden Registry-/Manifestquelle; deaktivierte, fehlende und ungültige Module ausschließen. **Status: ERLEDIGT**
-7. Modulmodus dauerhaft über den bestehenden zentralen Settings-/Config-Vertrag speichern und laden; neue passende Module automatisch berücksichtigen. **Status: ERLEDIGT**
-8. HTML-Modus umsetzen: freie Text-/HTML-Eingabe einschließlich vollständigem HTML, Inline-CSS, Links, Bildern und JavaScript unverändert ohne neu eingeführte Sanitization speichern/laden; passende Vorschau vorsehen. **Status: ERLEDIGT**
-9. Wechsel zwischen `module` und `html` konsistent speichern und nach Reload wiederherstellen. **Status: ERLEDIGT**
-10. Globale Startseitenänderungen ausschließlich über geschützte Admin-/CSRF-Pfade erlauben; normale User dürfen sie nicht ändern und Secrets gehören nicht in die Konfiguration. **Status: ERLEDIGT**
-11. User-App-Start integrieren: Konfiguration zuverlässig laden, gültiges Modul öffnen oder HTML-Inhalt als Startseite rendern; ungültige/fehlende Konfiguration robust auf bisherigen Default zurückfallen lassen. **Status: ERLEDIGT**
-12. Reload, bestehende Navigation und Offline-first-Fallback/Cache über vorhandene Mechanismen kompatibel halten; keinen parallelen Konfigurationssonderweg einführen. **Status: ERLEDIGT**
-13. P1-Sessiontrennung, Admin-Auth und CSRF unverändert erhalten und durch Regressionstests absichern. **Status: ERLEDIGT**
-14. Mindesttests vollständig abdecken: dynamische aktive Modulliste, Ausschluss deaktivierter/ungültiger Module, Persistenz, Modulstart, Default-Fallback, unverändertes HTML/CSS/JS, HTML-Start und beide Moduswechsel. **Status: ERLEDIGT**
-15. Relevante Vertrags-, Status-, TODO- und Changelog-Dokumentation auf den tatsächlichen Endstand aktualisieren; P4 höchstens `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`. **Status: ERLEDIGT**
-16. Fokussierte Tests, vollständige `npm test`-Suite unter PHP 8.1+, PHP-Lint betroffener Dateien, `node --check` betroffener JS-Dateien, `git diff --check`, Secret-/Artefaktprüfung und Produktionspaket ausführen. **Status: ERLEDIGT**
-17. `CHATGPT.md` mit vollständigem Abschlussbericht und konkreten Betreiber-Retestschritten aktualisieren. **Status: ERLEDIGT**
-18. Finalen Projektstand committen und authentifiziert nach GitHub `main` pushen. **Status: ERLEDIGT**
-19. `CHATGPT.md` auf GitHub `main` verifizieren sowie `HEAD == origin/main` und sauberen Working Tree prüfen. **Status: ERLEDIGT**
-20. FTPS, CodeQL und weitere erforderliche CI bis zum terminalen Status abwarten und wahrheitsgemäß dokumentieren. **Status: ERLEDIGT**
-
-## Verbindliche Design- und Persistenzentscheidung
-
-- `Admin → Appearance`: Theme, Layout und globale Startseiten-Konfiguration.
-- `Admin → Settings`: ausschließlich System-/technische Einstellungen.
-- Persistente Felder mindestens: Modus `module` oder `html`, gewähltes Modul im
-  Modulmodus und freier HTML-/Textinhalt im HTML-Modus.
-- Bestehenden zentralen Settings-/Config-Vertrag verwenden; keine parallele
-  Konfigurationsarchitektur.
-- Freies Admin-HTML/JS ist eine bewusste Betreiberentscheidung und darf nicht
-  automatisch verändert oder sanitisiert werden.
-
-## Sicherheits- und Statusgrenzen
-
-- Keine Secrets oder Zugangsdaten in Settings/Appearance speichern.
-- Keine unrelated Refactorings und keine Verträge wegen lokaler Runtimeprobleme zurückbauen.
-- Keine Änderung an P1 oder Übertragung eines Admin-Kontexts in die User-App.
-- P4 bleibt bis zum echten Betreiber-Gerätetest `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`; niemals vorzeitig `LIVE BESTANDEN` melden.
+1. Mit `origin/main` synchronisieren, ohne neuere Betreiber-/ChatGPT-Änderungen oder fremde Arbeit zu verwerfen. **Status: ERLEDIGT**
+2. `CODEX.md`, `WORKFLOW.md`, `UI-UX.md` und alle verpflichtend genannten Verträge, Statusdateien, Implementierungs- und Testpfade vollständig lesen. **Status: ERLEDIGT**
+3. Live-Produktionsfluss vollständig verfolgen: Admin Save → PHP-Persistenz → öffentliche Projektion → Base-Path/API → User-App Fetch/Fallback → Startup/Discovery/Access → sichtbares Home-Rendering → Service Worker/Produktionspaket. **Status: ERLEDIGT**
+4. Root Cause des live wirkungslosen Modul- und HTML-Modus konkret beweisen und in Regressionstests reproduzieren; grüne Mock-/Node-Tests nicht als Gegenbeweis verwenden. **Status: ERLEDIGT**
+5. PHP-nahe End-to-End-Tests ergänzen: Adminpersistenz und öffentliche Projektion stimmen für `module` und `html` strukturell überein; freies HTML bleibt unverändert. **Status: ERLEDIGT**
+6. Produktions-/Base-Path-/Packaging-Test ergänzen, der den tatsächlich ausgelieferten User-App-Endpoint und die benötigten versionierten Assets prüft. **Status: ERLEDIGT**
+7. Startup-Regressionstests ergänzen: gültige Konfiguration wird nach Discovery/Access wirklich sichtbar angewendet und nicht später durch Default-Rendering überschrieben. **Status: ERLEDIGT**
+8. P4 ursächlich korrigieren: Modulmodus öffnet ein gespeichertes aktives und zugängliches Modul (insbesondere GPS im Betreiberfall); ungültig/nicht zugänglich fällt kontrolliert neutral zurück. **Status: ERLEDIGT**
+9. P4 ursächlich korrigieren: gültiger HTML-Modus ersetzt nach Start/Reload sichtbar den Defaultinhalt und bewahrt den bewussten Administrator-HTML-Vertrag. **Status: ERLEDIGT**
+10. Wechsel `module → html → module`, Reload/Warmstart, bestehende Offline-Fallbacks sowie zentrale Persistenz ohne parallele Architektur erhalten. **Status: ERLEDIGT**
+11. User-App von technischem Username im Header, `Active Application`, `Local Workspace`, Modulzahl, Framework-/Discovery-/Workspace-Text und generischem sichtbaren Zurück-Standardbutton bereinigen. **Status: ERLEDIGT**
+12. Vorhandene zentrale Navigation app-typisch, touchgerecht und sichtbar nutzbar machen, ohne den Permission-/Module-Access-Vertrag zu umgehen oder eine große neue Navigationsarchitektur zu erfinden. **Status: ERLEDIGT**
+13. Produktbranding minimal universell machen: sichtbaren Application Name aus bestehendem Produktvertrag beziehen und Neutral-`N` über austauschbaren Logo/Icon-Konfigurations-/Assetvertrag ersetzen können; Generator/Produktkopie erhält den Vertrag. **Status: ERLEDIGT**
+14. Login-/Session-UX bereinigen, ohne P1, sichere Serversessions, Auth/CSRF oder Passwortregeln zu verändern; erfolgreicher Login darf keinen technisch unnötigen Namen im Header erzwingen. **Status: ERLEDIGT**
+15. Mindestregressionen abdecken: P1, Auth/CSRF, anonymer Viewer, Offline-Fallback, Theme, Modul-Lifecycle, Permissionfilter, UX-Bereinigung, Branding und Generator. **Status: ERLEDIGT**
+16. Keine Scope-Ausweitung auf Sync-Engine, Offline-Queue, Store-Wrapper, vollständiges Designsystem oder neue Produktmodule. **Status: ERLEDIGT**
+17. Relevante Architektur-, Funktions-, Status-, TODO- und Changelog-Dokumentation auf tatsächlichen Endstand aktualisieren; P4 bleibt `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`, bis ein neuer positiver Betreiber-Livetest vorliegt. **Status: ERLEDIGT**
+18. Fokussierte Tests, vollständige `npm test`-Suite unter PHP 8.1+, PHP-Lint, JS-Syntaxcheck, `git diff --check`, Produktionspaket und Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
+19. `CHATGPT.md` mit Root Cause, Ausgangs/finalem Commit, Dateien, Tests, offenen Punkten, Device-Retest, Push, CI, HEAD/origin-main, Working Tree und konkreten Retestschritten aktualisieren. **Status: IN ARBEIT**
+20. Committen, authentifiziert nach GitHub `main` pushen, `CHATGPT.md` dort verifizieren, `HEAD == origin/main` und sauberen Working Tree prüfen sowie FTPS, CodeQL und weitere CI bis terminal abwarten. **Status: AUSSTEHEND**
 
 ## Capture-Prüfung
 
 `CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
-## Betreiber-Retest nach erfolgreichem Deploy
+## Operative Wahrheiten und Grenzen
 
-1. Admin → Settings öffnen; dort darf keine Appearance-/Startseiten-Doppelansicht erscheinen.
-2. Admin → Appearance öffnen.
-3. Modus `Modul` wählen, aktives Modul speichern, App neu laden und Startziel prüfen.
-4. Modus `Text/HTML` wählen, einfachen HTML-Inhalt speichern, App neu laden und Darstellung prüfen.
-5. Zurück auf Modulmodus wechseln und Persistenz prüfen.
-6. Parallel P1 prüfen: User-App-User und Admin-Login bleiben getrennt.
+- Höchste Wahrheit: P4 funktioniert im aktuellen Betreiber-Livetest nicht.
+- P4-Status bis positivem Retest: `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`.
+- P1 zeigt keine neue Live-Regression und bleibt `LIVE BESTANDEN`.
+- Keine symptomatischen Timeouts/Reloads und kein stiller Default-Fallback bei gültiger Konfiguration.
+- Keine Secrets; keine neueren Betreiberänderungen überschreiben; keine unrelated Refactorings.
+
+## Betreiber-Retest nach Deploy
+
+1. Appearance → `Module` → GPS speichern → User-App neu laden → GPS muss Startziel sein.
+2. Appearance → `Text / HTML` → sichtbaren Testinhalt speichern → User-App neu laden → Inhalt muss Startseite sein.
+3. Wieder `Module` wählen → Reload → Persistenz und Startziel prüfen.
+4. User-App prüfen: kein `Tester`, kein `Active Application`, kein `Local Workspace`, keine Modulzahl, kein generischer Zurück-Button.
+5. Sichtbare, app-typische und permission-aware Navigation prüfen.
+6. Produktname, Logo-Default und Austauschbarkeit prüfen.
+7. User-/Admin-Sessiontrennung erneut bestätigen.

@@ -1,3 +1,11 @@
+## 2026-09-08 – P4 live regression: deterministic startup and deploy-bound user assets
+
+- Root Cause des Betreiber-Livefehlers beseitigt: unversionierte User-App-Assets konnten beim Installieren eines neuen Service Workers aus dem langlebigen HTTP-Cache übernommen werden; außerdem verhinderte ein Fehler im seriell davorliegenden Core-/Discovery-Start den Homepage-Fetch vollständig.
+- Das Produktionspaket versioniert lokale CSS-/JavaScript-Verweise nun mit dem Deployment-Commit. Core-Start, Homepage-Fetch und User-Session-Restore laufen unabhängig über `Promise.allSettled`.
+- PHP-Persistenztests sichern Modulmodus und bytegetreuen HTML-Inhalt; Packaging-Tests sichern die tatsächlichen versionierten User-Assets.
+- Die normale User-App wurde von Username-Badge, technischen Workspace-/Discovery-Texten, Modulzahl und generischem Zurück-Button bereinigt. Navigation bleibt sichtbar und permission-aware; Produktname, Icon-Text und optionale Logo-URL bilden einen minimalen Brandingvertrag.
+- P1 bleibt `LIVE BESTANDEN`; P4 bleibt bis zum positiven Betreiber-Livetest `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`.
+
 ## 2026-09-08 – P4 global homepage and Admin Appearance separation
 
 - Split `Admin → Settings` and `Admin → Appearance` into independent technical and presentation views.

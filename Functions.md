@@ -9,6 +9,8 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 
 Die User-App ergänzt eine lokale Light/Dark-Auswahl unter `neutral.user.theme.v1`; Auswahl, Warmstart und Persistenz benötigen keine Serververbindung.
 
+Die User-App lädt die zentrale Homepage-Projektion fehlertolerant parallel zum Core-Start und zur User-Session. Sie öffnet im Modulmodus nur ein aktives, sichtbares und berechtigtes Modul; im HTML-Modus übernimmt sie den bewusst unveränderten Administrator-Inhalt in den vorhandenen Sandbox-Frame. Die Produktidentität unterstützt konfigurierbaren Namen, kurzen Icon-Text und eine optionale Logo-URL.
+
 ## Status
 
 - **VORHANDEN**: implementiert und aufrufbar.

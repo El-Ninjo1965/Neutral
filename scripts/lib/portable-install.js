@@ -385,6 +385,22 @@ function injectServiceWorkerDeployStamp(serviceWorkerPath, sourceCommit, { allow
 
   const injected = `self.__NEUTRAL_DEPLOY_STAMP__ = '${sourceCommit}';\n`;
   fs.writeFileSync(serviceWorkerPath, injected + source);
+  return sourceCommit;
+}
+
+// A new service-worker cache alone is not sufficient: while installing it,
+// the browser may satisfy unversioned shell requests from its HTTP cache. Add
+// the same immutable deployment stamp to local CSS/JS references in the
+// packaged entry document so a deployment cannot keep executing an older
+// user-app.js against current server settings.
+function injectShellAssetDeployStamp(indexPath, deployStamp) {
+  if (typeof deployStamp !== 'string' || !/^(?:[0-9a-f]{7,64}|dev[0-9a-f]{12})$/i.test(deployStamp)) {
+    throw new Error('A valid deploy stamp is required for shell asset versioning.');
+  }
+  const html = fs.readFileSync(indexPath, 'utf8');
+  const stamped = html.replace(/\b(src|href)=(['"])(?![a-z][a-z0-9+.-]*:|\/\/|#)([^'"?]+\.(?:js|css))\2/gi,
+    (_match, attribute, quote, assetPath) => `${attribute}=${quote}${assetPath}?v=${deployStamp}${quote}`);
+  fs.writeFileSync(indexPath, stamped);
 }
 
 function discoverSourceDirty(sourceRoot) {
@@ -649,13 +665,17 @@ function buildProductionPackage(options = {}) {
     const resolvedSourceCommit = options.sourceCommit === undefined
       ? discoverSourceCommit(sourceRoot)
       : options.sourceCommit;
-    injectServiceWorkerDeployStamp(
+    const deployStamp = injectServiceWorkerDeployStamp(
       path.join(temporaryDirectory, 'Web-App/public/service-worker.js'),
       resolvedSourceCommit,
       // Local development outside a git checkout may fall back to a unique
       // dev stamp; production builds (workflow passes GITHUB_SHA / an explicit
       // commit) always fail closed when no stamp is available.
       { allowFallback: options.allowDevStampFallback === true }
+    );
+    injectShellAssetDeployStamp(
+      path.join(temporaryDirectory, 'Web-App/public/index.html'),
+      deployStamp
     );
 
     for (const relativePath of inventory) {

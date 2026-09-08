@@ -309,8 +309,29 @@
   };
 
   const getAppMark = () => {
+    const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
+      ? window.MasterFramework
+      : null;
+    const appConfig = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? window.ConfigManager.get('app', {})
+      : {};
+    const branding = framework?.getActiveApp()?.branding || appConfig.branding;
+    if (branding && typeof branding.iconText === 'string' && branding.iconText.trim()) {
+      return branding.iconText.trim().slice(0, 3);
+    }
     const name = getAppName().trim();
     return name ? name.charAt(0).toUpperCase() : 'A';
+  };
+
+  const getAppLogoUrl = () => {
+    const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
+      ? window.MasterFramework
+      : null;
+    const appConfig = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? window.ConfigManager.get('app', {})
+      : {};
+    const logoUrl = framework?.getActiveApp()?.branding?.logoUrl || appConfig.branding?.logoUrl;
+    return typeof logoUrl === 'string' && logoUrl.trim() ? logoUrl.trim() : '';
   };
 
   const getModuleDisplayName = (module) => {
@@ -353,19 +374,25 @@
   const getDiscoveryMessage = () => state.discoveryState === 'error'
     ? 'Modules could not be loaded. Check your connection and try again.'
     : 'Loading available modules...';
-  const getModuleCountLabel = (modules) => state.discoveryState === 'pending'
-    ? '...'
-    : state.discoveryState === 'error'
-      ? '—'
-      : String(modules.length);
-
   const applyBranding = () => {
     const appName = getAppName();
     document.title = appName;
     const title = document.querySelector('[data-app-title]');
     if (title) title.textContent = appName;
     if (brand) brand.textContent = appName;
-    if (mark) mark.textContent = getAppMark();
+    if (mark) {
+      const logoUrl = getAppLogoUrl();
+      mark.replaceChildren();
+      if (logoUrl) {
+        const logo = document.createElement('img');
+        logo.className = 'user-app-logo';
+        logo.src = logoUrl;
+        logo.alt = '';
+        mark.appendChild(logo);
+      } else {
+        mark.textContent = getAppMark();
+      }
+    }
   };
 
   const renderActions = () => {
@@ -394,7 +421,6 @@
     }
 
     actions.innerHTML = `
-      <span class="user-app-session-badge">${escapeHtml(currentUser.displayName || currentUser.username || 'User')}</span>
       ${settingsButton}
       <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
     `;
@@ -530,13 +556,10 @@
 
     content.innerHTML = `
       <section class="user-app-panel">
-        <button class="user-app-back" type="button" id="userSettingsBackButton">Back</button>
         <div class="user-app-section-heading">
           <div>
-            <span class="user-app-eyebrow">${currentUser ? 'Profile' : 'Local workspace'}</span>
             <h1>Settings</h1>
           </div>
-          <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
         <div class="user-settings-card">
           <h2>Appearance</h2>
@@ -587,18 +610,9 @@
           <button id="userSettingsSaveButton" type="button" class="primary">Save settings</button>
           <button id="userSettingsResetButton" type="button" class="secondary">Show all functions</button>
         </div>
-        <p id="userSettingsStatus" class="user-settings-status">Changes are stored locally in this workspace.</p>
+        <p id="userSettingsStatus" class="user-settings-status" aria-live="polite"></p>
       </section>
     `;
-
-    const backButton = document.getElementById('userSettingsBackButton');
-    if (backButton) {
-      backButton.addEventListener('click', () => {
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        renderApp();
-      });
-    }
 
     const saveButton = document.getElementById('userSettingsSaveButton');
     if (saveButton) {
@@ -721,8 +735,6 @@
   const renderLandingPage = () => {
     const homepage = getHomepageConfig();
     const appName = getAppName();
-    const currentUser = getCurrentUser();
-
     if (homepage.mode === 'module') {
       const moduleId = homepage.moduleId;
       const preferences = readUserPreferences();
@@ -752,7 +764,6 @@
         </div>
         <div class="user-app-homepage-content">${message}</div>
         ${moduleCards}
-        ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can use the available workspace features without signing in.</div>'}
       </section>
     `;
 
@@ -808,16 +819,26 @@
   const startBackgroundInitialization = () => {
     window.setTimeout(async () => {
       try {
-        if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
-          await window.CoreStartup.start();
-          if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
-          await window.CoreStartup.startBackground();
-        }
-        await loadHomepageConfig();
-        await restoreServerSession();
-      } catch (error) {
-        if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
-          window.CoreErrorHandler.handle(error, { type: 'background-startup' });
+        const startCore = async () => {
+          if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
+            await window.CoreStartup.start();
+            if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
+            await window.CoreStartup.startBackground();
+          }
+        };
+        // These data flows are intentionally independent. A failed module or
+        // IndexedDB startup must not prevent the public homepage projection
+        // from being fetched, and a homepage/API failure must not block P1
+        // session restoration or module discovery.
+        const initializationResults = await Promise.allSettled([
+          startCore(),
+          loadHomepageConfig(),
+          restoreServerSession()
+        ]);
+        for (const result of initializationResults) {
+          if (result.status === 'rejected' && window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
+            window.CoreErrorHandler.handle(result.reason, { type: 'background-startup' });
+          }
         }
       } finally {
         if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');

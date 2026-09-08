@@ -5,6 +5,13 @@
 **Geprüft:** 2026-09-04
 **Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
 
+## P4-Auslieferungs- und Startvertrag
+
+- Der öffentliche PHP-Endpunkt liefert ausschließlich die zentrale Homepage-Projektion; die User-App wendet sie unabhängig von Auth- und Core-/Discovery-Fehlern an.
+- Core-Start, Homepage-Fetch und Wiederherstellung der User-Session sind getrennte Startpfade. Ein Fehler in einem Pfad darf die beiden anderen nicht verhindern.
+- Das Produktionspaket bindet lokale JavaScript- und CSS-URLs im User-Entry-Document an denselben Deployment-Commit wie den Service-Worker-Cache. Damit kann ein neuer Worker keinen alten HTTP-Cache-Inhalt in einen neuen Shell-Cache übernehmen.
+- Branding ist App-Metadatum (`iconText`, optional `logoUrl`) und kein unveränderliches Neutral-Element.
+
 ## Statuslegende
 
 - **IST**: im aktuellen Repository nachweisbar implementiert.
