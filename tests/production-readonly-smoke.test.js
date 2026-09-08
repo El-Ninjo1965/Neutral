@@ -8,7 +8,7 @@ const path = require('node:path');
 const projectRoot = path.resolve(__dirname, '..');
 const workflowPath = path.join(projectRoot, '.github/workflows/ftp-upload.yml');
 const smokePath = path.join(projectRoot, 'scripts/production-readonly-smoke.js');
-const { runSmoke } = require(smokePath);
+const { readCurrentDeploymentManifest, runSmoke } = require(smokePath);
 
 function response(status, body, finalUrl, headers = {}) {
   return {
@@ -75,6 +75,39 @@ test('FTPS workflow runs the permanent read-only HTTP smoke after deployment', (
   assert.match(workflow, /failed_test/);
   assert.match(workflow, /steps\.tests\.outputs\.failed_test/);
   assert.match(workflow, /tests\/\$TEST_FAILURE/);
+  assert.match(workflow, /concurrency:\s*[\s\S]*group:\s*neutral-production-ftps[\s\S]*cancel-in-progress:\s*false/);
+  assert.match(workflow, /NEUTRAL_SMOKE_REVISION_ATTEMPTS=4/);
+  assert.ok(workflow.indexOf('manual-ftps-deploy.js') < workflow.indexOf('NEUTRAL_SMOKE_REVISION_ATTEMPTS'));
+});
+
+test('revision verification retries stale HTTP state after upload and then succeeds', async () => {
+  const commits = ['old123', 'abc123'];
+  const delays = [];
+  const result = await readCurrentDeploymentManifest({
+    publicBase: new URL('https://example.test/'),
+    fetchImpl: async (url) => response(200, JSON.stringify({ basePath: '', sourceCommit: commits.shift(), sourceDirty: false }), url),
+    expectedSourceCommit: 'abc123',
+    expectedBasePath: '',
+    attempts: 3,
+    backoffMs: [10, 20],
+    sleep: async (delay) => delays.push(delay),
+  });
+  assert.equal(result.attempt, 2);
+  assert.deepEqual(delays, [10]);
+});
+
+test('revision verification fails after bounded retries for a permanent mismatch', async () => {
+  let requests = 0;
+  await assert.rejects(readCurrentDeploymentManifest({
+    publicBase: new URL('https://example.test/'),
+    fetchImpl: async (url) => { requests += 1; return response(200, JSON.stringify({ basePath: '', sourceCommit: 'old123', sourceDirty: false }), url); },
+    expectedSourceCommit: 'abc123',
+    expectedBasePath: '',
+    attempts: 3,
+    backoffMs: [0, 0],
+    sleep: async () => {},
+  }), /deployten Revision/);
+  assert.equal(requests, 3);
 });
 
 test('production smoke covers public, protected, rewrite, viewer and module-contract boundaries', () => {

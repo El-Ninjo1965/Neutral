@@ -1632,6 +1632,38 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
 .gps-message { min-height: 1.3em; margin: 0; color: #68786f; font-size: 0.9rem; }
 @media (max-width: 600px) { .user-app-header { min-height: 68px; padding: 0 20px; } .user-app-nav { padding: 10px 20px; } .user-app-content { min-height: calc(100vh - 116px); padding: 34px 20px; } .user-app-panel h1 { font-size: 1.75rem; } .gps-heading { align-items: flex-start; } .gps-status { white-space: nowrap; } }
 
+/* Central user-surface contract: framework and modules inherit these tokens. */
+.user-app { background: var(--bg); color: var(--text); }
+.user-app-shell,
+.user-settings-card,
+.user-settings-toggle,
+.gps-location-card,
+.gps-position div { background: var(--surface); border-color: var(--border); color: var(--text); }
+.user-app-nav { background: var(--surface-secondary); border-color: var(--border); }
+.user-app-nav-item,
+.user-app-link,
+.user-app-action,
+.gps-actions button,
+.user-settings-select,
+.form-field input { background: var(--surface); border-color: var(--line-strong); color: var(--text); }
+.user-app-nav-item:hover { background: var(--surface-tertiary); border-color: var(--primary); }
+.user-app-nav-item.active,
+.user-app-action,
+.gps-actions .gps-primary-action { background: var(--primary); border-color: var(--primary); color: var(--surface); }
+.user-app-brand,
+.user-app-panel h1,
+.user-settings-field,
+.user-settings-toggle span,
+.gps-position dd,
+.form-field label { color: var(--text); }
+.user-settings-card p,
+.user-settings-toggle small,
+.gps-position dt,
+.gps-message { color: var(--text-muted); }
+.user-app-homepage-content,
+.user-app-homepage-frame { background: transparent; color-scheme: light dark; }
+.user-theme-toggle { min-width: 44px; min-height: 44px; padding: 8px; font-size: 1.2rem; }
+
 /* Shared app/admin navigation overrides */
 .shared-shell-brand {
   align-items: center;

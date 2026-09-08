@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: neutral-production-ftps
+  cancel-in-progress: false
+
 jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[cleanup-public-html]') }}
@@ -114,6 +118,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          NEUTRAL_SMOKE_REVISION_ATTEMPTS=4 \
+          NEUTRAL_SMOKE_REVISION_BACKOFF_MS=2000,5000,10000 \
           node scripts/production-readonly-smoke.js
 
       - name: Fehlgeschlagene Stufe begrenzt erfassen

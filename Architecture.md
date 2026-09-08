@@ -7,6 +7,10 @@
 
 ## P4-Auslieferungs- und Startvertrag
 
+### Zentraler User-Theme-Vertrag
+
+Framework- und Moduloberflächen verwenden die semantischen Tokens `--bg`, `--surface`, `--surface-secondary`, `--surface-tertiary`, `--text`, `--text-muted`, `--border`, `--line-strong` und `--primary`. Light/Dark werden zentral durch denselben persistenten User-Theme-State gesteuert; Module benötigen keine eigenen Dark-Mode-Sonderfarben. Freies Homepage-HTML wird nicht umgeschrieben, sein Frameworkcontainer bleibt theme-neutral transparent.
+
 - Der öffentliche PHP-Endpunkt liefert ausschließlich die zentrale Homepage-Projektion; die User-App wendet sie unabhängig von Auth- und Core-/Discovery-Fehlern an.
 - Core-Start, Homepage-Fetch und Wiederherstellung der User-Session sind getrennte Startpfade. Ein Fehler in einem Pfad darf die beiden anderen nicht verhindern.
 - Das Produktionspaket bindet lokale JavaScript- und CSS-URLs im User-Entry-Document an denselben Deployment-Commit wie den Service-Worker-Cache. Damit kann ein neuer Worker keinen alten HTTP-Cache-Inhalt in einen neuen Shell-Cache übernehmen.

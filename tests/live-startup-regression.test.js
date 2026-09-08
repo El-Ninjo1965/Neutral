@@ -111,6 +111,24 @@ test('central navigation has touch-sized button affordance in both themes', () =
   assert.match(css, /\.user-app-nav-item:focus-visible/);
 });
 
+test('header theme toggle shares the persistent Settings theme state', () => {
+  const source = read('Web-App/public/user-app.js');
+  const css = read('Web-App/public/style.css');
+  assert.match(source, /id="userThemeToggle"/);
+  assert.match(source, /applyUserTheme\(readUserTheme\(\) === 'dark' \? 'light' : 'dark'\)/);
+  assert.match(source, /localStorage\.setItem\(USER_THEME_KEY/);
+  assert.match(source, /id="userThemeSelect"/);
+  assert.match(css, /\.user-theme-toggle[^}]*min-width:\s*44px/);
+});
+
+test('user and GPS surfaces inherit central theme tokens', () => {
+  const css = read('Web-App/public/style.css');
+  assert.match(css, /\.gps-location-card,[\s\S]*background:\s*var\(--surface\)/);
+  assert.match(css, /\.user-app-link,[\s\S]*background:\s*var\(--surface\)/);
+  assert.match(css, /\.user-settings-toggle small,[\s\S]*color:\s*var\(--text-muted\)/);
+  assert.match(css, /\.user-app-homepage-frame[^}]*background:\s*transparent/);
+});
+
 test('static shell placeholder nav carries no fake active state', () => {
   const source = read('Web-App/public/index.html');
 

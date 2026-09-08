@@ -4,9 +4,10 @@
 
 - P1 (User-App vs Admin-Interface separation): LIVE BESTANDEN
 - Workflow reset: DONE / DOCUMENTED
-- P4 (configurable landing page): WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 (configurable landing page): THEME/FTPS-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Theme / i18n / navigation / other feature work: PENDING
+- Theme consistency and quick toggle: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- Full i18n / other feature work: PENDING
 
 ## Active priority list
 

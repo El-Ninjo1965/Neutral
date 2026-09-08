@@ -100,6 +100,7 @@ PHASE D – CLOSE
 - Umfang blieb auf Start-/Reload-Semantik, Focus, User-Login, persönliche Bereichsauswahl und locale-fähige GPS-Anzeige begrenzt; die vollständige Architektur aus `I18N.md` wurde nicht implementiert.
 - Verifikation, GitHub-Übertragung und terminale CI-Ergebnisse werden im zugehörigen `CHATGPT.md`-Abschlussbericht festgehalten.
 - Folgetask durch Codex: Live-Warmstartverzögerung auf fehlende lokale Homepagepersistenz zurückgeführt, öffentlichen versionierten Local-first-Cache und zentrale app-typische Navigation implementiert; keine permission-sensitiven Daten und keine neue Sync-/I18N-Architektur aufgenommen.
+- Folgetask durch Codex: User-Oberflächen an zentrale Light/Dark-Tokens gebunden, gemeinsamen persistenten Header-Toggle ergänzt und FTPS-Revisionsverifikation nach historischen post-upload HTTP-Mismatches durch serialisierte Deployments plus begrenzten Backoff stabilisiert.
 
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 

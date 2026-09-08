@@ -1,6 +1,6 @@
 # NEUTRAL – Status
 
-**Status:** P4 WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
+**Status:** THEME/FTPS-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
 **Geprüft:** 2026-09-08
 **Reference:** Repository + live operator confirmation + workflow reset documentation
 
@@ -28,6 +28,7 @@
 - Die User-App öffnet danach ein erlaubtes konfiguriertes Modul oder rendert das unveränderte Administrator-HTML. Automatisierte Regressionen sind grün; der nachgewiesene Livefehler bleibt bis zum positiven Betreiber-Retest die operative Wahrheit.
 - Betreiber-Livebefund vom 2026-09-08 bestätigte Modul- und HTML-Modus grundsätzlich, zeigte aber Folgefehler bei Reload-/Startkontext, Default-Flash, statischem HTML-Welcome, Fokusrahmen, Login-Race, Settings-Reset und GPS-Darstellung. Diese Pfade sind code-seitig korrigiert und benötigen erneut den Device-Retest.
 - Der anschließende Betreiber-Retest bestätigte diese Folgefixes live. Neuer Livebefund war eine circa zweisekündige Loading-Phase bei jedem Warmstart sowie eine zu schwache Textlink-Affordance der zentralen Navigation. Root Cause der Wartezeit war die ausschließlich serverseitig geladene Homepageprojektion; der neue öffentliche, schema-versionierte Local-first-Cache und die zentrale Buttonnavigation sind code-seitig umgesetzt und benötigen den nächsten Device-Retest.
+- Der nächste Betreiber-Retest bestätigte Warmstart, Navigation, HTML und GPS live. Offen waren inkonsistente Dark-Flächen/Kontraste und fehlende Schnellumschaltung. Diese sind über zentrale Theme-Tokens und einen gemeinsamen persistenten Header-/Settings-State code-seitig korrigiert. Wiederkehrende FTPS-Fehlmeldungen wurden auf kurzfristige alte HTTP-Revisionsstände nach erfolgreichem Upload sowie überlappende Deployments zurückgeführt; bounded Revision-Retry und Workflow-Concurrency sind umgesetzt.
 
 ## Historical evidence retained
 

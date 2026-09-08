@@ -2,35 +2,25 @@
 
 ## Gesamtauftrag
 
-Die beim Betreiber live beobachtete circa zweisekündige `Loading`-Phase bei jedem Warmstart/Reload ursächlich beheben und die zentrale User-App-Navigation app-typisch/touchgerecht gestalten. Der neue Local-first-Vertrag aus `UI-UX.md` ist verbindlich. Bereits live bestätigte P4-, GPS-, HTML-, Login- und P1-Fixes bleiben erhalten; keine vollständige I18N- oder neue Sync-/Offline-Queue-Architektur.
+Dark Theme zentral und konsistent fertigstellen, eine persistente Light/Dark-Schnellumschaltung im User-App-Header ergänzen und die wiederkehrenden falschen FTPS-Smoke-Fehlschläge nach erfolgreichem Upload ursächlich stabilisieren. Bestehende live bestätigte Warmstart-, P4-, GPS-, HTML-, Navigation-, Login- und P1-Fixes bleiben erhalten.
 
-## Nummerierte, überprüfbare Arbeitspunkte
+## Prüfliste
 
-1. Vollständig mit `origin/main` synchronisieren und neuere `CODEX.md`-/`UI-UX.md`-Verträge unverändert übernehmen. **Status: ERLEDIGT**
-2. Alle in `CODEX.md` geforderten Verträge, Status-, User-App-, Startup-, Cache-, Service-Worker-, Navigation-, Modul- und Testpfade vollständig lesen. **Status: ERLEDIGT**
-3. Root Cause der sichtbaren Warmstartwartezeit im tatsächlichen Homepage-/Startup-/Storage-Datenfluss bestimmen und dokumentieren; nicht durch Animation, Timeout oder Verstecken kaschieren. **Status: ERLEDIGT**
-4. Regressionstests zuerst ergänzen: gültige lokale HTML-Homepage rendert vor Serverrefresh; Refresh aktualisiert Cache; Offline-Warmstart; Erststart; invalider/inkompatibler Cache. **Status: ERLEDIGT**
-5. Einen minimalen versionierten, ausschließlich öffentlichen Homepage-Cache implementieren; keine Session-/Permission-/authentifizierten Katalogdaten als öffentliche Wahrheit persistieren. **Status: ERLEDIGT**
-6. HTML-Warmstart sofort aus gültigem lokalen Stand rendern und Serverprojektion danach im Hintergrund abgleichen. **Status: ERLEDIGT**
-7. Modul-Warmstart so früh wie sicher ermöglichen, ohne Permission-/Viewer-Fail-Closed oder Startkontext zu schwächen; Discovery-/Serverrefresh im Hintergrund erhalten. **Status: ERLEDIGT**
-8. Kaltstart ohne gültigen Cache sowie Online-/Offline-Fehler kontrolliert auf Loading/Fallback führen. **Status: ERLEDIGT**
-9. Messbare Startup-Instrumentierung bzw. belastbare Tests für Local-first Render vor verzögertem Serverrefresh ergänzen. **Status: ERLEDIGT**
-10. Zentrale Navigation (`Start`, GPS, spätere erlaubte Bereiche) als klar erkennbare touchgerechte App-Aktionen mit eindeutigem Active-, Hover- und `:focus-visible`-Zustand gestalten. **Status: ERLEDIGT**
-11. Navigation zentral/theme-kompatibel halten; keine Modul-eigenen Navigationsstile und keine Änderungen an freiem HTML-Inhalt. **Status: ERLEDIGT**
-12. Persönliche `App areas`-Auswahl, ausgeblendete/nicht erlaubte Bereiche, P1, Auth/CSRF, Appearance, GPS, HTML, Offline, Service Worker, Packaging und Base Path regressionsfrei halten. **Status: ERLEDIGT**
-13. Keine Scope-Ausweitung auf vollständige I18N-/Providerarchitektur, Sync-/Offline-Queue, Store-Wrapper, neue Module, Admin-Redesign oder Designsystemersatz. **Status: ERLEDIGT**
-14. Relevante Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; keine erfundene Live-Bestätigung. **Status: ERLEDIGT**
-15. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
-16. Vollständigen Abschlussbericht mit Root Cause, Änderungen, Tests, Commits, CI und konkretem Betreiber-Retest in `CHATGPT.md` erstellen. **Status: ERLEDIGT**
-17. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: ERLEDIGT**
+1. `origin/main` synchronisieren, neue Verträge erhalten und Pflichtdokumente/relevante Implementierung vollständig lesen. **ERLEDIGT**
+2. Theme-/FTPS-Regressionstests zuerst ergänzen. **ERLEDIGT**
+3. Zentrale semantische Theme-Tokens für User-App, Header, Navigation, Settings, GPS, Inputs und HTML-Container verwenden; keine punktuellen Screenshot-Hacks. **ERLEDIGT**
+4. Kompakten accessible Header-Theme-Toggle implementieren, der exakt denselben lokalen Theme-State wie Settings nutzt und sofort/offline/reloadfest wirkt. **ERLEDIGT**
+5. FTPS-Historie und Upload-/Smoke-Reihenfolge analysieren; Root Cause dokumentieren. **ERLEDIGT**
+6. Produktionsdeployments per Workflow-Concurrency serialisieren. **ERLEDIGT**
+7. Revision-Smoke nach erfolgreichem Upload begrenzt mit Backoff wiederholen; permanente Mismatches bleiben Fehler, Uploadfehler werden nicht kaschiert. **ERLEDIGT**
+8. Secret-freie Diagnose und falsche URL/Base-Path-/Securityfehler weiterhin fail-closed halten. **ERLEDIGT**
+9. P1/Auth/CSRF, Warmstart, HTML, GPS, Navigation, App areas, Offline, SW, Packaging/Base Path regressionsfrei halten. **ERLEDIGT**
+10. Keine Scope-Ausweitung auf vollständige I18N, neue Sync-/Queue-, Modul-, Admin- oder Designsystemarchitektur. **ERLEDIGT**
+11. Status/TODO/CHANGELOG/Workflow und Verträge wahrheitsgemäß aktualisieren; Theme bleibt bis Device-Retest unterhalb LIVE BESTANDEN. **ERLEDIGT**
+12. Fokussierte und vollständige Verifikation gemäß WORKFLOW durchführen. **ERLEDIGT**
+13. Vollständigen Bericht nach `CHATGPT.md` schreiben. **IN ARBEIT**
+14. Commit/Push main, CI/FTPS/CodeQL terminal, CHATGPT GitHub-Verifikation, HEAD==origin/main, sauberer Tree. **AUSSTEHEND**
 
 ## Capture-Prüfung
 
 `CODEX.md == CURRENT-TASK-Anforderungen: JA`
-
-## Operative Wahrheit und Grenzen
-
-- Live bestätigt bleiben: GPS/HTML-P4-Inhalt, Startkontext, kein Welcome-Flash, GPS-Formatierung/Share, bereinigte Settings und P1.
-- Aktuell offen und live nachgewiesen: Warmstart zeigt ungefähr zwei Sekunden `Loading`; zentrale Navigation wirkt zu sehr wie Textlinks/Tabs.
-- Öffentliche Homepage darf lokal gecacht werden; authentifizierte Berechtigungsdaten dürfen nicht als anonymer Fallback persistiert werden.
-- P4 bleibt bis erneutem Betreiber-Retest unterhalb `LIVE BESTANDEN`.

@@ -417,9 +417,11 @@
     const currentUser = getCurrentUser();
     const settingsLabel = 'Settings';
     const settingsButton = `<button id="userSettingsButton" class="user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
+    const nextTheme = readUserTheme() === 'dark' ? 'light' : 'dark';
+    const themeButton = `<button id="userThemeToggle" class="user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
 
     if (!currentUser) {
-      actions.innerHTML = `${settingsButton}<button id="userLoginButton" class="user-app-action" type="button">Login</button>`;
+      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="user-app-action" type="button">Login</button>`;
       const loginButton = document.getElementById('userLoginButton');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
@@ -434,11 +436,16 @@
           renderApp();
         });
       }
+      const themeToggle = document.getElementById('userThemeToggle');
+      if (themeToggle) themeToggle.addEventListener('click', () => {
+        applyUserTheme(readUserTheme() === 'dark' ? 'light' : 'dark');
+        renderApp();
+      });
       return;
     }
 
     actions.innerHTML = `
-      ${settingsButton}
+      ${themeButton}${settingsButton}
       <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
     `;
     const logoutButton = document.getElementById('userLogoutButton');
@@ -462,6 +469,11 @@
         renderApp();
       });
     }
+    const themeToggle = document.getElementById('userThemeToggle');
+    if (themeToggle) themeToggle.addEventListener('click', () => {
+      applyUserTheme(readUserTheme() === 'dark' ? 'light' : 'dark');
+      renderApp();
+    });
   };
 
   const renderModuleNav = () => {

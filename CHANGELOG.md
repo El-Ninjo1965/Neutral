@@ -1,3 +1,11 @@
+## 2026-09-08 – Central Dark Theme and stable FTPS revision verification
+
+- User-App, Header-Actions, Navigation, Settings, Inputs, GPS and Homepage-Container inherit semantic surface/text/muted/border/primary tokens in Light and Dark instead of component-local Light colors.
+- Added an accessible sun/moon header control using the exact same persistent `neutral.user.theme.v1` state as Settings; switching is immediate and offline-capable.
+- GitHub run history confirmed repeated post-upload smoke failures: runs `34204392812` and `34197224914` failed on a briefly stale public revision, while upload succeeded; a nearby run also observed an unavailable root during overlapping deploy activity.
+- FTPS workflow now serializes production deploys. After a successful upload only revision mismatches receive bounded backoff verification; permanent mismatch, upload, URL, Base Path and other smoke errors remain failures.
+- Executed and documented by Codex in `Neutral`; Theme UI remains device-retest-required and P1 remains live passed.
+
 ## 2026-09-08 – Local-first homepage warmstart and app navigation
 
 - Root Cause der live beobachteten circa zweisekündigen Loading-Phase: Die öffentliche Homepageprojektion existierte nur im Arbeitsspeicher und wurde bei jedem Reload ausschließlich über den Server geladen. Der erste sinnvolle Render wartete daher trotz bereits bekannten Inhalts immer auf den Netzwerkpfad.

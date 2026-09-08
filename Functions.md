@@ -15,6 +15,10 @@ Ein Homepage-Modul bleibt im aktiven Bereich `Start`; die eigenständige Modulan
 
 `NeutralHomepageCache` persistiert ausschließlich eine schema-versionierte öffentliche Homepageprojektion. Gültiges HTML kann beim Warmstart synchron vor dem Netzwerkrefresh erscheinen; inkompatible, leere oder nicht als öffentlich markierte Records werden verworfen. Die Performance-Marken `homepage-local-ready` und `homepage-refresh-ready` trennen lokalen First Render vom Serverabgleich.
 
+Der Header-Theme-Toggle und die Settings-Auswahl verwenden beide `neutral.user.theme.v1` und `applyUserTheme`; es existiert kein zweiter Theme-State. Die User-/GPS-Oberflächen beziehen Flächen, Text, Muted, Border, Primary und Fokus zentral aus den semantischen CSS-Tokens.
+
+Der Produktions-Smoke wiederholt ausschließlich einen kurzfristigen Revision-Mismatch nach bereits erfolgreichem Upload begrenzt (maximal fünf Versuche und 30 Sekunden Backoff). Andere Vertragsfehler bleiben sofortige Fehler; GitHub-Deployments sind über eine gemeinsame Concurrency-Gruppe serialisiert.
+
 ## Status
 
 - **VORHANDEN**: implementiert und aufrufbar.
