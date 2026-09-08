@@ -20,7 +20,7 @@
 12. P1/P4, Homepage, GPS, Login, Themes, Service Worker, Packaging/Base Path und FTPS-/Smoke regressionsfrei halten; keine ausgeschlossenen Zukunftsfeatures beginnen. **ERLEDIGT**
 13. Betroffene Architektur-, Funktions-, UI-/Design-, Status-, TODO-, ToDoNow-, CHANGELOG- und Workflow-Dokumentation wahrheitsgemäß aktualisieren. **ERLEDIGT**
 14. Fokussierte Tests, vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **ERLEDIGT**
-15. Commit/push nach `main`, terminale FTPS-/CodeQL-/sonstige CI, Abschlussbericht mit neun Retest-Schritten in `CHATGPT.md`, GitHub-Verifikation, `HEAD == origin/main` und sauberer Tree. **IN ARBEIT**
+15. Commit/push nach `main`, terminale FTPS-/CodeQL-/sonstige CI, Abschlussbericht mit neun Retest-Schritten in `CHATGPT.md`, GitHub-Verifikation, `HEAD == origin/main` und sauberer Tree. **ERLEDIGT**
 
 ## Capture-Prüfung
 

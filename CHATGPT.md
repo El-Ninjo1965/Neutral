@@ -1,64 +1,80 @@
 # NEUTRAL – CODEX ABSCHLUSSBERICHT
 
 **Richtung:** Codex → ChatGPT/Lea
-**Auftrag:** P4 live abschließen und `Admin → Appearance` bereinigen
+**Auftrag:** `Admin → Appearance` als produktiver User-UI-Designeditor V1
 **Datum:** 2026-09-08
-**Status:** P4 `LIVE BESTANDEN` · APPEARANCE-BEREINIGUNG CODE-SEITIG ABGESCHLOSSEN
+**Status:** CODE-SEITIG ABGESCHLOSSEN / BETREIBER-DEVICE-RETEST ERFORDERLICH
 
-## 1. Übergabe und Synchronisation
+## 1. Scope und bestehende Liveverträge
 
-- Die Sandbox wurde zuerst auf den aktuellen Stand von GitHub `main` (`cc90867`) synchronisiert. Die neueren verbindlichen Fassungen von `CODEX.md`, `USER-UI-DESIGN.md` und `I18N.md` wurden vollständig erhalten.
-- Der Auftrag wurde vor Implementierungsarbeit vollständig nach `CURRENT-TASK.md` übernommen und mit `CODEX.md == CURRENT-TASK-Anforderungen: JA` geprüft.
-- Der Scope blieb auf den P4-Liveabschluss und die Entfernung der toten Appearance-Controls begrenzt. Weder der künftige User-UI-Designeditor noch die vollständige I18N-Architektur wurden begonnen.
+- Der Auftrag wurde nach Synchronisation mit dem neuesten GitHub-`main` vollständig nach `CURRENT-TASK.md` übernommen. `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
+- P1 und P4 bleiben `LIVE BESTANDEN`. Start Page, Homepagecache, iframe-Adapter/-Gate, Warmstart ohne Loading-/White-Flash, Home/GPS, Login sowie getrennte User-/Admin-Sessions wurden nicht zurückgebaut.
+- Admin-Header-Theme und persönliche lokale User-Theme-Auswahl bleiben unabhängig. Der Editor definiert ausschließlich, wie beide User-App-Modi aussehen.
+- I18N, Language Settings, Remote Fonts, Branding-Upload, Page Builder, pro-Modul- und Store-App-Design wurden nicht begonnen.
 
-## 2. P4-Liveabschluss
+## 2. Strukturierter Designvertrag
 
-- Der neue Betreiberbefund bestätigt auf dem realen iPad/Safari bei aktivem Dark Theme und mehreren Reloads/Warmstarts: kein weißes `Loading…`, kein heller/weißer Flash und unmittelbares Erscheinen des lokalen Homepageinhalts.
-- Frühere negative Device-Befunde bleiben in der zeitlichen P4-Evidenz erhalten, sind aber kein aktiver Status mehr.
-- Die bereits vorher bestätigten Pflichtpfade umfassen Modul- und HTML-Modus, Moduswechsel, unverändertes Administrator-HTML, Local-first-Warmstart, Dark/Light-Umschaltung, Home/GPS-Navigation und die unveränderte P1-Sessiontrennung.
-- Die Abnahmelogik aus den geltenden P4-/Core-Verträgen enthält damit keinen weiteren offenen P4-Pflichtpunkt. Vollständige I18N und der zukünftige User-UI-Designeditor sind Folgearchitektur und keine rückwirkenden P4-Blocker.
-- Operative Wahrheit: **P4 = LIVE BESTANDEN** und **P1 = LIVE BESTANDEN**.
+- Neuer gemeinsamer Vertrag `NeutralUserUiDesign`, Schema V1.
+- Erlaubte Light-/Dark-Farben: App-Hintergrund, Surface, Primary, Text, Muted Text und Border; gespeichert als normalisierte sechsstellige Hexwerte.
+- Gemeinsame Geometrie: Control-Radius 0–32 px, Surface-Radius 0–48 px und Content-Max-Width 320–1920 px.
+- Robuste Typografie V1: Basisschriftgröße 12–24 px. Es wurde absichtlich keine freie Font-URL oder halbfertige Fontverwaltung eingeführt.
+- Unbekannte Top-Level-Werte, unbekannte Tokens, falsche Objektformen, ungültige Farben, Werte außerhalb der Grenzen und inkompatible Schema-Versionen werden nicht blind übernommen.
+- Fehlende oder ungültige öffentliche Cachewerte fallen auf die Frameworkdefaults zurück.
 
-## 3. Appearance-Codeprüfung und Änderung
+## 3. Appearance-Editor und Preview
 
-- Die erneute repositoryweite Prüfung fand keinen produktiven Consumer, der `settings.theme` auf die aktuelle Admin- oder User-Oberfläche anwendet. Admin und User verwenden stattdessen ihre getrennten lokalen Zustände `neutral-admin-theme` beziehungsweise `neutral.user.theme.v1`.
-- Ebenso existiert kein produktiver Consumer für `settings.layout = default|compact`.
-- Deshalb wurde der vollständige sichtbare Block `Theme & Layout` einschließlich beider Selects aus `Admin → Appearance` entfernt. Die Ansicht beginnt nun fachlich mit `Global Start Page`.
-- Der Save-Pfad fragt `theme` und `layout` nicht mehr aus dem Formular ab. Er führt jedoch weiterhin das vollständige bestehende `settings`-Objekt mit und ersetzt ausschließlich `homepage`. Vorhandene Altwerte und andere Settings werden deshalb weder gelöscht noch auf `null` gesetzt.
-- Global Start Page, HTML-/Modulmodus, dynamische Liste startbarer Module, Preview, Reload und geschützter Save bleiben erhalten.
-- Admin-Header-Theme und User-Header-Theme wurden nicht verändert.
+- Der sichtbare Admin-Seitentitel ist konsistent `Appearance`.
+- Die Seite enthält `Global Start Page`, `User UI Design` und `Advanced Custom CSS` ohne zusätzliche Navigationsebene.
+- Light und Dark besitzen getrennte Farbcontrols; Geometrie und Basisschriftgröße sind gemeinsame Werte.
+- Formularänderungen aktualisieren eine innerhalb der Appearance-Ansicht gekapselte Preview unmittelbar. Sie zeigt Header, Navigation, Card, Primary-/Secondary-Button, Text, Muted Text und Input und nutzt denselben Variablenmapper wie die User-App.
+- Der Preview-Modus kann gezielt zwischen Light und Dark gewechselt werden. Es werden keine Variablen auf die Admin-Shell geschrieben.
+- `Reset to Defaults` setzt nach einer klaren Bestätigung ausschließlich strukturierte Designwerte im Formular zurück. Start Page, Custom CSS und persönliche Themezustände bleiben unangetastet.
+- `Clear Custom CSS` ist davon getrennt.
 
-## 4. Regressionstests
+## 4. Persistenz, Projektion und Local-first
 
-- Der Appearance-Vertrag prüft jetzt ausdrücklich das Fehlen von `Theme & Layout`, `name="theme"`, `name="layout"` und entsprechender `FormData`-Abfragen.
-- Ein neuer Save-Test beweist, dass Homepage-HTML exakt übertragen wird und fremde sowie historische Settings (`language`, `theme`, `layout`) unverändert erhalten bleiben.
-- Fokussiertes Paket aus Appearance, Settings API, Homepage, Theme/Warmstart, Service Worker, Packaging, Auth und FTPS-Smoke: **148/148 bestanden**.
-- Vollständige Suite: **428/428 bestanden**, 0 Fehler, 0 übersprungen.
-- PHP-Lint: **36 Dateien bestanden**.
-- JavaScript-Syntaxcheck, `git diff --check`, Secret-Pattern-Prüfung und Produktionspaket bestanden; das Paket enthält **106 Dateien** bei Base Path `""`.
-- In der Sandbox steht kein Chromium-/Chrome-Browser zur Verfügung. Daher wurde keine künstliche visuelle Bestätigung erzeugt; der verbleibende kurze Kontrolltest ist unten benannt.
+- Admin-Saves laufen weiter durch den bestehenden authentifizierten und CSRF-geschützten Settings-Pfad.
+- Node- und PHP-Persistenz normalisieren denselben V1-Vertrag. Homepage und Appearance werden zusammengeführt; das Speichern eines Bereichs setzt den anderen nicht zurück.
+- `GET /api/settings/appearance` liefert ausschließlich die freigegebene Designprojektion, keine Admin-, Session-, Permission- oder Securitydaten.
+- Der öffentliche Designcache ist schema-versioniert und enthält nur diese Projektion.
+- `index.html` lädt den Designvertrag vor dem render-blockierenden Stylesheet, liest synchron den letzten gültigen Cache und setzt die CSS Custom Properties vor dem ersten User-App-Paint. Custom CSS steht in einem nach dem Frameworkstylesheet angeordneten User-App-Styleelement.
+- Serverrefresh von Design, Homepage, Core und Session läuft unabhängig im Hintergrund. Eine Designantwort blockiert den bereits live bestandenen Homepage-Warmstart nicht.
+- Beim User-Theme-Wechsel wird derselbe gespeicherte Designzustand mit der jeweils passenden Light-/Dark-Palette erneut gemappt.
 
-## 5. GitHub und CI
+## 5. Advanced Custom CSS und Sicherheit
 
-- Implementierungscommit `4c8c626` (`fix: remove obsolete Appearance controls`) wurde nach GitHub `main` übertragen.
-- CodeQL / `Push on main`: Run `34282252971` – terminal `success`.
-- FTPS Deploy: Run `34282253189` – terminal `success`, einschließlich Test-, Paket-, Upload- und Read-only-Smoke-Pfad.
-- Berichtcommit `d97eba0` wurde ebenfalls nach `main` übertragen. CodeQL / `Push on main` Run `34282751925` und FTPS Deploy Run `34282753416` erreichten terminal `success`.
-- Die abschließende Checklist-Markierung wird als letzter Dokumentationscommit übertragen und vor der externen Abschlussmeldung erneut auf terminale CI, `HEAD == origin/main`, sauberen Working Tree und identischen GitHub-Blob geprüft.
+- Custom CSS ist optional; leer bedeutet kein Override.
+- Limit: 20.000 Zeichen. `</style`, `@import`, `javascript:` und nicht-stringförmige Inhalte werden abgewiesen; HTML-/Script-Ausbruch und zusätzliche Remote-Stylesheet-Infrastruktur werden nicht ermöglicht.
+- Es wird kein irreführender CSS-Sanitizer behauptet. CSS wird über `style.textContent` ausschließlich im User-App-Dokument nach dem strukturierten Design eingesetzt.
+- Die Admin-UI lädt den Override nicht als Adminstylesheet. CSP, iframe-Sandbox, Auth und CSRF wurden nicht gelockert.
+- Syntaktisch wirkungsloses CSS kann den darunterliegenden strukturierten Tokenvertrag nicht am Laden hindern und kann separat geleert werden.
 
-## 6. Kurzer Betreiber-Kontrolltest
+## 6. Verifikation
 
-Dies ist kein verbleibender P4-Blocker, sondern die kurze visuelle Kontrolle der neu bereinigten Adminansicht:
+- Fokussierte Suite für Designvertrag, PHP-Parität, Admin UI/API, Homepage, Warmstart, Service Worker, Packaging und Auth: **169/169 bestanden**.
+- Vollständige Suite nach Einbeziehung der neuen versionierten Dateien in generierte Appkopien: **438/438 bestanden**, 0 Fehler, 0 übersprungen.
+- PHP-Lint: **37 Dateien bestanden**.
+- JavaScript-Syntaxcheck, `git diff --check`, Produktionspaket und Secret-Pattern-Prüfung bestanden.
+- Produktionspaket: **108 Dateien**, Base Path `""`.
+- Screenshot-Versuch: In der Sandbox war kein Browser vorhanden. Die Installation des Ubuntu-Snap-Platzhalters konnte ohne funktionsfähigen Snap-Daemon keinen Chromium-Browser bereitstellen; daher wird keine visuelle Browserabnahme erfunden.
 
-1. `Admin → Appearance` öffnen.
-2. Prüfen: `Theme & Layout` ist entfernt.
-3. Prüfen: `Global Start Page` ist weiterhin vorhanden.
-4. HTML-Inhalt speichern und die User-App kurz prüfen.
-5. Admin-Header-Theme und User-Header-Theme kurz regressiv prüfen.
+## 7. GitHub und CI
 
-## 7. Ergebnis
+- Implementierungscommit `b8c1e20` (`feat: add user UI design editor`) wurde nach GitHub `main` übertragen.
+- CodeQL / `Push on main`: Run `34287584612` – terminal `success`.
+- FTPS Deploy: Run `34287585014` – terminal `success`, einschließlich Test-, Paket-, Upload- und Read-only-Smoke-Pfad.
+- Dieser Bericht und die finale Checklist-Markierung werden ebenfalls nach `main` übertragen. Ihre CI wird vor der Abschlussmeldung terminal abgewartet; anschließend werden GitHub-Blob, `HEAD == origin/main` und sauberer Tree geprüft.
 
-- Keine selbst ausführbaren fachlichen Punkte offen.
-- Keine Secret-Werte, künstlichen Testdateien oder generierten Paketartefakte committed.
-- Keine P4-fremde I18N- oder User-UI-Designimplementierung begonnen.
-- P4 und P1 bleiben entsprechend der aktuellen realen Betreiberbefunde `LIVE BESTANDEN`.
+## 8. Betreiber-Device-Retest
+
+1. `Admin → Appearance` öffnen: Titel `Appearance`, Bereiche Start Page / User UI Design / Advanced Custom CSS sichtbar.
+2. Eine deutlich erkennbare Light-Farbe ändern, Preview prüfen, speichern und User-App in Light prüfen.
+3. Eine Dark-Farbe ändern, Preview prüfen, speichern und User-App in Dark prüfen.
+4. Radius oder Contentbreite ändern und reale User-App-Wirkung prüfen.
+5. Reload/Warmstart und offline soweit praktikabel prüfen: Design bleibt erhalten, kein Loading-/White-Flash.
+6. `Reset to Defaults` prüfen; Start Page und Custom CSS müssen dabei erhalten bleiben.
+7. Kleines harmloses Custom-CSS-Override setzen, Wirkung nur in User-App prüfen und anschließend `Clear Custom CSS` testen.
+8. Start Page in HTML- und/oder Modulmodus speichern und kurz regressiv prüfen.
+9. Admin-Theme und persönliche User-Theme-Auswahl getrennt regressiv prüfen.
+
+Automatisierte Tests ersetzen diese reale visuelle Device-Abnahme nicht. Bis zu diesem Retest gilt der neue Designeditor als code-seitig abgeschlossen; P1 und P4 bleiben aufgrund ihrer bereits erfolgten separaten Liveabnahmen `LIVE BESTANDEN`.
