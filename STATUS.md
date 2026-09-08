@@ -1,7 +1,7 @@
 # NEUTRAL – Status
 
-**Status:** OPERATIVE WORKFLOW RESET / P1 LIVE BESTANDEN
-**Geprüft:** 2026-09-07
+**Status:** P4 CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED · P1 LIVE BESTANDEN
+**Geprüft:** 2026-09-08
 **Reference:** Repository + live operator confirmation + workflow reset documentation
 
 ## Current device-live status
@@ -13,10 +13,19 @@
 ## Active project state
 
 - Workflow reset and governance correction: DONE / DOCUMENTED
-- P4 configurable landing page: PENDING
-- Settings / Appearance separation: PENDING until the complete feature task is validated
+- Codex environment `Neutral` and its secrets-safe GitHub/FTPS recovery path: DONE / DOCUMENTED
+- P4 configurable landing page: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Theme / i18n / navigation / other feature work: PENDING
 - Historical failures and older task states: retained as evidence only, not operative truth
+
+## P4 implementation evidence
+
+- `Admin → Settings` contains system and technical settings only; `Admin → Appearance` is an independent view for theme, layout, and the global start page.
+- Appearance dynamically derives start-module choices from active modules with a client entry.
+- The central settings service persists `module` or `html`, the selected module, and trusted administrator HTML without altering HTML, inline styles, links, images, or JavaScript.
+- The User-App loads the public homepage projection during background startup, opens an allowed configured module, renders trusted HTML in a script-capable sandboxed frame, and falls back to the existing neutral home when configuration or module access is unavailable.
+- Automated tests are green; real browser/device acceptance remains required before P4 may become `LIVE BESTANDEN`.
 
 ## Historical evidence retained
 

@@ -1,3 +1,17 @@
+## 2026-09-08 – P4 global homepage and Admin Appearance separation
+
+- Split `Admin → Settings` and `Admin → Appearance` into independent technical and presentation views.
+- Added central persistence and a public read-only projection for global homepage mode, module target, and trusted administrator HTML; writes remain protected by existing admin auth and CSRF controls.
+- Added dynamic active/startable module selection, trusted HTML/inline-style/link/image/JavaScript preview and rendering, mode switching, startup loading, access-aware module opening, and robust default fallback.
+- Added Node/PHP API, admin UI, startup, persistence, P1, and packaging regression coverage. P4 remains `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`; P1 remains `LIVE BESTANDEN`.
+
+## 2026-09-07 – Codex environment operating path made persistent
+
+- Documented Codex environment `Neutral` as the required secrets-safe operating environment for `El-Ninjo1965/Neutral` through project completion.
+- Recorded the verified GitHub path through `GH_TOKEN`, the canonical HTTPS `origin`, the GitHub Actions and direct Explicit-FTPS endpoints, required secret names, and the recovery sequence for replaceable sandboxes without storing secret values.
+- Added the environment preflight and Codex/ChatGPT handoff sequence to the binding workflow.
+- Preserved `P1 = LIVE BESTANDEN`, deferred P4, and made no application or feature changes.
+
 ## 2026-09-07 – Workflow reset: operational truth hierarchy and live status corrected
 
 - The project operating rules were reset so that the newest live operator finding, newest operator task, and `CURRENT-TASK.md` capture order are authoritative.

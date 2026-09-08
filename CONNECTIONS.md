@@ -1,11 +1,32 @@
 # NEUTRAL – Verbindungen und Wiederherstellung
 
 **Status:** ENDE-ZU-ENDE VERIFIZIERT  
-**Geprüft:** 2026-09-01  
+**Geprüft:** 2026-09-07
 **Repository:** `El-Ninjo1965/Neutral`  
 **Produktionsweg:** `PC → GitHub → GitHub Actions → FTPS → Webserver → HTTPS`
 
-Diese Datei ist die verbindliche, secretsichere Betriebsübersicht für lokale Codex-Sitzungen und Verbindungsdiagnosen. Sie enthält bewusst keine Passwörter, Tokens oder privaten Secret-Werte. Das Repository ist öffentlich.
+Diese Datei ist die verbindliche, secretsichere Betriebsübersicht für Codex-Sitzungen und Verbindungsdiagnosen. Sie enthält bewusst keine Passwörter, Tokens oder privaten Secret-Werte. Das Repository ist öffentlich.
+
+## 0. Verbindliche Codex-Arbeitsumgebung
+
+Für Codex-Arbeit an diesem Projekt ist bis zum Projektabschluss die bestehende
+Codex-Umgebung **`Neutral`** zu verwenden. Die dauerhafte Aufgabenteilung lautet:
+
+- **Repository:** dauerhafte, nicht geheime Betriebsanleitung und Projektstand;
+- **Codex-Umgebung `Neutral`:** persistente Secrets und ENV-Konfiguration;
+- **einzelne Sandbox:** austauschbare Arbeitsumgebung ohne Anspruch auf eine
+  dauerhafte lokale Git-, CLI- oder Credential-Konfiguration.
+
+Der am 2026-09-07 real bestätigte GitHub-Schreibweg ist:
+
+`Neutral` → `GH_TOKEN` → GitHub-Konto `El-Ninjo1965` →
+`El-Ninjo1965/Neutral` → `main`
+
+Authentifizierter Schreibzugriff, Push nach `main`, Auslösung von GitHub Actions,
+FTPS und CodeQL wurden über diesen Weg erfolgreich nachgewiesen. Eine neue
+Sandbox prüft deshalb immer zuerst diesen Standardweg. Sie darf fehlenden
+GitHub-Schreibzugriff erst melden, nachdem Umgebung, Secret-Verfügbarkeit und
+Authentifizierung tatsächlich geprüft wurden.
 
 ## 1. Verbindliche Zuordnung
 
@@ -14,14 +35,40 @@ Diese Datei ist die verbindliche, secretsichere Betriebsübersicht für lokale C
 | GitHub-Konto | `El-Ninjo1965` |
 | GitHub-Repository | `El-Ninjo1965/Neutral` |
 | Hauptbranch | `main` |
-| Git-Protokoll | HTTPS über Git Credential Manager |
+| Git-Protokoll in Codex | HTTPS über `GH_TOKEN` aus Umgebung `Neutral` |
+| Verbindliches `origin` | `https://github.com/El-Ninjo1965/Neutral.git` |
 | Deployment | GitHub Actions, Workflow `FTPS Deploy` |
 | Produktionshost | `www.turbolikes.com` |
-| FTP-/FTPS-Benutzer | `root@turbolikes.com` |
+| GitHub-Actions-FTPS | `server.cpprotect5.de`, Port `21`, FTPS, Hostnameprüfung aktiv |
+| Direkter manueller FTPS-Zugang | `ftp.turbolikes.com`, Port `21`, Explicit FTPS |
+| Verbindlicher FTPS-Benutzer | `root@turbolikes.com` |
+| Produktionsziel | aktueller, verifizierter Wert aus `FTP_TARGET_DIR`; niemals im Repository erraten oder festschreiben |
 
 Nicht auf ein anderes GitHub-Konto, Repository oder einen anderen Branch ausweichen. Ein einzelner fehlgeschlagener Aufruf beweist nicht, dass Repository oder Verbindung fehlen.
 
 ## 2. Dauerhafte Secret-Speicherung
+
+### Codex-Umgebung `Neutral`
+
+Die Umgebung benötigt für Entwicklungs- und direkten Betriebsweg folgende
+Secret-/ENV-Namen. Diese Liste dokumentiert ausschließlich Namen und Zweck:
+
+| Name | Zweck |
+|---|---|
+| `GH_TOKEN` | GitHub-Authentifizierung für Konto, Repository und Push |
+| `FTP_HOST` | Host des direkten FTPS-Zugangs |
+| `FTP_PORT` | FTPS-Port |
+| `FTP_USER` | verbindlicher FTPS-Benutzer |
+| `FTP_PASSWORD` | FTPS-Authentifizierung |
+| `FTP_PROTOCOL` | Auswahl des FTPS-Protokolls |
+| `FTP_TARGET_DIR` | aktueller verifizierter Produktionszielpfad |
+| `FTP_SECURE` | Aktivierung der sicheren FTPS-Verbindung |
+
+Secret-Werte dürfen niemals ausgegeben, in Befehlszeilen oder URLs eingebettet,
+in Repositorydateien geschrieben oder committed werden. Prüfungen beschränken
+sich auf Vorhandensein und reale authentifizierte Operationen. Für
+GitHub-Kommandos wird `GH_TOKEN` prozesslokal verwendet; es wird nicht in
+`origin` gespeichert.
 
 ### GitHub
 
@@ -70,6 +117,29 @@ Die temporäre Datei ist lokal, auf GitHub und auf dem Server entfernt.
 
 ## 4. Schnellprüfung
 
+### Start einer neuen Codex-Sandbox
+
+Nicht erneut die gesamte Zugangshistorie untersuchen. In dieser Reihenfolge:
+
+1. bestätigen, dass die Task in der Codex-Umgebung `Neutral` läuft;
+2. Repository `El-Ninjo1965/Neutral` und aktuellen Arbeitsbaum prüfen;
+3. `GH_TOKEN` ausschließlich auf Vorhandensein prüfen, niemals ausgeben;
+4. `origin` prüfen und bei Bedarf auf die URL aus Abschnitt 1 setzen;
+5. `git fetch origin --prune` ausführen und `HEAD` mit `origin/main` vergleichen;
+6. `CODEX.md` vollständig lesen;
+7. den neuesten Auftrag vollständig nach `CURRENT-TASK.md` übernehmen;
+8. erst nach bestandener Capture-Prüfung arbeiten.
+
+Ein in einer isolierten Sandbox fehlendes `origin` ist kein Projektfehler. Vor
+dem Setzen oder Korrigieren eines Remotes werden vorhandene Änderungen und lokale
+Commits geprüft; nichts wird blind zurückgesetzt oder verworfen.
+
+Falls GitHub-Schreibzugriff scheinbar fehlt, werden vor einer Zugangsdiagnose
+richtige Umgebung `Neutral`, Vorhandensein von `GH_TOKEN`, erfolgreiche
+GitHub-Authentifizierung, Repositoryzuordnung und Schreibberechtigung geprüft.
+Erst wenn dieser dokumentierte Standardweg tatsächlich fehlschlägt, beginnt eine
+weitergehende Diagnose.
+
 ### PC und lokales Git
 
 Im Repository ausführen:
@@ -100,6 +170,10 @@ Erwartung:
 - aktives Konto `El-Ninjo1965`
 - Default-Branch `main`
 - Berechtigung `ADMIN`
+
+In Codex muss `GH_TOKEN` dabei aus der Umgebung `Neutral` stammen. Der Tokenwert
+wird weder angezeigt noch mit `gh auth token` abgefragt. Eine persistente
+CLI-Anmeldung in der austauschbaren Sandbox ist nicht erforderlich.
 
 ### GitHub-Secrets
 
@@ -171,7 +245,29 @@ In dieser Reihenfolge prüfen:
 
 Status mit `gh run list` und `gh run view` belegen. Nur Läufe mit `queued`, `in_progress`, `waiting` oder einer angezeigten Environment-Freigabe benötigen weitere Aufmerksamkeit. Abgeschlossene fehlgeschlagene Läufe blockieren neue Arbeit nicht.
 
-## 6. Sicherheitsregeln
+### Verbindliche FTPS-Wege
+
+Der GitHub-Actions-Produktionsweg verwendet verbindlich
+`server.cpprotect5.de:21` per FTPS mit aktiver Hostnameprüfung. Der direkte
+manuelle Weg verwendet `ftp.turbolikes.com:21`, Explicit FTPS und den Benutzer
+`root@turbolikes.com`. Beide verwenden den aktuell verifizierten Zielpfad nur
+über `FTP_TARGET_DIR`. Alte historische FTP-Konten dürfen nicht wiederhergestellt
+oder als Fallback eingesetzt werden.
+
+## 6. Aktuelle ENV-, Datenbank- und Auth-Wahrheit
+
+Die aktuell wiederhergestellte DB-, Bootstrap-, Admin-, Auth- und
+ENV-Konfiguration bleibt maßgeblich. Historische Werte dürfen nur verwendet
+werden, wenn sie dem aktuellen Projektvertrag entsprechen. Insbesondere darf
+keine historische Auth-Struktur die aktuelle getrennte User-/Admin-Sessionstruktur
+ersetzen.
+
+`P1 = LIVE BESTANDEN`
+
+User-App- und Admin-Authentifizierung bleiben getrennte Scopes; ein Login darf
+die Identität des jeweils anderen Scopes nicht überschreiben.
+
+## 7. Sicherheitsregeln
 
 - Keine Passwörter oder Tokens in Git, Markdown, Issues, Pull Requests oder Chatantworten wiedergeben.
 - Keine produktiven Secrets in Testdateien einbetten.
@@ -180,6 +276,6 @@ Status mit `gh run list` und `gh run view` belegen. Nur Läufe mit `queued`, `in
 - Der PC muss eingeschaltet, online und der lokale Codex-Host erreichbar sein, damit lokale PC-Arbeit möglich ist.
 - GitHub-Secrets bleiben nutzbar, bis Zugangsdaten geändert, widerrufen oder vom Hostinganbieter ersetzt werden.
 
-## 7. Aussagegrenzen
+## 8. Aussagegrenzen
 
 Bestätigt ist der Weg `PC → GitHub → GitHub Actions → FTPS → Webserver → HTTPS`. Eine direkte manuelle Übertragung `PC → FTPS` muss separat mit einer lokalen, nicht versionierten Deploy-Konfiguration geprüft werden. Fehlender Zugriff einer einzelnen Codex-Task-Sandbox auf eine `.env` bedeutet nicht, dass die Datei oder der Serverzugang fehlen.

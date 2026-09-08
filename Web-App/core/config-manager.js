@@ -179,7 +179,7 @@
             });
 
             this.set('homepage', {
-                mode: 'content',
+                mode: 'html',
                 title: '',
                 content: '',
                 moduleId: ''

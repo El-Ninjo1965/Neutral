@@ -53,6 +53,15 @@ Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `
 
 **Settings-/User-UI-Vertrag (2026-09-06):** User-Theme und Präferenzen werden lokal/offline versioniert gespeichert; Light ist der Erststart und Dark wird vor dem ersten sichtbaren Paint angewendet. Normale Module erhalten zentrale Navigation ohne technische Manifestbeschreibung oder generischen Back-Link. Die Application ID bleibt serverseitig unveränderbar, während der Application Name ein persistenter Anzeigename ist. Session-Invalidierung ist eine geschützte Einzelaktion; der Permission Catalog ist read-only.
 
+**P4-/Appearance-Vertrag (2026-09-08):** System-/Technikeinstellungen und
+Darstellung sind eigenständige Admin-Views. Die globale Startseite wird zentral
+als aktives, startbares Modul oder als unverändertes vertrauenswürdiges
+Administrator-HTML persistiert. Die User-App liest ausschließlich die öffentliche
+Homepage-Projektion, respektiert beim Modulstart den vorhandenen
+Client-Zugriffsvertrag und fällt bei fehlender oder ungültiger Konfiguration auf
+den neutralen Startzustand zurück. Schreibzugriff verbleibt im geschützten
+Admin-/CSRF-Pfad.
+
 ## 2. Web-App
 
 **IST:** `Web-App/public/index.html` stellt die Shell bereit. `Web-App/public/user-app.js` rendert sie sofort und startet Core, IndexedDB und Discovery danach im Hintergrund. `Web-App/public/public-path.js` normalisiert den öffentlichen Installationspräfix aus `NeutralConfig.basePath` beziehungsweise dem Meta-Element `neutral-base-path`; `api-client.js`, Assets, Admin und Setup konsumieren denselben Resolver. Ein zum normalisierten Basispfad passendes `<base href>` hält Assets auch auf tiefen SPA-Routen unter derselben Installation. Die einzige ausgelieferte Runtimekonfiguration enthält `basePath` und das daraus abgeleitete `apiBase`, keine Environment- oder Dateisystemwerte; der Resolver verwendet `basePath` als Eingabe.

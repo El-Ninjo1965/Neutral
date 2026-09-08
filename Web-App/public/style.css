@@ -1707,3 +1707,14 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
     justify-content: flex-start;
   }
 }
+.user-app-homepage-frame {
+  display: block;
+  width: 100%;
+  min-height: 60vh;
+  border: 0;
+  background: transparent;
+}
+
+.admin-appearance-view [hidden] {
+  display: none !important;
+}

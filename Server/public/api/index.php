@@ -571,6 +571,11 @@ if (preg_match('#^admin/roles/([a-z0-9\-]+)$#', $route, $matches) === 1) {
     }
 }
 
+if ($route === 'settings/homepage' && $method === 'GET') {
+    $settings = $settingsService->getAll();
+    JsonResponse::success(['homepage' => $settings['homepage'] ?? []]);
+}
+
 if ($route === 'admin/settings' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success(['settings' => $settingsService->getAll()]);
