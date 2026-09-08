@@ -14,6 +14,7 @@
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
   const USER_THEME_KEY = 'neutral.user.theme.v1';
+  const HOME_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.75 12 3l9 7.75v9a1.25 1.25 0 0 1-1.25 1.25h-5.5v-6h-4.5v6h-5.5A1.25 1.25 0 0 1 3 19.75v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
@@ -113,25 +114,11 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  const getSafeHomepageContent = (value) => {
-    let html = String(value ?? '');
-    html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/<iframe[\s\S]*?<\/iframe>/gi, '');
-    html = html.replace(/<(?:object|embed|svg|math)[\s\S]*?(?:<\/\1>|$)/gi, '');
-    html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    html = html.replace(/href\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'href="#"');
-    html = html.replace(/src\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'src="#"');
-    html = html.replace(/<(?!\/?(?:p|br|strong|b|em|i|u|small|ul|ol|li|h1|h2|h3|h4|h5|h6|a|span|div|blockquote|code|pre|hr|mark|section)\b)[^>]+>/gi, '');
-    html = html.replace(/<a\b([^>]*)\s+href=(?:"[^"]*"|'[^']*'|[^\s>]+)([^>]*)>/gi, (match, before, after) => {
-      const hrefMatch = match.match(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-      const href = hrefMatch ? (hrefMatch[1] || hrefMatch[2] || hrefMatch[3] || '') : '';
-      const safeHref = /^https?:\/\//i.test(href) || href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')
-        ? href
-        : '#';
-      return `<a${before || ''} href="${escapeHtml(safeHref)}"${after || ''}>`;
-    });
-    return html;
-  };
+  const homepageCache = window.NeutralHomepageCache || null;
+  const homepageDocument = window.NeutralHomepageDocument;
+  let homepageConfig = homepageCache && typeof homepageCache.read === 'function' ? homepageCache.read() : null;
+  let homepageResolved = homepageConfig !== null;
+  if (homepageResolved && window.CorePerformance) window.CorePerformance.mark('homepage-local-ready');
 
   const getHomepageConfig = () => {
     const configManager = window.ConfigManager && typeof window.ConfigManager.get === 'function'
@@ -139,17 +126,45 @@
       : null;
     const assigned = configManager ? configManager.get('homepage', null) : null;
     const fromWindow = window.NeutralHomepageConfig || window.NeutralAppHomepage || {};
-    const source = assigned && typeof assigned === 'object' ? assigned : fromWindow;
-    const mode = source && source.mode === 'module' ? 'module' : 'content';
+    const source = homepageConfig || (assigned && typeof assigned === 'object' ? assigned : fromWindow);
+    const mode = source && source.mode === 'module' ? 'module' : 'html';
     const title = typeof source?.title === 'string' ? source.title.trim() : '';
     const content = typeof source?.content === 'string' ? source.content : '';
     const moduleId = typeof source?.moduleId === 'string' ? source.moduleId.trim() : '';
     return {
       mode,
       title,
-      content: getSafeHomepageContent(content),
+      content,
       moduleId
     };
+  };
+
+  const loadHomepageConfig = async () => {
+    try {
+      const client = getServerApiClient('user');
+      if (!client || typeof client.getHomepage !== 'function') return getHomepageConfig();
+      const result = await client.getHomepage();
+      const envelope = result?.data?.data || result?.data || {};
+      const received = envelope.homepage;
+      if (!result.ok || !received || typeof received !== 'object') return getHomepageConfig();
+      homepageConfig = {
+        mode: received.mode === 'module' ? 'module' : 'html',
+        title: typeof received.title === 'string' ? received.title.trim() : '',
+        content: typeof received.content === 'string' ? received.content : '',
+        moduleId: typeof received.moduleId === 'string' ? received.moduleId.trim() : ''
+      };
+      if (window.ConfigManager && typeof window.ConfigManager.set === 'function') {
+        window.ConfigManager.set('homepage', homepageConfig);
+      }
+      if (homepageCache && typeof homepageCache.write === 'function') {
+        homepageCache.write(homepageConfig);
+      }
+      if (window.CorePerformance) window.CorePerformance.mark('homepage-refresh-ready');
+      return homepageConfig;
+    } finally {
+      homepageResolved = true;
+      renderApp();
+    }
   };
 
   // Real end-user login must go through the server-authenticated session
@@ -158,6 +173,7 @@
   // the identity confirmed by the server for this tab; it is not persisted to
   // localStorage and is re-derived on every reload via restoreServerSession().
   let serverUser = null;
+  let sessionRevision = 0;
 
   const getServerApiClient = (scope = 'user') => {
     const eligibleScope = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : null);
@@ -274,10 +290,12 @@
   // Restores an existing server session (e.g. after a page reload) via the
   // cookie-backed /api/auth/me endpoint. Never falls back to local storage.
   const restoreServerSession = async () => {
+    const revision = sessionRevision;
     const apiClient = getServerApiClient();
     if (!apiClient) return null;
     try {
       const sessionResult = await apiClient.me();
+      if (revision !== sessionRevision) return serverUser;
       const sessionData = extractServerAuthData(sessionResult);
       if (sessionResult.ok && sessionData && sessionData.user) {
         return applyServerUser(sessionData);
@@ -285,6 +303,7 @@
     } catch (error) {
       // No active server session; treat as anonymous.
     }
+    if (revision !== sessionRevision) return serverUser;
     clearServerUser();
     return null;
   };
@@ -309,8 +328,29 @@
   };
 
   const getAppMark = () => {
+    const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
+      ? window.MasterFramework
+      : null;
+    const appConfig = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? window.ConfigManager.get('app', {})
+      : {};
+    const branding = framework?.getActiveApp()?.branding || appConfig.branding;
+    if (branding && typeof branding.iconText === 'string' && branding.iconText.trim()) {
+      return branding.iconText.trim().slice(0, 3);
+    }
     const name = getAppName().trim();
     return name ? name.charAt(0).toUpperCase() : 'A';
+  };
+
+  const getAppLogoUrl = () => {
+    const framework = window.MasterFramework && typeof window.MasterFramework.getActiveApp === 'function'
+      ? window.MasterFramework
+      : null;
+    const appConfig = window.ConfigManager && typeof window.ConfigManager.get === 'function'
+      ? window.ConfigManager.get('app', {})
+      : {};
+    const logoUrl = framework?.getActiveApp()?.branding?.logoUrl || appConfig.branding?.logoUrl;
+    return typeof logoUrl === 'string' && logoUrl.trim() ? logoUrl.trim() : '';
   };
 
   const getModuleDisplayName = (module) => {
@@ -353,29 +393,37 @@
   const getDiscoveryMessage = () => state.discoveryState === 'error'
     ? 'Modules could not be loaded. Check your connection and try again.'
     : 'Loading available modules...';
-  const getModuleCountLabel = (modules) => state.discoveryState === 'pending'
-    ? '...'
-    : state.discoveryState === 'error'
-      ? '—'
-      : String(modules.length);
-
   const applyBranding = () => {
     const appName = getAppName();
     document.title = appName;
     const title = document.querySelector('[data-app-title]');
     if (title) title.textContent = appName;
     if (brand) brand.textContent = appName;
-    if (mark) mark.textContent = getAppMark();
+    if (mark) {
+      const logoUrl = getAppLogoUrl();
+      mark.replaceChildren();
+      if (logoUrl) {
+        const logo = document.createElement('img');
+        logo.className = 'user-app-logo';
+        logo.src = logoUrl;
+        logo.alt = '';
+        mark.appendChild(logo);
+      } else {
+        mark.textContent = getAppMark();
+      }
+    }
   };
 
   const renderActions = () => {
     if (!actions) return;
     const currentUser = getCurrentUser();
     const settingsLabel = 'Settings';
-    const settingsButton = `<button id="userSettingsButton" class="user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
+    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
+    const nextTheme = readUserTheme() === 'dark' ? 'light' : 'dark';
+    const themeButton = `<button id="userThemeToggle" class="ui-button ui-button--icon user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
 
     if (!currentUser) {
-      actions.innerHTML = `${settingsButton}<button id="userLoginButton" class="user-app-action" type="button">Login</button>`;
+      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ui-button--primary user-app-action" type="button">Login</button>`;
       const loginButton = document.getElementById('userLoginButton');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
@@ -390,13 +438,17 @@
           renderApp();
         });
       }
+      const themeToggle = document.getElementById('userThemeToggle');
+      if (themeToggle) themeToggle.addEventListener('click', () => {
+        applyUserTheme(readUserTheme() === 'dark' ? 'light' : 'dark');
+        renderApp();
+      });
       return;
     }
 
     actions.innerHTML = `
-      <span class="user-app-session-badge">${escapeHtml(currentUser.displayName || currentUser.username || 'User')}</span>
-      ${settingsButton}
-      <button id="userLogoutButton" class="user-app-link" type="button">Logout</button>
+      ${themeButton}${settingsButton}
+      <button id="userLogoutButton" class="ui-button ui-button--secondary user-app-link" type="button">Logout</button>
     `;
     const logoutButton = document.getElementById('userLogoutButton');
     if (logoutButton) {
@@ -419,21 +471,29 @@
         renderApp();
       });
     }
+    const themeToggle = document.getElementById('userThemeToggle');
+    if (themeToggle) themeToggle.addEventListener('click', () => {
+      applyUserTheme(readUserTheme() === 'dark' ? 'light' : 'dark');
+      renderApp();
+    });
   };
 
   const renderModuleNav = () => {
     if (!nav) return;
     const modules = getVisibleModules();
     const items = [
-      { id: 'home', label: 'Start' },
+      { id: 'home', label: 'Start', icon: HOME_ICON },
       ...modules.map((module) => ({ id: `module:${module.id}`, label: getModuleDisplayName(module) }))
     ];
     nav.innerHTML = items.map((item) => `
       <button
         type="button"
-        class="user-app-nav-item ${state.activeView === item.id ? 'active' : ''}"
+        class="ui-button ui-button--navigation user-app-nav-item ${state.activeView === item.id ? 'active' : ''}"
         data-user-nav="${escapeHtml(item.id)}"
-      >${escapeHtml(item.label)}</button>
+        aria-label="${escapeHtml(item.label)}"
+        title="${escapeHtml(item.label)}"
+        ${state.activeView === item.id ? 'aria-current="page"' : ''}
+      >${item.icon || escapeHtml(item.label)}</button>
     `).join('');
     nav.querySelectorAll('[data-user-nav]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -450,10 +510,8 @@
     state.activeModuleId = null;
     content.innerHTML = `
       <section class="user-app-panel">
-        <span class="user-app-eyebrow">Account access</span>
-        <h1>Sign in</h1>
-        <p>Use your local workspace account to unlock available features.</p>
-        <div class="user-login-form">
+        <h1>Login</h1>
+        <form id="userLoginForm" class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
             <input id="userLoginUsername" type="text" autocomplete="username" />
@@ -463,15 +521,20 @@
             <input id="userLoginPassword" type="password" autocomplete="current-password" />
           </div>
           <div class="user-login-actions">
-            <button type="button" id="userLoginSubmit" class="primary">Login</button>
+            <button type="submit" id="userLoginSubmit" class="ui-button ui-button--primary primary">Login</button>
           </div>
-          <div id="userLoginStatus" class="message info">Sign in with your configured account.</div>
-        </div>
+          <div id="userLoginStatus" class="message" role="status" aria-live="polite"></div>
+        </form>
       </section>
     `;
 
     const submit = document.getElementById('userLoginSubmit');
-    submit.addEventListener('click', async () => {
+    const loginForm = document.getElementById('userLoginForm');
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (submit.disabled) return;
+      submit.disabled = true;
+      sessionRevision += 1;
       const username = document.getElementById('userLoginUsername').value.trim();
       const password = document.getElementById('userLoginPassword').value;
       const status = document.getElementById('userLoginStatus');
@@ -480,6 +543,7 @@
       if (!apiClient) {
         status.className = 'message error';
         status.textContent = 'Server authentication client is not available.';
+        submit.disabled = false;
         return;
       }
 
@@ -492,6 +556,7 @@
       } catch (error) {
         status.className = 'message error';
         status.textContent = 'Authentication failed. Check your connection and try again.';
+        submit.disabled = false;
         return;
       }
 
@@ -502,6 +567,7 @@
           : (loginResult && loginResult.error ? loginResult.error : 'Authentication failed.');
         status.className = 'message error';
         status.textContent = serverError;
+        submit.disabled = false;
         return;
       }
 
@@ -509,6 +575,7 @@
       if (!user) {
         status.className = 'message error';
         status.textContent = 'No authenticated user was returned by the server.';
+        submit.disabled = false;
         return;
       }
 
@@ -530,26 +597,14 @@
 
     content.innerHTML = `
       <section class="user-app-panel">
-        <button class="user-app-back" type="button" id="userSettingsBackButton">Back</button>
         <div class="user-app-section-heading">
           <div>
-            <span class="user-app-eyebrow">${currentUser ? 'Profile' : 'Local workspace'}</span>
             <h1>Settings</h1>
           </div>
-          <span class="user-app-count">${getModuleCountLabel(modules)}</span>
         </div>
         <div class="user-settings-card">
-          <h2>Appearance</h2>
-          <p>Choose the theme used by this app. It is stored locally and works offline.</p>
-          <label class="user-settings-field" for="userThemeSelect">Theme</label>
-          <select id="userThemeSelect" class="user-settings-select">
-            <option value="light" ${readUserTheme() === 'light' ? 'selected' : ''}>Light</option>
-            <option value="dark" ${readUserTheme() === 'dark' ? 'selected' : ''}>Dark</option>
-          </select>
-        </div>
-        <div class="user-settings-card">
-          <h2>Functions</h2>
-          <p>Choose which features should remain visible in your current workspace menu.</p>
+          <h2 data-i18n-key="settings.areas">App areas</h2>
+          <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
             ${isDiscoveryPending() || state.discoveryState === 'error' ? `<p class="user-app-empty">${getDiscoveryMessage()}</p>` : modules.length ? modules.map((module) => `
               <label class="user-settings-toggle" for="module-toggle-${escapeHtml(module.id)}">
@@ -585,20 +640,10 @@
         </div>
         <div class="user-settings-actions">
           <button id="userSettingsSaveButton" type="button" class="primary">Save settings</button>
-          <button id="userSettingsResetButton" type="button" class="secondary">Show all functions</button>
         </div>
-        <p id="userSettingsStatus" class="user-settings-status">Changes are stored locally in this workspace.</p>
+        <p id="userSettingsStatus" class="user-settings-status" aria-live="polite"></p>
       </section>
     `;
-
-    const backButton = document.getElementById('userSettingsBackButton');
-    if (backButton) {
-      backButton.addEventListener('click', () => {
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        renderApp();
-      });
-    }
 
     const saveButton = document.getElementById('userSettingsSaveButton');
     if (saveButton) {
@@ -609,14 +654,11 @@
           privacySelection[input.dataset.userSettingPrivacy] = !!input.checked;
         });
 
-        const selectedTheme = document.getElementById('userThemeSelect')?.value === 'dark' ? 'dark' : 'light';
         const nextPreferences = saveUserPreferences({
           visibleModuleIds: moduleSelection,
           privacy: privacySelection,
-          theme: selectedTheme
+          theme: readUserTheme()
         });
-        const themePersisted = applyUserTheme(selectedTheme);
-        nextPreferences.persisted = nextPreferences.persisted && themePersisted;
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
           const currentUser = getCurrentUser();
           if (currentUser && window.UserModule && typeof window.UserModule.updateProfile === 'function') {
@@ -645,28 +687,9 @@
       });
     }
 
-    const resetButton = document.getElementById('userSettingsResetButton');
-    if (resetButton) {
-      resetButton.addEventListener('click', () => {
-        const moduleIds = getAvailableModulesForUser().map((module) => module.id);
-        const nextPreferences = saveUserPreferences({ visibleModuleIds: moduleIds, privacy: defaultUserPreferences.privacy, theme: readUserTheme() });
-        const status = document.getElementById('userSettingsStatus');
-        if (status) {
-          if (nextPreferences.persisted) {
-            status.textContent = 'All functions are visible again.';
-            status.className = 'user-settings-status success';
-          } else {
-            status.textContent = 'Reset could not be saved. Local storage is unavailable or restricted.';
-            status.className = 'user-settings-status error';
-          }
-          if (nextPreferences.persisted) window.alert('All functions are visible again.');
-        }
-        renderUserSettings();
-      });
-    }
   };
 
-  const renderModule = (moduleId) => {
+  const renderModule = (moduleId, { asHomepage = false } = {}) => {
     const preferences = readUserPreferences();
     const module = window.NeutralUserModuleAccess.findVisibleModule(getModules(), moduleId, {
       currentUser: getCurrentUser(),
@@ -679,8 +702,10 @@
       return;
     }
 
-    state.activeView = `module:${moduleId}`;
-    state.activeModuleId = moduleId;
+    if (!asHomepage) {
+      state.activeView = `module:${moduleId}`;
+      state.activeModuleId = moduleId;
+    }
     content.innerHTML = `
       <section class="user-app-panel">
         <div id="moduleUserInterface"></div>
@@ -692,7 +717,6 @@
     } else {
       target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
     }
-    content.focus();
   };
 
   const renderModuleCards = () => {
@@ -719,37 +743,45 @@
   };
 
   const renderLandingPage = () => {
+    if (!homepageResolved) {
+      content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';
+      return;
+    }
     const homepage = getHomepageConfig();
     const appName = getAppName();
-    const currentUser = getCurrentUser();
-
     if (homepage.mode === 'module') {
+      if (state.discoveryState === 'pending') {
+        content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';
+        return;
+      }
       const moduleId = homepage.moduleId;
-      const module = moduleId && getModules().some((entry) => entry.id === moduleId)
-        ? getModules().find((entry) => entry.id === moduleId)
+      const preferences = readUserPreferences();
+      const module = moduleId
+        ? window.NeutralUserModuleAccess.findVisibleModule(getModules(), moduleId, {
+          currentUser: getCurrentUser(),
+          visibleModuleIds: preferences.visibleModuleIds
+        })
         : null;
       if (module) {
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        content.innerHTML = `
-          <section class="user-app-panel">
-            <div id="moduleUserInterface"></div>
-          </section>
-        `;
-        const target = document.getElementById('moduleUserInterface');
-        if (typeof module.renderUserInterface === 'function') {
-          module.renderUserInterface(target);
-        } else {
-          target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
-        }
+        renderModule(module.id, { asHomepage: true });
         return;
       }
     }
 
+    if (homepage.mode === 'html' && homepage.content) {
+      content.innerHTML = '<section class="user-app-panel"><div class="user-app-homepage-content"></div></section>';
+      const host = content.querySelector('.user-app-homepage-content');
+      const frame = document.createElement('iframe');
+      frame.className = 'user-app-homepage-frame';
+      frame.title = homepage.title || 'Start page content';
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
+      homepageDocument.apply(frame, homepage.content, readUserTheme());
+      host.appendChild(frame);
+      return;
+    }
+
     const heading = homepage.title ? homepage.title : appName;
-    const message = homepage.content
-      ? homepage.content
-      : '<p class="user-app-intro">Welcome to the workspace.</p>';
+    const message = '<p class="user-app-intro">Welcome to the workspace.</p>';
     const moduleCards = homepage.mode === 'module' ? renderModuleCards() : '';
 
     content.innerHTML = `
@@ -762,9 +794,9 @@
         </div>
         <div class="user-app-homepage-content">${message}</div>
         ${moduleCards}
-        ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can use the available workspace features without signing in.</div>'}
       </section>
     `;
+
 
     const homeModuleCards = content.querySelectorAll('[data-module-card]');
     homeModuleCards.forEach((button) => {
@@ -807,15 +839,26 @@
   const startBackgroundInitialization = () => {
     window.setTimeout(async () => {
       try {
-        if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
-          await window.CoreStartup.start();
-          if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
-          await window.CoreStartup.startBackground();
-        }
-        await restoreServerSession();
-      } catch (error) {
-        if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
-          window.CoreErrorHandler.handle(error, { type: 'background-startup' });
+        const startCore = async () => {
+          if (window.CoreStartup && typeof window.CoreStartup.start === 'function') {
+            await window.CoreStartup.start();
+            if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
+            await window.CoreStartup.startBackground();
+          }
+        };
+        // These data flows are intentionally independent. A failed module or
+        // IndexedDB startup must not prevent the public homepage projection
+        // from being fetched, and a homepage/API failure must not block P1
+        // session restoration or module discovery.
+        const initializationResults = await Promise.allSettled([
+          startCore(),
+          loadHomepageConfig(),
+          restoreServerSession()
+        ]);
+        for (const result of initializationResults) {
+          if (result.status === 'rejected' && window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {
+            window.CoreErrorHandler.handle(result.reason, { type: 'background-startup' });
+          }
         }
       } finally {
         if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');

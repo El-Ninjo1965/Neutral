@@ -166,9 +166,9 @@ final class Phase6SettingsService
     private function normalizeHomepage($value): array
     {
        $candidate = is_array($value) ? $value : [];
-       $mode = (($candidate['mode'] ?? 'content') === 'module') ? 'module' : 'content';
+       $mode = (($candidate['mode'] ?? 'html') === 'module') ? 'module' : 'html';
        $title = is_string($candidate['title'] ?? null) ? trim($candidate['title']) : '';
-       $content = is_string($candidate['content'] ?? null) ? trim($candidate['content']) : '';
+       $content = is_string($candidate['content'] ?? null) ? $candidate['content'] : '';
        $moduleId = is_string($candidate['moduleId'] ?? null) ? trim($candidate['moduleId']) : '';
        return [
            'mode' => $mode,

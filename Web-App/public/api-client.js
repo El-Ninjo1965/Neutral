@@ -297,6 +297,10 @@ class ApiClient {
     return this.get('/api/admin/settings');
   }
 
+  async getHomepage() {
+    return this.get('/api/settings/homepage');
+  }
+
   async updateSettings(settingsData) {
     return this.post('/api/admin/settings', settingsData);
   }

@@ -1,7 +1,7 @@
 # NEUTRAL – Dokumentationsordnung
 
 **Status:** VERBINDLICH  
-**Geprüft:** 2026-09-04
+**Geprüft:** 2026-09-08
 
 Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand, nächste Schritte und abgeschlossene Änderungen stehen.
 
@@ -10,13 +10,20 @@ Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie leg
 1. [`VISION.md`](VISION.md) beschreibt das langfristige, technologieunabhängige Ziel.
 2. [`CORE-1.0.md`](CORE-1.0.md) definiert den endlichen Umfang und die Abnahme von Neutral Core 1.0.
 3. [`Architecture.md`](Architecture.md) und [`ModuleCreation.md`](ModuleCreation.md) definieren Systemgrenzen und Erweiterungsverträge.
-4. [`API.md`](API.md), [`Database.md`](Database.md), [`Security.md`](Security.md) und [`Functions.md`](Functions.md) dokumentieren nachprüfbare Fachverträge.
-5. [`STATUS.md`](STATUS.md) beschreibt den aktuell nachgewiesenen Stand, ohne Anforderungen zu verändern.
-6. [`TODO.md`](TODO.md) enthält ausschließlich die nächsten ausführbaren Arbeiten.
+4. [`UI-UX.md`](UI-UX.md) definiert das langfristige verbindliche UI-/UX-Zielbild; [`I18N.md`](I18N.md) definiert die langfristige zentrale Internationalisierungs-, Locale- und Sprachpaketarchitektur.
+5. [`API.md`](API.md), [`Database.md`](Database.md), [`Security.md`](Security.md) und [`Functions.md`](Functions.md) dokumentieren nachprüfbare Fachverträge.
+6. [`STATUS.md`](STATUS.md) beschreibt den aktuell nachgewiesenen Stand, ohne Anforderungen zu verändern.
+7. [`TODO.md`](TODO.md) enthält ausschließlich die nächsten ausführbaren Arbeiten.
 
 [`ROADMAP.md`](ROADMAP.md) enthält bewusst auf später verschobene Ziele. [`CHANGELOG.md`](CHANGELOG.md) dokumentiert abgeschlossene Änderungen. Installationsanleitungen konkretisieren ausschließlich den Betrieb und stehen unter den genannten Verträgen.
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) beschreibt die verifizierte lokale Entwicklungsumgebung. Sie ist kein Produktionsvertrag und darf Node.js nicht zur Shared-Hosting-Voraussetzung machen.
+
+## Relevanzregel für UI/I18N
+
+`UI-UX.md` und `I18N.md` sind verbindliche Zielverträge, aber nicht bei jedem fachfremden Auftrag vollständig zu lesen. Bei Arbeiten an User-App, sichtbaren Texten, Navigation, Modulen, Locale, Sprache, Datum/Uhrzeit, Zahlen-/Einheitenformatierung, Sprachpaketen oder Übersetzungsprovidern müssen die jeweils betroffenen Verträge vor Implementierung gelesen und berücksichtigt werden.
+
+Neue Module dürfen keine Architektur schaffen, die den zentralen I18N-Vertrag aus `I18N.md` später verhindert oder durch inkompatible Insellösungen ersetzt.
 
 ## Konfliktregel
 
