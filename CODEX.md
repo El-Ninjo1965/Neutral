@@ -5,11 +5,11 @@
 
 # Aktueller Auftrag
 
-## User-App Visual Cleanup nach Betreiber-Device-Retest
+## Zwei verbleibende Device-Retest-Punkte: HTML-Dark-Frame + redundante Theme-Settings
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Designsystem-, Navigation-, Login-, Homepage-, CSS- und Testdateien.
+Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Settings-, Homepage-/iframe-, CSS- und Testdateien.
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
@@ -17,186 +17,142 @@ Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.
 
 ## Betreiber-Device-Retest vom 2026-09-08
 
-### Jetzt live bestätigt – nicht zurückbauen
+### Live bestätigt – nicht zurückbauen
 
-- Local-first Warmstart funktioniert ohne das frühere sichtbare `Loading`.
-- Sonne-/Mond-Schnellumschaltung im Header funktioniert.
-- Theme-Wechsel erfolgt unmittelbar.
-- GPS-Darstellung im Dark Mode ist jetzt sauber: Hintergrund, Karte, Texte und Buttons sind konsistent und lesbar.
-- Header-Actions sind im Dark Mode konsistent.
-- Light Mode funktioniert grundsätzlich.
-- `Start` / `GPS` sind als touchbare Navigation erkennbar.
-- HTML-Homepage funktioniert weiterhin.
-- GPS funktioniert weiterhin.
-- FTPS-Stabilisierung des vorherigen Auftrags nicht zurückbauen.
+- Local-first Warmstart funktioniert ohne sichtbares früheres `Loading`.
+- Sonne-/Mond-Schnellumschaltung im Header funktioniert und wechselt Theme unmittelbar.
+- Home-Icon anstelle von `Start` ist live sichtbar und wird vom Betreiber als Verbesserung akzeptiert.
+- Home/GPS-Navigation ist als App-Navigation erkennbar.
+- überarbeitetes Buttonsystem im Dark Mode ist konsistent genug für den aktuellen Stand.
+- GPS-Darstellung im Dark Mode ist sauber und lesbar.
+- Login-/Header-Actions funktionieren.
+- FTPS-Stabilisierung nicht zurückbauen.
 
-P4 bleibt bis zum Abschluss dieses visuellen Folge-Retests unterhalb `LIVE BESTANDEN`.
+Es verbleiben zwei konkrete Punkte.
 
-# Arbeitspaket A – Zentrales Button-/Navigation-Design verfeinern
+# Arbeitspaket A – HTML-Homepage bleibt auf iPad/Safari im Dark Mode weiß
 
-Der Betreiber bewertet das aktuelle Button-Design, **besonders im Light Mode**, noch nicht als ausreichend hochwertig.
+Der letzte Fix ist auf dem realen Betreibergerät **nicht erfolgreich**.
 
-Live sichtbar:
+Live-Screenshot nach aktuellem Deploy:
 
-- `Start` / `GPS` wirken im Light Mode zu weich/weiß und besitzen zu wenig klare visuelle Hierarchie.
-- aktiver und inaktiver Zustand sollen klarer und hochwertiger wirken, ohne grell zu werden;
-- Theme-, Settings-, Login- und Navigationsbuttons wirken noch nicht vollständig wie Teile eines gemeinsamen Designsystems;
-- `Login` ist visuell sehr dominant gegenüber den übrigen Header-Actions;
-- Radien, Höhen, Border-Stärke, Innenabstände und Zustände sollen systematisch konsistent sein.
+- App selbst ist eindeutig im Dark Theme.
+- gespeicherter Homepageinhalt ist weiterhin das schlichte `<h1>TEST</h1>`.
+- trotzdem zeigt der sandboxed HTML-Homepage-Bereich weiterhin eine große weiße rechteckige Fläche.
+
+Der vorherige Ansatz, dem `srcdoc`-iframe beim Erstellen den aktuellen lokalen `color-scheme` zu geben, reicht auf dem realen iPad/Safari also nicht aus.
 
 ## Auftrag
 
-Überarbeite das zentrale Button-/Navigation-System als Frameworkvertrag, nicht als Sammlung einzelner Screenshot-Hacks.
-
-Ziel:
-
-- einheitliche zentrale Button-Tokens bzw. gemeinsame Komponenten-/Klassenverträge;
-- Light Mode mit klarer Kontur und ausreichendem Kontrast;
-- Dark Mode mindestens auf dem jetzt erreichten Qualitätsniveau halten;
-- klarer aktiver Navigationszustand;
-- ruhiger inaktiver Zustand;
-- Primary/Secondary/Navigation/Icon-Button-Hierarchie nachvollziehbar;
-- Header-Actions und Navigation wirken aus derselben Designsprache;
-- `Login` darf als Aktion erkennbar sein, soll aber die gesamte Navigation nicht unnötig dominieren;
-- konsistente Höhe, Radius, Border, Padding und Touchfläche;
-- Hover nur ergänzend für Pointer/Desktop;
-- Touch darf nicht von Hover abhängen;
-- sichtbarer Keyboard-Fokus;
-- ausreichender Kontrast;
-- zukünftige Module erben den zentralen Navigations-/Buttonvertrag.
-
-Keine komplette Neugestaltung des gesamten Designsystems. Bestehende zentrale Tokens sinnvoll erweitern/verwenden.
-
-# Arbeitspaket B – `Start` durch Home-Icon ersetzen
-
-Der Textlink/-button `Start` soll in der zentralen User-App-Navigation durch ein etabliertes **Home-/Haus-Icon** ersetzt werden.
-
-Anforderungen:
-
-- international verständliches Home-Symbol;
-- keine externe Netzwerkabhängigkeit für das Icon;
-- keine zufällige Emoji-Darstellung;
-- bestehende zentrale Icon-/Asset-/SVG-Lösung verwenden oder eine saubere lokale Lösung schaffen;
-- touchgerechte Icon-Button-Fläche;
-- aktiver/inaktiver Zustand über denselben Navigationsvertrag wie Modulnavigation;
-- `aria-label`/accessible name `Start` bzw. lokalisierbarer äquivalenter Schlüssel;
-- Tooltip/Title soweit für Verständlichkeit sinnvoll;
-- Tastaturfokus sichtbar;
-- Screenreader-Bedienbarkeit erhalten;
-- bestehende Startlogik/Route/Homepage-Verhalten nicht verändern.
-
-`GPS` vorerst als Textbezeichnung belassen. Keine allgemeine Modul-Icon-Architektur improvisieren. Eine solche Entscheidung kann später separat für alle Module getroffen werden.
-
-# Arbeitspaket C – HTML-Homepage Dark-Mode-Fläche ursächlich prüfen
-
-Im aktuellen Betreiber-Screenshot erscheint bei Dark Theme und gespeichertem Inhalt `<h1>TEST</h1>` weiterhin eine **große weiße rechteckige Inhaltsfläche**.
-
-Der vorherige Auftrag sollte den Frameworkcontainer transparent/theme-neutral machen. Deshalb jetzt Root Cause tatsächlich feststellen.
-
-Prüfe:
-
-- den exakt gespeicherten Homepagewert und dessen Renderpfad;
-- ob die weiße Fläche vom Frameworkcontainer stammt;
-- ob eine CSS-Regel, ein Default-Style, Sanitizer-/Renderer-Wrapper oder ein anderer User-App-Container weiterhin `white/#fff` erzwingt;
-- ob die Fläche Bestandteil des tatsächlich gespeicherten freien Administrator-HTML/CSS ist.
-
-Regel:
-
-- Wenn die weiße Fläche vom Framework stammt: zentral korrigieren, sodass ein simples `<h1>TEST</h1>` keinen künstlichen riesigen weißen Block im Dark Mode erzeugt.
-- Wenn die weiße Fläche ausdrücklich aus dem gespeicherten Administrator-HTML/CSS stammt: freien Inhalt **nicht** automatisch umschreiben. Root Cause dokumentieren und im Abschlussbericht klar benennen.
-
-Keine heuristische Manipulation freien Administrator-HTMLs.
-
-# Arbeitspaket D – Login-Seite von Framework-/Developertext bereinigen
-
-Im Betreiber-Screenshot der anonymen Login-Seite stehen weiterhin unnötige bzw. technische Texte:
-
-- `ACCOUNT ACCESS`
-- `Use your local workspace account to unlock available features.`
-- `Sign in with your configured account.`
-
-Insbesondere `local workspace account` ist technische Framework-/Workspace-Sprache und widerspricht dem bestehenden User-App-UX-Vertrag.
-
-## Ziel
-
-Die normale Login-Seite soll knapp und produktorientiert sein.
-
-Standarddarstellung im Kern:
-
-- `Login` bzw. bestehende lokalisierbare Produktbezeichnung;
-- Username;
-- Password;
-- Login-Button;
-- notwendige echte Fehler-/Statusmeldungen nur dann, wenn sie tatsächlich relevant sind.
-
-Entferne redundante Erklärungstexte und Framework-/Workspace-Terminologie aus der normalen User-App.
+Untersuche den tatsächlichen Safari/WebKit-Rendervertrag für sandboxed `iframe[srcdoc]` im Dark Theme und behebe die Frameworkursache robust.
 
 WICHTIG:
 
-- Authentifizierungslogik nicht verändern;
-- echte Login-Fehler weiterhin klar anzeigen;
-- Accessibility/Labels nicht entfernen;
-- I18N-Verträge respektieren; keine neue umfassende I18N-Architektur beginnen.
+- Nicht erneut nur denselben `color-scheme`-Ansatz umformulieren.
+- Der reale Device-Befund widerlegt die Annahme, dass dieser Ansatz allein genügt.
+- Freies Administrator-HTML darf weiterhin nicht heuristisch verändert, sanitisiert oder inhaltlich umgeschrieben werden.
+- Explizit vom Administrator gesetztes CSS/Background muss weiterhin Vorrang haben.
+
+Prüfe insbesondere:
+
+- Safari/WebKit-Verhalten von `iframe[srcdoc]`, `color-scheme` und transparentem iframe canvas;
+- ob das iframe-Dokument ohne eigene `html/body`-Background-Regel standardmäßig einen weißen Canvas erzeugt;
+- ob ein frameworkseitiges neutrales Dokumentgerüst um den freien Body-Inhalt technisch notwendig ist;
+- ob Theme-Information über CSS Custom Properties, `prefers-color-scheme`, `meta name=color-scheme`, dokumenteigene Styles oder einen anderen sicheren Mechanismus in den isolierten Browsing Context übertragen werden muss;
+- ob `srcdoc` als kompletter Dokumentinhalt oder Body-Fragment behandelt wird und welche Fälle unterstützt werden müssen;
+- Warmstart und Theme-Wechsel nach bereits gerendertem iframe: der Frame muss bei Light↔Dark korrekt mitwechseln;
+- Sandbox-/Security-Vertrag darf nicht geschwächt werden.
+
+## Zielvertrag
+
+Für freien Homepageinhalt ohne explizite Hintergrundgestaltung, z. B.:
+
+`<h1>TEST</h1>`
+
+muss der Framework-Renderpfad im Dark Theme einen zum App-Theme passenden neutralen Hintergrund/Text-Farbraum bereitstellen und im Light Theme entsprechend hell darstellen.
+
+Wenn der Administrator dagegen ausdrücklich z. B. `body { background: white; }` oder eine äquivalente eigene Gestaltung setzt, muss diese eigene Gestaltung sichtbar bleiben.
+
+Der Framework-Theme-Adapter darf also **Defaults bereitstellen, aber keine explizite Administratorgestaltung überschreiben**.
+
+Bevorzugt eine standardsaubere, Safari-kompatible Lösung entwickeln und durch Tests absichern. Keine UA-Sniffing-Sonderlösung, sofern nicht zwingend erforderlich und begründet.
+
+# Arbeitspaket B – Appearance/Theme aus User-Settings entfernen
+
+Der Betreiber hat den aktuellen Settings-Screenshot geprüft.
+
+Der gesamte Block:
+
+- `Appearance`
+- Erklärung `Choose the theme used by this app. It is stored locally and works offline.`
+- `Theme`
+- Light/Dark-Select
+
+ist jetzt redundant, weil die User-App bereits den unmittelbar erreichbaren Sonne-/Mond-Schnellumschalter im Header besitzt.
+
+## Auftrag
+
+Entferne den **Appearance/Theme-Block aus den normalen User-Settings**.
+
+WICHTIG:
+
+- Theme-Funktionalität selbst bleibt vollständig erhalten.
+- Header-Sonne/Mond bleibt der normale User-Zugriff für Light/Dark.
+- derselbe persistente lokale Theme-State bleibt erhalten.
+- Theme-Persistenz, Offline-Funktion und sofortiger Wechsel bleiben erhalten.
+- keine Serverabhängigkeit hinzufügen.
+- keine Admin-/Developer-Theme-Konfiguration entfernen, falls eine solche separat existiert und fachlich benötigt wird; Auftrag betrifft die normale User-Settings-Seite.
+- nach Entfernen keine leeren Container, Überschriften oder unnötigen Abstände hinterlassen.
+
+Die User-Settings sollen dadurch kompakter werden und mit `App areas`, `Privacy and sharing` usw. beginnen, soweit dies dem bestehenden Aufbau entspricht.
 
 # Tests
 
 Regressionstests zuerst ergänzen/anpassen.
 
-Mindestens soweit automatisiert sinnvoll beweisen:
+## HTML iframe / Theme
 
-## Button/Navigation
+Mindestens beweisen:
 
-- zentrale Navigation verwendet den gemeinsamen Button-/Navigation-Vertrag;
-- Light/Dark nutzen zentrale Tokens;
-- aktive/inaktive Zustände bleiben eindeutig;
-- Header-Actions verwenden konsistente zentrale Buttonvarianten;
-- Fokuszustände bleiben sichtbar;
-- Touchgrößen bleiben ausreichend;
-- persönliche `App areas` bleiben funktional.
+- `<h1>TEST</h1>` erhält im Dark Theme einen neutralen Dark-Default statt weißem UA-Canvas;
+- derselbe Inhalt erhält im Light Theme einen passenden Light-Default;
+- Theme-Wechsel aktualisiert einen bereits vorhandenen HTML-Homepage-Frame korrekt;
+- explizites Administrator-CSS für Background/Text bleibt maßgeblich und wird nicht überschrieben;
+- freier Inhalt wird nicht semantisch verändert;
+- sandbox/security-Attribute bleiben unverändert bzw. mindestens gleich restriktiv;
+- Local-first Warmstart/Cache bleibt erhalten;
+- vollständiges HTML-Dokument und einfaches HTML-Fragment werden nach bestehendem Vertrag korrekt behandelt oder der tatsächlich unterstützte Vertrag wird sauber definiert und getestet.
 
-## Home-Icon
+## User Settings
 
-- `Start`-Text wird in der sichtbaren Navigation durch lokales Home-Icon ersetzt;
-- accessible name bleibt vorhanden;
-- Startnavigation funktioniert unverändert;
-- aktiver Zustand funktioniert;
-- keine externe Icon-Abhängigkeit.
-
-## HTML
-
-- simples `<h1>TEST</h1>` erhält vom Framework im Dark Mode keinen erzwungenen weißen Vollflächencontainer;
-- freies Administrator-HTML wird nicht automatisch verändert;
-- Warmstart/Cache bleibt funktionsfähig.
-
-## Login
-
-- `local workspace account` erscheint nicht mehr in der normalen User-App;
-- redundante Standardhinweise sind entfernt;
-- Username-/Password-Labels und Login-Aktion bleiben vorhanden;
-- echte Authfehler bleiben darstellbar;
-- Login-Funktionalität bleibt unverändert.
+- Appearance/Theme-Block erscheint nicht mehr in normalen User-Settings;
+- Header-Theme-Switch bleibt vorhanden und funktionsfähig;
+- Theme-State bleibt nach Reload persistent;
+- Offline-Theme bleibt funktionsfähig;
+- `App areas` und `Privacy and sharing` bleiben unverändert funktionsfähig;
+- keine leere Appearance-Struktur bleibt im DOM sichtbar.
 
 ## Regression
 
-- Theme-Schnellumschaltung;
-- Theme-Persistenz/Offline;
+- Home-Icon und Home-Navigation;
 - GPS;
-- HTML-Homepage;
-- Warmstart;
+- Buttonsystem Light/Dark;
 - Login;
 - P1 User-/Admin-Sessiontrennung;
 - Auth/CSRF;
+- HTML-Homepage;
+- Warmstart;
 - Service Worker;
 - Packaging/Base Path;
 - FTPS-/Smoke-Stabilisierung.
 
 # Abschluss
 
-Dokumentiere Root Causes und Änderungen vollständig in `CHATGPT.md`.
+Dokumentiere die tatsächliche Root Cause des Safari/iPad-White-Frame-Problems in `CHATGPT.md`. Keine bloße Vermutung als bestätigt darstellen.
 
-Aktualisiere dauerhafte Dokumentation nur, wenn tatsächlich ein neuer allgemeiner Vertrag entsteht.
+Aktualisiere dauerhafte Dokumentation nur, wenn ein neuer allgemeiner Vertrag entsteht.
 
-Danach gemäß `WORKFLOW.md` vollständig:
+Danach vollständig gemäß `WORKFLOW.md`:
 
 - fokussierte Tests;
 - vollständige Test-Suite;
@@ -217,13 +173,12 @@ Keine selbst ausführbaren offenen Punkte zurücklassen.
 
 ## Betreiber-Retest danach
 
-`CHATGPT.md` soll einen kurzen Device-Retest liefern für:
+`CHATGPT.md` soll nur die noch nötigen kurzen Schritte nennen:
 
-1. Light Mode: Header-Buttons + Home/GPS-Navigation visuell prüfen.
-2. Dark Mode: dieselben Elemente regressiv prüfen.
-3. Home-Icon antippen und Startfunktion bestätigen.
-4. HTML `<h1>TEST</h1>` in Dark prüfen.
-5. Login-Seite auf reduzierte, nicht-technische Darstellung prüfen.
-6. Warmstart, GPS und Theme-Switch kurz regressiv bestätigen.
+1. Dark aktivieren und HTML-Homepage `<h1>TEST</h1>` prüfen: keine künstliche große weiße Frameworkfläche.
+2. Light aktivieren und denselben Inhalt prüfen.
+3. Settings öffnen: Appearance/Theme-Block ist entfernt; App areas/Privacy bleiben vorhanden.
+4. Theme über Header wechseln, Reload durchführen und Persistenz bestätigen.
+5. Home/GPS/Warmstart kurz regressiv prüfen.
 
-Bis zu diesem Betreiber-Retest keine erfundene vollständige Live-Bestätigung.
+Bis zum positiven realen Device-Retest keine vollständige P4-Livefreigabe erfinden.
