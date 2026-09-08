@@ -1,89 +1,67 @@
 # NEUTRAL – CODEX ABSCHLUSSBERICHT
 
 **Richtung:** Codex → ChatGPT/Lea
-**Auftrag:** User-App Visual Cleanup nach Betreiber-Device-Retest
+**Auftrag:** HTML-Dark-Frame auf iPad/Safari und redundante normale Theme-Settings
 **Datum:** 2026-09-08
 **Status:** CODE-SEITIG ERLEDIGT / BETREIBER-DEVICE-RETEST ERFORDERLICH
 
 ## 1. Übergabe und Scope
 
-- Die Sandbox wurde zuerst mit `origin/main` synchronisiert. Der neuere Betreiberauftrag aus `CODEX.md` wurde erhalten, vollständig nach `CURRENT-TASK.md` übernommen und mit `CODEX.md == CURRENT-TASK-Anforderungen: JA` geprüft.
-- Der Scope blieb auf dem beauftragten visuellen User-App-Folgepaket. Es wurde keine vollständige I18N-/Übersetzungsarchitektur, keine allgemeine Modul-Icon-Architektur, keine neue Sync-/Queue-Lösung und keine weitere P4-Featurearbeit begonnen.
-- Die live bestätigten Warmstart-, Theme-, GPS-, HTML-, Navigations- und FTPS-Stabilisierungen wurden nicht zurückgebaut. P1 bleibt `LIVE BESTANDEN`; P4 erhält ohne den unten beschriebenen Betreiber-Retest keine erfundene Live-Freigabe.
+- Die austauschbare Sandbox wurde secretsicher mit `origin/main` verbunden und vollständig synchronisiert. Der neue Betreiberauftrag aus `CODEX.md` wurde unverändert erhalten, nach `CURRENT-TASK.md` übernommen und mit `CODEX.md == CURRENT-TASK-Anforderungen: JA` geprüft.
+- Der aktuelle reale iPad/Safari-Befund hatte Vorrang vor dem früher grünen Test und der früheren Annahme zum iframe-Element-`color-scheme`.
+- Der Scope blieb auf den HTML-Homepage-Frame und die normalen User Settings. Keine vollständige I18N-, Modul-Icon-, Sync-/Queue-, Admin- oder weitere P4-Architektur wurde begonnen.
+- Live bestätigte Warmstart-, Home-, Button-, GPS-, Login-, Navigation- und FTPS-Stabilisierungen wurden nicht zurückgebaut. P1 bleibt `LIVE BESTANDEN`; P4 bleibt bis zum positiven Betreiber-Retest unterhalb `LIVE BESTANDEN`.
 
-## 2. Root Causes
+## 2. Tatsächliche Root Cause und Evidenz
 
-### Button- und Navigationshierarchie
+Der vorherige Fix setzte ausschließlich `color-scheme` am äußeren `<iframe>`-Element. Der aktuelle reale Safari/iPad-Retest beweist, dass diese Information dort allein den Canvas des isolierten `srcdoc`-Dokuments nicht zuverlässig dunkel zeichnet.
 
-Die User-App hatte mehrere historisch übereinanderliegende Komponentenregeln. Header-Actions und Navigation besaßen jeweils eigene Radien, Konturen, Flächen und Zustände; eine späte Regel setzte den aktiven Navigationszustand wieder auf eine sehr weiche hellgrüne Fläche. Besonders im Light Mode fehlte deshalb eine verbindliche, kontrastreiche gemeinsame Hierarchie.
+Der Codepfad bestätigte die verbleibende Lücke: Das gespeicherte `<h1>TEST</h1>` wurde als nacktes `srcdoc`-Fragment verwendet. Innerhalb des dadurch erzeugten eigenständigen Dokuments gab es weder einen dokumenteigenen `meta name="color-scheme"` noch Author-Defaults für `html` und `body`. Der weiße Block war daher der vom isolierten Dokument gerenderte Default-Canvas, nicht ein gespeichertes Administrator-Background und nicht der bereits transparente äußere Frameworkcontainer.
 
-### Große helle Fläche der freien HTML-Homepage
+Die primären WHATWG-/CSSWG-/WebKit-Seiten waren aus dieser Sandbox nicht abrufbar: sowohl die Websuche als auch direkte HTTPS-Aufrufe wurden von der Umgebung mit 401 beziehungsweise CONNECT-Proxy 403 blockiert. Deshalb wird keine externe Browserquelle als gelesen behauptet. Die Root Cause stützt sich auf den aktuellen realen Safari-Gegenbeweis, den vollständig geprüften Renderpfad und die konkret fehlenden dokumentinternen Defaults; eine erneute bloße Umformulierung des widerlegten Ansatzes wurde vermieden.
 
-Der gespeicherte Betreiberwert ist laut aktuellem Auftrag das schlichte `<h1>TEST</h1>`; im Renderpfad wird dieser Wert weiterhin exakt als `frame.srcdoc = homepage.content` gesetzt. Die auffällige Fläche stammt damit nicht aus einem vom Administrator gespeicherten Background-Style und auch nicht aus einem Sanitizer.
+## 3. Safari-kompatibler Homepage-Dokumentadapter
 
-Die Frameworkursache lag an der isolierten Browsing-Context-Fläche des sandboxed `srcdoc`-iframes: Der Container war zwar transparent und deklarierte allgemein `color-scheme: light dark`, aber die Einbettung wählte nicht ausdrücklich das aktive App-Theme. Der unabhängige User-Agent-Canvas konnte daher auch unter Dark Theme im Light-Farbraum bleiben. Der Frame erhält nun bei seiner Erstellung den aktuellen lokalen `color-scheme`. Das gespeicherte HTML wird weder umgeschrieben noch sanitisiert; ausdrücklich im freien Inhalt gesetzte Administrator-CSS bleibt maßgeblich.
+- `NeutralHomepageDocument` erstellt für ein HTML-Fragment ein vollständiges `<!doctype html>`-/`html`-/`head`-/`body`-Gerüst und übernimmt die Administratorquelle exakt einmal unverändert in den Body.
+- Ein bereits vollständiges HTML-Dokument behält seine Quelle; der Adapter wird am Anfang des vorhandenen `head` eingesetzt. Fehlt `head`, wird er direkt nach `html` ergänzt; ein Doctype-Dokument ohne explizites `html` erhält den Adapter direkt nach dem Doctype.
+- Der Adapter setzt im isolierten Dokument genau einen Light- oder Dark-Farbraum sowie passende neutrale Defaults für `:root`, `html` und den mindestens viewport-hohen `body`.
+- Diese Defaults stehen **vor** der unveränderten Administratorquelle. Ein späteres ausdrückliches `body { background: white; }`, eigene Textfarbe oder Inline-CSS besitzt dadurch nach normaler CSS-Cascade weiterhin Vorrang.
+- `apply(frame, content, theme)` kann denselben bestehenden Frame bei einem Themewechsel neu aufbauen. Der User-App-Renderpfad verwendet bei jedem Render den aktuellen persistenten lokalen Theme-State.
+- Die Sandbox bleibt exakt `allow-scripts allow-forms allow-popups`; `allow-same-origin` oder eine andere Lockerung wurde nicht hinzugefügt.
+- Der neue Adapter wird vor `user-app.js` geladen, vom Service Worker versioniert vorgecached und über den Shared-Hosting-Root geroutet. Local-first-Homepagecache und Hintergrundrefresh bleiben unverändert.
 
-Eine direkte Live-API-Abfrage aus dieser Sandbox wurde vom vorgeschalteten CONNECT-Proxy mit HTTP 403 blockiert. Diese Umgebungsgrenze ändert nicht die Codepfad- und Betreiberwertanalyse und wurde nicht durch Credentials oder einen unsicheren Umgehungsweg kaschiert.
+## 4. Normale User Settings
 
-## 3. Änderungen
+- Der vollständige normale Block `Appearance`, Hilfetext, `Theme`-Label und Light/Dark-Select wurde entfernt.
+- User Settings beginnen nun direkt mit `App areas`, gefolgt von `Privacy and sharing`; es bleibt kein leerer Appearance-Container zurück.
+- Beim Speichern von App areas/Privacy wird der aktuell persistierte Theme-Wert nur mitgeführt. Es gibt keinen zweiten Themewechsel im Settings-Save-Pfad.
+- Der Sonne-/Mond-Button im Header bleibt der normale unmittelbare Theme-Zugriff und verwendet unverändert `neutral.user.theme.v1`, `applyUserTheme`, Offlinepersistenz und Reload-Wiederherstellung.
+- Separate Admin-/Developer-Themefunktionen wurden nicht verändert.
 
-### Zentraler Buttonvertrag
+## 5. Tests und Verifikation
 
-- Neue zentrale Tokens definieren Mindesthöhe, Radius, Border-Stärke, horizontalen Innenabstand sowie Secondary-, Active- und Fokusfarben für Light und Dark.
-- `.ui-button` bildet die gemeinsame Basis; `--primary`, `--secondary`, `--navigation` und `--icon` bilden nachvollziehbare Varianten.
-- Header-Theme, Settings, Login/Logout und zentrale Navigation verwenden denselben Vertrag.
-- Jede Aktion bleibt mindestens 44 px hoch. Pointer-Hover liegt in einer passenden Hover/Pointer-Media-Query; Touch ist davon unabhängig. `:focus-visible` bleibt klar erkennbar.
-- Der aktive Navigationszustand verwendet eine eindeutige zentrale Fläche/Kontur/Textfarbe. Inaktive Light-Buttons haben eine sichtbar stärkere Kontur, während Dark Mode seine bestehende Qualität behält.
-
-### Lokales Home-Icon
-
-- Die sichtbare Beschriftung `Start` wurde nur in der Navigation durch ein lokales Inline-SVG-Haus ersetzt; es gibt keine externe Netzwerkabhängigkeit und keine Emoji-Renderingabhängigkeit.
-- `aria-label="Start"`, `title="Start"`, Tastaturfokus und `aria-current="page"` sichern Verständlichkeit und Accessibility.
-- Die zugrunde liegende ID bleibt `home`; Click-, Route-, Homepage- und aktive Zustandslogik sind unverändert. `GPS` bleibt absichtlich Text.
-
-### HTML-Homepage
-
-- Der Sandbox-Frame wählt den aktuellen Light-/Dark-Farbraum über die Einbettung.
-- Der freie Administratorinhalt bleibt bytegetreu und wird nicht heuristisch manipuliert.
-- Sandboxattribute, Local-first-Cache, Hintergrundrefresh und Warmstartpfad bleiben unverändert.
-
-### Reduzierte Loginseite
-
-- `ACCOUNT ACCESS`, `Use your local workspace account to unlock available features.` und `Sign in with your configured account.` wurden aus der normalen anonymen Ansicht entfernt.
-- Sichtbar bleiben `Login`, Username, Password und die Login-Aktion.
-- Labels, Autocomplete, semantischer Formular-Submit, `role=status`/`aria-live`, Zwischenstatus, echte Server-/Verbindungsfehler und die bestehende Session-Race-Sicherung bleiben erhalten.
-
-## 4. Tests und Verifikation
-
-- Fokusregressionen für Homepagecache, Start/Navigation, gemeinsamen Buttonvertrag, Home-SVG/A11y, Theme-Canvas und Login: **42/42 bestanden**.
-- Vollständige Suite: **418/418 bestanden**, 0 Fehler, 0 übersprungen.
+- Fokuspaket für Theme-Dokumentadapter, Fragment/Voll-Dokument, explizites Administrator-CSS, bestehenden Frame, Settings, Homepagecache, Service Worker und Packaging: **73/73 bestanden**.
+- Vollständige Suite: **424/424 bestanden**, 0 Fehler, 0 übersprungen.
 - PHP-Lint: **36 Dateien bestanden**.
 - JavaScript-Syntaxcheck: bestanden.
 - `git diff --check`: bestanden.
-- Produktionspaket: erfolgreich, **105 Payload-Dateien**, Base Path `""`.
-- Secret-Pattern-Prüfung des Diffs: bestanden; keine Secrets oder Zugangswerte aufgenommen.
-- Visueller lokaler Screenshot war in der Sandbox nicht ausführbar, weil weder Chromium/Chrome noch ein Browserdriver installiert ist. Die Änderung ist deshalb zusätzlich durch DOM-/CSS-Vertragsregressionen abgesichert; die reale visuelle Abnahme bleibt bewusst beim Betreiber-Device-Retest.
+- Produktionspaket: erfolgreich, **106 Payload-Dateien**, Base Path `""`.
+- Secret-Pattern-Prüfung: bestanden; keine Zugangswerte aufgenommen.
+- Ein lokaler visueller Screenshot war nicht möglich, da diese Sandbox weder Chromium/Chrome noch einen Browserdriver enthält. Der reale iPad/Safari-Test bleibt deshalb ausdrücklich Teil der Betreiberabnahme.
 
-## 5. GitHub, FTPS und CodeQL
+## 6. GitHub und CI
 
-- Implementierungscommit: `8b2fdee5577906ee9891a48d62a7b83b54e029ab` (`fix: refine user app visual controls`).
-- GitHub-Authentifizierung und Schreibzugriff für `El-Ninjo1965/Neutral` wurden secretsicher bestätigt; der Commit wurde nach `main` übertragen.
-- Erster Implementierungs-CI-Lauf terminal erfolgreich:
-  - `FTPS Deploy`: Run `34214340128` – `success`.
-  - `Push on main` / CodeQL: Run `34214339451` – `success`.
-- Abschlussbericht-Commit: `05e09dee09ce77ec326ba8d67312bbc640a14d40` (`docs: report user app visual cleanup`), nach `main` übertragen.
-- CI des Bericht-Commits terminal erfolgreich:
-  - `FTPS Deploy`: Run `34214970804` – `success`.
-  - `Push on main` / CodeQL: Run `34214970801` – `success`.
-- Die abschließende operative Statusmarkierung wird ebenfalls committed und nach `main` übertragen. Erst nach deren terminaler CI, `HEAD == origin/main`, sauberem Working Tree und GitHub-Blob-Verifikation erfolgt die externe Abschlussmeldung.
+- Implementierungscommit: `8a76d42` (`fix: theme sandboxed homepage documents`), nach GitHub `main` übertragen.
+- CodeQL / `Push on main`: Run `34219386335` terminal `success`.
+- FTPS Run `34219386338` baute, testete, paketierte und lud erfolgreich hoch, scheiterte anschließend jedoch terminal im read-only Smoke mit `Öffentlicher Root ist nicht erreichbar.`. Dieser nicht-revisionsbezogene Smoke-Fehler wurde vertragsgemäß nicht kaschiert oder automatisch als Erfolg behandelt. Der verwendete Fine-grained Token darf Actions-Runs nicht manuell erneut starten.
+- Der Abschlussbericht-Commit löst deshalb einen neuen vollständigen FTPS-/CodeQL-Lauf aus. Erst wenn dieser terminal erfolgreich ist, `HEAD == origin/main`, der Working Tree sauber ist und der GitHub-Blob von `CHATGPT.md` übereinstimmt, erfolgt die externe Abschlussmeldung.
 
-## 6. Betreiber-Device-Retest
+## 7. Noch notwendiger Betreiber-Retest
 
-1. **Light Mode:** Header-Theme/Settings/Login bzw. Logout sowie Home/GPS-Navigation auf klare, ruhige Hierarchie, Kontur, gleiche Höhe und aktive/inaktive Zustände prüfen.
-2. **Dark Mode:** dieselben Elemente regressiv prüfen; insbesondere Lesbarkeit, Fokus und aktiven Navigationszustand bestätigen.
-3. **Home-Icon:** Haus-Symbol antippen und unveränderte Start-/Homepage-Funktion bestätigen; optional Tastatur/Screenreader mit Accessible Name `Start` prüfen.
-4. **HTML:** in Appearance `<h1>TEST</h1>` speichern, Dark aktivieren und bestätigen, dass kein künstlicher großer weißer Frameworkblock erscheint. Danach optional explizites eigenes Background-CSS prüfen; dieses muss unverändert wirken.
-5. **Login:** abmelden/anonymous öffnen und bestätigen, dass nur Login, Username, Password und Login-Aktion als Standardinhalt erscheinen; einen echten Fehlversuch auf klare Fehlermeldung prüfen.
-6. **Kurzregression:** Warmstart/Reload ohne früheres sichtbares Loading, GPS-Funktion und unmittelbaren persistenten Theme-Switch bestätigen.
+1. Dark aktivieren und HTML-Homepage `<h1>TEST</h1>` prüfen: keine künstliche große weiße Frameworkfläche.
+2. Light aktivieren und denselben Inhalt auf passenden hellen Default prüfen.
+3. Settings öffnen: Appearance/Theme-Block ist entfernt; App areas und Privacy bleiben vorhanden.
+4. Theme ausschließlich über den Header wechseln, Reload durchführen und Persistenz bestätigen.
+5. Home, GPS und Warmstart kurz regressiv prüfen.
 
-Bis dieser reale Retest positiv gemeldet wird, bleibt der wahrheitsgemäße Status `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`.
+Bis diese fünf realen Device-Schritte positiv bestätigt sind, bleibt der Status `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`.
