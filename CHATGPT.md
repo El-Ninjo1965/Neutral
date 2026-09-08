@@ -1,125 +1,95 @@
 # NEUTRAL – Abschlussbericht Codex → ChatGPT/Lea
 
 **Datum:** 2026-09-08  
-**Auftrag:** P4-Device-Retest-Folgefehler und User-UX bereinigen  
-**Status:** **P4 FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**  
+**Auftrag:** Local-first Warmstart-Performance und zentrale App-Navigation  
+**Status:** **P4 WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**  
 **P1:** **LIVE BESTANDEN**
 
-## 1. Synchronisation und Capture
+## Synchronisation und Capture
 
-- Die Sandbox wurde zuerst mit `origin/main` synchronisiert.
-- Ausgangs-`origin/main`: `eae8b35098484a0eba1d5b8574adfe2b049fc68c`.
-- Die neue verbindliche `I18N.md`, die aktualisierte `DOCUMENTATION.md` und der neue Betreiberauftrag in `CODEX.md` wurden vollständig aus `origin/main` übernommen und nicht durch ältere lokale Fassungen ersetzt.
-- Der divergierte lokale Stand wurde ohne Reset über Merge-Commit `8314044` integriert; danach bestand gegenüber `origin/main` vor Implementierung kein inhaltlicher Unterschied außer der gemeinsamen Historie.
-- Der Gesamtauftrag wurde vor Implementierung vollständig nach `CURRENT-TASK.md` übernommen. Capture-Ergebnis: `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
+- Zuerst wurde `origin/main` (`744db4b`) synchronisiert.
+- Die neueren verbindlichen Fassungen von `CODEX.md` und `UI-UX.md`, insbesondere der Local-first-Warmstart-/Reload-Vertrag, wurden vollständig aus `origin/main` übernommen und nicht durch ältere lokale Fassungen ersetzt.
+- Die divergierte lokale Arbeitslinie wurde ohne Reset im Merge-Commit `d1e9bfc` integriert.
+- Der vollständige Auftrag wurde vor Implementierung in `CURRENT-TASK.md` erfasst. Prüfung: `CODEX.md == CURRENT-TASK-Anforderungen: JA`.
 
-## 2. Root Causes und Korrekturen
+## Root Cause der circa zweisekündigen Loading-Phase
 
-### Startkontext und Reload
+Die Homepageprojektion wurde bei jedem Reload ausschließlich über `/api/settings/homepage` vom Server bezogen. `homepageConfig` existierte nur im flüchtigen Arbeitsspeicher und `homepageResolved` startete immer mit `false`. Der erste sinnvolle Homepage-Render wartete daher bei jedem Aufruf erneut auf den Netzwerk-/PHP-Pfad. Service Worker, Session-Restore und Modul-Discovery waren nicht die Ursache der bereits bekannten HTML-Homepage-Wartezeit; sie liefen bereits unabhängig. Es gab schlicht keinen zulässigen synchronen lokalen Homepagezustand.
 
-Root Cause: Der Homepagepfad rief denselben `renderModule()`-Pfad wie eine bewusste Modulnavigation auf. Dieser setzte `state.activeView = module:*`, `activeModuleId` und fokussierte anschließend den gesamten Content-Container. Damit wurde die konfigurierte Homepage beim Reload semantisch zur eigenständigen Modulansicht.
+Der Delay wurde nicht versteckt, animiert oder durch einen kürzeren Timeout kaschiert. Der Datenfluss wurde Local-first geändert.
 
-Korrektur:
+## Implementierung
 
-- `renderModule(moduleId, { asHomepage: true })` rendert das Modul als Inhalt von `Start`, ohne den aktiven Navigationskontext zu verändern.
-- Eine bewusste Auswahl im Modulmenü verwendet weiterhin die eigenständige Modulansicht.
-- Bis die öffentliche Homepageprojektion geladen ist, zeigt die Shell nur einen neutralen Ladezustand.
-- Im Modulmodus bleibt dieser Ladezustand auch bis zum Abschluss der Discovery bestehen. Dadurch erscheint vor gültigem GPS-Inhalt kein falscher Welcome-Default.
+### Öffentlicher Homepage-Warmstartcache
 
-### Blauer GPS-Rahmen
+- Neues zentrales `NeutralHomepageCache` mit Storage-Key `neutral.public.homepage.v1`, `schemaVersion: 1` und festem Scope `public-homepage`.
+- Persistiert wird ausschließlich die bereits öffentlich lesbare Homepageprojektion (`mode`, `title`, `content`, `moduleId`).
+- Gültiges HTML wird beim Warmstart synchron vor dem Serverrefresh gelesen und kann beim ersten User-App-Render unmittelbar erscheinen.
+- Nach erfolgreichem Serverfetch ersetzt die neue Projektion den älteren Cache kontrolliert und rendert sofort neu.
+- Offline bleibt die letzte gültige öffentliche Projektion verfügbar.
+- Kaltstart ohne gültigen Cache behält den ehrlichen Loading-/Fallback-Pfad.
+- Leere, malformed, inkompatibel versionierte oder nicht als `public-homepage` markierte Records werden verworfen.
+- Es werden keine Sessionidentitäten, Rollen, Permissions oder authentifizierten Modulkataloge in diesem Cache gespeichert.
 
-Root Cause: `renderModule()` rief nach jedem Modulrender `content.focus()` auf. Der fokussierbare Main-Container behielt dadurch den Browser-Fokusrahmen, bis eine weitere Pointeraktion stattfand.
+Der Modulmodus verwendet ebenfalls die lokal bekannte öffentliche Homepageauswahl, rendert das Modul aber weiterhin erst aus der vorhandenen permission-aware Modul-Discovery. Viewer-/Access-Fail-Closed wurde nicht aufgeweicht.
 
-Korrektur:
+### Messbarkeit
 
-- Der erzwungene Containerfokus wurde entfernt.
-- Echte Tastaturnavigation behält explizite `:focus-visible`-Indikatoren auf Navigation, Karten, Aktionen und GPS-Buttons. Fokusaccessibility wurde nicht global deaktiviert.
+- `homepage-local-ready` markiert den synchron verfügbaren lokalen Homepagezustand.
+- `homepage-refresh-ready` markiert die gültige Serveraktualisierung.
+- Tests sichern zusätzlich die Reihenfolge Cache-Read → erster Render → verzögerter Serverrefresh.
 
-### HTML-Homepage
+### Zentrale Navigation
 
-Root Cause: Der allgemeine Welcome-/Produkttitelblock wurde immer vor dem HTML-Frame aufgebaut. Der Frame ersetzte nur den inneren Inhaltscontainer, nicht den statischen Headingblock.
+- `Start`, `GPS` und spätere sichtbare Produktbereiche verwenden weiterhin zentral `.user-app-nav-item`.
+- Die zentrale Klasse besitzt jetzt mindestens 44px Touchhöhe, sichtbaren Rahmen, Fläche, Radius und Shadow.
+- Der aktive Zustand verwendet eine klare gefüllte Darstellung statt eines bloßen Textlink-Unterstrichs.
+- Hover ist nur Ergänzung; Bedienbarkeit hängt nicht davon ab.
+- `:focus-visible` bleibt accessibility-konform sichtbar.
+- Light- und Dark-Theme besitzen jeweils explizite Normal-, Hover- und Active-Farben.
+- Keine Modul-eigenen Navigationsstile und keine automatische Veränderung des freien Administrator-HTMLs wurden eingeführt.
 
-Korrektur:
+## Tests und Verifikation
 
-- Gültiger HTML-Inhalt besitzt einen eigenen frühen Renderpfad und bestimmt den vollständigen Startseiteninhalt.
-- Welcome/Produktname erscheint ausschließlich als kontrollierter Fallback ohne gültigen HTML- oder zugänglichen Modulinhaltsvertrag.
-
-### Login mit zwei Klicks
-
-Root Cause: Beim App-Start lief `restoreServerSession()` parallel. Wenn der Nutzer währenddessen anmeldete, konnte eine ältere anonyme `/auth/me`-Antwort nach dem erfolgreichen Login eintreffen, `serverUser` wieder löschen und die Ansicht erneut rendern. Dies erzeugte den beobachteten Eindruck, der erste Login habe nicht funktioniert.
-
-Korrektur:
-
-- Login ist jetzt ein semantischer Formular-Submit; Klick und Enter verwenden exakt denselben Handler.
-- Während eines laufenden Submits wird der Submitbutton deaktiviert.
-- Eine `sessionRevision` bindet Restore-Ergebnisse an den Zustand, in dem sie gestartet wurden. Eine vor dem Login gestartete Antwort darf die neuere Loginidentität nicht mehr überschreiben.
-- User-/Admin-Cookies, serverseitige Authentifizierung, CSRF und P1 wurden nicht verändert.
-
-### Settings und GPS
-
-- `Show all functions` und der zugehörige Browser-Alert wurden vollständig entfernt.
-- Die individuelle persönliche Sichtbarkeitsauswahl bleibt erhalten und verändert keine serverseitige Berechtigung.
-- Der sichtbare Bereich heißt nutzerorientiert `App areas`; angefasste Texte besitzen stabile `data-i18n-key`-Marker, ohne eine eigene Übersetzungsengine oder die vollständige `I18N.md`-Architektur zu implementieren.
-- GPS zeigt Genauigkeit locale-fähig und gerundet als `± … m`.
-- GPS-Zeit wird über `Intl.DateTimeFormat` lokal und menschenlesbar angezeigt.
-- Rohgenauigkeit und ISO-Zeit bleiben für Logik, Persistenz und Diagnose unverändert erhalten.
-
-## 3. Tests und lokale Verifikation
-
-- Fokussierte User-App-/Login-/GPS-Regressionen: 32/32 bestanden.
-- Vollständige Suite: 406/406 bestanden, 0 Fehler, 0 übersprungen.
+- Fokussierte Homepage-/Warmstart-/Navigation-/P4-/Login-/Packaging-Tests: 61/61 bestanden.
+- Vollständige Suite: 412/412 bestanden, 0 Fehler, 0 übersprungen.
 - PHP-Lint aller Server-PHP-Dateien: bestanden.
-- JavaScript-Syntaxprüfung aller relevanten Projektdateien: bestanden.
+- JavaScript-Syntaxprüfung: bestanden.
 - `git diff --check`: bestanden.
-- Produktionspaket: erfolgreich, 104 Dateien, Base Path `""`.
-- Secretprüfung: keine Token-, FTPS-, DB- oder sonstigen Secret-Werte in Änderungen oder Commit aufgenommen. Der gefundene Quelltextbegriff `password` ist ausschließlich die erwartete lokale Passwortfeldvariable.
-- Keine künstliche Testdatei und keine neue Produkt-/I18N-Architektur wurden erzeugt.
-- Screenshotprüfung wurde versucht. Die Umgebung besitzt keinen ausführbaren Browser; Playwright-CDN und Snap-basierter Chromium-Bezug waren durch die Umgebung blockiert. Es wurde kein Screenshotartefakt in das Repository geschrieben.
+- Produktionspaket: erfolgreich, 105 Dateien, Base Path `""`; `homepage-cache.js` ist Entry-, Rewrite-, Service-Worker- und Package-Bestandteil.
+- Secretprüfung: keine Token-, FTPS-, DB- oder sonstigen Secret-Werte eingebracht.
+- Keine künstliche Testdatei, neue Sync-/Queue-Architektur oder vollständige I18N-Implementierung.
+- Ein Screenshot konnte mangels ausführbarem Browser in dieser Containerumgebung nicht erzeugt werden; Playwright-CDN/Snap-Chromium stehen hier nicht zur Verfügung. Es wurde kein Artefakt committed.
 
-## 4. Dokumentation
+## Dokumentation
 
-Aktualisiert wurden:
+Aktualisiert wurden `Architecture.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, `WORKFLOW.md`, `CURRENT-TASK.md` und dieser Bericht. Die neue `UI-UX.md` und `CODEX.md` wurden nicht überschrieben.
 
-- `CURRENT-TASK.md`: vollständige operative Liste und Abschlussstatus,
-- `Architecture.md`: Startkontext- und Ladevertrag,
-- `Functions.md`: Login-Race-, Homepage- und GPS-Formatierungsverhalten,
-- `STATUS.md`, `TODO.md`, `ToDoNow.md`: tatsächlicher P4-Folgefix-/Device-Retest-Status,
-- `CHANGELOG.md`: Root Causes und Änderungen,
-- `WORKFLOW.md`: datiertes Arbeitsprotokoll mit Ausführendem Codex.
+## GitHub und CI
 
-`I18N.md`, `DOCUMENTATION.md`, `CODEX.md` und `UI-UX.md` wurden nicht überschrieben.
+Implementierungscommit: `719a90f` (`fix: make homepage warmstarts local-first`).
 
-## 5. GitHub, Deployment und CI
+Terminale Ergebnisse nach Push auf `main`:
 
-Implementierungscommit: `3b666dd` (`fix: refine P4 start and user experience`).
+- FTPS Deploy Run `34205494123`: **SUCCESS**.
+- Push on main / CodeQL Run `34205494188`: **SUCCESS**.
 
-Nach Push auf `main` wurden die erforderlichen Workflows bis terminal abgewartet:
+Der Abschlussbericht wird ebenfalls nach `main` übertragen; dessen CI wird vor der externen Abschlussmeldung vollständig abgewartet. Danach wird `CHATGPT.md` per GitHub-Blob-Hash verifiziert.
 
-- FTPS Deploy Run `34198466106`: **SUCCESS**.
-- Push on main / CodeQL Run `34198465658`: **SUCCESS**.
+## Betreiber-Retest
 
-Die Dokumentationsübergabe wird ebenfalls nach `main` übertragen; der dadurch ausgelöste reine Dokumentationslauf wird vor der externen Abschlussmeldung terminal abgewartet. `CHATGPT.md` wird anschließend per GitHub-Blob-Hash gegen die lokale Datei verifiziert.
+1. HTML-Startseite einmal online laden.
+2. Mehrfach reloaden und App neu öffnen: der bekannte HTML-Inhalt soll ohne sichtbare circa zweisekündige Loading-Phase unmittelbar erscheinen.
+3. Verbindung deaktivieren und denselben Offline-Warmstart prüfen.
+4. Wieder online gehen, Homepage serverseitig ändern und prüfen, dass der lokale Inhalt zunächst erscheint und anschließend kontrolliert auf die neue Serverversion aktualisiert wird.
+5. `Module → GPS` setzen und warmstarten: `Start` bleibt aktiv; GPS erscheint so früh wie der permission-aware lokale Discoveryzustand es sicher erlaubt.
+6. `Start` und `GPS` per Touch prüfen: beide müssen eindeutig wie App-Navigationsaktionen wirken, Active-Zustand klar.
+7. Light-/Dark-Theme und Tastaturfokus prüfen.
+8. Persönliche `App areas`-Auswahl prüfen; ausgeblendete oder nicht erlaubte Bereiche dürfen nicht erscheinen.
+9. User-App und Admin parallel öffnen und P1-Sessiontrennung bestätigen.
 
-## 6. Externer Betreiber-Retest
+Bis zu diesem positiven Test bleibt P4 **WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**. Die zuvor positiv getesteten P4-/GPS-/HTML-/Loginpunkte und P1 bleiben erhalten.
 
-Keine selbst ausführbare Entwicklungs- oder Verifikationsarbeit bleibt offen. Der folgende echte Device-Test bleibt absichtlich extern:
+## Scope
 
-1. `Appearance → Module → GPS` speichern und User-App neu laden.
-2. Prüfen: `Start` bleibt aktiv; GPS erscheint als Inhalt von `Start`; der GPS-Modultab wird nicht automatisch aktiv.
-3. Prüfen: Vor GPS erscheint kein alter Welcome-/Neutral-Inhalt.
-4. GPS bewusst über seinen Navigationseintrag öffnen und neu laden; kein persistenter blauer Containerrahmen darf erscheinen. Per Tastatur müssen Bedienfelder weiterhin sichtbar fokussierbar sein.
-5. `Appearance → Text / HTML` mit `<h1>TEST</h1>` speichern und neu laden; ausschließlich der konfigurierte Inhalt darf erscheinen, ohne festen Welcome-/Neutral-Block.
-6. User abmelden, Passwort eingeben und Login genau einmal klicken bzw. Enter drücken; die authentifizierte Ansicht muss mit einer Aktion erscheinen.
-7. Settings öffnen: kein `Show all functions`; persönliche App-Areas-Auswahl speichern und prüfen, dass nur die Navigation angepasst wird.
-8. GPS prüfen: Genauigkeit als gerundetes `± … m`, Zeitpunkt lokal und lesbar.
-9. User-App und Admin parallel öffnen und P1-Sessiontrennung erneut bestätigen.
-
-P4 darf erst nach diesem positiven Betreiberbefund `LIVE BESTANDEN` werden. Bis dahin bleibt der Status **FOLGEFIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED**. P1 bleibt **LIVE BESTANDEN**.
-
-## 7. Scope
-
-Nicht implementiert wurden die vollständige I18N-/Sprachpaket-/Providerarchitektur, ein neues Designsystem, Sync-Engine, Offline-Queue, Store-App-Wrapper oder neue Produktmodule.
-
-## 8. Abschlussdokumentationslauf
-
-Der erste Abschlussbericht wurde ebenfalls erfolgreich ausgeliefert: FTPS Deploy Run `34198957525` und Push on main / CodeQL Run `34198956921` endeten terminal mit **SUCCESS**. Der nun folgende reine Checklist-Abschlusscommit wird vor der externen Abschlussmeldung ebenfalls vollständig abgewartet.
+Nicht implementiert: vollständige I18N-/Sprachpaket-/Providerarchitektur, Sync-Engine, Offline-Queue, Store-App-Wrapper, neues Produktmodul, Admin-Redesign oder vollständiger Designsystemersatz.

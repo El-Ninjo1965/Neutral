@@ -21,8 +21,8 @@ Die beim Betreiber live beobachtete circa zweisekündige `Loading`-Phase bei jed
 13. Keine Scope-Ausweitung auf vollständige I18N-/Providerarchitektur, Sync-/Offline-Queue, Store-Wrapper, neue Module, Admin-Redesign oder Designsystemersatz. **Status: ERLEDIGT**
 14. Relevante Verträge, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und Workflow-Arbeitsprotokoll wahrheitsgemäß aktualisieren; keine erfundene Live-Bestätigung. **Status: ERLEDIGT**
 15. Fokussierte Tests, vollständige Suite unter PHP 8.1+, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
-16. Vollständigen Abschlussbericht mit Root Cause, Änderungen, Tests, Commits, CI und konkretem Betreiber-Retest in `CHATGPT.md` erstellen. **Status: IN ARBEIT**
-17. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: AUSSTEHEND**
+16. Vollständigen Abschlussbericht mit Root Cause, Änderungen, Tests, Commits, CI und konkretem Betreiber-Retest in `CHATGPT.md` erstellen. **Status: ERLEDIGT**
+17. Committen, nach GitHub `main` pushen, `HEAD == origin/main`, sauberen Working Tree und `CHATGPT.md` auf GitHub verifizieren sowie FTPS, CodeQL und weitere CI terminal abwarten. **Status: IN ARBEIT**
 
 ## Capture-Prüfung
 
