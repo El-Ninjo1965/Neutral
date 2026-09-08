@@ -5,11 +5,9 @@
 
 # Aktueller Auftrag
 
-## Local-first Warmstart-Performance + sichtbare App-Navigation prüfen und verbessern
+## Dark-Theme konsistent fertigstellen + Theme-Schnellumschaltung + FTPS-Verifikation stabilisieren
 
-Synchronisiere zuerst vollständig mit `origin/main`.
-
-Seit deinem letzten Abschluss wurde `UI-UX.md` durch ChatGPT/Lea auf `main` um den verbindlichen **Local-first Warmstart-/Reload-Vertrag** erweitert. Diese Änderung ist Betreiber-/Projektvorgabe und darf nicht überschrieben oder durch eine ältere lokale Fassung ersetzt werden.
+Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
 Lies vor Implementierung vollständig:
 
@@ -24,149 +22,221 @@ Lies vor Implementierung vollständig:
 - `Architecture.md`
 - `Functions.md`
 - `ModuleCreation.md`
+- `CONNECTIONS.md`
 - `STATUS.md`
 - `TODO.md`
 - `ToDoNow.md`
-- relevante User-App-, Startup-, Homepage-, Cache-/Storage-, Service-Worker-, Navigation-, CSS-, Settings-, Modul- und Testdateien
+- alle relevanten User-App-, Theme-/Designsystem-, Navigation-, Settings-, GPS-, Homepage-, CSS-, FTPS-/Deployment-, Smoke-, Workflow- und Testdateien
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
 `CODEX.md == CURRENT-TASK-Anforderungen`
 
-## Aktueller Betreiber-Livebefund vom 2026-09-08
+## Betreiber-Device-Retest vom 2026-09-08
 
-Der letzte Folgefix wurde auf dem realen Gerät erneut getestet.
+### Live bestanden
 
-### Jetzt live bestätigt
+- Local-first Warmstart funktioniert jetzt.
+- Bei wiederholtem Reload erscheint der gespeicherte HTML-Startinhalt unmittelbar; das vorherige sichtbare `Loading` ist verschwunden.
+- Die neue zentrale Navigation `Start` / `GPS` ist deutlich als klick-/touchbare App-Navigation erkennbar.
+- Aktiver/inaktiver Zustand von `Start` / `GPS` ist grundsätzlich verständlich.
+- HTML-Startinhalt funktioniert weiterhin.
+- GPS funktioniert weiterhin.
 
-- `Appearance → Module → GPS` funktioniert.
-- Nach Reload bleibt `Start` aktiv; GPS wird als Inhalt von `Start` dargestellt und nicht mehr als erzwungene eigenständige Modulnavigation geöffnet.
-- Vor dem GPS-Inhalt erscheint kein alter `Welcome / Neutral Platform`-Inhalt mehr; stattdessen wird derzeit ein neutraler `Loading`-Zustand gezeigt.
-- GPS-Genauigkeit ist jetzt menschenlesbar gerundet, z. B. etwa `6 m`/`± … m`.
-- GPS-Zeitpunkt ist lokal und menschenlesbar.
-- `Position teilen` funktioniert im Betreiber-Test.
-- `Appearance → Text / HTML` funktioniert.
-- `<h1>TEST</h1>` wird als alleiniger Startseiteninhalt dargestellt; der feste Welcome-/Neutral-Block ist entfernt.
-- Username-/Developerinformationen sind weiterhin entfernt.
-- Settings wirkt bereinigt.
+Diese Verbesserungen nicht zurückbauen.
 
-Diese Punkte nicht erneut zurückbauen.
+# Arbeitspaket A – Theme / Dark Mode / Schnellumschaltung
 
-## Neuer Livebefund 1 – Warmstart/Reload ist zu langsam
+Der Betreiber hat Light und Dark auf dem realen iPad geprüft.
 
-Bei bereits konfigurierter HTML-Startseite sieht der Betreiber bei **jedem Browser-Reload bzw. erneuten App-Aufruf ungefähr zwei Sekunden `Loading`**, bevor der bereits bekannte HTML-Startinhalt erscheint. Die Internetverbindung ist dabei gut.
+## Livebefund
 
-Für den Betreiber ist dies mit dem Offline-first-/App-first-Ziel nicht akzeptabel. Beim echten ersten Start ohne lokalen Stand ist ein kurzer Ladezustand verständlich. Nach einem bereits erfolgreichen Laden soll ein gültiger lokaler Startzustand jedoch unmittelbar erscheinen.
+**Light:** Darstellung insgesamt brauchbar.
 
-Der neue verbindliche Vertrag steht in `UI-UX.md` unter **Local-first Warmstart und Reload**.
+**Dark:** noch nicht konsistent umgesetzt.
 
-### Auftrag
+Im Live-Test sichtbar:
 
-Finde die tatsächliche Root Cause der beobachteten ~2-Sekunden-Wartezeit. Nicht einfach `Loading` verstecken, keine künstlichen Timeouts verkürzen und keine Animation darüberlegen.
+1. `Settings`- und `Login`-Button im Header bleiben nahezu weiß und wirken im Dark Theme wie Fremdkörper.
+2. GPS-Inhaltskarte bleibt weiß.
+3. Texte innerhalb der GPS-Karte besitzen teilweise sehr schlechten Kontrast.
+4. Mehrere Texte/Labels in den User-Settings sind im Dark Mode zu dunkel und teilweise kaum lesbar.
+5. HTML-Startinhalt erscheint innerhalb einer großen weißen Fläche, obwohl die App im Dark Mode läuft.
+6. Insgesamt werden Theme-Werte offenbar nicht konsequent über das zentrale Designsystem an alle Framework-/Modulkomponenten vererbt.
+
+## Auftrag
+
+Root Cause ermitteln. Keine punktuellen CSS-Hacks nur für die aktuell sichtbaren Screenshots einbauen.
 
 Prüfe insbesondere:
 
-- ob Homepage-/Startseitenkonfiguration derzeit nur vom Server gelesen wird;
-- ob ein geeigneter gültiger lokaler Cache bereits existiert und nur zu spät gelesen wird;
-- ob Homepage-Konfiguration lokal persistent und versioniert gespeichert werden sollte;
-- ob Server-Fetch vor dem ersten sinnvollen Render blockiert;
-- ob Session-Restore, CoreStartup, IndexedDB, Modul-Discovery oder andere Tasks das Rendern unnötig blockieren;
-- Service-Worker-/HTTP-Cache-Verhalten;
-- HTML-Modus und Modulmodus getrennt;
-- kalter Erststart versus Warmstart/Reload;
-- Online- versus Offline-Warmstart;
-- Berechtigungs-/Viewer-/Sessiongrenzen: keine veraltete authentifizierte Berechtigung als öffentliche Wahrheit verwenden.
+- zentrale Theme-Tokens/CSS-Variablen;
+- feste/hardcodierte Light-Farben in User-App und Modulen;
+- Background-/Surface-/Card-/Input-/Button-/Text-/Muted-/Border-/Active-/Focus-Tokens;
+- GPS-Modul;
+- User Settings;
+- Header-Actions;
+- Navigation;
+- HTML-Homepage-Container;
+- Accessibility/Kontrast;
+- Vererbung der zentralen Theme-Regeln an zukünftige Module.
 
-### Zielverhalten
+### Ziel
 
-**HTML-Modus:**
+Das Framework stellt Light und Dark zentral bereit. Module und Framework-Komponenten verwenden diese Theme-Verträge automatisch und benötigen nicht jeweils eigene Dark-Mode-Sonderlösungen.
 
-- Nach mindestens einem erfolgreichen Laden soll der letzte gültige lokale HTML-Startinhalt bei Warmstart/Reload möglichst sofort dargestellt werden.
-- Serverabgleich erfolgt danach im Hintergrund.
-- Neuere gültige Serverkonfiguration aktualisiert den lokalen Stand kontrolliert.
-- Offline bleibt der zulässige lokale Inhalt verfügbar.
+WICHTIG zum HTML-Modus:
 
-**Modulmodus:**
+Vom Administrator frei eingegebenes HTML darf nicht willkürlich umgeschrieben werden. Der Framework-Container um diesen Inhalt darf aber nicht unnötig eine fest verdrahtete weiße Fläche erzwingen.
 
-- Shell und sicher lokal bekannte Darstellung erscheinen sofort.
-- Modulinhalt wird so früh wie sicher möglich aus lokal verfügbaren, gültigen Informationen dargestellt.
-- Permission-/Access-Fail-Closed-Vertrag darf nicht aufgeweicht werden.
-- Server-/Discovery-Refresh läuft soweit möglich im Hintergrund.
+## Light/Dark-Schnellumschaltung
 
-Definiere keine willkürliche Millisekunden-Garantie, bevor reale Messungen vorliegen. Ergänze aber messbare Instrumentierung/Tests, soweit sinnvoll, und dokumentiere, was den bisherigen sichtbaren Delay verursacht hat.
+Der Betreiber möchte den Theme-Wechsel zusätzlich **direkt im oberen User-App-Bereich bei den Header-Aktionen** erreichen können.
 
-## Neuer Livebefund 2 – Navigation/Buttons visuell noch nicht app-typisch genug
+Aktuell muss dafür `Settings → Appearance → Theme` geöffnet werden.
 
-Im aktuellen User-App-Screenshot sind `Settings` und `Login` klar als Buttons erkennbar (Rahmen/Hintergrund). Die primären Navigationspunkte `Start` und `GPS` wirken dagegen eher wie schlichte Textlinks/Tabs und nicht wie deutlich erkennbare touchgerechte App-Aktionen.
+Implementiere eine kompakte, app-typische Light/Dark-Schnellumschaltung im oberen Bereich bei `Settings` / `Login`.
 
-Der Betreiber möchte eine **echte App-Anmutung**, keine Webseite mit Textlinks.
+Anforderungen:
 
-### Auftrag
+- unmittelbar erreichbar;
+- eindeutig verständlich;
+- touchgerecht;
+- nicht unnötig textlastig;
+- zentraler Theme-Vertrag;
+- Änderung bleibt lokal persistent und offline verfügbar;
+- `Settings → Appearance → Theme` bleibt erhalten und synchronisiert exakt denselben Zustand;
+- keine zwei voneinander unabhängigen Theme-Zustände;
+- Accessibility beachten;
+- Light und Dark wechseln sofort sichtbar;
+- keine unnötige Serverabhängigkeit.
 
-Prüfe die bestehende zentrale User-App-Navigation und verbessere deren visuelle Affordance im Rahmen des vorhandenen Designsystems/CSS-Vertrags:
+Prüfe, ob ein etabliertes Sonne-/Mond- bzw. äquivalentes Symbolpaar die bessere UX ist. Keine kryptische Bedienung.
 
-- `Start` und sichtbare/erlaubte Produktbereiche müssen eindeutig als bedienbare Navigation erkennbar sein;
-- touchgerechte Größe/Abstände;
-- klarer aktiver Zustand;
-- konsistent mit Theme hell/dunkel;
-- Hover darf Desktop ergänzen, aber Touch darf nicht davon abhängen;
-- Fokuszustände accessibility-konform;
-- keine Rückkehr zu Developer-/Webseitenoptik;
-- nicht jedes Modul darf eigene Navigationsbutton-Stile erfinden;
-- zentrale Framework-/Designregel verwenden, damit spätere Module dieselbe Navigation automatisch erben.
+# Arbeitspaket B – Wiederkehrende `FTPS Deploy – Run failed`
 
-WICHTIG: Im HTML-Startseitenmodus ist der Administratorinhalt selbst frei. Erfinde keine automatischen Inhaltsbuttons innerhalb des frei eingegebenen HTML. Der Betreiberhinweis betrifft primär die **zentrale App-Navigation** (`Start`, `GPS`, spätere sichtbare Bereiche) und deren erkennbare Button-/App-Anmutung.
+Auf dem iPad erhält der Betreiber regelmäßig GitHub-Mitteilungen `FTPS Deploy – Run failed`, obwohl die Anwendung anschließend häufig korrekt aktualisiert ist und spätere Runs erfolgreich sind.
 
-## Status des vorherigen Device-Retests
+Dieser Punkt wurde anhand eines konkreten fehlgeschlagenen Runs bereits extern untersucht.
 
-Die oben als live bestätigt genannten Folgefixes dürfen als positiv getestete Teilpunkte dokumentiert werden. P4 als Gesamtstatus darf nur dann auf `LIVE BESTANDEN` gesetzt werden, wenn die vorhandenen Statusregeln dies nach diesem neuen Auftrag und anschließendem Betreiber-Retest zulassen. Der neue Warmstart-Performancebefund ist ein echter noch offener UX-/Performancepunkt und darf nicht durch grüne Unit-Tests wegdefiniert werden.
+## Wichtige Feststellung
 
-## Nicht Bestandteil dieses Auftrags
+Beim untersuchten fehlgeschlagenen Run für Commit `f4437b4` waren:
 
-- vollständige I18N-/Sprachpaket-/Providerarchitektur;
-- neue Sync-Engine/Offline-Queue;
-- Store-App-Wrapper;
-- neues Produktmodul;
-- komplette Neugestaltung des Adminbereichs;
-- vollständiger Ersatz des bestehenden Designsystems;
-- willkürliche UI-Animationen zur Kaschierung von Ladezeit.
+- Checkout: SUCCESS
+- vollständige Tests: SUCCESS
+- Produktionspaket: SUCCESS
+- FTPS-Client: SUCCESS
+- FTPS-Upload: SUCCESS
+- Upload-Ergebnis: `status OK`
+- 106 Dateien erfolgreich übertragen
 
-## Tests
+Erst danach schlug der Schritt `Produktionsstand rein lesend prüfen` fehl.
 
-Regressionstests zuerst ergänzen/anpassen. Mindestens soweit automatisiert sinnvoll beweisen:
+Der Smoke-Test meldete:
 
-### Warmstart / Cache
-- gültige lokal persistierte HTML-Homepage kann vor Abschluss des Serverrefreshs gerendert werden;
-- Serverrefresh aktualisiert einen älteren lokalen Homepagezustand kontrolliert;
-- Offline-Warmstart verwendet zulässigen lokalen Homepagezustand;
-- fehlender lokaler Zustand fällt beim Erststart sauber auf Loading/Fallback zurück;
-- ungültiger/inkompatibler Cache wird nicht blind verwendet;
-- authentifizierte/permission-sensitive Daten werden nicht als unzulässiger anonymer Fallback verwendet;
-- Modulmodus schwächt Permission-/Viewer-Fail-Closed nicht;
-- bisherige P4-Startkontext-, HTML- und Login-Regressionen bleiben grün.
+`Öffentliche Installation entspricht nicht der deployten Revision.`
 
-### Navigation
-- `Start` und sichtbare Produktbereiche verwenden die zentrale app-typische Navigationskomponente/-Klasse;
-- aktiver Zustand bleibt eindeutig;
-- ausgeblendete/nicht erlaubte Bereiche erscheinen nicht;
-- persönliche `App areas`-Auswahl bleibt funktional;
-- Keyboard-Fokus bleibt sichtbar;
-- Light/Dark-Theme bleibt kompatibel.
+Damit ist für diesen Fall ausdrücklich **nicht** Git-Commit, Git-Push oder der eigentliche FTPS-Upload die Fehlerursache.
 
-### Regression
+## Auftrag
+
+Untersuche die wiederkehrenden fehlgeschlagenen FTPS-Runs ursächlich und stabilisiere den Deployment-/Verifikationsvertrag.
+
+Nicht fehlgeschlagene Runs blind erneut starten und keine echten Fehler unterdrücken.
+
+Prüfe insbesondere:
+
+1. mehrere historische erfolgreiche und fehlgeschlagene FTPS-Runs;
+2. ob wiederholt dieselbe Smoke-/Revision-Stage verantwortlich ist;
+3. ob der HTTP-Smoke unmittelbar nach dem Upload zu früh startet;
+4. LiteSpeed-/HTTP-/Proxy-/OPcache-/Server-Cache bzw. kurzfristige Propagation;
+5. Service-Worker-Einfluss, soweit serverseitige Smoke-Prüfung davon überhaupt betroffen sein kann;
+6. Revision-/Manifest-/Deployment-Marker;
+7. Reihenfolge der hochgeladenen Dateien;
+8. ob `manifest.json` bzw. ein Revision-Marker bereits früh übertragen wird, obwohl der restliche Upload noch läuft;
+9. ob ein Deployment-complete-Marker sinnvollerweise zuletzt/atomar geschrieben werden sollte;
+10. ob eine begrenzte Retry-/Backoff-Verifikation nach vollständig erfolgreichem Upload fachlich sinnvoll ist;
+11. ob kurz nacheinander gestartete `main`-Deployments miteinander kollidieren;
+12. GitHub-Actions-Concurrency für Produktionsdeployments.
+
+Besonders prüfen:
+
+Der untersuchte Upload überträgt viele Dateien nacheinander und ersetzt vorhandene Dateien während des Deployments. Stelle sicher, dass der öffentlich sichtbare Revisionsvertrag während und unmittelbar nach diesem Vorgang keinen falschen Mischzustand erzeugt.
+
+Falls Retry/Backoff eingesetzt wird:
+
+- ausschließlich nach erfolgreichem Upload;
+- begrenzte Anzahl;
+- begrenzte Gesamtdauer;
+- echte dauerhafte Revision-Mismatches bleiben FAILURE;
+- Uploadfehler bleiben sofort echte Fehler;
+- keine pauschale `sleep`-Lösung ohne Root-Cause-Verständnis.
+
+### Ziel
+
+Ein tatsächlich erfolgreicher Deploy darf nicht allein wegen eines kurzfristig noch alten öffentlichen HTTP-Zustands unnötig als FAILURE gemeldet werden.
+
+Gleichzeitig darf die Lösung keine echten Deploymentfehler verstecken.
+
+Bevorzugt prüfen/umsetzen, soweit Root Cause dies bestätigt:
+
+- deterministische Upload-/Commit-Marker-Reihenfolge;
+- gegebenenfalls atomarer Deployment-complete-Marker;
+- begrenzte verifizierende Retries mit Backoff;
+- Concurrency-Schutz gegen überlappende Deployments;
+- nachvollziehbare, secret-freie Diagnose im Workflow.
+
+# Tests
+
+Regressionstests zuerst ergänzen/anpassen.
+
+## Theme mindestens
+
+- zentrale Komponenten verwenden Theme-Tokens statt hardcodierter Light-Farben;
+- Header-Actions Light/Dark;
+- Navigation Light/Dark;
+- GPS Light/Dark;
+- Settings Light/Dark;
+- HTML-Homepage-Frameworkcontainer Light/Dark;
+- Text-/Border-/Surface-Kontrast;
+- Schnellumschaltung aktualisiert denselben persistenten Theme-State wie Settings;
+- Reload erhält Theme;
+- Offline erhält Theme;
+- Accessibility/Fokus bleibt erhalten.
+
+## FTPS mindestens
+
+- erfolgreicher Upload + kurzfristig alte Revision + danach aktuelle Revision → begrenzte Verifikation kann SUCCESS ergeben;
+- dauerhaft falsche/alte Revision → FAILURE;
+- Uploadfehler → FAILURE ohne Smoke-Kosmetik;
+- falsche Public URL/Base Path → FAILURE;
+- überlappende Deployments erzeugen keinen falschen Success;
+- Secrets bleiben maskiert;
+- bestehende FTPS-, Packaging-, Smoke- und Securitytests bleiben grün.
+
+## Regression
+
+- Warmstart darf nicht zurückgebaut werden;
+- HTML-Homepage;
+- GPS;
+- `Start` / `GPS`-Navigation;
+- persönliche `App areas`;
+- Login;
 - P1 User-/Admin-Sessiontrennung;
 - Auth/CSRF;
-- Appearance;
-- GPS;
-- HTML-Homepage;
+- Service Worker;
 - Offline-Fallback;
-- Service Worker/Packaging/Base Path.
+- Packaging/Base Path.
 
-## Abschluss
+# Abschluss
 
-Gemäß `WORKFLOW.md` vollständig:
+Dokumentiere die tatsächlichen Root Causes in `CHATGPT.md`.
 
-- Root Cause dokumentieren;
+Aktualisiere relevante dauerhafte Dokumentation nur dort, wo ein neuer allgemeiner Vertrag tatsächlich erforderlich ist.
+
+Danach vollständig gemäß `WORKFLOW.md`:
+
 - fokussierte Tests;
 - vollständige Test-Suite unter unterstützter PHP-8.1+-Runtime;
 - PHP-Lint;
@@ -174,25 +244,16 @@ Gemäß `WORKFLOW.md` vollständig:
 - `git diff --check`;
 - Produktionspaket;
 - Secret-/Artefaktprüfung;
-- relevante Verträge/Status/TODO/CHANGELOG/Workflow wahrheitsgemäß aktualisieren;
+- relevante Status-/TODO-/CHANGELOG-/Workflow-Dokumentation wahrheitsgemäß aktualisieren;
 - Commit und Push nach `main`;
 - `HEAD == origin/main`;
 - Working Tree sauber;
-- FTPS, CodeQL und weitere erforderliche CI bis terminal abwarten;
-- vollständigen Abschlussbericht nach `CHATGPT.md` schreiben und auf GitHub `main` verifizieren;
+- FTPS und CodeQL bis terminal abwarten;
+- insbesondere feststellen, ob der korrigierte FTPS-Workflow beim eigenen Abschlussdeploy tatsächlich stabil SUCCESS erreicht;
+- vollständigen Abschlussbericht nach `CHATGPT.md` schreiben;
+- `CHATGPT.md` auf GitHub `main` verifizieren;
 - erst danach Abschlussmeldung.
 
-## Betreiber-Retest nach Deploy
+Keine selbst ausführbaren offenen Punkte zurücklassen.
 
-`CHATGPT.md` soll kurze konkrete Schritte liefern, mindestens:
-
-1. HTML-Startseite einmal laden, danach mehrfach reloaden/neu öffnen und sichtbares `Loading`-Verhalten prüfen.
-2. Verbindung deaktivieren und Offline-Warmstart der bereits geladenen HTML-Startseite prüfen.
-3. Wieder online gehen und Serverrefresh prüfen.
-4. Modulmodus GPS setzen, Warmstart/Reload prüfen: `Start` bleibt aktiv, GPS erscheint korrekt und so früh wie sicher möglich.
-5. Navigation `Start`/`GPS` optisch und per Touch prüfen: eindeutig als bedienbare App-Navigation erkennbar, aktiver Zustand klar.
-6. Light/Dark prüfen.
-7. persönliche `App areas`-Auswahl prüfen.
-8. P1 User-/Admin-Sessiontrennung erneut bestätigen.
-
-Bis zum erneuten Betreiber-Livetest keine erfundene Live-Bestätigung.
+P4 nicht allein aufgrund automatisierter Tests als vollständig `LIVE BESTANDEN` markieren. Die Theme-/UI-Änderungen benötigen anschließend erneut einen kurzen Betreiber-Device-Retest.
