@@ -154,6 +154,19 @@ test('user and GPS surfaces inherit central theme tokens', () => {
   assert.match(source, /homepageDocument\.apply\(frame, homepage\.content, readUserTheme\(\)\)/);
 });
 
+test('HTML homepage excludes Safari about:blank paint before themed srcdoc load', () => {
+  const source = read('Web-App/public/user-app.js');
+  const css = read('Web-App/public/style.css');
+  const htmlBranch = source.match(/if \(homepage\.mode === 'html' && homepage\.content\) \{[\s\S]*?\n    \}/);
+  assert.ok(htmlBranch);
+  assert.ok(htmlBranch[0].indexOf('homepageDocument.apply') < htmlBranch[0].indexOf('host.appendChild(frame)'));
+  assert.doesNotMatch(htmlBranch[0], /Loading|setTimeout|requestAnimationFrame/);
+  assert.match(css, /\.user-app-homepage-content\s*\{[^}]*min-height:\s*60vh[^}]*background:\s*var\(--surface\)/s);
+  assert.match(css, /\.user-app-homepage-frame\s*\{[^}]*visibility:\s*hidden/s);
+  assert.match(css, /\.user-app-homepage-frame\.homepage-frame-ready\s*\{[^}]*visibility:\s*visible/s);
+  assert.doesNotMatch(css, /homepage-frame-ready[^}]*transition|homepage-frame-ready[^}]*animation/s);
+});
+
 test('normal User Settings begin with app areas and privacy without a redundant theme block', () => {
   const source = read('Web-App/public/user-app.js');
   const settings = source.match(/const renderUserSettings = \(\) => \{[\s\S]*?\n  \};/);

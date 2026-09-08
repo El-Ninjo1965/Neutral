@@ -103,6 +103,7 @@ PHASE D – CLOSE
 - Folgetask durch Codex: User-Oberflächen an zentrale Light/Dark-Tokens gebunden, gemeinsamen persistenten Header-Toggle ergänzt und FTPS-Revisionsverifikation nach historischen post-upload HTTP-Mismatches durch serialisierte Deployments plus begrenzten Backoff stabilisiert.
 - Folgetask durch Codex: zentralen Endnutzer-Buttonvertrag verfeinert, Start durch barrierefreies lokales Home-SVG ersetzt, Logintext reduziert und den unabhängigen Homepage-iframe-Canvas ohne Änderung des Administrator-HTMLs an das aktive Farbschema gebunden; Betreiber-Retest bleibt offen.
 - Folgetask durch Codex: nach negativem iPad/Safari-Retest den unzureichenden iframe-Element-Ansatz durch dokumenteigene, von nachfolgendem Administrator-CSS überschreibbare Light-/Dark-Defaults ersetzt und den redundanten Themeblock aus normalen User Settings entfernt; Sandbox, Cache und Header-Persistenz bleiben erhalten.
+- Folgetask durch Codex: nach bestätigtem dunklem Endzustand den verbleibenden Safari-Initial-Flash strukturell ausgeschlossen: thematisierter Frame/`srcdoc` vor Insertion, revisionsgebundener Load-Reveal und durchgehend thematisierter, layoutstabiler Wrapper ohne Delay, Animation oder Loading.
 
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 

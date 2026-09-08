@@ -45,7 +45,17 @@
   const apply = (frame, content, theme) => {
     if (!frame || typeof frame !== 'object') throw new TypeError('A homepage iframe is required.');
     const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+    const palette = palettes[resolvedTheme];
+    const revision = (frame.__neutralHomepageRevision || 0) + 1;
+    frame.__neutralHomepageRevision = revision;
+    frame.classList.remove('homepage-frame-ready');
+    frame.addEventListener('load', () => {
+      if (frame.__neutralHomepageRevision === revision) {
+        frame.classList.add('homepage-frame-ready');
+      }
+    }, { once: true });
     frame.style.colorScheme = resolvedTheme;
+    frame.style.backgroundColor = palette.background;
     frame.srcdoc = build(content, resolvedTheme);
     return frame.srcdoc;
   };

@@ -1,3 +1,11 @@
+## 2026-09-08 – Remove Safari HTML-homepage first-paint flash
+
+- The iPad retest confirmed the document-level Dark defaults fixed the persistent white canvas but exposed a separate first-paint FOUC: Safari could paint the iframe's initial unthemed browsing context before the prepared `srcdoc` committed.
+- Homepage frames now begin structurally hidden, register a one-shot revision-aware `load` gate, receive iframe color scheme/background and complete themed `srcdoc`, and are only then inserted into the DOM. The frame becomes visible only after the matching themed document load.
+- The wrapper reserves the existing 60vh layout and paints the current semantic surface throughout the gate. There is no timeout, animation, Loading message, white placeholder or layout jump.
+- Reapplying Light/Dark invalidates an older pending load revision, preventing an obsolete document load from revealing the next frame state. Administrator CSS, source preservation, sandbox restrictions and Local-first cache remain unchanged.
+- Executed and documented by Codex in `Neutral`; visual success remains subject to the focused iPad/Safari retest.
+
 ## 2026-09-08 – Safari-safe homepage document defaults and compact User Settings
 
 - Root Cause corrected after the iPad/Safari retest disproved iframe-element `color-scheme` as sufficient: the isolated `srcdoc` document had no author-level `html`/`body` background and text defaults, so WebKit could still paint its document canvas white.

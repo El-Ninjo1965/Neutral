@@ -1862,3 +1862,19 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
     color: var(--surface);
   }
 }
+
+/* Keep Safari's initial about:blank canvas outside the visible paint path. */
+.user-app-homepage-content {
+  min-height: 60vh;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.user-app-homepage-frame {
+  visibility: hidden;
+  background: var(--surface);
+}
+
+.user-app-homepage-frame.homepage-frame-ready {
+  visibility: visible;
+}

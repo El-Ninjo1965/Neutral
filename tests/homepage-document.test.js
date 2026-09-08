@@ -37,15 +37,63 @@ test('complete HTML documents keep their exact source and receive defaults at th
 });
 
 test('an existing iframe can be updated in place when the theme changes', () => {
-  const frame = { style: {}, srcdoc: '' };
+  const classes = new Set();
+  let load;
+  const frame = {
+    style: {},
+    srcdoc: '',
+    classList: {
+      add: (name) => classes.add(name),
+      remove: (name) => classes.delete(name)
+    },
+    addEventListener: (_name, handler) => { load = handler; }
+  };
   const content = '<h1>TEST</h1>';
 
   HomepageDocument.apply(frame, content, 'dark');
   const darkDocument = frame.srcdoc;
+  load();
+  assert.equal(classes.has('homepage-frame-ready'), true);
   HomepageDocument.apply(frame, content, 'light');
 
   assert.equal(frame.style.colorScheme, 'light');
+  assert.equal(frame.style.backgroundColor, '#ffffff');
+  assert.equal(classes.has('homepage-frame-ready'), false);
   assert.notEqual(frame.srcdoc, darkDocument);
   assert.match(frame.srcdoc, /content="light"/);
   assert.equal(frame.srcdoc.split(content).length - 1, 1);
+});
+
+test('load gate is installed and themed before srcdoc can become visible', () => {
+  const lifecycle = [];
+  const classes = new Set(['homepage-frame-ready']);
+  let load;
+  const frame = {
+    style: {},
+    classList: {
+      add(name) { lifecycle.push(`class:add:${name}`); classes.add(name); },
+      remove(name) { lifecycle.push(`class:remove:${name}`); classes.delete(name); }
+    },
+    addEventListener(name, handler, options) {
+      lifecycle.push(`listener:${name}:${options.once}`);
+      load = handler;
+    }
+  };
+  Object.defineProperty(frame, 'srcdoc', {
+    set(value) { lifecycle.push('srcdoc'); this._srcdoc = value; },
+    get() { return this._srcdoc; }
+  });
+
+  HomepageDocument.apply(frame, '<h1>TEST</h1>', 'dark');
+
+  assert.deepEqual(lifecycle.slice(0, 3), [
+    'class:remove:homepage-frame-ready',
+    'listener:load:true',
+    'srcdoc'
+  ]);
+  assert.equal(frame.style.colorScheme, 'dark');
+  assert.equal(frame.style.backgroundColor, '#111b2d');
+  assert.equal(classes.has('homepage-frame-ready'), false);
+  load();
+  assert.equal(classes.has('homepage-frame-ready'), true);
 });
