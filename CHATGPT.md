@@ -54,7 +54,10 @@ Die primären WHATWG-/CSSWG-/WebKit-Seiten waren aus dieser Sandbox nicht abrufb
 - Implementierungscommit: `8a76d42` (`fix: theme sandboxed homepage documents`), nach GitHub `main` übertragen.
 - CodeQL / `Push on main`: Run `34219386335` terminal `success`.
 - FTPS Run `34219386338` baute, testete, paketierte und lud erfolgreich hoch, scheiterte anschließend jedoch terminal im read-only Smoke mit `Öffentlicher Root ist nicht erreichbar.`. Dieser nicht-revisionsbezogene Smoke-Fehler wurde vertragsgemäß nicht kaschiert oder automatisch als Erfolg behandelt. Der verwendete Fine-grained Token darf Actions-Runs nicht manuell erneut starten.
-- Der Abschlussbericht-Commit löst deshalb einen neuen vollständigen FTPS-/CodeQL-Lauf aus. Erst wenn dieser terminal erfolgreich ist, `HEAD == origin/main`, der Working Tree sauber ist und der GitHub-Blob von `CHATGPT.md` übereinstimmt, erfolgt die externe Abschlussmeldung.
+- Abschlussbericht-Commit `9e7c989` wurde nach `main` übertragen. Dessen vollständige Folgeprüfung war terminal erfolgreich:
+  - `FTPS Deploy`: Run `34219973400` – `success`, einschließlich Upload und read-only Produktions-Smoke.
+  - `Push on main` / CodeQL: Run `34219973622` – `success`.
+- Die abschließende operative Statusmarkierung wird ebenfalls nach `main` übertragen und vor der externen Abschlussmeldung erneut bis zu terminaler CI, `HEAD == origin/main`, sauberem Working Tree und identischem GitHub-Blob verifiziert.
 
 ## 7. Noch notwendiger Betreiber-Retest
 
