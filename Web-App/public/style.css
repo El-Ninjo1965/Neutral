@@ -1571,6 +1571,7 @@ body[data-page="admin"] .gps-actions .gps-primary-action {
 .user-app-header { display: flex; align-items: center; min-height: 78px; padding: 0 32px; border: 0; }
 .user-app-identity { display: inline-flex; align-items: center; gap: 10px; }
 .user-app-mark { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; background: #176b52; color: #fff; font-family: Georgia, serif; font-weight: 700; }
+.user-app-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
 .user-app-brand { color: #183b2d; font-size: 1.1rem; letter-spacing: 0; }
 .user-app-nav { gap: 28px; padding: 0 32px; border-color: #e3ebe6; }
 .user-app-nav-item { padding: 15px 0 13px; color: #6a786f; font-size: 0.9rem; }
@@ -1706,4 +1707,15 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
     width: 100%;
     justify-content: flex-start;
   }
+}
+.user-app-homepage-frame {
+  display: block;
+  width: 100%;
+  min-height: 60vh;
+  border: 0;
+  background: transparent;
+}
+
+.admin-appearance-view [hidden] {
+  display: none !important;
 }

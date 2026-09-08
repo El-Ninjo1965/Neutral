@@ -1,3 +1,25 @@
+## 2026-09-08 – P4 live regression: deterministic startup and deploy-bound user assets
+
+- Root Cause des Betreiber-Livefehlers beseitigt: unversionierte User-App-Assets konnten beim Installieren eines neuen Service Workers aus dem langlebigen HTTP-Cache übernommen werden; außerdem verhinderte ein Fehler im seriell davorliegenden Core-/Discovery-Start den Homepage-Fetch vollständig.
+- Das Produktionspaket versioniert lokale CSS-/JavaScript-Verweise nun mit dem Deployment-Commit. Core-Start, Homepage-Fetch und User-Session-Restore laufen unabhängig über `Promise.allSettled`.
+- PHP-Persistenztests sichern Modulmodus und bytegetreuen HTML-Inhalt; Packaging-Tests sichern die tatsächlichen versionierten User-Assets.
+- Die normale User-App wurde von Username-Badge, technischen Workspace-/Discovery-Texten, Modulzahl und generischem Zurück-Button bereinigt. Navigation bleibt sichtbar und permission-aware; Produktname, Icon-Text und optionale Logo-URL bilden einen minimalen Brandingvertrag.
+- P1 bleibt `LIVE BESTANDEN`; P4 bleibt bis zum positiven Betreiber-Livetest `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`.
+
+## 2026-09-08 – P4 global homepage and Admin Appearance separation
+
+- Split `Admin → Settings` and `Admin → Appearance` into independent technical and presentation views.
+- Added central persistence and a public read-only projection for global homepage mode, module target, and trusted administrator HTML; writes remain protected by existing admin auth and CSRF controls.
+- Added dynamic active/startable module selection, trusted HTML/inline-style/link/image/JavaScript preview and rendering, mode switching, startup loading, access-aware module opening, and robust default fallback.
+- Added Node/PHP API, admin UI, startup, persistence, P1, and packaging regression coverage. P4 remains `CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED`; P1 remains `LIVE BESTANDEN`.
+
+## 2026-09-07 – Codex environment operating path made persistent
+
+- Documented Codex environment `Neutral` as the required secrets-safe operating environment for `El-Ninjo1965/Neutral` through project completion.
+- Recorded the verified GitHub path through `GH_TOKEN`, the canonical HTTPS `origin`, the GitHub Actions and direct Explicit-FTPS endpoints, required secret names, and the recovery sequence for replaceable sandboxes without storing secret values.
+- Added the environment preflight and Codex/ChatGPT handoff sequence to the binding workflow.
+- Preserved `P1 = LIVE BESTANDEN`, deferred P4, and made no application or feature changes.
+
 ## 2026-09-07 – Workflow reset: operational truth hierarchy and live status corrected
 
 - The project operating rules were reset so that the newest live operator finding, newest operator task, and `CURRENT-TASK.md` capture order are authoritative.

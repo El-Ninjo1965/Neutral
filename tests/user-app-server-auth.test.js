@@ -43,7 +43,7 @@ test('User-App restores an existing session via the server /api/auth/me endpoint
 
   assert.match(source, /const restoreServerSession = async \(\) => \{/);
   assert.match(source, /apiClient\.me\(\)/);
-  assert.match(source, /await restoreServerSession\(\);/);
+  assert.match(source, /restoreServerSession\(\)/);
 });
 
 test('User-App getCurrentUser only reflects the confirmed server identity', () => {
