@@ -1,80 +1,68 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea  
-**Status:** ABGESCHLOSSEN
+**Status:** P4 CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED / CLOSE IN ARBEIT
 
 ## AUFTRAG
 
-- **Bezeichnung:** Dauerhafte Codex-Arbeitsumgebung für Projekt Neutral festschreiben
-- **Ausgangscommit:** `26c6a28a708fca9a5c1e7c243237abd7017ba565`
-- **Dokumentationscommit:** `50cb278d9d8b9523ac9f8055f956f49b548fcea4`
-- **Abschlussbericht-Commit:** `a6ad848661335979798e97a983fa8eee6623d470`
-- **CURRENT-TASK vollständig abgearbeitet:** JA
-- **Capture-Prüfung:** `Neuer Betreiberauftrag == CURRENT-TASK-Anforderungen: JA`
+- **Bezeichnung:** P4 + Admin Appearance sauber und vollständig umsetzen
+- **Ausgangscommit auf `origin/main`:** `d14c128`
+- **Synchronisationscommit:** `0a1d768` (bestehenden Arbeitsbranch ohne Verwerfen mit `origin/main` zusammengeführt)
+- **CURRENT-TASK vollständig abgearbeitet:** lokal JA; finaler Push, GitHub-Verifikation und CI folgen im CLOSE-Prozess
+- **Capture-Prüfung:** `CODEX.md == CURRENT-TASK-Anforderungen: JA`
 
 ## ÄNDERUNGEN
 
-- `CONNECTIONS.md`: Codex-Umgebung `Neutral`, GitHub-Standardweg, Repository/Branch/origin, erforderliche Secret-Namen und Zwecke, FTPS-Wege, Sandbox-Start und Zugangsdiagnose dauerhaft und ohne Secret-Werte dokumentiert.
-- `WORKFLOW.md`: Prüfung der verbindlichen Umgebung vor jeder neuen Codex-Task sowie der CODEX/CURRENT-TASK/CHATGPT-Übergabekanal festgeschrieben.
-- `CURRENT-TASK.md`: ausschließlich diesen Dokumentationsauftrag als operative Checkliste erfasst.
-- `STATUS.md`, `TODO.md` und `CHANGELOG.md`: Dokumentationsstand konsistent fortgeschrieben.
-- Keine Anwendung, kein Feature und insbesondere keine P4-Funktion geändert.
-- Keine künstliche Testdatei erzeugt; keine Secret-Werte dokumentiert oder committet.
+- `Admin → Settings` enthält nur noch System-/Technikeinstellungen und bewahrt beim Speichern bestehende andere Settings.
+- Neue eigenständige `AdminAppearanceView` für Theme, Layout und globale Startseite; der Router verwendet nicht länger dieselbe Settings-View für Appearance.
+- Startmodul-Auswahl wird dynamisch aus aktiven Modulen mit Client-Entry erzeugt; inaktive oder nicht startbare Module werden ausgeschlossen.
+- Zentraler Node- und PHP-Settings-Vertrag persistiert Modus `module`/`html`, Modul-ID und HTML. Freies HTML, Inline-CSS und JavaScript bleiben bytegetreu erhalten.
+- Öffentliche read-only Homepage-Projektion ergänzt; Schreibzugriff bleibt ausschließlich am bestehenden geschützten Admin-Settings-/CSRF-Pfad.
+- User-App lädt die globale Konfiguration im vorhandenen Hintergrundstart. Ein sichtbares/zugelassenes Modul wird direkt geöffnet; ungültige oder nicht zugängliche Module fallen auf den neutralen Start zurück.
+- HTML wird als vollständiges `srcdoc` in einem scriptfähigen Sandbox-Frame gerendert und in Appearance live vorab angezeigt; keine Sanitization verändert den Administratorinhalt.
+- Generator, Produktionspaket und Admin-PHP-Assetliste enthalten die neue Appearance-View.
+- P1-Sessiontrennung wurde nicht verändert.
+
+## GEÄNDERTE DATEIEN
+
+- Admin/User-App: `Web-App/public/admin/appearance-view.js`, `admin/settings-view.js`, `admin/index.js`, `admin-init.js`, `api-client.js`, `user-app.js`, `style.css`, `config-manager.js`
+- Server/Persistenz: `Server/public/api/index.php`, `Server/php/src/Phase4AuthRbac.php`, `Phase6AdminStorage.php`, `Server/node/bootstrap/server.js`, `settings-service.js`, `Server/php/views/admin-ui.php`
+- Generator: `scripts/create-neutral-app.js`
+- Tests: `tests/admin-api.test.js`, `admin-cms-ui.test.js`, `admin-php-entry.test.js`, `live-startup-regression.test.js`
+- Dokumentation: `Architecture.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, `CURRENT-TASK.md`, `CHATGPT.md`
 
 ## TESTS
 
-- `node --test --test-concurrency=1 tests/core-contracts.test.js tests/manual-deploy-manifest.test.js tests/vision-framework.test.js`: BESTANDEN, 42 Tests, 0 Fehler, 0 übersprungen.
+- Fokussierte Admin/API/PHP/Startup/User/Bootstrap/Packaging-Regressionen: BESTANDEN.
+- Vollständige Suite `npm test`: BESTANDEN, 399 Tests, 0 Fehler, 0 übersprungen.
+- PHP-Lint: BESTANDEN, 36 Dateien.
+- JavaScript `node --check`: BESTANDEN, 117 Dateien.
 - `git diff --check`: BESTANDEN.
-- Secret-Musterprüfung des Diffs: BESTANDEN; keine Secret-Werte gefunden.
-- GitHub-Actions-Teststufen: BESTANDEN; vollständige Suite und Produktionspaket in beiden FTPS-Läufen erfolgreich.
+- Produktionspaket: BESTANDEN, 104 Manifestdateien.
+- Secret-Musterprüfung: BESTANDEN; keine Secrets oder unbeabsichtigten Artefakte aufgenommen.
+- Visuelle Prüfung: Appearance-View einschließlich HTML-Eingabe und Live-Vorschau mit Playwright/Chromium gerendert und als Screenshot geprüft.
 
-## GIT
+## GIT / CI / DEPLOYMENT
 
-- **Arbeitsbranch:** `work`
+- **Branch:** `work`
 - **Origin:** `https://github.com/El-Ninjo1965/Neutral.git`
-- **Zielbranch:** `main`
-- **Authentifizierter Push:** BESTANDEN
-- **Finaler Berichtscommit:** GitHub-`main`-HEAD, der diese Fassung enthält; ein Commit-SHA kann nicht selbstreferenziell in seinem eigenen Dateiinhalt stehen.
-- **GitHub-Verifikation:** diese `CHATGPT.md`-Fassung wird nach dem finalen Push direkt von GitHub `main` gelesen.
-- **HEAD == origin/main:** JA nach finalem Push/Fetch.
-- **Working Tree:** SAUBER nach finalem Commit.
-
-## CI / DEPLOYMENT
-
-Für Dokumentationscommit `50cb278d9d8b9523ac9f8055f956f49b548fcea4`:
-
-- **CodeQL (`Push on main`):** Run-ID `34101994547`, Status `completed`, Conclusion `success`.
-- **FTPS Deploy:** Run-ID `34101995394`, Status `completed`, Conclusion `failure`.
-
-Für Abschlussbericht-Commit `a6ad848661335979798e97a983fa8eee6623d470`:
-
-- **CodeQL (`Push on main`):** Run-ID `34102622702`, Status `completed`, Conclusion `success`.
-- **FTPS Deploy:** Run-ID `34102622698`, Status `completed`, Conclusion `failure`.
-- In beiden FTPS-Läufen waren Checkout, Produktionszielprüfung, vollständige Tests, Produktionspaket, FTPS-Client und Upload erfolgreich. Ausschließlich der nachgelagerte read-only Smoke scheiterte mit `Öffentlicher Root ist nicht erreichbar.`
-- Die beiden Fehlschläge bleiben als Diagnoseevidenz erhalten; sie wurden nicht fälschlich als Erfolg gemeldet.
-
-Für den danach veröffentlichten finalen Abschlussstand `86c81d6c0066d11554b72961df136992ef60b90f`:
-
-- **CodeQL (`Push on main`):** Run-ID `34103135149`, Status `completed`, Conclusion `success`.
-- **FTPS Deploy:** Run-ID `34103135803`, Status `completed`, Conclusion `success`.
-- Kein laufender Job wird als abgeschlossen gemeldet; auch die letzte reine Statusfortschreibung wird vor der Chat-Abschlussmeldung terminal geprüft.
+- **Ziel:** `main`
+- **Finaler Commit, Push, HEAD/origin-main, Working Tree, FTPS, CodeQL und weitere CI:** werden nach dem CLOSE-Prozess mit den tatsächlichen Fakten ergänzt.
 
 ## STATUS
 
-### Erledigt
+- **P1:** LIVE BESTANDEN
+- **P4:** CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- **Offene fachliche Punkte:** keine selbst ausführbaren Codepunkte; Betreiber-Livetest bleibt extern erforderlich.
+- **DEVICE RETEST REQUIRED:** JA
 
-- Verbindliche Codex-Umgebung und secretsicherer Standardweg dauerhaft dokumentiert.
-- GitHub-Authentifizierung, Schreibzugriff und Push nach `main` erfolgreich.
-- Lokale Dokumentationsprüfungen und GitHub-CodeQL erfolgreich.
-- FTPS einschließlich Upload ausgeführt und bis zum terminalen Status abgewartet.
-- P1 bleibt `LIVE BESTANDEN`; P4 bleibt `PENDING` und unangetastet.
+## Betreiber-Retest nach erfolgreichem Deploy
 
-### Offene Punkte / Blocker
+1. `Admin → Settings` öffnen und bestätigen, dass dort keine Appearance- oder Startseiten-Doppelansicht erscheint.
+2. `Admin → Appearance` öffnen und Theme/Layout sowie den Bereich „Global Start Page“ prüfen.
+3. Modus `Module` wählen, ein aktives Modul speichern, User-App neu laden und prüfen, dass dieses Modul startet.
+4. Modus `Text / HTML` wählen, einfachen HTML-Inhalt (optional mit Inline-Style) speichern, User-App neu laden und Darstellung prüfen.
+5. Wieder auf `Module` wechseln, speichern, neu laden und Persistenz bestätigen.
+6. Parallel User-App als normalen User und Admin separat angemeldet lassen; bestätigen, dass beide Identitäten weiterhin getrennt bleiben.
 
-- Keine. Der dritte reguläre Lauf bestätigte nach den zwei vorübergehenden Smoke-Fehlschlägen den vollständigen FTPS- und Read-only-Smoke-Weg terminal erfolgreich.
-- Keine P4-/Featurearbeit begonnen.
-
-### Device-Retest
-
-- **DEVICE RETEST REQUIRED:** NEIN, reine Dokumentationsänderung.
-- Keine Betreiber-Gerätetests erforderlich.
+Erst nach positivem Betreiber-Livetest darf P4 später als `LIVE BESTANDEN` markiert werden.

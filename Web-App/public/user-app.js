@@ -113,25 +113,7 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  const getSafeHomepageContent = (value) => {
-    let html = String(value ?? '');
-    html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/<iframe[\s\S]*?<\/iframe>/gi, '');
-    html = html.replace(/<(?:object|embed|svg|math)[\s\S]*?(?:<\/\1>|$)/gi, '');
-    html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    html = html.replace(/href\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'href="#"');
-    html = html.replace(/src\s*=\s*(?:"\s*javascript:|'\s*javascript:|javascript:)/gi, 'src="#"');
-    html = html.replace(/<(?!\/?(?:p|br|strong|b|em|i|u|small|ul|ol|li|h1|h2|h3|h4|h5|h6|a|span|div|blockquote|code|pre|hr|mark|section)\b)[^>]+>/gi, '');
-    html = html.replace(/<a\b([^>]*)\s+href=(?:"[^"]*"|'[^']*'|[^\s>]+)([^>]*)>/gi, (match, before, after) => {
-      const hrefMatch = match.match(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-      const href = hrefMatch ? (hrefMatch[1] || hrefMatch[2] || hrefMatch[3] || '') : '';
-      const safeHref = /^https?:\/\//i.test(href) || href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')
-        ? href
-        : '#';
-      return `<a${before || ''} href="${escapeHtml(safeHref)}"${after || ''}>`;
-    });
-    return html;
-  };
+  let homepageConfig = null;
 
   const getHomepageConfig = () => {
     const configManager = window.ConfigManager && typeof window.ConfigManager.get === 'function'
@@ -139,17 +121,35 @@
       : null;
     const assigned = configManager ? configManager.get('homepage', null) : null;
     const fromWindow = window.NeutralHomepageConfig || window.NeutralAppHomepage || {};
-    const source = assigned && typeof assigned === 'object' ? assigned : fromWindow;
-    const mode = source && source.mode === 'module' ? 'module' : 'content';
+    const source = homepageConfig || (assigned && typeof assigned === 'object' ? assigned : fromWindow);
+    const mode = source && source.mode === 'module' ? 'module' : 'html';
     const title = typeof source?.title === 'string' ? source.title.trim() : '';
     const content = typeof source?.content === 'string' ? source.content : '';
     const moduleId = typeof source?.moduleId === 'string' ? source.moduleId.trim() : '';
     return {
       mode,
       title,
-      content: getSafeHomepageContent(content),
+      content,
       moduleId
     };
+  };
+
+  const loadHomepageConfig = async () => {
+    const client = getServerApiClient('user');
+    if (!client || typeof client.getHomepage !== 'function') return getHomepageConfig();
+    const result = await client.getHomepage();
+    const envelope = result?.data?.data || result?.data || {};
+    const received = envelope.homepage;
+    if (!result.ok || !received || typeof received !== 'object') return getHomepageConfig();
+    homepageConfig = {
+      mode: received.mode === 'module' ? 'module' : 'html',
+      content: typeof received.content === 'string' ? received.content : '',
+      moduleId: typeof received.moduleId === 'string' ? received.moduleId.trim() : ''
+    };
+    if (window.ConfigManager && typeof window.ConfigManager.set === 'function') {
+      window.ConfigManager.set('homepage', homepageConfig);
+    }
+    return homepageConfig;
   };
 
   // Real end-user login must go through the server-authenticated session
@@ -725,31 +725,21 @@
 
     if (homepage.mode === 'module') {
       const moduleId = homepage.moduleId;
-      const module = moduleId && getModules().some((entry) => entry.id === moduleId)
-        ? getModules().find((entry) => entry.id === moduleId)
+      const preferences = readUserPreferences();
+      const module = moduleId
+        ? window.NeutralUserModuleAccess.findVisibleModule(getModules(), moduleId, {
+          currentUser: getCurrentUser(),
+          visibleModuleIds: preferences.visibleModuleIds
+        })
         : null;
       if (module) {
-        state.activeView = 'home';
-        state.activeModuleId = null;
-        content.innerHTML = `
-          <section class="user-app-panel">
-            <div id="moduleUserInterface"></div>
-          </section>
-        `;
-        const target = document.getElementById('moduleUserInterface');
-        if (typeof module.renderUserInterface === 'function') {
-          module.renderUserInterface(target);
-        } else {
-          target.innerHTML = '<span class="user-app-eyebrow">Module</span><h1>' + escapeHtml(getModuleDisplayName(module)) + '</h1><p>This module does not provide a user interface.</p>';
-        }
+        renderModule(module.id);
         return;
       }
     }
 
     const heading = homepage.title ? homepage.title : appName;
-    const message = homepage.content
-      ? homepage.content
-      : '<p class="user-app-intro">Welcome to the workspace.</p>';
+    const message = '<p class="user-app-intro">Welcome to the workspace.</p>';
     const moduleCards = homepage.mode === 'module' ? renderModuleCards() : '';
 
     content.innerHTML = `
@@ -765,6 +755,17 @@
         ${currentUser ? `<div class="user-app-status">Signed in as ${escapeHtml(currentUser.displayName || currentUser.username || 'User')} (${escapeHtml((currentUser.roles || ['user']).join(', '))})</div>` : '<div class="user-app-status">You can use the available workspace features without signing in.</div>'}
       </section>
     `;
+
+    if (homepage.mode === 'html' && homepage.content) {
+      const host = content.querySelector('.user-app-homepage-content');
+      host.innerHTML = '';
+      const frame = document.createElement('iframe');
+      frame.className = 'user-app-homepage-frame';
+      frame.title = 'Start page content';
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
+      frame.srcdoc = homepage.content;
+      host.appendChild(frame);
+    }
 
     const homeModuleCards = content.querySelectorAll('[data-module-card]');
     homeModuleCards.forEach((button) => {
@@ -812,6 +813,7 @@
           if (window.CorePerformance) window.CorePerformance.mark('minimal-core-ready');
           await window.CoreStartup.startBackground();
         }
+        await loadHomepageConfig();
         await restoreServerSession();
       } catch (error) {
         if (window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {

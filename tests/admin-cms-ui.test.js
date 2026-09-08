@@ -12,6 +12,7 @@ test('admin dependencies publish the browser globals required by admin-init', ()
     ['users-view.js', 'AdminUsersView', 'function'],
     ['roles-view.js', 'AdminRolesView', 'function'],
     ['settings-view.js', 'AdminSettingsView', 'function'],
+    ['appearance-view.js', 'AdminAppearanceView', 'function'],
     ['audit-view.js', 'AdminAuditView', 'function'],
     ['modules-view.js', 'AdminModulesView', 'function']
   ];
@@ -78,6 +79,36 @@ test('admin router delegates layout and navigation to AdminShell', () => {
   assert.match(source, /window\.AdminRouter\s*=\s*AdminRouter/);
   assert.match(source, /onNavigate:\s*\(viewId\)\s*=>\s*this\.showView\(viewId\)/);
   assert.doesNotMatch(source, /admin-top-nav/);
+});
+
+test('Settings and Appearance are separate views with distinct responsibilities', () => {
+  const settings = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/settings-view.js'), 'utf8');
+  const appearance = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/appearance-view.js'), 'utf8');
+  const router = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
+
+  assert.doesNotMatch(settings, /homepageMode|homepageModuleId|homepageContent|Startseite/);
+  assert.match(settings, /System Settings/);
+  assert.match(appearance, /Appearance/);
+  assert.match(appearance, /homepageMode/);
+  assert.match(appearance, /homepageModuleId/);
+  assert.match(appearance, /homepageContent/);
+  assert.match(appearance, /getAdminModules/);
+  assert.match(router, /theme:\s*new AdminAppearanceView\(apiClient\)/);
+  assert.doesNotMatch(router, /theme:\s*new AdminSettingsView/);
+});
+
+test('Appearance derives valid homepage targets dynamically and preserves trusted HTML', () => {
+  const AdminAppearanceView = require('../Web-App/public/admin/appearance-view.js');
+  const view = new AdminAppearanceView({});
+  view.modules = [
+    { id: 'gps', displayName: 'GPS', active: true, lifecycleState: 'ACTIVE', entry: 'index.js' },
+    { id: 'inactive', active: false, lifecycleState: 'INACTIVE', entry: 'index.js' },
+    { id: 'no-entry', active: true, lifecycleState: 'ACTIVE' }
+  ];
+  assert.deepEqual(view.getStartableModules().map((module) => module.id), ['gps']);
+  const html = '<style>body{color:red}</style><a href="/ok">Link</a><script>window.previewRan=true</script>';
+  assert.equal(view.normalizeHomepage({ mode: 'html', content: html }).content, html);
+  assert.equal(view.normalizeHomepage({ mode: 'module', moduleId: 'inactive' }).moduleId, '');
 });
 
 test('admin logout returns to the deployed root entry', () => {

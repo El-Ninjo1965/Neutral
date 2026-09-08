@@ -11,7 +11,7 @@
 
   const dependenciesReady = () => [
     getClientConstructor(), window.AdminCommon, window.AdminUsersView, window.AdminRolesView,
-    window.AdminSettingsView, window.AdminAuditView, window.AdminModulesView, window.AdminNavigation,
+    window.AdminSettingsView, window.AdminAppearanceView, window.AdminAuditView, window.AdminModulesView, window.AdminNavigation,
     window.AdminShell, window.AdminRouter
   ].every(Boolean);
 
@@ -41,6 +41,7 @@
         adminUsers: window.adminRouter.views.users,
         adminRoles: window.adminRouter.views.roles,
         adminSettings: window.adminRouter.views.settings,
+        adminAppearance: window.adminRouter.views.theme,
         adminAudit: window.adminRouter.views.audit,
         adminModules: window.adminRouter.views.modules
       });

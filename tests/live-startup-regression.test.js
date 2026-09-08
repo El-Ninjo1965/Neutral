@@ -95,12 +95,12 @@ test('GPS consent has modal presentation and focus management', { skip: gpsRefer
   assert.match(css, /\.gps-confirmation-modal\s*\{[\s\S]*z-index/);
 });
 
-test('homepage config defaults to neutral content mode and stores central metadata', () => {
+test('homepage config defaults to neutral html mode and stores central metadata', () => {
   const configSource = read('Web-App/core/config-manager.js');
   const settingsSource = read('Server/node/services/settings-service.js');
 
-  assert.match(configSource, /this\.set\('homepage', \{\s*mode:\s*'content',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
-  assert.match(settingsSource, /const defaultHomepage = Object\.freeze\(\{\s*mode:\s*'content',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
+  assert.match(configSource, /this\.set\('homepage', \{\s*mode:\s*'html',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
+  assert.match(settingsSource, /const defaultHomepage = Object\.freeze\(\{\s*mode:\s*'html',\s*title:\s*'',\s*content:\s*'',\s*moduleId:\s*''\s*\}\);/s);
   assert.match(settingsSource, /moduleId\s*:\s*''|moduleId\s*=\s*typeof candidate\.moduleId/);
 });
 
@@ -108,19 +108,34 @@ test('user home view falls back to neutral content when configured module is inv
   const source = read('Web-App/public/user-app.js');
 
   assert.match(source, /if \(homepage\.mode === 'module'\) \{\s*const moduleId = homepage\.moduleId;/s);
-  assert.match(source, /state\.activeView = 'home';\s*state\.activeModuleId = null;\s*content\.innerHTML = `/s);
+  assert.match(source, /NeutralUserModuleAccess\.findVisibleModule\(getModules\(\), moduleId/);
   assert.match(source, /const heading = homepage\.title \? homepage\.title : appName;/);
-  assert.match(source, /const message = homepage\.content\s*\?\s*homepage\.content\s*:\s*'<p class="user-app-intro">Welcome to the workspace\.<\/p>'/);
+  assert.match(source, /const message = '<p class="user-app-intro">Welcome to the workspace\.<\/p>'/);
 });
 
-test('admin settings UI exposes the Startseite contract', () => {
-  const source = read('Web-App/public/admin/settings-view.js');
+test('admin Appearance UI exposes the Startseite contract while Settings does not', () => {
+  const source = read('Web-App/public/admin/appearance-view.js');
+  const settings = read('Web-App/public/admin/settings-view.js');
 
-  assert.match(source, /<legend>Startseite<\/legend>/);
+  assert.match(source, /<legend>Global Start Page<\/legend>/);
   assert.match(source, /id="homepageMode"/);
-  assert.match(source, /id="homepageTitle"/);
   assert.match(source, /id="homepageContent"/);
   assert.match(source, /id="homepageModuleId"/);
+  assert.doesNotMatch(settings, /homepageMode|homepageModuleId|homepageContent/);
+});
+
+
+test('user startup loads central homepage config and renders trusted HTML without sanitization', () => {
+  const source = read('Web-App/public/user-app.js');
+  const apiClient = read('Web-App/public/api-client.js');
+  const phpApi = read('Server/public/api/index.php');
+
+  assert.match(apiClient, /getHomepage\(\)/);
+  assert.match(phpApi, /\$route === 'settings\/homepage'/);
+  assert.match(source, /await loadHomepageConfig\(\)/);
+  assert.match(source, /homepage\.mode === 'html'/);
+  assert.match(source, /frame\.srcdoc = homepage\.content/);
+  assert.doesNotMatch(source, /getSafeHomepageContent/);
 });
 
 test('local settings save surfaces both success and error status without admin hints', () => {

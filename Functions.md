@@ -101,3 +101,17 @@ Ein bereits serverseitig aktives Modul wird nach der Client-Discovery initialisi
 ### Vollständige Startmarken
 
 `navigation-start`, `dom-available`, `shell-visible`, `minimal-core-ready`, `ui-interactive`, `storage-ready`, `auth-status-known`, `module-discovery-complete` und `background-initialization-complete` bilden den P3-Codevertrag. Die Werte enthalten keine Identität, URL, Payload oder Secrets.
+## P4 global homepage configuration
+
+`Admin → Appearance` owns global presentation settings and the start page.
+Administrators choose either an active startable module from the runtime module
+catalog or trusted free HTML. The central settings contract stores the mode,
+module ID, and HTML unchanged; the public API exposes only that homepage
+projection for User-App startup. Writes continue through the protected admin
+settings endpoint with admin authorization and CSRF enforcement.
+
+The User-App opens a configured module only when it is active and visible to the
+current user. Trusted HTML is rendered as a complete `srcdoc` document in a
+script-capable sandboxed frame. Missing configuration, unavailable server state,
+an inactive module, or insufficient module access falls back to the neutral
+default home instead of leaving an empty view.
