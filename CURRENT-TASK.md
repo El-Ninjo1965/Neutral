@@ -29,8 +29,8 @@ werden.
 16. Keine Scope-Ausweitung auf Sync-Engine, Offline-Queue, Store-Wrapper, vollständiges Designsystem oder neue Produktmodule. **Status: ERLEDIGT**
 17. Relevante Architektur-, Funktions-, Status-, TODO- und Changelog-Dokumentation auf tatsächlichen Endstand aktualisieren; P4 bleibt `DEVICE RETEST REQUIRED / LIVE FEHLER NACHGEWIESEN`, bis ein neuer positiver Betreiber-Livetest vorliegt. **Status: ERLEDIGT**
 18. Fokussierte Tests, vollständige `npm test`-Suite unter PHP 8.1+, PHP-Lint, JS-Syntaxcheck, `git diff --check`, Produktionspaket und Secret-/Artefaktprüfung ausführen. **Status: ERLEDIGT**
-19. `CHATGPT.md` mit Root Cause, Ausgangs/finalem Commit, Dateien, Tests, offenen Punkten, Device-Retest, Push, CI, HEAD/origin-main, Working Tree und konkreten Retestschritten aktualisieren. **Status: IN ARBEIT**
-20. Committen, authentifiziert nach GitHub `main` pushen, `CHATGPT.md` dort verifizieren, `HEAD == origin/main` und sauberen Working Tree prüfen sowie FTPS, CodeQL und weitere CI bis terminal abwarten. **Status: AUSSTEHEND**
+19. `CHATGPT.md` mit Root Cause, Ausgangs/finalem Commit, Dateien, Tests, offenen Punkten, Device-Retest, Push, CI, HEAD/origin-main, Working Tree und konkreten Retestschritten aktualisieren. **Status: ERLEDIGT**
+20. Committen, authentifiziert nach GitHub `main` pushen, `CHATGPT.md` dort verifizieren, `HEAD == origin/main` und sauberen Working Tree prüfen sowie FTPS, CodeQL und weitere CI bis terminal abwarten. **Status: IN ARBEIT**
 
 ## Capture-Prüfung
 
