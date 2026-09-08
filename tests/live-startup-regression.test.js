@@ -103,6 +103,12 @@ test('valid public homepage cache renders before a delayed server refresh', () =
   assert.match(source, /finally \{\s*homepageResolved = true;\s*renderApp\(\);/s);
 });
 
+test('homepage document adapter loads before the User-App renderer', () => {
+  const index = read('Web-App/public/index.html');
+  assert.ok(index.indexOf('homepage-document.js') > -1);
+  assert.ok(index.indexOf('homepage-document.js') < index.indexOf('user-app.js'));
+});
+
 test('central navigation has touch-sized button affordance in both themes', () => {
   const source = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
@@ -134,7 +140,7 @@ test('header theme toggle shares the persistent Settings theme state', () => {
   assert.match(source, /id="userThemeToggle"/);
   assert.match(source, /applyUserTheme\(readUserTheme\(\) === 'dark' \? 'light' : 'dark'\)/);
   assert.match(source, /localStorage\.setItem\(USER_THEME_KEY/);
-  assert.match(source, /id="userThemeSelect"/);
+  assert.doesNotMatch(source, /id="userThemeSelect"|<h2>Appearance<\/h2>|Choose the theme used by this app/);
   assert.match(css, /\.user-theme-toggle[^}]*min-width:\s*44px/);
 });
 
@@ -145,7 +151,18 @@ test('user and GPS surfaces inherit central theme tokens', () => {
   assert.match(css, /\.user-app-link,[\s\S]*background:\s*var\(--surface\)/);
   assert.match(css, /\.user-settings-toggle small,[\s\S]*color:\s*var\(--text-muted\)/);
   assert.match(css, /\.user-app-homepage-frame[^}]*background:\s*transparent/);
-  assert.match(source, /frame\.style\.colorScheme = readUserTheme\(\)/);
+  assert.match(source, /homepageDocument\.apply\(frame, homepage\.content, readUserTheme\(\)\)/);
+});
+
+test('normal User Settings begin with app areas and privacy without a redundant theme block', () => {
+  const source = read('Web-App/public/user-app.js');
+  const settings = source.match(/const renderUserSettings = \(\) => \{[\s\S]*?\n  \};/);
+  assert.ok(settings);
+  assert.doesNotMatch(settings[0], /Appearance|userThemeSelect|Choose the theme used by this app/);
+  assert.match(settings[0], />App areas<\/h2>/);
+  assert.match(settings[0], />Privacy and sharing<\/h2>/);
+  assert.match(settings[0], /theme: readUserTheme\(\)/);
+  assert.doesNotMatch(settings[0], /applyUserTheme\(/);
 });
 
 test('static shell placeholder nav carries no fake active state', () => {
@@ -227,7 +244,8 @@ test('user startup loads central homepage config and renders trusted HTML withou
   assert.match(phpApi, /\$route === 'settings\/homepage'/);
   assert.match(source, /loadHomepageConfig\(\)/);
   assert.match(source, /homepage\.mode === 'html'/);
-  assert.match(source, /frame\.srcdoc = homepage\.content/);
+  assert.match(source, /homepageDocument\.apply\(frame, homepage\.content, readUserTheme\(\)\)/);
+  assert.match(source, /frame\.setAttribute\('sandbox', 'allow-scripts allow-forms allow-popups'\)/);
   assert.doesNotMatch(source, /getSafeHomepageContent/);
   assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*restoreServerSession\(\)/s);
   assert.doesNotMatch(source, /await window\.CoreStartup\.startBackground\(\);\s*}\s*await loadHomepageConfig\(\)/s);

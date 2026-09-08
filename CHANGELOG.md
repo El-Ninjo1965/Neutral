@@ -1,3 +1,11 @@
+## 2026-09-08 – Safari-safe homepage document defaults and compact User Settings
+
+- Root Cause corrected after the iPad/Safari retest disproved iframe-element `color-scheme` as sufficient: the isolated `srcdoc` document had no author-level `html`/`body` background and text defaults, so WebKit could still paint its document canvas white.
+- Added `NeutralHomepageDocument`: fragments receive a neutral complete document shell, complete documents receive the adapter at the beginning of `head`, and the adapter selects one Light/Dark scheme plus matching `html`/`body` defaults. The original administrator source remains exact and follows the adapter, so explicit author CSS continues to override framework defaults.
+- The existing sandbox attributes are unchanged. The adapter is a versioned/offline shell asset and is reapplied from the persistent local theme whenever the homepage renders.
+- Removed the redundant Appearance/Theme card from normal User Settings. Header sun/moon remains the sole normal theme control and the Settings save path retains the current local theme while App areas and Privacy remain intact.
+- Executed and documented by Codex in `Neutral`; P4 remains device-retest-required until the five focused operator checks pass.
+
 ## 2026-09-08 – User-App visual cleanup after operator device retest
 
 - Added a shared end-user button contract with central height, radius, border, spacing, Light/Dark, active, pointer-hover and keyboard-focus tokens; header actions and primary/navigation/icon variants now share that contract.

@@ -138,6 +138,7 @@ test('service worker precaches the app shell and core assets on install', async 
   assert.ok(cached.some((url) => url.includes('style.css')));
   assert.ok(cached.some((url) => url.includes('core/core.js')));
   assert.ok(cached.some((url) => url.includes('user-app.js')));
+  assert.ok(cached.some((url) => url.includes('homepage-document.js')));
 });
 
 test('navigation requests fall back to the cached shell when offline', async () => {

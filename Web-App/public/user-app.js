@@ -115,6 +115,7 @@
     .replace(/'/g, '&#039;');
 
   const homepageCache = window.NeutralHomepageCache || null;
+  const homepageDocument = window.NeutralHomepageDocument;
   let homepageConfig = homepageCache && typeof homepageCache.read === 'function' ? homepageCache.read() : null;
   let homepageResolved = homepageConfig !== null;
   if (homepageResolved && window.CorePerformance) window.CorePerformance.mark('homepage-local-ready');
@@ -602,15 +603,6 @@
           </div>
         </div>
         <div class="user-settings-card">
-          <h2>Appearance</h2>
-          <p>Choose the theme used by this app. It is stored locally and works offline.</p>
-          <label class="user-settings-field" for="userThemeSelect">Theme</label>
-          <select id="userThemeSelect" class="user-settings-select">
-            <option value="light" ${readUserTheme() === 'light' ? 'selected' : ''}>Light</option>
-            <option value="dark" ${readUserTheme() === 'dark' ? 'selected' : ''}>Dark</option>
-          </select>
-        </div>
-        <div class="user-settings-card">
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
@@ -662,14 +654,11 @@
           privacySelection[input.dataset.userSettingPrivacy] = !!input.checked;
         });
 
-        const selectedTheme = document.getElementById('userThemeSelect')?.value === 'dark' ? 'dark' : 'light';
         const nextPreferences = saveUserPreferences({
           visibleModuleIds: moduleSelection,
           privacy: privacySelection,
-          theme: selectedTheme
+          theme: readUserTheme()
         });
-        const themePersisted = applyUserTheme(selectedTheme);
-        nextPreferences.persisted = nextPreferences.persisted && themePersisted;
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
           const currentUser = getCurrentUser();
           if (currentUser && window.UserModule && typeof window.UserModule.updateProfile === 'function') {
@@ -786,10 +775,7 @@
       frame.className = 'user-app-homepage-frame';
       frame.title = homepage.title || 'Start page content';
       frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups');
-      // The embedding element controls the user-agent canvas scheme without
-      // rewriting trusted administrator HTML or overriding its own CSS.
-      frame.style.colorScheme = readUserTheme();
-      frame.srcdoc = homepage.content;
+      homepageDocument.apply(frame, homepage.content, readUserTheme());
       host.appendChild(frame);
       return;
     }

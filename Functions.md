@@ -9,7 +9,9 @@ Dieses Dokument beschreibt ausschließlich im Repository nachweisbare, relevante
 
 Die User-App ergänzt eine lokale Light/Dark-Auswahl unter `neutral.user.theme.v1`; Auswahl, Warmstart und Persistenz benötigen keine Serververbindung.
 
-Die User-App verwendet für Primary-, Secondary-, Navigations- und Icon-Aktionen den gemeinsamen `.ui-button`-Vertrag mit zentralen Größen-, Kontur-, Zustands- und Fokus-Tokens. Die Home-Navigation zeigt ein lokales SVG, behält aber `Start` als Accessible Name und dieselbe `home`-Route. Der HTML-Sandbox-Frame übernimmt über die Einbettung den aktiven `color-scheme`, ohne den gespeicherten freien Administrator-Inhalt umzuschreiben.
+Die User-App verwendet für Primary-, Secondary-, Navigations- und Icon-Aktionen den gemeinsamen `.ui-button`-Vertrag mit zentralen Größen-, Kontur-, Zustands- und Fokus-Tokens. Die Home-Navigation zeigt ein lokales SVG, behält aber `Start` als Accessible Name und dieselbe `home`-Route.
+
+`NeutralHomepageDocument` bettet ein freies HTML-Fragment unverändert in ein vollständiges Dokument ein oder fügt bei einem vollständigen HTML-Dokument den Frameworkadapter am Anfang von `head` ein. Der Adapter setzt den eindeutigen Light-/Dark-`color-scheme` und neutrale `html`/`body`-Farbdefaults. Weil die unveränderte Administratorquelle danach folgt, bleiben deren explizite Background-/Textregeln maßgeblich. `apply(frame, content, theme)` aktualisiert denselben sandboxed Frame ohne Lockerung seiner Attribute.
 
 Die User-App lädt die zentrale Homepage-Projektion fehlertolerant parallel zum Core-Start und zur User-Session. Sie öffnet im Modulmodus nur ein aktives, sichtbares und berechtigtes Modul; im HTML-Modus übernimmt sie den bewusst unveränderten Administrator-Inhalt in den vorhandenen Sandbox-Frame. Die Produktidentität unterstützt konfigurierbaren Namen, kurzen Icon-Text und eine optionale Logo-URL.
 
@@ -17,7 +19,7 @@ Ein Homepage-Modul bleibt im aktiven Bereich `Start`; die eigenständige Modulan
 
 `NeutralHomepageCache` persistiert ausschließlich eine schema-versionierte öffentliche Homepageprojektion. Gültiges HTML kann beim Warmstart synchron vor dem Netzwerkrefresh erscheinen; inkompatible, leere oder nicht als öffentlich markierte Records werden verworfen. Die Performance-Marken `homepage-local-ready` und `homepage-refresh-ready` trennen lokalen First Render vom Serverabgleich.
 
-Der Header-Theme-Toggle und die Settings-Auswahl verwenden beide `neutral.user.theme.v1` und `applyUserTheme`; es existiert kein zweiter Theme-State. Die User-/GPS-Oberflächen beziehen Flächen, Text, Muted, Border, Primary und Fokus zentral aus den semantischen CSS-Tokens.
+Der Header-Theme-Toggle verwendet `neutral.user.theme.v1` und `applyUserTheme` als einzigen normalen User-Zugriff; normale User Settings enthalten keine redundante Theme-Auswahl. Beim Speichern anderer User Settings wird der bestehende Theme-Wert nur unverändert mitgeführt. Die User-/GPS-Oberflächen beziehen Flächen, Text, Muted, Border, Primary und Fokus zentral aus den semantischen CSS-Tokens.
 
 Der Produktions-Smoke wiederholt ausschließlich einen kurzfristigen Revision-Mismatch nach bereits erfolgreichem Upload begrenzt (maximal fünf Versuche und 30 Sekunden Backoff). Andere Vertragsfehler bleiben sofortige Fehler; GitHub-Deployments sind über eine gemeinsame Concurrency-Gruppe serialisiert.
 

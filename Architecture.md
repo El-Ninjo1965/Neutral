@@ -206,7 +206,9 @@ Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin gl
 
 ### Zentrale User-App-Steuerelemente – IST
 
-Primary-, Secondary-, Navigations- und Icon-Aktionen teilen den zentralen `.ui-button`-Vertrag und dessen semantische Light-/Dark-Tokens. Module können diesen veröffentlichten visuellen Vertrag erben, statt eigene globale Buttonsysteme zu erzeugen. Die Home-Aktion ist ein lokales Inline-SVG mit textuellem Accessible Name; dies begründet ausdrücklich keine allgemeine Modul-Icon-Architektur. Freies Homepage-HTML bleibt unverändert im Sandbox-Frame, während dessen Einbettung den aktiven User-Theme-Farbraum für den Browsercanvas auswählt.
+Primary-, Secondary-, Navigations- und Icon-Aktionen teilen den zentralen `.ui-button`-Vertrag und dessen semantische Light-/Dark-Tokens. Module können diesen veröffentlichten visuellen Vertrag erben, statt eigene globale Buttonsysteme zu erzeugen. Die Home-Aktion ist ein lokales Inline-SVG mit textuellem Accessible Name; dies begründet ausdrücklich keine allgemeine Modul-Icon-Architektur.
+
+Freies Homepage-HTML bleibt als gespeicherte Quelle unverändert im Sandbox-Frame. Weil ein isoliertes `srcdoc`-Dokument auf Safari nicht zuverlässig allein vom `color-scheme` des iframe-Elements einen transparenten/dunklen Canvas ableitet, erzeugt `NeutralHomepageDocument` vor der Administratorquelle einen dokumenteigenen, themespezifischen Defaultstyle. Fragmente erhalten ein vollständiges neutrales Dokumentgerüst; bei vollständigen Dokumenten wird der Adapter am Anfang des vorhandenen beziehungsweise ergänzten `head` platziert. Nachfolgendes explizites Administrator-CSS überschreibt diese Defaults durch normale Cascade. Die Sandboxrechte werden nicht erweitert.
 
 Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.
 
