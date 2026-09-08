@@ -5,28 +5,11 @@
 
 # Aktueller Auftrag
 
-## Dark-Theme konsistent fertigstellen + Theme-Schnellumschaltung + FTPS-Verifikation stabilisieren
+## User-App Visual Cleanup nach Betreiber-Device-Retest
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig:
-
-- `WORKFLOW.md`
-- `DOCUMENTATION.md`
-- `CODEX.md`
-- `CURRENT-TASK.md`
-- `UI-UX.md`
-- `I18N.md`
-- `VISION.md`
-- `CORE-1.0.md`
-- `Architecture.md`
-- `Functions.md`
-- `ModuleCreation.md`
-- `CONNECTIONS.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
-- alle relevanten User-App-, Theme-/Designsystem-, Navigation-, Settings-, GPS-, Homepage-, CSS-, FTPS-/Deployment-, Smoke-, Workflow- und Testdateien
+Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `UI-UX.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md` sowie alle relevanten User-App-, Theme-, Designsystem-, Navigation-, Login-, Homepage-, CSS- und Testdateien.
 
 Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
@@ -34,226 +17,213 @@ Lies vor Implementierung vollständig:
 
 ## Betreiber-Device-Retest vom 2026-09-08
 
-### Live bestanden
+### Jetzt live bestätigt – nicht zurückbauen
 
-- Local-first Warmstart funktioniert jetzt.
-- Bei wiederholtem Reload erscheint der gespeicherte HTML-Startinhalt unmittelbar; das vorherige sichtbare `Loading` ist verschwunden.
-- Die neue zentrale Navigation `Start` / `GPS` ist deutlich als klick-/touchbare App-Navigation erkennbar.
-- Aktiver/inaktiver Zustand von `Start` / `GPS` ist grundsätzlich verständlich.
-- HTML-Startinhalt funktioniert weiterhin.
+- Local-first Warmstart funktioniert ohne das frühere sichtbare `Loading`.
+- Sonne-/Mond-Schnellumschaltung im Header funktioniert.
+- Theme-Wechsel erfolgt unmittelbar.
+- GPS-Darstellung im Dark Mode ist jetzt sauber: Hintergrund, Karte, Texte und Buttons sind konsistent und lesbar.
+- Header-Actions sind im Dark Mode konsistent.
+- Light Mode funktioniert grundsätzlich.
+- `Start` / `GPS` sind als touchbare Navigation erkennbar.
+- HTML-Homepage funktioniert weiterhin.
 - GPS funktioniert weiterhin.
+- FTPS-Stabilisierung des vorherigen Auftrags nicht zurückbauen.
 
-Diese Verbesserungen nicht zurückbauen.
+P4 bleibt bis zum Abschluss dieses visuellen Folge-Retests unterhalb `LIVE BESTANDEN`.
 
-# Arbeitspaket A – Theme / Dark Mode / Schnellumschaltung
+# Arbeitspaket A – Zentrales Button-/Navigation-Design verfeinern
 
-Der Betreiber hat Light und Dark auf dem realen iPad geprüft.
+Der Betreiber bewertet das aktuelle Button-Design, **besonders im Light Mode**, noch nicht als ausreichend hochwertig.
 
-## Livebefund
+Live sichtbar:
 
-**Light:** Darstellung insgesamt brauchbar.
-
-**Dark:** noch nicht konsistent umgesetzt.
-
-Im Live-Test sichtbar:
-
-1. `Settings`- und `Login`-Button im Header bleiben nahezu weiß und wirken im Dark Theme wie Fremdkörper.
-2. GPS-Inhaltskarte bleibt weiß.
-3. Texte innerhalb der GPS-Karte besitzen teilweise sehr schlechten Kontrast.
-4. Mehrere Texte/Labels in den User-Settings sind im Dark Mode zu dunkel und teilweise kaum lesbar.
-5. HTML-Startinhalt erscheint innerhalb einer großen weißen Fläche, obwohl die App im Dark Mode läuft.
-6. Insgesamt werden Theme-Werte offenbar nicht konsequent über das zentrale Designsystem an alle Framework-/Modulkomponenten vererbt.
+- `Start` / `GPS` wirken im Light Mode zu weich/weiß und besitzen zu wenig klare visuelle Hierarchie.
+- aktiver und inaktiver Zustand sollen klarer und hochwertiger wirken, ohne grell zu werden;
+- Theme-, Settings-, Login- und Navigationsbuttons wirken noch nicht vollständig wie Teile eines gemeinsamen Designsystems;
+- `Login` ist visuell sehr dominant gegenüber den übrigen Header-Actions;
+- Radien, Höhen, Border-Stärke, Innenabstände und Zustände sollen systematisch konsistent sein.
 
 ## Auftrag
 
-Root Cause ermitteln. Keine punktuellen CSS-Hacks nur für die aktuell sichtbaren Screenshots einbauen.
+Überarbeite das zentrale Button-/Navigation-System als Frameworkvertrag, nicht als Sammlung einzelner Screenshot-Hacks.
 
-Prüfe insbesondere:
+Ziel:
 
-- zentrale Theme-Tokens/CSS-Variablen;
-- feste/hardcodierte Light-Farben in User-App und Modulen;
-- Background-/Surface-/Card-/Input-/Button-/Text-/Muted-/Border-/Active-/Focus-Tokens;
-- GPS-Modul;
-- User Settings;
-- Header-Actions;
-- Navigation;
-- HTML-Homepage-Container;
-- Accessibility/Kontrast;
-- Vererbung der zentralen Theme-Regeln an zukünftige Module.
+- einheitliche zentrale Button-Tokens bzw. gemeinsame Komponenten-/Klassenverträge;
+- Light Mode mit klarer Kontur und ausreichendem Kontrast;
+- Dark Mode mindestens auf dem jetzt erreichten Qualitätsniveau halten;
+- klarer aktiver Navigationszustand;
+- ruhiger inaktiver Zustand;
+- Primary/Secondary/Navigation/Icon-Button-Hierarchie nachvollziehbar;
+- Header-Actions und Navigation wirken aus derselben Designsprache;
+- `Login` darf als Aktion erkennbar sein, soll aber die gesamte Navigation nicht unnötig dominieren;
+- konsistente Höhe, Radius, Border, Padding und Touchfläche;
+- Hover nur ergänzend für Pointer/Desktop;
+- Touch darf nicht von Hover abhängen;
+- sichtbarer Keyboard-Fokus;
+- ausreichender Kontrast;
+- zukünftige Module erben den zentralen Navigations-/Buttonvertrag.
 
-### Ziel
+Keine komplette Neugestaltung des gesamten Designsystems. Bestehende zentrale Tokens sinnvoll erweitern/verwenden.
 
-Das Framework stellt Light und Dark zentral bereit. Module und Framework-Komponenten verwenden diese Theme-Verträge automatisch und benötigen nicht jeweils eigene Dark-Mode-Sonderlösungen.
+# Arbeitspaket B – `Start` durch Home-Icon ersetzen
 
-WICHTIG zum HTML-Modus:
-
-Vom Administrator frei eingegebenes HTML darf nicht willkürlich umgeschrieben werden. Der Framework-Container um diesen Inhalt darf aber nicht unnötig eine fest verdrahtete weiße Fläche erzwingen.
-
-## Light/Dark-Schnellumschaltung
-
-Der Betreiber möchte den Theme-Wechsel zusätzlich **direkt im oberen User-App-Bereich bei den Header-Aktionen** erreichen können.
-
-Aktuell muss dafür `Settings → Appearance → Theme` geöffnet werden.
-
-Implementiere eine kompakte, app-typische Light/Dark-Schnellumschaltung im oberen Bereich bei `Settings` / `Login`.
+Der Textlink/-button `Start` soll in der zentralen User-App-Navigation durch ein etabliertes **Home-/Haus-Icon** ersetzt werden.
 
 Anforderungen:
 
-- unmittelbar erreichbar;
-- eindeutig verständlich;
-- touchgerecht;
-- nicht unnötig textlastig;
-- zentraler Theme-Vertrag;
-- Änderung bleibt lokal persistent und offline verfügbar;
-- `Settings → Appearance → Theme` bleibt erhalten und synchronisiert exakt denselben Zustand;
-- keine zwei voneinander unabhängigen Theme-Zustände;
-- Accessibility beachten;
-- Light und Dark wechseln sofort sichtbar;
-- keine unnötige Serverabhängigkeit.
+- international verständliches Home-Symbol;
+- keine externe Netzwerkabhängigkeit für das Icon;
+- keine zufällige Emoji-Darstellung;
+- bestehende zentrale Icon-/Asset-/SVG-Lösung verwenden oder eine saubere lokale Lösung schaffen;
+- touchgerechte Icon-Button-Fläche;
+- aktiver/inaktiver Zustand über denselben Navigationsvertrag wie Modulnavigation;
+- `aria-label`/accessible name `Start` bzw. lokalisierbarer äquivalenter Schlüssel;
+- Tooltip/Title soweit für Verständlichkeit sinnvoll;
+- Tastaturfokus sichtbar;
+- Screenreader-Bedienbarkeit erhalten;
+- bestehende Startlogik/Route/Homepage-Verhalten nicht verändern.
 
-Prüfe, ob ein etabliertes Sonne-/Mond- bzw. äquivalentes Symbolpaar die bessere UX ist. Keine kryptische Bedienung.
+`GPS` vorerst als Textbezeichnung belassen. Keine allgemeine Modul-Icon-Architektur improvisieren. Eine solche Entscheidung kann später separat für alle Module getroffen werden.
 
-# Arbeitspaket B – Wiederkehrende `FTPS Deploy – Run failed`
+# Arbeitspaket C – HTML-Homepage Dark-Mode-Fläche ursächlich prüfen
 
-Auf dem iPad erhält der Betreiber regelmäßig GitHub-Mitteilungen `FTPS Deploy – Run failed`, obwohl die Anwendung anschließend häufig korrekt aktualisiert ist und spätere Runs erfolgreich sind.
+Im aktuellen Betreiber-Screenshot erscheint bei Dark Theme und gespeichertem Inhalt `<h1>TEST</h1>` weiterhin eine **große weiße rechteckige Inhaltsfläche**.
 
-Dieser Punkt wurde anhand eines konkreten fehlgeschlagenen Runs bereits extern untersucht.
+Der vorherige Auftrag sollte den Frameworkcontainer transparent/theme-neutral machen. Deshalb jetzt Root Cause tatsächlich feststellen.
 
-## Wichtige Feststellung
+Prüfe:
 
-Beim untersuchten fehlgeschlagenen Run für Commit `f4437b4` waren:
+- den exakt gespeicherten Homepagewert und dessen Renderpfad;
+- ob die weiße Fläche vom Frameworkcontainer stammt;
+- ob eine CSS-Regel, ein Default-Style, Sanitizer-/Renderer-Wrapper oder ein anderer User-App-Container weiterhin `white/#fff` erzwingt;
+- ob die Fläche Bestandteil des tatsächlich gespeicherten freien Administrator-HTML/CSS ist.
 
-- Checkout: SUCCESS
-- vollständige Tests: SUCCESS
-- Produktionspaket: SUCCESS
-- FTPS-Client: SUCCESS
-- FTPS-Upload: SUCCESS
-- Upload-Ergebnis: `status OK`
-- 106 Dateien erfolgreich übertragen
+Regel:
 
-Erst danach schlug der Schritt `Produktionsstand rein lesend prüfen` fehl.
+- Wenn die weiße Fläche vom Framework stammt: zentral korrigieren, sodass ein simples `<h1>TEST</h1>` keinen künstlichen riesigen weißen Block im Dark Mode erzeugt.
+- Wenn die weiße Fläche ausdrücklich aus dem gespeicherten Administrator-HTML/CSS stammt: freien Inhalt **nicht** automatisch umschreiben. Root Cause dokumentieren und im Abschlussbericht klar benennen.
 
-Der Smoke-Test meldete:
+Keine heuristische Manipulation freien Administrator-HTMLs.
 
-`Öffentliche Installation entspricht nicht der deployten Revision.`
+# Arbeitspaket D – Login-Seite von Framework-/Developertext bereinigen
 
-Damit ist für diesen Fall ausdrücklich **nicht** Git-Commit, Git-Push oder der eigentliche FTPS-Upload die Fehlerursache.
+Im Betreiber-Screenshot der anonymen Login-Seite stehen weiterhin unnötige bzw. technische Texte:
 
-## Auftrag
+- `ACCOUNT ACCESS`
+- `Use your local workspace account to unlock available features.`
+- `Sign in with your configured account.`
 
-Untersuche die wiederkehrenden fehlgeschlagenen FTPS-Runs ursächlich und stabilisiere den Deployment-/Verifikationsvertrag.
+Insbesondere `local workspace account` ist technische Framework-/Workspace-Sprache und widerspricht dem bestehenden User-App-UX-Vertrag.
 
-Nicht fehlgeschlagene Runs blind erneut starten und keine echten Fehler unterdrücken.
+## Ziel
 
-Prüfe insbesondere:
+Die normale Login-Seite soll knapp und produktorientiert sein.
 
-1. mehrere historische erfolgreiche und fehlgeschlagene FTPS-Runs;
-2. ob wiederholt dieselbe Smoke-/Revision-Stage verantwortlich ist;
-3. ob der HTTP-Smoke unmittelbar nach dem Upload zu früh startet;
-4. LiteSpeed-/HTTP-/Proxy-/OPcache-/Server-Cache bzw. kurzfristige Propagation;
-5. Service-Worker-Einfluss, soweit serverseitige Smoke-Prüfung davon überhaupt betroffen sein kann;
-6. Revision-/Manifest-/Deployment-Marker;
-7. Reihenfolge der hochgeladenen Dateien;
-8. ob `manifest.json` bzw. ein Revision-Marker bereits früh übertragen wird, obwohl der restliche Upload noch läuft;
-9. ob ein Deployment-complete-Marker sinnvollerweise zuletzt/atomar geschrieben werden sollte;
-10. ob eine begrenzte Retry-/Backoff-Verifikation nach vollständig erfolgreichem Upload fachlich sinnvoll ist;
-11. ob kurz nacheinander gestartete `main`-Deployments miteinander kollidieren;
-12. GitHub-Actions-Concurrency für Produktionsdeployments.
+Standarddarstellung im Kern:
 
-Besonders prüfen:
+- `Login` bzw. bestehende lokalisierbare Produktbezeichnung;
+- Username;
+- Password;
+- Login-Button;
+- notwendige echte Fehler-/Statusmeldungen nur dann, wenn sie tatsächlich relevant sind.
 
-Der untersuchte Upload überträgt viele Dateien nacheinander und ersetzt vorhandene Dateien während des Deployments. Stelle sicher, dass der öffentlich sichtbare Revisionsvertrag während und unmittelbar nach diesem Vorgang keinen falschen Mischzustand erzeugt.
+Entferne redundante Erklärungstexte und Framework-/Workspace-Terminologie aus der normalen User-App.
 
-Falls Retry/Backoff eingesetzt wird:
+WICHTIG:
 
-- ausschließlich nach erfolgreichem Upload;
-- begrenzte Anzahl;
-- begrenzte Gesamtdauer;
-- echte dauerhafte Revision-Mismatches bleiben FAILURE;
-- Uploadfehler bleiben sofort echte Fehler;
-- keine pauschale `sleep`-Lösung ohne Root-Cause-Verständnis.
-
-### Ziel
-
-Ein tatsächlich erfolgreicher Deploy darf nicht allein wegen eines kurzfristig noch alten öffentlichen HTTP-Zustands unnötig als FAILURE gemeldet werden.
-
-Gleichzeitig darf die Lösung keine echten Deploymentfehler verstecken.
-
-Bevorzugt prüfen/umsetzen, soweit Root Cause dies bestätigt:
-
-- deterministische Upload-/Commit-Marker-Reihenfolge;
-- gegebenenfalls atomarer Deployment-complete-Marker;
-- begrenzte verifizierende Retries mit Backoff;
-- Concurrency-Schutz gegen überlappende Deployments;
-- nachvollziehbare, secret-freie Diagnose im Workflow.
+- Authentifizierungslogik nicht verändern;
+- echte Login-Fehler weiterhin klar anzeigen;
+- Accessibility/Labels nicht entfernen;
+- I18N-Verträge respektieren; keine neue umfassende I18N-Architektur beginnen.
 
 # Tests
 
 Regressionstests zuerst ergänzen/anpassen.
 
-## Theme mindestens
+Mindestens soweit automatisiert sinnvoll beweisen:
 
-- zentrale Komponenten verwenden Theme-Tokens statt hardcodierter Light-Farben;
-- Header-Actions Light/Dark;
-- Navigation Light/Dark;
-- GPS Light/Dark;
-- Settings Light/Dark;
-- HTML-Homepage-Frameworkcontainer Light/Dark;
-- Text-/Border-/Surface-Kontrast;
-- Schnellumschaltung aktualisiert denselben persistenten Theme-State wie Settings;
-- Reload erhält Theme;
-- Offline erhält Theme;
-- Accessibility/Fokus bleibt erhalten.
+## Button/Navigation
 
-## FTPS mindestens
+- zentrale Navigation verwendet den gemeinsamen Button-/Navigation-Vertrag;
+- Light/Dark nutzen zentrale Tokens;
+- aktive/inaktive Zustände bleiben eindeutig;
+- Header-Actions verwenden konsistente zentrale Buttonvarianten;
+- Fokuszustände bleiben sichtbar;
+- Touchgrößen bleiben ausreichend;
+- persönliche `App areas` bleiben funktional.
 
-- erfolgreicher Upload + kurzfristig alte Revision + danach aktuelle Revision → begrenzte Verifikation kann SUCCESS ergeben;
-- dauerhaft falsche/alte Revision → FAILURE;
-- Uploadfehler → FAILURE ohne Smoke-Kosmetik;
-- falsche Public URL/Base Path → FAILURE;
-- überlappende Deployments erzeugen keinen falschen Success;
-- Secrets bleiben maskiert;
-- bestehende FTPS-, Packaging-, Smoke- und Securitytests bleiben grün.
+## Home-Icon
+
+- `Start`-Text wird in der sichtbaren Navigation durch lokales Home-Icon ersetzt;
+- accessible name bleibt vorhanden;
+- Startnavigation funktioniert unverändert;
+- aktiver Zustand funktioniert;
+- keine externe Icon-Abhängigkeit.
+
+## HTML
+
+- simples `<h1>TEST</h1>` erhält vom Framework im Dark Mode keinen erzwungenen weißen Vollflächencontainer;
+- freies Administrator-HTML wird nicht automatisch verändert;
+- Warmstart/Cache bleibt funktionsfähig.
+
+## Login
+
+- `local workspace account` erscheint nicht mehr in der normalen User-App;
+- redundante Standardhinweise sind entfernt;
+- Username-/Password-Labels und Login-Aktion bleiben vorhanden;
+- echte Authfehler bleiben darstellbar;
+- Login-Funktionalität bleibt unverändert.
 
 ## Regression
 
-- Warmstart darf nicht zurückgebaut werden;
-- HTML-Homepage;
+- Theme-Schnellumschaltung;
+- Theme-Persistenz/Offline;
 - GPS;
-- `Start` / `GPS`-Navigation;
-- persönliche `App areas`;
+- HTML-Homepage;
+- Warmstart;
 - Login;
 - P1 User-/Admin-Sessiontrennung;
 - Auth/CSRF;
 - Service Worker;
-- Offline-Fallback;
-- Packaging/Base Path.
+- Packaging/Base Path;
+- FTPS-/Smoke-Stabilisierung.
 
 # Abschluss
 
-Dokumentiere die tatsächlichen Root Causes in `CHATGPT.md`.
+Dokumentiere Root Causes und Änderungen vollständig in `CHATGPT.md`.
 
-Aktualisiere relevante dauerhafte Dokumentation nur dort, wo ein neuer allgemeiner Vertrag tatsächlich erforderlich ist.
+Aktualisiere dauerhafte Dokumentation nur, wenn tatsächlich ein neuer allgemeiner Vertrag entsteht.
 
-Danach vollständig gemäß `WORKFLOW.md`:
+Danach gemäß `WORKFLOW.md` vollständig:
 
 - fokussierte Tests;
-- vollständige Test-Suite unter unterstützter PHP-8.1+-Runtime;
+- vollständige Test-Suite;
 - PHP-Lint;
 - JavaScript-Syntaxcheck;
 - `git diff --check`;
 - Produktionspaket;
 - Secret-/Artefaktprüfung;
-- relevante Status-/TODO-/CHANGELOG-/Workflow-Dokumentation wahrheitsgemäß aktualisieren;
+- relevante Status-/TODO-/CHANGELOG-Dokumentation wahrheitsgemäß aktualisieren;
 - Commit und Push nach `main`;
 - `HEAD == origin/main`;
 - Working Tree sauber;
 - FTPS und CodeQL bis terminal abwarten;
-- insbesondere feststellen, ob der korrigierte FTPS-Workflow beim eigenen Abschlussdeploy tatsächlich stabil SUCCESS erreicht;
-- vollständigen Abschlussbericht nach `CHATGPT.md` schreiben;
-- `CHATGPT.md` auf GitHub `main` verifizieren;
+- vollständigen Abschlussbericht nach `CHATGPT.md` schreiben und auf GitHub `main` verifizieren;
 - erst danach Abschlussmeldung.
 
 Keine selbst ausführbaren offenen Punkte zurücklassen.
 
-P4 nicht allein aufgrund automatisierter Tests als vollständig `LIVE BESTANDEN` markieren. Die Theme-/UI-Änderungen benötigen anschließend erneut einen kurzen Betreiber-Device-Retest.
+## Betreiber-Retest danach
+
+`CHATGPT.md` soll einen kurzen Device-Retest liefern für:
+
+1. Light Mode: Header-Buttons + Home/GPS-Navigation visuell prüfen.
+2. Dark Mode: dieselben Elemente regressiv prüfen.
+3. Home-Icon antippen und Startfunktion bestätigen.
+4. HTML `<h1>TEST</h1>` in Dark prüfen.
+5. Login-Seite auf reduzierte, nicht-technische Darstellung prüfen.
+6. Warmstart, GPS und Theme-Switch kurz regressiv bestätigen.
+
+Bis zu diesem Betreiber-Retest keine erfundene vollständige Live-Bestätigung.
