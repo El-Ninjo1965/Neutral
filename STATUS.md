@@ -14,9 +14,9 @@
 
 - Workflow reset and governance correction: DONE / DOCUMENTED
 - Codex environment `Neutral` and its secrets-safe GitHub/FTPS recovery path: DONE / DOCUMENTED
-- P4 configurable landing page: WARMSTART-/NAV-FIX CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- P4 configurable landing page: VISUAL-CLEANUP CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Settings / Appearance separation: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
-- Theme / i18n / navigation / other feature work: PENDING
+- Full i18n / other future feature work: PENDING
 - Historical failures and older task states: retained as evidence only, not operative truth
 
 ## P4 implementation evidence
