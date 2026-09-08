@@ -18,6 +18,39 @@ Das Framework stellt die gemeinsame Designsprache bereit. Zentrale Design-Tokens
 
 Custom CSS kann als Expertenfunktion für Administrator/Developer vorgesehen werden, ist aber nicht der primäre Weg der normalen Designkonfiguration.
 
+## User-App ist Produkt, nicht Developer-Oberfläche
+
+Die sichtbare User-App wird konsequent aus Sicht des Endnutzers gestaltet. Das Neutral-Framework soll im normalen Nutzerbetrieb möglichst unsichtbar bleiben.
+
+Technische Framework-, Modul- und Entwicklungsinformationen gehören in Admin-/Developer-Kontexte und nicht dauerhaft in die User-App, sofern sie keinen unmittelbaren Nutzen für den Endnutzer besitzen.
+
+Insbesondere gelten als unerwünschte Standardbestandteile der User-App:
+
+- dauerhafte Anzeige des aktuell angemeldeten Benutzernamens im Hauptheader, wenn die Produkt-App dafür keinen fachlichen Grund besitzt;
+- technische Bezeichnungen wie `Active Application`;
+- technische Workspace-Bezeichnungen wie `Local Workspace`;
+- Modulanzahlen oder ähnliche interne Framework-/Discovery-Statuszahlen;
+- technische Manifest-, Modul-, Runtime- oder Entwicklungsinformationen;
+- generische Developer-Dashboards als normale Startansicht.
+
+Diese Informationen dürfen weiterhin im Admin-/Developerbereich verfügbar sein, wenn sie dort für Betrieb, Diagnose oder Konfiguration sinnvoll sind.
+
+Die User-App soll nach dem Öffnen unmittelbar die eigentliche Produktfunktion, die konfigurierte Startseite oder eine bewusst gestaltete neutrale Produkt-Startansicht zeigen.
+
+## Produktbranding und App-Identität
+
+Neutral darf ein eigenes Default-Branding für Entwicklung, Setup und unveränderte Framework-Installationen besitzen. Eine daraus erzeugte Produkt-App muss dieses Branding jedoch einfach ersetzen können.
+
+Produktbezogen konfigurierbar bzw. austauschbar sollen mindestens sein:
+
+- sichtbarer Application Name;
+- App-/Produktlogo bzw. Icon;
+- das aktuelle Neutral-`N` als Default/Platzhalter;
+- Farben und weitere zentrale Appearance-Werte;
+- später für PWA/Store-App relevante Icons und Branding-Assets über einen konsistenten Produktvertrag.
+
+Das Neutral-`N` darf deshalb nicht als unveränderliche Identität in der User-App fest verdrahtet werden. Das Framework bleibt Neutral; die daraus erzeugte App zeigt die Identität des jeweiligen Produkts.
+
 ## Geschwindigkeit
 
 Der bestehende Vertrag `UI zuerst → notwendiger minimaler Core → Hintergrundinitialisierung` bleibt verbindlich.
@@ -78,10 +111,27 @@ Beispielziel für Daten und Medien:
 Die User-App soll sich wie eine eigenständige App anfühlen und nicht wie eine Webseite in einer App-Hülle.
 
 - Navigation ist vorhersehbar, app-typisch und möglichst flach.
-- Ein generischer sichtbarer „Zurück“-Button auf jeder Seite ist kein gewünschtes Standardmuster.
+- Ein generischer sichtbarer `Zurück`-Button auf jeder Seite ist ausdrücklich kein gewünschtes Standardmuster.
+- Ein generischer Framework-Back-Link darf nicht als Ersatz für eine echte App-Navigation dienen.
 - Zurücknavigation wird kontextbezogen, zentral und später soweit sinnvoll über Plattformnavigation gelöst.
 - Module integrieren sich in die zentrale Navigation.
+- Wichtige Produktbereiche benötigen klar erkennbare, touchgerechte Navigationselemente bzw. Buttons, wenn sie für den aktuellen Nutzer zugänglich sind.
+- Das Fehlen einer sinnvollen sichtbaren Navigation bei gleichzeitig vorhandenen technischen Statusinformationen gilt nicht als fertige User Experience.
 - Browsertypische Seitennavigation, technische URL-Sprünge und sichtbar webseitige Hilfskonstruktionen dominieren die UX nicht.
+
+## Startseite und Appearance müssen reale User-App-Wirkung haben
+
+Appearance ist keine reine Admin-Dokumentation. Einstellungen, die ausdrücklich das Erscheinungsbild oder die globale Startseite der User-App steuern, müssen nach erfolgreichem Speichern tatsächlich im vorgesehenen User-App-Lifecycle wirksam werden.
+
+Für die globale Startseite gilt als Zielvertrag:
+
+- `Module`: ein zulässiges aktives/startbares Modul wird als Startziel verwendet;
+- `Text / HTML`: der konfigurierte Inhalt wird als Startinhalt dargestellt;
+- ungültige oder nicht zugängliche Konfiguration fällt kontrolliert auf den definierten neutralen Produktzustand zurück;
+- ein erfolgreich gespeicherter gültiger Wert darf nicht stillschweigend ignoriert werden;
+- Reload/Warmstart und später Offline-/Cacheverhalten müssen den dokumentierten Persistenzvertrag respektieren.
+
+Ein Admin-Save ohne entsprechende Wirkung in der User-App gilt nicht als bestandene Feature-Abnahme.
 
 ## Progressive Disclosure und kontextbezogene Aktionen
 
@@ -147,6 +197,7 @@ Die heutige Web-App ist Entwicklungs- und Laufzeitbasis; das langfristige Produk
 - Navigation, Lifecycle, Storage, Netzwerkstatus, Authentifizierung, Gerätefunktionen, Background Tasks und Notifications bleiben adapterfähig.
 - Direkte Browser-API-Nutzung bleibt lokal begrenzt und ersetzbar, wenn noch kein Coreadapter existiert.
 - Eine spätere Store-App soll keinen vollständigen Rewrite des fachlichen Cores oder der Produktmodule erfordern.
+- Produktbranding soll so modelliert sein, dass Web/PWA und spätere Store-App dieselbe Produktidentität ableiten können.
 - Die konkrete Store-Technik wird erst bei ausreichenden realen Anforderungen entschieden.
 
 ## Qualitäts-/Hardening-Phase vor Final Freeze
@@ -155,6 +206,9 @@ Vor dem Final Freeze erfolgt eine gesonderte UI-/UX-/Qualitätsprüfung. Mindest
 
 - Startperformance;
 - Navigation und App-Gefühl;
+- Entfernung unnötiger Developer-/Frameworkinformationen aus der User-App;
+- Produktbranding und austauschbare App-Identität;
+- reale Wirkung von Appearance-/Startseitenkonfiguration;
 - visuelle Konsistenz;
 - Designvererbung an Module;
 - visuelle Kommunikation und Symbolsprache;
