@@ -2,7 +2,7 @@
 
 **Datum:** 2026-09-09
 **Auftrag:** P0 Live-Auth/GPS und Core-Freeze-Nachbesserung
-**Status:** CODE-SEITIG ERLEDIGT · DEPLOYMENT/CI IN PRÜFUNG · DEVICE RETEST REQUIRED · HOST/OPERATOR CHECK REQUIRED
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST/OPERATOR CHECK REQUIRED
 
 ## Root Causes und Korrekturen
 
@@ -17,7 +17,7 @@
 - Test-first: neue GPS-Projektions-/OSM-Navigationstests waren zunächst rot und sind nach der Korrektur grün.
 - Fokussierte Auth-Shell/PHP/User-App/GPS-Suite: 82/82 grün.
 - License-/Media-Serviceintegration mit realem PHP, PDO-Testadapter, real dekodiertem PNG und privatem Filesystem: grün.
-- Vollständige Regression, PHP-Lint, JavaScript-Syntax, `git diff --check` und Produktionspaket wurden ausgeführt; der finale CI-/Deploymentstand wird nach den terminalen GitHub-Läufen unten ergänzt.
+- Vollständige Regression, PHP-Lint, JavaScript-Syntax, `git diff --check` und Produktionspaket wurden ausgeführt; vollständige GitHub-Verifikation: CodeQL/Push-on-main `34351608990` und FTPS Deploy einschließlich read-only Smoke `34351608319` endeten terminal erfolgreich.
 - Keine Secrets, Testcredentials, Produktions-Personendaten oder künstliche öffentliche Testdatei wurden eingeführt. Kein Restore und keine destruktive Produktionsaktion wurde ausgeführt.
 
 ## Wahrheitsgrenze / Retest
@@ -32,3 +32,7 @@ Bis zur realen Bestätigung bleiben die vier Betreiberbefunde **DEVICE RETEST RE
 4. `In OpenStreetMap öffnen`: OSM in neuem Tab/Fenster, Neutral bleibt offen; Google Maps und Teilen separat prüfen.
 5. Testlizenz A: User anlegen, blockieren/reaktivieren, Zuordnung entfernen, Used/Allowed/Last Activity und Geräte sehen; Gerät revoken. Mit Manager A darf Lizenz B weder gelesen noch verändert werden. Limit 1 → zweites Gerät blockiert → altes revoken → neues möglich; `unlimited` prüfen.
 6. Berechtigter Testuser lädt valides Bild hoch: `pending`, nicht öffentlich. Fake/zu groß ablehnen. Moderator approve/reject (mit Grund)/delete und Historie prüfen; normaler User darf nicht moderieren und sieht keine interne Notiz/fremde Medien.
+
+## Deploymentabschluss
+
+Commit `151c4747f7363688ef89e0f911f055653dbe63dc` wurde nach `main` übertragen. CodeQL/Push-on-main `34351608990` und FTPS Deploy `34351608319` endeten terminal mit `success`. Der FTPS-Job führte vollständige Tests, Paketbau, Upload und read-only Produktionsprüfung aus; damit ist die Deploymentrevision samt Migrations-Readiness maschinell bestätigt. Reale Login-/Geräteinteraktion bleibt gemäß Wahrheitsvertrag Retest.

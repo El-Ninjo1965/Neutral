@@ -1,7 +1,7 @@
 # CURRENT TASK — P0 Live-Auth/GPS und Core-Freeze-Restlücken
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** IN ARBEIT
+**Status:** CODE-SEITIG ABGESCHLOSSEN · DEVICE RETEST REQUIRED · HOST/OPERATOR CHECK REQUIRED
 **Grenzen:** Keine CatchTrack-Fachlogik, kein GPS Pro, Marketplace, Community oder Messaging; keine Secrets oder destruktiven Produktionsaktionen; P1/P4, Offline-First, I18N, Profile/Privacy, Entitlements und Session-Deduplizierung erhalten.
 
 ## Verbindliche Arbeitsliste
