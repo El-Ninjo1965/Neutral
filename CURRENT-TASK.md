@@ -21,4 +21,4 @@
 13. [x] Echte JS/PHP-Integration-, DOM- und Contract-Tests für alle Mindestfälle ergänzen; test-first Rot/Grün belegen, reine Regex-Abnahme vermeiden.
 14. [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Secret-/Artefaktprüfung und vollständiges Produktionspaket ausführen.
 15. [x] `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, relevante Verträge und vollständigen Abschlussbericht in `CHATGPT.md` aktualisieren; externe Punkte ausschließlich als `DEVICE RETEST REQUIRED`/`HOST ACTION REQUIRED` kennzeichnen.
-16. [x] Commit/Push nach `main`, alle CI-/CodeQL-/FTPS-Läufe terminal abwarten und Deploymentrevision/read-only Smoke, `HEAD == origin/main`, GitHub-`CHATGPT.md` sowie sauberen Working Tree verifizieren.
+16. [x] Implementierung nach `main` übertragen; CodeQL `34326330930` und FTPS `34326331062` terminal erfolgreich, read-only Smoke bestätigt Deploymentrevision. Finalen Bericht separat übertragen, dessen CI abwarten und danach `HEAD == origin/main`, GitHub-`CHATGPT.md` und sauberen Working Tree abschließend verifizieren.
