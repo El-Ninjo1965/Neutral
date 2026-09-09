@@ -1,464 +1,279 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER AUFTRAG – CORE-FREEZE BLOCKER: USER/ACCOUNT/LIZENZ + GPS/SETTINGS LIVE-FIXES  
+**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – P0 LIVE AUTH/GPS + CORE-FREEZE-RESTLÜCKEN  
 **Datum:** 2026-09-09
 
 # Aktueller Auftrag
 
-## Core vor CatchTrack finalisieren: Livefehler beheben und generisches Benutzer-/Lizenzfundament ergänzen
+## Produktionsregressionen zuerst beheben, danach zwei nachgewiesene Core-Freeze-Lücken schließen
 
-Der letzte Session-Fix wurde real auf iPad/Chrome geprüft: Wiederholtes Login/Logout erzeugt **keine neuen parallelen Sessions mehr**. Dieser Vertrag ist jetzt zu erhalten. Offen sind jedoch weitere Livefehler und vor dem Core-Freeze nachgewiesene generische Plattformlücken.
+Der vorige Auftrag wurde als abgeschlossen/deployed gemeldet. Der reale Betreiber-Retest auf **iPad/Chrome am 2026-09-09 ca. 20:08–20:09 lokale Zeit** widerlegt diesen Abschluss in vier Punkten. Zusätzlich hat die nachträgliche Repositoryprüfung durch ChatGPT/Lea zwei Anforderungen gefunden, die in `CURRENT-TASK.md` als erledigt markiert wurden, im produktiven Vertrag aber nicht vollständig vorhanden sind.
 
-Arbeite autonom, systematisch und test-first bis zum vollständigen Abschluss. Nicht nach Teilaufgaben stoppen, wenn Repository, Dokumentation oder sichere Diagnose die Antwort liefern.
+**Diese sechs Punkte sind jetzt der vollständige Auftrag.** Die vier Livebefunde haben Vorrang vor grünen Tests und vor früheren Abschlussberichten. Der Core ist bis zu ihrer Behebung und realem Retest **nicht freeze-fähig**.
 
-**Verbindliche Architekturquellen:** `VISION.md`, `CORE-1.0.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Architecture.md`, `Security.md`, `ModuleCreation.md`, `UI-UX.md`.
-
-Keine CatchTrack-Fachlogik. Kein GPS Pro. Marketplace, vollständige Community und vollständiges Messaging in diesem Auftrag **nicht** als Fachfeature implementieren.
+Arbeite autonom, systematisch und test-first bis zum vollständigen code-seitigen Abschluss. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community und kein vollständiges Messaging implementieren. Bestehende positive Verträge – insbesondere Session-Deduplizierung, I18N, Settings-Unterseiten, Passwort 8–25 ohne Leerzeichen, Profile/Privacy, Entitlements und Offline-First – dürfen nicht regressieren.
 
 ---
 
-# 1. Pflicht-Preflight
+# 1. Pflicht-Preflight und Wahrheitsvertrag
 
-1. Vollständig mit `origin/main` synchronisieren.
-2. Vollständig lesen:
-   - `CHATGPT.md`
-   - `CODEX.md`
-   - `CURRENT-TASK.md`
-   - `VISION.md`
-   - `CORE-1.0.md`
-   - `USER-ACCOUNT-LICENSE-MODEL.md`
-   - `Architecture.md`
-   - `Security.md`
-   - `API.md`
-   - `Database.md`
-   - `Functions.md`
-   - `ModuleCreation.md`
-   - `Modules.md`
-   - `UI-UX.md`
-   - `I18N.md`
-   - `STATUS.md`
-   - `TODO.md`
-   - `ToDoNow.md`
-   - `WORKFLOW.md`
-   - relevante Install-/Deploymentdokumentation
-3. Diesen Auftrag vollständig nach `CURRENT-TASK.md` übernehmen und dokumentieren: `CODEX.md == CURRENT-TASK-Anforderungen`.
-4. Echte Integration-/DOM-/PHP-Tests ergänzen. Reine Regex-Sourcechecks sind keine ausreichende Abnahme.
-5. P1/P4 sowie der nun live bestätigte Session-Deduplizierungsvertrag dürfen nicht regressieren.
-6. Keine Secrets, Passwörter, Tokens oder personenbezogenen Produktionsdaten ausgeben.
-7. Kein Restore und keine destruktiven Produktionsaktionen.
+1. Mit `origin/main` synchronisieren.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `ModuleCreation.md`, `UI-UX.md`, `I18N.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, relevante Deployment-/Installationsdokumentation sowie alle betroffenen Implementierungs- und Testdateien.
+3. Diesen neuen Auftrag vollständig nach `CURRENT-TASK.md` übernehmen. Frühere `[x]`-Markierungen dürfen nicht als Beweis gelten.
+4. Für jeden der sechs Punkte Root Cause nachweisen. Keine symptomatischen Schnellfixes.
+5. Reale Produktionsbefunde sind autoritativ. Ein Test, der dem Livebefund widerspricht, ist unvollständig und muss verbessert werden.
+6. Keine Secrets, Passwörter, Tokens oder personenbezogenen Produktionsdaten ausgeben. Kein Restore, keine destruktiven Produktionsaktionen.
+7. Nach Änderungen vollständige Regression, Packaging, Deployment und read-only Produktionssmoke gemäß `WORKFLOW.md`.
+8. Nur reale Betreiberprüfungen dürfen `LIVE BESTANDEN` heißen. Code/CI/Smoke allein heißt höchstens `CODE-SEITIG ERLEDIGT · DEVICE RETEST REQUIRED`.
 
 ---
 
-# 2. Device Sessions – bestätigten Fix erhalten, Anzeige korrigieren
+# 2. P0 – User-Login live komplett ausgefallen
 
-## Live bestätigt
+## Verbindlicher Livebefund
 
-- Gleiche Installation + gleicher User erzeugt nach Logout/Login keine zusätzliche aktive Session mehr.
-- Tester auf derselben Installation verhält sich ebenfalls stabil.
-- `Current session` funktioniert.
+User-App Login mit bestehendem Tester-Account zeigt:
 
-## Noch live falsch
+`Authentication service temporarily unavailable.`
 
-### Zeit
-
-Sessionzeit wird als ca. `08:24` angezeigt, während lokale iPad-Zeit `16:24` ist.
-
-Ziel:
-
-- Server speichert/überträgt Zeit weiterhin eindeutig in UTC/ISO.
-- User-/Admin-UI rendert Zeit in **lokaler Browserzeitzone**.
-- Keine serverseitige lokale Zeitzonenannahme.
-- Optional technischer UTC-Wert nur in Details, nicht als primäre Anzeige.
-
-### Plattform
-
-Auf iPad/Chrome erscheint weiterhin `macOS · Chrome`.
-
-Ziel:
-
-- Plattforminformation ist nur Anzeige, niemals Geräteidentität.
-- iPad/iPadOS soll bei belastbarer Clientinformation als `iPadOS · Chrome` erscheinen.
-- Wenn iPadOS wegen Desktop-UA technisch nicht sicher ermittelbar ist, ehrlicher neutraler Tablet-/Apple-Fallback statt nachweislich falschem `macOS`.
-- `MacIntel` niemals als Gerätename anzeigen.
-- Keine Hardwarefingerprints.
-
----
-
-# 3. GPS – Sprache vollständig konsistent
-
-Realer Screenshot zeigt Sprachmischung: deutsche Überschriften/Statuswerte, englische Buttons und englischer Privacy-Hilfetext.
+Damit ist die normale User-Authentifizierung in Produktion nicht nutzbar.
 
 ## Auftrag
 
-- GPS vollständig an den vorhandenen I18N-Vertrag anbinden.
-- Keine sichtbaren hartkodierten Mischsprachen.
-- Wenn App-Sprache Deutsch: alle GPS-Texte Deutsch.
-- Wenn Englisch: alle GPS-Texte Englisch.
-- Keine neue parallele I18N-Architektur bauen; vorhandenen Vertrag verwenden.
-- Hilfetext zu manuellem Teilen und `Allow Location Context Sharing` kurz, verständlich und vollständig übersetzbar formulieren.
+Root Cause vom Browser bis zum produktiven PHP-Endpunkt vollständig verfolgen:
 
-Semantik erhalten:
+- tatsächlich ausgelieferte `index.html`/User-Shell;
+- Script-/Assetpfade und `.htaccess`-Rewrite;
+- `ApiClient`-Ladefolge, Export/Global, Instanziierung und Base Path;
+- Login-Handler der User-App;
+- `/api/v1/auth/login` bzw. kanonischer produktiver Loginpfad;
+- PHP-Router/Bootstrap/Migrationsbootstrap;
+- Fehlerbehandlung, die aktuell den generischen Text erzeugt;
+- Cache/Service-Worker/Deploymentrevision, damit kein alter Client mit neuem Server gemischt wird.
 
-- Position aktualisieren
-- In Google Maps öffnen
-- In OpenStreetMap öffnen
-- Position teilen
-
----
-
-# 4. GPS – OSM-Karte real interaktiv machen
-
-Live:
-
-- externer Linkwrapper ist entfernt – positiv.
-- Zoom `+/-` reagiert trotzdem nicht.
-- Karte lässt sich nicht ziehen/pannen.
+Nicht nur prüfen, ob die API theoretisch antwortet. Reproduziere den **realen Browservertrag** so nah wie möglich: ausgelieferte Produktionsstruktur + User-Shell + Loginpfad.
 
 ## Ziel
 
-- eingebettete Karte innerhalb der User-App wirklich zoombar und verschiebbar;
-- Touch/Pan/Pinch auf iPad/Chrome soweit Browser erlaubt;
-- `+/-` muss real funktionieren, sonst darf es nicht angezeigt werden;
-- Marker bleibt auf aktueller Position;
-- externe OSM-Navigation ausschließlich über separaten Button;
-- Attribution/Lizenzvertrag erhalten;
-- keine Trackingfunktion.
-
-Root Cause prüfen: aktuelles iframe/embed-Format kann ggf. absichtlich statisch sein. Falls mit dem aktuellen OSM-Embed echte Interaktion nicht zuverlässig möglich ist, ersetze es durch eine leichte, Core-kompatible interaktive Kartenlösung auf Basis von OSM-Tiles, ohne Google-Abhängigkeit und ohne unnötig schwere Frameworkabhängigkeit.
+- bestehender gültiger User kann sich wieder anmelden;
+- falsche Credentials liefern einen normalen Authfehler, nicht `service unavailable`;
+- erfolgreicher Login stellt User-Session/CSRF korrekt her;
+- persistente Installation-ID und Session-Deduplizierung bleiben erhalten;
+- Logout/Login erzeugt keine zusätzliche aktive Session derselben Installation.
 
 ---
 
-# 5. Settings – klare Unter-Navigation statt endloser Kartenübersicht
+# 3. P0 – Admin-Login live komplett ausgefallen
 
-Die aktuelle Kartenübersicht wird mit zunehmenden Einstellungen unübersichtlich.
+## Verbindlicher Livebefund
 
-## Zielstruktur
+Admin-Authentifizierungsseite mit bestehendem Developer/Admin-Account zeigt ebenfalls:
 
-Unter der Überschrift `Settings` erscheint eine sichtbare interne Buttonnavigation, analog zum klaren Navigationserlebnis der App, aber **nur innerhalb Settings**:
+`Authentication service temporarily unavailable.`
 
-1. App Areas
-2. Navigation
-3. Privacy & Sharing
-4. Profile
+## Auftrag
 
-Keine Dropdowns. Diese Unterpunkte gehören nicht in die globale Hauptnavigation.
+Adminpfad separat end-to-end verfolgen. Nicht annehmen, dass der User-Fix automatisch Admin repariert.
 
-- Beim Öffnen von Settings sinnvoller Default-Unterpunkt.
-- Aktiver Unterpunkt eindeutig hervorgehoben.
-- Nur der gewählte Settings-Bereich wird primär angezeigt; keine endlose Mischung aller Blöcke.
-- Responsive auf Phone, Tablet, Landscape und Desktop.
+Prüfe insbesondere:
 
----
-
-# 6. Settings – Save-Verhalten und Texte
-
-Live:
-
-- Save funktioniert.
-- Erfolgsmeldung erscheint.
-- danach wird der User aber auf Start zurückgeleitet.
+- tatsächlich ausgelieferte `admin.php`/Auth-Shell;
+- geladenen `ApiClient` und seine öffentliche URL/Rewrite-Regel;
+- Admin-Session-Scope (`neutral_admin_session`, CSRF);
+- Loginrequest, Router, Bootstrap und Fehlerantwort;
+- Trennung User-App/Admin bleibt erhalten;
+- keine Rückkehr zu direktem Login-`fetch`, der den gemeinsamen Device-ID-Vertrag umgeht.
 
 ## Ziel
 
-- Speichern bleibt auf aktueller Settings-Unterseite.
-- kurze Erfolgsmeldung/Toast/Dialog; User entscheidet danach selbst, wohin er navigiert.
-- kein automatischer Redirect auf Start.
-- Reset-Texte verständlich und kurz. Technische Formulierungen wie `Reset all navigation labels` auf benutzerfreundliche I18N-Texte prüfen, z. B. sinngemäß `Standardnamen wiederherstellen`.
+- bestehender autorisierter Admin kann sich wieder anmelden;
+- User- und Adminsession bleiben getrennt;
+- Access-denied/Admin-Reauth-Vertrag bleibt erhalten;
+- Device-ID und Deduplizierung bleiben stabil.
+
+**Abnahme:** echte Integrationstests müssen die ausgelieferte Admin-Auth-Seite und deren tatsächlichen Clientpfad abdecken, nicht nur isolierte Serviceklassen.
 
 ---
 
-# 7. Globale Navigation – Active State korrigieren
+# 4. P0 – GPS-Karte zeigt Position falsch
 
-Live:
+## Verbindlicher Livebefund
 
-- Login bleibt teilweise blau hervorgehoben, obwohl Settings oder Start aktiv ist.
-- zeitweise Start und Login gleichzeitig blau.
+GPS-Daten zeigen ungefähr:
+
+- Latitude `7.105691769982597`
+- Longitude `125.63707611554916`
+
+Die neue interaktive OSM-Karte ist zwar zoombar, aber Kartenposition/Markerprojektion entspricht live nicht zuverlässig diesen Koordinaten.
+
+## Auftrag
+
+Die neue selbst implementierte Tile-/Web-Mercator-Logik mathematisch und DOM-seitig prüfen:
+
+- lat/lon → Web-Mercator world/tile coordinates;
+- `x/y/z`, `floor`, Pixeloffsets und Tilegrenzen;
+- Longitude/Latitude niemals vertauschen;
+- korrekte Mercator-Latitude-Clamps;
+- Kartenmittelpunkt und Marker müssen dieselbe Projektion/Transformationsbasis verwenden;
+- nach Zoom und Pan Marker/Map weiterhin konsistent;
+- Retina/devicePixelRatio darf keine Positionsverschiebung erzeugen;
+- Containergröße/Responsive Layout darf keine falsche Markerposition erzeugen.
+
+Ergänze deterministische Tests mit bekannten Referenzkoordinaten einschließlich der obigen Davao-Koordinate. Prüfe Tileindex und Pixelposition gegen unabhängig berechnete Web-Mercator-Erwartungswerte; kein Test, der lediglich bestätigt, dass HTML sich nach `+` verändert.
 
 ## Ziel
 
-- Genau der aktuell dargestellte globale Navigationspunkt besitzt Active-State.
-- Login ist nur aktiv, wenn die Login-Seite tatsächlich dargestellt wird.
-- Nach Navigation zu Start/GPS/Settings darf Login nicht hervorgehoben bleiben.
-- Settings-Subnavigation ist davon separat und besitzt ihren eigenen Active-State.
-- Light/Dark identisch logisch.
+Beim Öffnen ist die aktuelle GPS-Position der korrekte Kartenmittelpunkt/Marker. Zoom und Pan funktionieren weiterhin. `Position aktualisieren` setzt Karte und Marker wieder korrekt auf die neue aktuelle Position. Keine Trackingfunktion.
 
 ---
 
-# 8. Profile – generische Settings-Grundfunktion implementieren
+# 5. OpenStreetMap extern in neuem Tab/Fenster öffnen
 
-`USER-ACCOUNT-LICENSE-MODEL.md` ist verbindlich.
+## Verbindlicher Livebefund
 
-Implementiere eine neutrale Profile-Unterseite als Core-/User-Funktion, keine CatchTrack-Sonderlogik.
+`In OpenStreetMap öffnen` ersetzt derzeit die Neutral-App im selben Browserfenster/Tab.
 
-## Mindestens
+## Ziel
 
-Account:
+- separater OSM-Button öffnet OSM **in neuem Tab/Fenster**, sodass Neutral geöffnet bleibt;
+- sichere externe Navigation mit `noopener`/`noreferrer` soweit passend;
+- kein vorab erzeugtes leeres `about:blank`;
+- eingebettete Karte selbst bleibt ohne externen Linkwrapper;
+- Google-Maps-Verhalten nicht unbeabsichtigt regressieren;
+- System-Share bleibt getrennt.
 
-- Username anzeigen; global eindeutig; Änderung nur, wenn bestehender Sicherheitsvertrag dies sauber erlaubt, sonst zunächst read-only mit dokumentierter Entscheidung.
-- Passwort ändern.
-- optionale E-Mail hinterlegen/ändern/entfernen.
-- Login weiterhin per Username; falls E-Mail vorhanden, optional zusätzlich per E-Mail.
-
-Profil:
-
-- Display Name optional.
-- Public Nickname/Handle optional und klar vom echten/privaten Profil getrennt.
-- Telefon optional.
-- Adresse optional.
-- Geburtstag optional.
-
-Privacy:
-
-- Feldweise Freigaben standardmäßig `off`.
-- mindestens Scope `organization/license owner` vorbereiten.
-- öffentliche Freigabe nicht implizit aus Vereinsfreigabe ableiten.
-
-Server validiert und autorisiert alle zentral gespeicherten Werte.
+Auf iPad/Chrome muss der Browser die externe OSM-Seite öffnen können, ohne die laufende Neutral-Seite zu ersetzen.
 
 ---
 
-# 9. Passwortpolitik – verbindlicher einfacher Vertrag
+# 6. Core-Freeze-Lücke – delegierter License/Organization Admin ist unvollständig
 
-Verbindliche Passwortregeln für **alle** Benutzeranlage-, Initialpasswort-, Änderungs- und spätere Resetpfade:
+## Repositorybefund
 
-- Mindestlänge: **8 Zeichen**;
-- Maximallänge: **25 Zeichen**;
-- **keine Leerzeichen**;
-- keine Pflicht für Großbuchstaben, Kleinbuchstaben, Zahlen oder Sonderzeichen;
-- Sonderzeichen sind erlaubt, aber freiwillig;
-- serverseitig exakt dieselben Regeln validieren wie im Client;
-- bestehende sichere Hashing-/Throttle-/Rate-Limit-Sicherheit erhalten;
-- Initialpasswort kann durch Admin/Lizenzverwalter vergeben werden und anschließend vom User geändert werden;
-- niemals Klartextpasswort speichern, protokollieren oder erneut anzeigen.
+Der vorige Auftrag verlangte für einen Lizenz-/Organisationsverwalter innerhalb **seiner eigenen Lizenz** mindestens:
 
-Keine zusätzliche Passwort-Komplexität einführen, die diesem Vertrag widerspricht. `Security.md` und alle betroffenen UI-Hilfetexte müssen exakt denselben 8–25-Zeichen-Vertrag dokumentieren.
+- User anlegen / Initialpasswort;
+- User sehen;
+- User blockieren/entfernen;
+- Seats/Geräte sehen;
+- einzelne Geräte freigeben/revoken;
+- Last Activity und Used/Allowed Devices sehen;
+- ausschließlich vom User freigegebene Profildaten sehen.
 
----
+Aktuell sind produktiv im Wesentlichen `GET /license/users` und `POST /license/users` sowie `organizationUsers()`/`assignUser()` nachweisbar. Damit sind Block/Remove und scoped Device-Revoke nicht vollständig umgesetzt, obwohl `CURRENT-TASK.md` dies als erledigt markiert.
 
-# 10. User Management vereinfachen und erweitern
+## Auftrag
 
-## Create New User
+Den delegierten Vertrag vollständig und serverautoritativ schließen:
 
-Pflichtfelder:
+- geeignete scoped API/Serviceoperationen für Blockieren/Entfernen eines eigenen Lizenzusers;
+- Device-/Installation-Liste innerhalb der eigenen Lizenz;
+- Revoke/Freigabe einer einzelnen Installation innerhalb der eigenen Lizenz;
+- Used/Allowed + Last Activity in der Organisationsansicht;
+- ausschließlich explizit freigegebene Profilfelder;
+- kein Zugriff auf fremde Lizenzuser/-geräte;
+- kein Zugriff auf globale Rollen/Corepermissions, Server, Backup, Audit oder Systemsettings;
+- alle schreibenden Aktionen CSRF-geschützt und auditierbar;
+- Seat-/Device-Limits bleiben autoritativ.
 
-- Username
-- Initial Password
-- Role
+**Wichtig:** „Entfernen“ muss sicher definiert werden. Ein Vereinsadmin darf nicht unkontrolliert einen globalen Account löschen, wenn dieser später/parallel außerhalb seiner Organisation relevant sein könnte. Bevorzuge scoped Zuordnung entfernen bzw. blockieren, sofern der globale Accountvertrag dies verlangt.
 
-E-Mail ist optional.
-
-Display Name ist nicht Pflicht und kann vom User später im Profil gepflegt werden.
-
-## Status
-
-Normale Admin-UX primär:
-
-- Active
-- Blocked
-
-`Inactive` wird aus Last Activity abgeleitet, nicht manuell gesetzt. Legacy-/interne Zustände nur zeigen, wenn betrieblich wirklich nötig.
-
-## Übersicht ergänzen
+## Echte Tests
 
 Mindestens:
 
-- Username
-- optionale E-Mail
-- Rolle
-- Active/Blocked
-- Created
-- Last Activity in lokaler Browserzeit
-- Used Devices / Allowed Devices
+1. Manager Lizenz A sieht/ändert nur A.
+2. Manager A kann A-User anlegen und scoped blockieren/entfernen.
+3. Manager A kann A-Gerät revoken.
+4. Manager A kann User/Gerät von Lizenz B weder lesen noch verändern.
+5. Device-Limit 1 → zweites Gerät blockiert → Manager revoket altes Gerät → neues Gerät möglich.
+6. `unlimited` bleibt korrekt.
+7. Nicht freigegebene Profilfelder erscheinen nie.
 
-Drill-down zu den Device Sessions/Installationen des Users.
-
----
-
-# 11. Packages / Entitlements / Licenses – generisches Fundament vor Core-Freeze
-
-Rollen, Permissions und Pakete nicht vermischen.
-
-Implementiere die **generische Grundlage**, nicht konkrete Verkaufsnamen.
-
-## Datenmodell/Vertrag
-
-- Package/Entitlement Definition
-- License/Organization Assignment
-- Modul-/Capability-Freigaben
-- quantitative Limits, insbesondere Device-/Seat-Limit
-- `unlimited` sauber repräsentierbar
-
-Keine festen Corebegriffe `Silver/Gold/Platinum`; diese sind spätere Konfiguration.
-
-## User-App
-
-Ein Modul darf je Entitlement:
-
-- vollständig verfügbar,
-- sichtbar aber gesperrt,
-- oder unsichtbar sein.
-
-Wenn sichtbar aber gesperrt: klarer generischer Hinweis auf benötigtes Paket/Entitlement, ohne Fachcode im Core.
-
-Server bleibt Autorität.
+Ein Unit-Test `allowsLicenseScope(7,7)` allein reicht nicht.
 
 ---
 
-# 12. Delegierter License/Organization Admin
+# 7. Core-Freeze-Lücke – Medien-/Moderationsgrundlage ist nur teilweise funktional
 
-Generische Rolle/Permission-Scope ergänzen, ohne System-Adminrechte zu vergeben.
+## Repositorybefund
 
-Ein Lizenz-/Organisationsverwalter darf ausschließlich innerhalb seiner eigenen Lizenz:
+Vorhanden sind Schema/Tabellen (`user_media`, `media_moderation_history`), Statusmodell und Bildvalidierung. Nicht ausreichend nachgewiesen ist ein vollständiger produktiver generischer Workflow von berechtigtem Upload bis Moderationsentscheidung.
 
-- User anlegen;
-- initiale Passwörter vergeben;
-- Seats/Geräte einsehen und freigeben;
-- ausgeschiedene Nutzer blockieren/entfernen;
-- Last Activity und erlaubte/verwendete Geräte sehen;
-- nur vom User freigegebene Profildaten sehen.
+## Auftrag
 
-Er darf keine globalen Rollen, Corepermissions, Server, Backups, Audit oder fremde Lizenzen verwalten.
+Nur die neutrale Plattformgrundlage fertigstellen, keine Community-/Marketplace-UI:
 
-Scope serverseitig zwingend erzwingen; UI-Verstecken allein reicht nicht.
-
----
-
-# 13. Device Limits an Lizenz/Entitlement binden
-
-Das bestehende stabile Installations-ID-Modell verwenden.
-
-- Allowed Devices pro User/Lizenz konfigurierbar.
-- Used Devices aus realen registrierten Installationen.
-- Limit erreicht → verständliche Ablehnung mit Option, altes Gerät durch berechtigten Verwalter freizugeben.
-- Admin/Developer können konfigurierbar `unlimited` erhalten.
-- Keine Plattform-/UA-Werte als Identität verwenden.
-
-Echte Tests: 1 erlaubt, zweites Gerät blockiert; nach Revoke neues Gerät möglich; unlimited funktioniert; Organisationsadmin kann nur eigene Seats verwalten.
-
----
-
-# 14. Anonymous / Viewer Installation Statistics
-
-Implementiere datensparsame Installationsstatistik ohne Trackingzwang.
-
-Gezählt wird ausschließlich eine zufällige Installation, die tatsächlich online den Server kontaktiert. Offline-Nutzung ohne Serverkontakt wird nicht behauptet oder nachträglich erfunden.
-
-Admin-Kennzahlen mindestens:
-
-- Known installations total
-- Active today
-- Active 7 days
-- Active 30 days
-- Anonymous/viewer
-- Authenticated
-
-Keine IP-Historie, Hardwarefingerprints, GPS-Daten oder unnötige personenbezogene Analyticsdaten.
-
-Dokumentiere klar: `installation seen by server`, nicht App-Store-Downloadzahl.
-
----
-
-# 15. Profilbild / Medien / Moderation – nur generische Grundlage
-
-Keine Community-/Marketplace-Oberfläche bauen.
-
-Aber prüfe vor Core-Freeze, ob der generische Vertrag für spätere serverseitige User-Medien fehlt. Falls ja, implementiere nur die notwendige neutrale Grundlage:
-
-- Upload-Entitlement/Permission;
-- `pending/approved/rejected/deleted`;
-- sichere serverseitige Bildvalidierung und Größenlimits;
-- clientseitige Optimierung soweit sinnvoll, serverseitige Validierung bleibt autoritativ;
+- authentifizierter Userupload nur mit passender Permission/Entitlement;
+- Viewer/anonym: kein Serverupload;
+- sichere serverseitige JPEG/PNG/WebP-Validierung und Größenlimits erhalten;
+- sichere Speicherung außerhalb unkontrolliert ausführbarer öffentlicher Pfade bzw. über kontrollierten Media-Delivery-Vertrag;
+- neuer Upload startet `pending` und wird niemals automatisch öffentlich;
+- autorisierter Moderator kann `approve`, `reject`, `delete`;
 - Rejection reason + optionale Moderatornotiz;
-- Moderationshistorie/Zähler;
-- kein automatisches Public Publishing.
+- jede Statusänderung in `media_moderation_history`;
+- User-/Moderationszähler konsistent aktualisieren bzw. belastbar ableiten;
+- User kann seinen Status/Ablehnungsgrund sehen, aber keine internen sensitiven Moderatordaten, sofern nicht dafür vorgesehen;
+- CSRF, Permission, MIME/Decode, Dateigröße, Dateiname/Pfad und Ownership serverseitig prüfen;
+- keine KI-Inhaltsmoderation.
 
-Viewer ohne Login besitzt keinen Serverupload.
+Clientseitige Optimierung ist optional/ergänzend; serverseitige Validierung bleibt Autorität.
 
-Lokale Profilbilder ohne Upload bleiben lokal und benötigen keine Moderation.
+## Echte Tests
 
-Keine automatische KI-Inhaltsmoderation in diesem Auftrag.
+Mindestens:
 
----
-
-# 16. Messaging / Marketplace – dokumentieren, nicht als Feature bauen
-
-`USER-ACCOUNT-LICENSE-MODEL.md` enthält die Zukunftsverträge.
-
-In diesem Auftrag:
-
-- keine komplette Inbox/Chat-UI;
-- kein Marketplace;
-- keine CatchTrack-Community.
-
-Nur sicherstellen, dass Core-/Modularchitektur später generische Messaging-/Moderationsservices als eigenständige Fähigkeit ergänzen kann, ohne Produktfeaturebranches. Keine spekulativen Hooks hinzufügen, wenn aktuell kein nachgewiesener Bedarf im Vertrag besteht.
+- Viewer Upload → 401/403;
+- User ohne Entitlement → 403;
+- erlaubter valider Upload → `pending`;
+- Fake MIME/ungültiges Bild/zu groß → abgelehnt;
+- Upload ist vor Approval nicht öffentlich;
+- Moderator approve/reject/delete mit Historie;
+- normaler User kann Moderationsstatus nicht selbst ändern;
+- Ownership-/Cross-user-Zugriff fail-closed.
 
 ---
 
-# 17. Core-Freeze-Prüfung nach Umsetzung
+# 8. Regression und Core-Freeze-Abnahme
 
-Nach Umsetzung erneut prüfen:
+Nach Behebung aller sechs Punkte vollständige Regression durchführen.
 
-> Kann CatchTrack mit neuen fachlichen Modulen auf diesem Core aufgebaut werden, ohne für normale Produktfeatures Core-Dateien zu ändern?
+Mindestens erhalten/prüfen:
 
-Insbesondere müssen generisch vorhanden bzw. vertraglich sauber vorbereitet sein:
+- User- und Adminlogin realer Browservertrag;
+- Session-Deduplizierung und getrennte Session-Scopes;
+- Passwortvertrag exakt 8–25, keine Leerzeichen;
+- Profile/Privacy default-off;
+- Settings-Unterseiten + Save ohne Redirect + Active-State;
+- GPS I18N;
+- GPS korrekte Position + Zoom/Pan;
+- OSM neuer Tab;
+- Entitlement `available/locked/hidden`;
+- Device-Limits und scoped License Admin;
+- Installationsmetriken ohne Fingerprint/PII;
+- Medienworkflow und Moderationsscope;
+- P1/P4 und Offline-First;
+- PHP-Lint, JS-Syntax, `git diff --check`, vollständige Tests, Produktionspaket und Secret-/Artefaktprüfung.
 
-- Auth/User
-- Profile/Privacy
-- Roles/Permissions
-- Entitlements/Licenses
-- Device Limits
-- User-/License Administration
-- Module visibility/locked state
-- responsive Settings/Profile UI
-- anonymous installation metrics
-- generic media moderation foundation, soweit tatsächlich implementiert
+Danach erneut ehrlich prüfen:
 
-Keine CatchTrack-spezifische Umsetzung zur „Beweisführung“ einbauen.
+> Kann CatchTrack auf diesem Core mit Fachmodulen aufgebaut werden, ohne normale Produktfeatures durch Core-Sonderänderungen zu implementieren?
 
----
-
-# 18. Test- und Abnahmevertrag
-
-Mindestens echte Tests für:
-
-- Session-Deduplizierung bleibt stabil.
-- lokale Zeitdarstellung aus UTC-Timestamps.
-- iPad/Chrome-Plattformdarstellung ohne `MacIntel`.
-- GPS komplett einsprachig gemäß aktueller Locale.
-- GPS-Karte reagiert real auf Zoom/Pan-Vertrag.
-- Settings-Subnavigation responsive und Active-State korrekt.
-- Save bleibt auf aktueller Settings-Seite.
-- globale Navigation hat genau einen Active-State.
-- User ohne E-Mail anlegbar.
-- Username global eindeutig.
-- Login via Username und optional via vorhandene E-Mail.
-- Passwort: 8–25 Zeichen akzeptiert; 7 und 26 Zeichen abgelehnt; Leerzeichen abgelehnt; keine Kompositionspflicht.
-- Passwortänderung/Validierung/Hashing.
-- Profilfelder + default-off Sharing.
-- Organisation sieht nur freigegebene Felder.
-- Active/Blocked und Last Activity.
-- Device Used/Allowed und Limits.
-- License Admin kann nur eigenen Scope verwalten.
-- Entitlement steuert visible/locked/available ohne Rechteerweiterung im Client.
-- anonyme Installationsstatistik ohne PII/Fingerprint.
-- P1/P4 und Offline-First regressionsfrei.
-
-Danach vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket, Secret-/Artefaktprüfung.
+Core-Freeze nur dokumentieren, wenn die code-seitigen Verträge vollständig sind. Die vier heutigen Livefehler bleiben bis zum realen Betreiber-Retest `DEVICE RETEST REQUIRED`.
 
 ---
 
-# 19. Deploy und Übergabe
+# 9. Deployment und Übergabe
 
 Gemäß `WORKFLOW.md`:
 
 1. Commit/push `main`.
 2. CI/CodeQL/FTPS terminal abwarten.
-3. `HEAD == origin/main`, Working Tree sauber.
-4. Deploymentrevision und read-only Produktionssmoke prüfen.
-5. Migrationen idempotent und `migrationsReady:true`.
-6. Relevante Dokumente wahrheitsgemäß aktualisieren, insbesondere `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `UI-UX.md`, `ModuleCreation.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`.
-7. Vollständigen Übergabebericht in `CHATGPT.md` schreiben.
-8. Klare kurze Retestliste für iPad/Chrome liefern.
-9. Nicht real getestete Flächen als `DEVICE RETEST REQUIRED`; Hostabhängiges als `HOST ACTION REQUIRED`.
-10. Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` melden.
+3. `HEAD == origin/main`, sauberer Tree.
+4. Deploymentrevision und read-only Produktionssmoke prüfen; `migrationsReady:true`.
+5. Falls neue Migration nötig: ausschließlich über bestehenden checksummed/idempotenten Migrationsvertrag, niemals manuelles Produktions-SQL.
+6. Relevante Dokumentation wahrheitsgemäß aktualisieren; falsche frühere `[x]`-/Freeze-Aussagen korrigieren.
+7. Vollständigen Bericht in `CHATGPT.md` schreiben.
+8. Kurze Betreiber-Retestliste exakt für die vier Livefehler plus die administrativ testbaren neuen License-/Media-Flows liefern.
+9. Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` melden.
