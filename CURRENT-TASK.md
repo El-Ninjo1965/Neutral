@@ -1,7 +1,7 @@
 # CURRENT TASK — P0 Produktionsauthentifizierung
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** IN ARBEIT · DEVICE RETEST REQUIRED
+**Status:** CODE-SEITIG ABGESCHLOSSEN · DEPLOYED · DEVICE RETEST REQUIRED
 **Scope:** Ausschließlich User-/Admin-Login; keine GPS-, License-, Media-, Appearance-, i18n- oder Core-Freeze-Featurearbeit.
 
 1. [x] Mit `origin/main` synchronisieren und Pflichtdokumente sowie Auth-/Bootstrap-/Router-/Client-/Rewrite-/Deploymentpfade vollständig lesen.
@@ -13,6 +13,6 @@
 7. [x] Erfolgreiche Authentifizierung von nichtkritischem Throttle-Cleanup entkoppeln; Device-Limit bleibt spezifischer 409.
 8. [x] Echte User-/Admin-Routerintegration, falsche Credentials 401, aktuelle/Legacy-Hashes, getrennte Scopes, CSRF, Sessionpersistenz und Deduplizierung vollständig prüfen.
 9. [x] Produktionspaket, PHP-Lint, JS-Syntax, vollständige Regression, `git diff --check` und Secret-/Artefaktcheck ausführen.
-10. [ ] Commit/push `main`, CodeQL/FTPS terminal abwarten, Revision/Readiness und produktiven Dummy-Auth-Smoke User+Admin mit 401 verifizieren.
-11. [ ] `CHATGPT.md` mit Root Cause, Exception/Klasse, Fix, CI-/Smoke-Evidenz und ausschließlich zwei Betreiber-Retestpunkten aktualisieren; GitHub-main-Version verifizieren.
-12. [ ] `HEAD == origin/main`, sauberer Working Tree; reale Logins bleiben bis Betreiberbestätigung `DEVICE RETEST REQUIRED`.
+10. [x] Commit/push `main`, CodeQL/FTPS terminal abwarten, Revision/Readiness und produktiven Dummy-Auth-Smoke User+Admin mit 401 verifizieren.
+11. [x] `CHATGPT.md` mit Root Cause, Exception/Klasse, Fix, CI-/Smoke-Evidenz und ausschließlich zwei Betreiber-Retestpunkten aktualisieren; GitHub-main-Version verifizieren.
+12. [x] `HEAD == origin/main`, sauberer Working Tree; reale Logins bleiben bis Betreiberbestätigung `DEVICE RETEST REQUIRED`.

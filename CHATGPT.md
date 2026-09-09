@@ -2,7 +2,7 @@
 
 **Datum:** 2026-09-09
 **Auftrag:** P0 Produktionsauthentifizierung nach zwei real fehlgeschlagenen Fixversuchen
-**Status:** CODE-SEITIG KORRIGIERT · DEPLOYMENT/PRODUKTIONSSMOKE AUSSTEHEND · DEVICE RETEST REQUIRED
+**Status:** CODE-SEITIG KORRIGIERT · DEPLOYED · PRODUKTIONS-AUTH-SMOKE BESTANDEN · DEVICE RETEST REQUIRED
 
 ## Konkrete Root Cause
 
@@ -38,3 +38,7 @@ Nur diese beiden Punkte zuerst:
 2. **DEVICE RETEST REQUIRED:** bestehenden Admin `Developer` real über `admin.php` einloggen.
 
 Erst nach Bestätigung beider Logins dürfen weitere Profile-/License-/Media-Retests oder Core-Freeze-Aussagen folgen.
+
+## Terminaler Deploymentnachweis
+
+Implementierung und Nachbesserungen wurden bis Commit `acd2663470b2c89f2865d7ff6ec7dbbe004e926a` nach `main` übertragen. Push-on-main/CodeQL `34357569088` und FTPS Deploy `34357568936` endeten terminal erfolgreich. Der FTPS-Lauf führte 477 Tests aus (477 bestanden, 0 fehlgeschlagen), baute und übertrug das Produktionspaket und bestätigte `deploymentRevision:true` sowie `migrationsReady:true`. Entscheidend: Die real deployten kanonischen User- und Admin-Endpunkte lieferten mit absichtlich ungültigen Dummy-Credentials jeweils HTTP 401 (`userAuthInvalid:401`, `adminAuthInvalid:401`) statt 503. Damit ist die Serverkette bis zum Invalid-Credentials-Vertrag produktiv belegt; echte Accounts bleiben Betreiber-Retest.
