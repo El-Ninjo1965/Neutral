@@ -55,7 +55,7 @@ Der Auftrag wurde ohne GPS Pro, CatchTrack-spezifische Logik, allgemeine i18n-Ph
 - CodeQL Run `34326330930` endete terminal mit `success`.
 - FTPS Run `34326331062` endete terminal mit `success`; Deploy- und Report-Job waren erfolgreich.
 - Der darin enthaltene read-only Produktionssmoke meldete Root/Rewrite/Status/Modulcatalog erfolgreich, Admin/Core korrekt geschützt, HTTPS erzwungen, zwei Modulverträge, Viewer-GPS und `migrationsReady:true`. `deploymentRevision:true` bestätigt exakt den Implementierungscommit.
-- Die endgültige Berichtsversion wird mit einem separaten Dokumentationscommit übertragen und dessen ausgelöste CI ebenfalls terminal abgewartet. `CHATGPT.md` wird danach direkt auf GitHub `main` verifiziert.
+- Die Berichtsversion wurde als Dokumentationscommit `45e601865cde9be263e405daf515f65c3afc1496` übertragen. Dessen CodeQL Run `34326873273` und FTPS Run `34326873533` endeten ebenfalls terminal mit `success`; damit wurde auch der vollständige Übergabestand über denselben Produktionsweg geprüft.
 - Ein lokaler UI-Screenshot war nicht ausführbar, weil die Codex-Sandbox kein Chromium-/Chrome-Binary enthält. Das ist eine Werkzeuggrenze und ersetzt nicht den ausdrücklich offenen realen iPad/Chrome-Retest.
 
 ## Kurze Betreiber-Retestliste (iPad/Chrome)
