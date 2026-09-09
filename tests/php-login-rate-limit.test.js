@@ -79,3 +79,13 @@ echo json_encode(['third' => $third, 'fourth' => $fourth, 'ip' => $limiter->chec
     other: { allowed: true, retryAfter: 0 }
   });
 });
+
+test('PDO login-attempt reads never execute request-time DDL', () => {
+  const result = runPhp(`
+require getenv('NEUTRAL_TEST_ROOT') . '/Server/php/bootstrap.php';
+class NoDdlStatement extends PDOStatement { public function execute(?array $params=null):bool{return true;} public function fetch(int $mode=PDO::FETCH_DEFAULT,int $orientation=PDO::FETCH_ORI_NEXT,int $offset=0):mixed{return false;} }
+class NoDdlPdo extends PDO { public int $execs=0; public function __construct(){} public function exec(string $statement):int|false{$this->execs++;throw new RuntimeException('DDL forbidden during requests');} public function prepare(string $query,array $options=[]):PDOStatement|false{return new NoDdlStatement();} }
+$config=new Neutral\\Core\\AppConfig(['APP_ENV'=>'test','DB_TYPE'=>'mysql','DB_HOST'=>'x','DB_NAME'=>'x','DB_USER'=>'x'],getenv('NEUTRAL_TEST_ROOT'));$db=new Neutral\\Core\\Database($config);$pdo=new NoDdlPdo();$property=new ReflectionProperty($db,'pdo');$property->setAccessible(true);$property->setValue($db,$pdo);$store=new Neutral\\Core\\PdoLoginAttemptStore($db);$state=$store->state(hash('sha256','dummy'));echo json_encode(['state'=>$state,'execs'=>$pdo->execs]);`);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(JSON.parse(result.stdout), { state: null, execs: 0 });
+});

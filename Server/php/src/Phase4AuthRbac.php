@@ -1434,6 +1434,16 @@ final class Phase4SessionRegistry
     }
 }
 
+final class AuthRuntimeException extends \RuntimeException
+{
+    public function __construct(private string $safeCode, \Throwable $previous)
+    {
+        parent::__construct('Authentication runtime operation failed.', 0, $previous);
+    }
+
+    public function safeCode(): string { return $this->safeCode; }
+}
+
 final class Phase4AuthManager
 {
     private AppConfig $config;
@@ -1506,9 +1516,13 @@ final class Phase4AuthManager
     public function authenticate(string $username, string $password, ?string $scope = null, string $deviceId = '', string $deviceLabel = '', string $clientPlatform = ''): ?array
     {
         $scope = $this->normalizeSessionScope($scope);
-        $this->startSession($scope);
-        $this->users->ensureBootstrapAdminFromEnv();
-        $user = $this->users->authenticate($username, $password);
+        try {
+            $this->startSession($scope);
+            $this->users->ensureBootstrapAdminFromEnv();
+            $user = $this->users->authenticate($username, $password);
+        } catch (\Throwable $exception) {
+            throw new AuthRuntimeException('AUTH_USER_LOOKUP_UNAVAILABLE', $exception);
+        }
         if (!$user) {
             return null;
         }
@@ -1532,7 +1546,11 @@ final class Phase4AuthManager
             $ttlMs = 1000 * 60 * 60 * 24 * 30;
         }
         $expiresAt = time() + (int) floor($ttlMs / 1000);
-        $permissions = $this->users->effectivePermissions($user);
+        try {
+            $permissions = $this->users->effectivePermissions($user);
+        } catch (\Throwable $exception) {
+            throw new AuthRuntimeException('AUTH_PERMISSION_RESOLUTION_FAILED', $exception);
+        }
 
         $_SESSION['auth_identity'] = [
             'userId' => (string) ($user['id'] ?? ''),
@@ -1550,8 +1568,13 @@ final class Phase4AuthManager
                 : 'Browser installation',
         ];
         $csrf = Security::ensureCsrfToken();
-        $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id());
-        $this->sessions->upsert(session_id(), $_SESSION['auth_identity']);
+        try {
+            $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id());
+            $this->sessions->upsert(session_id(), $_SESSION['auth_identity']);
+        } catch (\Throwable $exception) {
+            unset($_SESSION['auth_identity']);
+            throw new AuthRuntimeException('AUTH_SESSION_PERSISTENCE_FAILED', $exception);
+        }
 
         return [
             'user' => $this->users->getPublicById((string) ($user['id'] ?? '')),

@@ -122,3 +122,7 @@ Package/module states are `available`, `locked` or `hidden`. They are display pr
 `GET/POST /api/v1/license/users`, `PATCH/DELETE /api/v1/license/users/{id}`, `GET /api/v1/license/devices` and `POST /api/v1/license/users/{id}/devices/{sessionId}/revoke` are restricted to `license.manage`, the actor's own managed license, CSRF for mutations, and audit logging. Delegated user creation can create only ordinary `user` members.
 
 `GET/POST /api/v1/account/media`, controlled `GET /api/v1/media/{id}`, and `POST /api/v1/admin/media/{id}/{approve|reject|delete}` implement the neutral media lifecycle. Upload requires `profile.media.upload`; moderation requires `media.moderate`; pending/rejected media is available only to its owner or a moderator and every decision is recorded.
+
+## Authentication availability contract (2026-09-09)
+
+`POST /api/v1/auth/login` and `POST /api/v1/admin/auth/login` share the authoritative authentication implementation but retain separate cookie/CSRF scopes. Invalid credentials return 401. Device exhaustion returns 409 with `DEVICE_LIMIT_REACHED`. Runtime infrastructure failures return 503 with a bounded safe code and random correlation ID. Production smoke exercises both canonical routes using intentionally invalid non-account credentials and requires 401.

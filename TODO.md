@@ -43,3 +43,7 @@
 
 - **DEVICE RETEST REQUIRED:** user login, separate admin login, Davao GPS marker/center through zoom/pan/refresh, and OSM opening without replacing Neutral.
 - **HOST/OPERATOR CHECK REQUIRED:** exercise a test license's scoped block/remove/device revoke and a test media pending/approve/reject/delete lifecycle; no destructive production restore.
+
+## P0 external acceptance
+
+- **DEVICE RETEST REQUIRED:** after the auth deployment, first test only existing User `Tester`, then existing Admin `Developer`. Do not proceed to broader freeze acceptance until both are operator-confirmed.

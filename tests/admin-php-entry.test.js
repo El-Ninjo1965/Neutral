@@ -631,6 +631,9 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     });
     assert.equal(result.statusCode, 503);
     assert.match(result.body, /Authentication service temporarily unavailable/i);
+    const payload = JSON.parse(result.body);
+    assert.equal(payload.error.details.code, 'AUTH_THROTTLE_UNAVAILABLE');
+    assert.match(payload.error.details.correlationId, /^[a-f0-9]{16}$/);
     assert.doesNotMatch(result.body, /PDO|database|SQL|password_hash|stack/i);
   });
 

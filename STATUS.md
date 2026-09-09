@@ -66,3 +66,7 @@ These entries remain in the archive and support root-cause analysis, but they do
 ## 2026-09-09 P0/Core-freeze follow-up
 
 The six code-side gaps in the active handoff are implemented and locally verified. User/Admin auth, GPS position and external OSM behavior remain **DEVICE RETEST REQUIRED** because the reported production failures require a real operator login/device check after deployment. Scoped license and media flows are code-side present; host/database and operator acceptance remain required before any `LIVE BESTANDEN` statement.
+
+## 2026-09-09 — Authentication P0 follow-up
+
+The repository now removes all known request-time auth DDL and safely classifies infrastructure failures. Code/test/CI evidence does not prove real credentials: both existing User `Tester` and Admin `Developer` remain **DEVICE RETEST REQUIRED** after deployment.

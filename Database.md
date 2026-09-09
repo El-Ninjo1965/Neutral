@@ -127,3 +127,7 @@ Adds nullable/optional user e-mail plus `user_profiles`, `packages`, `licenses`,
 ## Migration 2026_09_09_0006
 
 `license_users.membership_status` provides scoped `active`/`blocked` membership without deleting or globally blocking the account. The indexed license/status projection supports organization administration. Existing `user_media` and `media_moderation_history` tables are now exercised by the production service/API workflow; media bytes remain outside publicly executable paths.
+
+## Login-attempt ownership
+
+The `login_attempts` table is migration-managed. `PdoLoginAttemptStore` performs no `CREATE`/`ALTER` at request time, allowing production application credentials to follow least privilege (runtime DML without schema DDL).

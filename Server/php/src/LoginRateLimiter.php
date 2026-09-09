@@ -19,15 +19,12 @@ interface LoginAttemptStore
 
 final class PdoLoginAttemptStore implements LoginAttemptStore
 {
-    private bool $schemaReady = false;
-
     public function __construct(private readonly Database $database)
     {
     }
 
     public function state(string $key): ?array
     {
-        $this->ensureSchema();
         $statement = $this->database->connect()->prepare(
             'SELECT attempt_count, UNIX_TIMESTAMP(window_started_at), COALESCE(UNIX_TIMESTAMP(locked_until), 0) FROM login_attempts WHERE scope_key = :key LIMIT 1'
         );
@@ -42,7 +39,6 @@ final class PdoLoginAttemptStore implements LoginAttemptStore
 
     public function recordFailure(string $key, int $limit, int $window, int $lock, int $now): array
     {
-        $this->ensureSchema();
         $pdo = $this->database->connect();
         $statement = $pdo->prepare(
             'INSERT INTO login_attempts (scope_key, attempt_count, window_started_at, last_attempt_at, locked_until)
@@ -80,7 +76,6 @@ final class PdoLoginAttemptStore implements LoginAttemptStore
         if ($keys === []) {
             return;
         }
-        $this->ensureSchema();
         $placeholders = implode(',', array_fill(0, count($keys), '?'));
         $statement = $this->database->connect()->prepare('DELETE FROM login_attempts WHERE scope_key IN (' . $placeholders . ')');
         $statement->execute(array_values($keys));
@@ -88,30 +83,10 @@ final class PdoLoginAttemptStore implements LoginAttemptStore
 
     public function purgeExpired(int $before): void
     {
-        $this->ensureSchema();
         $statement = $this->database->connect()->prepare('DELETE FROM login_attempts WHERE last_attempt_at < FROM_UNIXTIME(:before) AND (locked_until IS NULL OR locked_until < FROM_UNIXTIME(:before))');
         $statement->execute([':before' => $before]);
     }
 
-    private function ensureSchema(): void
-    {
-        if ($this->schemaReady) {
-            return;
-        }
-        $this->database->connect()->exec(
-            "CREATE TABLE IF NOT EXISTS login_attempts (
-                scope_key CHAR(64) NOT NULL,
-                attempt_count INT UNSIGNED NOT NULL DEFAULT 0,
-                window_started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                locked_until TIMESTAMP NULL DEFAULT NULL,
-                PRIMARY KEY (scope_key),
-                KEY ix_login_attempts_last_attempt (last_attempt_at),
-                KEY ix_login_attempts_locked_until (locked_until)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-        );
-        $this->schemaReady = true;
-    }
 }
 
 final class LoginRateLimiter

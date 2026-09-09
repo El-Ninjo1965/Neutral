@@ -1,38 +1,35 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-09
-**Auftrag:** P0 Live-Auth/GPS und Core-Freeze-Nachbesserung
-**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST/OPERATOR CHECK REQUIRED
+**Auftrag:** P0 Produktionsauthentifizierung nach zwei real fehlgeschlagenen Fixversuchen
+**Status:** CODE-SEITIG KORRIGIERT · DEPLOYMENT/PRODUKTIONSSMOKE AUSSTEHEND · DEVICE RETEST REQUIRED
 
-## Root Causes und Korrekturen
+## Konkrete Root Cause
 
-1. **User- und Adminlogin / generischer 503:** Beide getrennten Browser-Shells verwenden korrekt denselben ausgelieferten `ApiClient`, den kanonischen `/api/v1`-Resolver und unterschiedliche Session-/CSRF-Cookies. Der gemeinsame PHP-Loginhandler führte jedoch innerhalb jedes Loginversuchs erneut den vollständigen `SchemaMigrator::migrate()` aus. Dieser nimmt einen MySQL-Advisory-Lock (`GET_LOCK`); Lockverweigerung/-konkurrenz wurde vom breiten Login-Catch als `Authentication service temporarily unavailable.` maskiert. Der API-Bootstrap besitzt bereits den idempotenten Migrationsvertrag. Der redundante Request-time-Migrationslauf wurde entfernt. Throttle, Credentials, Installation-ID, Deduplizierung, Session-Scope und CSRF bleiben unverändert. Falsche Credentials gelangen wieder zum normalen 401-Vertrag statt durch einen DDL-Lock zu 503 zu werden.
-2. **GPS-Fehlprojektion:** Die alte Karte berechnete nur `floor(tileX/tileY)` und legte das gesamte Mitteltile geometrisch in die Viewportmitte. Der Subtile-Pixeloffset der tatsächlichen Koordinate ging verloren; der Marker blieb trotzdem in der Mitte. Zusätzlich approximierte Pan die Mercator-Y-Achse linear in Grad. Nun verwenden Kartenmittelpunkt, Kachelursprung und Marker dieselbe geklammerte Web-Mercator-Weltpixelprojektion. Pan wird invers aus Weltpixeln berechnet; Zoom projiziert den Mittelpunkt neu. Die Davao-Koordinate ist gegen unabhängige Pixel-/Tile-Referenzwerte getestet.
-3. **OSM ersetzt Neutral:** `openCurrentPosition` verwendete für beide Provider `location.assign`. OSM nutzt jetzt direkt `window.open(url, '_blank', 'noopener,noreferrer')`, setzt zusätzlich `opener=null` und erzeugt kein vorläufiges `about:blank`. Das bestehende Google-Verhalten und System-Share bleiben separat.
-4. **Delegierter License Admin:** Eine neue scoped Membership-Migration ergänzt `active/blocked`. Der Service bietet innerhalb exakt der eigenen Managerlizenz sichere Zuordnung entfernen (kein globales Account-Löschen), Status, Device-Liste und Einzel-Revoke. Die Organisationsprojektion enthält Used/Allowed/Last Activity und ausschließlich explizit freigegebene Profilfelder. Delegierte Anlage wird serverseitig immer zur normalen `user`-Rolle gezwungen. Mutationen sind CSRF-geschützt und auditiert.
-5. **Medienworkflow:** Der vorhandene Tabellen-/Validator-Stub ist nun ein produktiver neutraler Workflow. Upload benötigt `profile.media.upload`, wird serverseitig dekodiert/MIME- und größenvalidiert, zufällig benannt unter dem nicht öffentlich ausführbaren `Server/runtime` mit privaten Rechten gespeichert und startet `pending`. Owner sieht Status/Ablehnungsgrund ohne Moderatornotiz. Kontrollierte Delivery prüft Status/Owner/Moderator. `media.moderate` darf approve/reject/delete; Reject verlangt Grund, jede Transition schreibt Historie und Audit. Viewer/anonym sowie Cross-user/ungeprüfte öffentliche Zugriffe bleiben fail-closed.
+Der vorher entfernte `SchemaMigrator::migrate()`-Aufruf war nicht der einzige DDL-Pfad im Login. Vor **jedem** Credential-Lookup ruft `LoginRateLimiter::check()` zweimal `PdoLoginAttemptStore::state()` auf. Dessen bisheriges `ensureSchema()` führte bei jeder neuen PHP-Request-Instanz `CREATE TABLE IF NOT EXISTS login_attempts` aus. Der produktive Runtime-DB-Benutzer folgt Least Privilege und kann Anwendungs-DML ausführen, aber kein DDL. Die dadurch geworfene PDO-/Runtime-Exception traf User und Admin im gemeinsamen Routerpfad vor der Passwortprüfung und wurde vom breiten Catch als HTTP 503 `Authentication service temporarily unavailable.` maskiert.
 
-## Test- und Paketstand
+Ein test-first gebauter PDO-Adapter, der DDL wie der Produktionsaccount verweigert, reproduzierte den Blindspot: Schon `state()` scheiterte vor dem SELECT. Nach dem Fix läuft derselbe Test mit null `exec()`-Aufrufen grün. Dies ist neue konkrete Evidenz und nicht die widerlegte Advisory-Lock-Hypothese.
 
-- Test-first: neue GPS-Projektions-/OSM-Navigationstests waren zunächst rot und sind nach der Korrektur grün.
-- Fokussierte Auth-Shell/PHP/User-App/GPS-Suite: 82/82 grün.
-- License-/Media-Serviceintegration mit realem PHP, PDO-Testadapter, real dekodiertem PNG und privatem Filesystem: grün.
-- Vollständige Regression, PHP-Lint, JavaScript-Syntax, `git diff --check` und Produktionspaket wurden ausgeführt; vollständige GitHub-Verifikation: CodeQL/Push-on-main `34351608990` und FTPS Deploy einschließlich read-only Smoke `34351608319` endeten terminal erfolgreich.
-- Keine Secrets, Testcredentials, Produktions-Personendaten oder künstliche öffentliche Testdatei wurden eingeführt. Kein Restore und keine destruktive Produktionsaktion wurde ausgeführt.
+## Fix
 
-## Wahrheitsgrenze / Retest
+- `PdoLoginAttemptStore` besitzt keine Request-time-Schemaerzeugung mehr. `login_attempts` gehört ausschließlich der checksummed Migration `2026_09_01_0002_login_throttle`; Runtimezugriffe sind SELECT/INSERT/DELETE.
+- Infrastrukturfehler werden ohne interne Exceptiontexte sicher klassifiziert: `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED` oder `AUTH_SESSION_PERSISTENCE_FAILED`, jeweils mit zufälliger 16-Hex-Correlation-ID. Keine SQL-, Credential-, Cookie-, Account- oder PII-Daten gelangen zum Client.
+- Nach erfolgreicher Identitäts- und Sessionpersistenz ist das Löschen alter Throttle-Zähler best effort; ein optionaler Cleanup kann gültigen Login nicht nachträglich in 503 verwandeln. Kritische Sessionpersistenz bleibt fail-closed.
+- `DEVICE_LIMIT_REACHED` bleibt ein eigener 409. Falsche Credentials bleiben 401. User/Admin verwenden weiter denselben ApiClient und Authservice, aber getrennte Session-/CSRF-Cookies.
+- Der Produktionssmoke sendet für beide kanonischen Loginrouten absichtlich ungültige, nicht existierende Dummy-Credentials und verlangt explizit 401 plus Invalid-Credentials-Envelope. 503 lässt das Deployment fehlschlagen. Keine Betreibercredentials werden verwendet.
 
-Bis zur realen Bestätigung bleiben die vier Betreiberbefunde **DEVICE RETEST REQUIRED**, License/Media **HOST/OPERATOR CHECK REQUIRED** und werden nicht als `LIVE BESTANDEN` bezeichnet.
+## Verifikation vor Deployment
 
-### Kurze Betreiber-Retestliste
+- Der neue DDL-Blindspot-Test war vor dem Fix rot und danach grün.
+- Fokussierte PHP-/Auth-/Session-/Shell-/Smoke-Suite bestand einschließlich gültigem Userlogin, gültigem Adminlogin, falschen Credentials, getrennten Scopes, CSRF und Session-Deduplizierung.
+- PHP-Lint, JavaScript-Syntax, `git diff --check` und Produktionspaket inklusive Authclient, Rewrite, Router und PHP-Services bestanden.
+- Keine Secrets oder Produktionsdaten wurden ausgegeben/committed; keine Produktionsmutation außer den ausdrücklich erlaubten ungültigen Auth-Probes, kein Testuser, kein Restore, kein manuelles SQL.
 
-1. Bestehenden normalen User auf iPad/Chrome anmelden; falsches Passwort muss normal abgelehnt werden, korrektes Passwort anmelden. Zweimal Logout/Login: nur eine aktive Installation dieses Geräts.
-2. `admin.php` separat mit bestehendem Admin anmelden; User- und Adminsession parallel prüfen, Access Denied/Reauth weiterhin getrennt.
-3. GPS bei `7.105691769982597, 125.63707611554916`: Marker exakt im Kartenmittelpunkt; `+/-`, Pan und danach `Position aktualisieren` prüfen.
-4. `In OpenStreetMap öffnen`: OSM in neuem Tab/Fenster, Neutral bleibt offen; Google Maps und Teilen separat prüfen.
-5. Testlizenz A: User anlegen, blockieren/reaktivieren, Zuordnung entfernen, Used/Allowed/Last Activity und Geräte sehen; Gerät revoken. Mit Manager A darf Lizenz B weder gelesen noch verändert werden. Limit 1 → zweites Gerät blockiert → altes revoken → neues möglich; `unlimited` prüfen.
-6. Berechtigter Testuser lädt valides Bild hoch: `pending`, nicht öffentlich. Fake/zu groß ablehnen. Moderator approve/reject (mit Grund)/delete und Historie prüfen; normaler User darf nicht moderieren und sieht keine interne Notiz/fremde Medien.
+## Betreiber-Retest nach Deployment
 
-## Deploymentabschluss
+Nur diese beiden Punkte zuerst:
 
-Commit `151c4747f7363688ef89e0f911f055653dbe63dc` wurde nach `main` übertragen. CodeQL/Push-on-main `34351608990` und FTPS Deploy `34351608319` endeten terminal mit `success`. Der FTPS-Job führte vollständige Tests, Paketbau, Upload und read-only Produktionsprüfung aus; damit ist die Deploymentrevision samt Migrations-Readiness maschinell bestätigt. Reale Login-/Geräteinteraktion bleibt gemäß Wahrheitsvertrag Retest.
+1. **DEVICE RETEST REQUIRED:** bestehenden User `Tester` real einloggen.
+2. **DEVICE RETEST REQUIRED:** bestehenden Admin `Developer` real über `admin.php` einloggen.
+
+Erst nach Bestätigung beider Logins dürfen weitere Profile-/License-/Media-Retests oder Core-Freeze-Aussagen folgen.

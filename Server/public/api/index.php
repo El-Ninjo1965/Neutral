@@ -26,6 +26,7 @@ use Neutral\Core\DatabaseBackupService;
 use Neutral\Core\BackupRuntimeException;
 use Neutral\Core\SchemaMigrator;
 use Neutral\Core\AccountLicenseService;
+use Neutral\Core\AuthRuntimeException;
 
 $runtime = neutral_bootstrap();
 $config = $runtime->config();
@@ -363,6 +364,7 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
     $username = trim((string) ($payload['username'] ?? ''));
     $password = (string) ($payload['password'] ?? '');
     $clientIp = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    $authStage = 'throttle';
     try {
         // Schema readiness is handled once during API bootstrap. Re-running the
         // migrator for every login needlessly requires a database advisory lock
@@ -378,6 +380,7 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
             header('Retry-After: ' . max(1, $rateState['retryAfter']));
             JsonResponse::error('Too many failed login attempts. Try again later.', 429);
         }
+        $authStage = 'authentication';
         $result = $authManager->authenticate(
             $username,
             $password,
@@ -387,19 +390,34 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
             trim((string) ($headers['x-neutral-client-platform'] ?? ''))
         );
         if (!$result) {
+            $authStage = 'throttle-write';
             $rateState = $loginLimiter->registerFailure($username, $clientIp);
             if (!$rateState['allowed']) {
                 header('Retry-After: ' . max(1, $rateState['retryAfter']));
                 JsonResponse::error('Too many failed login attempts. Try again later.', 429);
             }
         } else {
-            $loginLimiter->registerSuccess($username, $clientIp);
+            $authStage = 'throttle-write';
+            try {
+                $loginLimiter->registerSuccess($username, $clientIp);
+            } catch (\Throwable $exception) {
+                // Clearing stale throttle counters is non-critical after the
+                // identity and durable session were established successfully.
+            }
         }
     } catch (\Throwable $exception) {
         if ($exception->getMessage() === 'Active device limit reached. Revoke another device session in Admin before adding this device.') {
             JsonResponse::error($exception->getMessage(), 409, ['code' => 'DEVICE_LIMIT_REACHED']);
         }
-        JsonResponse::error('Authentication service temporarily unavailable.', 503);
+        $errorCode = $exception instanceof AuthRuntimeException ? $exception->safeCode() : match ($authStage) {
+            'throttle', 'throttle-write' => 'AUTH_THROTTLE_UNAVAILABLE',
+            'authentication' => 'AUTH_SESSION_OR_IDENTITY_UNAVAILABLE',
+            default => 'AUTH_SERVICE_UNAVAILABLE',
+        };
+        JsonResponse::error('Authentication service temporarily unavailable.', 503, [
+            'code' => $errorCode,
+            'correlationId' => bin2hex(random_bytes(8)),
+        ]);
     }
     if (!$result) {
         JsonResponse::error('Invalid username or password.', 401);

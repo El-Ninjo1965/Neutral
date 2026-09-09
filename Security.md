@@ -144,3 +144,7 @@ Schema migration is not controlled by request input: API bootstrap may apply onl
 ## Auth availability, delegated scope and media (2026-09-09)
 
 Login never runs DDL or acquires a schema advisory lock inside the credential transaction. Deployment/API bootstrap owns idempotent migrations; authentication owns throttle, password, scoped session, device ID and CSRF only. License managers cannot choose global roles and every target query/mutation joins through their own managed license. Media upload is decode/MIME/size validated, stored with private permissions below `Server/runtime`, starts pending, and is delivered only by an ownership/moderation/status checked endpoint with `nosniff`.
+
+## P0 authentication failure classification (2026-09-09)
+
+Request handlers never execute auth schema DDL. `login_attempts` is provisioned only by the checksummed schema migration; runtime uses SELECT/INSERT/DELETE DML. Safe 503 details distinguish `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED`, and `AUTH_SESSION_PERSISTENCE_FAILED`, accompanied only by a random correlation ID. They never expose exception messages, SQL, account identifiers, credentials or cookies. Invalid credentials remain 401 and device exhaustion remains 409 `DEVICE_LIMIT_REACHED`.

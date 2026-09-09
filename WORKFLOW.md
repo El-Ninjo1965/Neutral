@@ -167,3 +167,7 @@ Historische Fehlversuche bleiben als historische Evidenz erhalten, sind aber nic
 ## 2026-09-09 — P0 Auth/GPS and freeze follow-up (Codex)
 
 Codex traced the live generic auth error to schema migration locking inside both login routes, corrected the shared auth path, rebuilt GPS around one independently tested projection, and completed the scoped license/media service and API contracts. Verification and deployment evidence are recorded in `CHATGPT.md`; device/host-dependent checks remain explicitly external.
+
+## 2026-09-09 — Persistent P0 auth diagnosis (Codex)
+
+After the second real-device 503, Codex traced the request before credential lookup and found a second request-time DDL path in `PdoLoginAttemptStore::ensureSchema()`. A test with a PDO adapter that rejects DDL reproduced the exact blind spot before the implementation was changed. Production acceptance now requires invalid-credential 401 probes for both user and admin routes in every FTPS smoke.

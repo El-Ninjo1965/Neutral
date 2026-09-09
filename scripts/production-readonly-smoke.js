@@ -64,6 +64,21 @@ async function readResponse(fetchImpl, baseUrl, route) {
   return { status: response.status, body: await response.text() };
 }
 
+async function probeInvalidLogin(fetchImpl, baseUrl, route, scope) {
+  const requestedUrl = endpoint(baseUrl, route);
+  const response = await fetchImpl(requestedUrl, {
+    method: 'POST', redirect: 'follow', cache: 'no-store', signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'x-neutral-device-id': '00000000000000000000000000000000', ...(scope === 'admin' ? { 'x-framework-role': 'admin' } : {}) },
+    body: JSON.stringify({ username: `neutral-auth-smoke-${scope}-invalid`, password: 'intentionally-invalid' }),
+  });
+  assertFinalUrl(response.url, requestedUrl, baseUrl);
+  const body = await response.text();
+  const payload = parseJson(body, `${scope} auth smoke`);
+  requireCondition(response.status === 401, `${scope} auth smoke returned ${response.status} instead of 401.`);
+  requireCondition(payload?.ok === false && /invalid username or password/i.test(payload?.error?.message || ''), `${scope} auth smoke did not return the invalid-credentials contract.`);
+  return response.status;
+}
+
 async function readCurrentDeploymentManifest({ fetchImpl, publicBase, expectedSourceCommit, expectedBasePath, attempts = 1, backoffMs = [], sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), write = () => {} }) {
   requireCondition(Number.isInteger(attempts) && attempts >= 1 && attempts <= 5, 'Revision-Retry-Konfiguration ist ungültig.');
   requireCondition(backoffMs.slice(0, attempts - 1).every((delay) => Number.isFinite(delay) && delay >= 0 && delay <= 15_000), 'Revision-Backoff-Konfiguration ist ungültig.');
@@ -121,6 +136,8 @@ async function runSmoke({
   results.modules = await readResponse(fetchImpl, publicBase, '/api/v1/modules');
   results.readiness = await readResponse(fetchImpl, publicBase, '/api/v1/system/readiness');
   results.internal = await readResponse(fetchImpl, publicBase, '/Server/php/bootstrap.php');
+  results.userAuthInvalid = await probeInvalidLogin(fetchImpl, publicBase, '/api/v1/auth/login', 'user');
+  results.adminAuthInvalid = await probeInvalidLogin(fetchImpl, publicBase, '/api/v1/admin/auth/login', 'admin');
 
   requireCondition(results.root.status === 200, 'Öffentlicher Root ist nicht erreichbar.');
   requireCondition(results.rewrite.status === 200, 'SPA-Rewrite ist nicht erreichbar.');
@@ -224,6 +241,8 @@ async function runSmoke({
     moduleContracts: expectedModules.length,
     viewerGps: expectedViewerModules.includes('gps'),
     httpsEnforced,
+    userAuthInvalid: results.userAuthInvalid,
+    adminAuthInvalid: results.adminAuthInvalid,
   };
   write(JSON.stringify(summary));
   return summary;

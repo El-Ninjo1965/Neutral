@@ -464,3 +464,10 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - OpenStreetMap now opens directly in a separate `noopener,noreferrer` browsing context while Google Maps retains its established navigation behavior.
 - Completed scoped license membership status/removal, device inventory/revoke, activity/usage projection and privacy-filtered organization users. Delegated creation is forced to the ordinary user role.
 - Completed permission-gated private media upload, pending moderation, controlled delivery, approve/reject/delete history and safe user status projection. Migration `2026_09_09_0006_license_media_workflow` adds scoped membership state.
+
+## 2026-09-09 — P0 production authentication root cause
+
+- Removed hidden request-time `CREATE TABLE IF NOT EXISTS login_attempts` calls from `PdoLoginAttemptStore`. The deployed database account may perform application DML but intentionally lacks DDL privileges; the resulting exception occurred before every credential lookup and was masked as auth 503 for both user and admin.
+- Login-attempt schema ownership remains exclusively in the checksummed migrator. Auth failures now expose safe stage codes and a random correlation ID without SQL, credentials, cookies or PII.
+- A successful durable login no longer fails because cleanup of old throttle counters fails. Critical identity/session persistence still fails closed, while device-limit retains its dedicated 409 contract.
+- Production smoke now posts two intentionally invalid, non-account credentials and requires 401 for both canonical user and admin login routes.
