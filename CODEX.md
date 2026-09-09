@@ -218,21 +218,21 @@ Server validiert und autorisiert alle zentral gespeicherten Werte.
 
 ---
 
-# 9. Passwortpolitik – einfache UX, aber nicht unsicher
+# 9. Passwortpolitik – verbindlicher einfacher Vertrag
 
-Der Betreiber möchte keine unnötigen Sonderzeichen-/Groß-/Kleinschreibungszwänge.
+Verbindliche Passwortregeln für **alle** Benutzeranlage-, Initialpasswort-, Änderungs- und spätere Resetpfade:
 
-Das ist umzusetzen, aber **kein dauerhaft unsicheres 6-Zeichen-/Geburtsdatums-Schema fest verdrahten**.
+- Mindestlänge: **8 Zeichen**;
+- Maximallänge: **25 Zeichen**;
+- **keine Leerzeichen**;
+- keine Pflicht für Großbuchstaben, Kleinbuchstaben, Zahlen oder Sonderzeichen;
+- Sonderzeichen sind erlaubt, aber freiwillig;
+- serverseitig exakt dieselben Regeln validieren wie im Client;
+- bestehende sichere Hashing-/Throttle-/Rate-Limit-Sicherheit erhalten;
+- Initialpasswort kann durch Admin/Lizenzverwalter vergeben werden und anschließend vom User geändert werden;
+- niemals Klartextpasswort speichern, protokollieren oder erneut anzeigen.
 
-Ziel:
-
-- keine Kompositionsregeln wie `muss Sonderzeichen enthalten`;
-- serverseitig konfigurierbare Mindestlänge mit sicherem Default;
-- bestehende Hashing-/Throttle-Sicherheit erhalten;
-- klare UX für temporäres Initialpasswort und spätere Änderung;
-- niemals Klartextpasswort speichern oder erneut anzeigen.
-
-Dokumentiere die konkrete Default-Mindestlänge mit technischer Begründung in `Security.md`.
+Keine zusätzliche Passwort-Komplexität einführen, die diesem Vertrag widerspricht. `Security.md` und alle betroffenen UI-Hilfetexte müssen exakt denselben 8–25-Zeichen-Vertrag dokumentieren.
 
 ---
 
@@ -433,6 +433,7 @@ Mindestens echte Tests für:
 - User ohne E-Mail anlegbar.
 - Username global eindeutig.
 - Login via Username und optional via vorhandene E-Mail.
+- Passwort: 8–25 Zeichen akzeptiert; 7 und 26 Zeichen abgelehnt; Leerzeichen abgelehnt; keine Kompositionspflicht.
 - Passwortänderung/Validierung/Hashing.
 - Profilfelder + default-off Sharing.
 - Organisation sieht nur freigegebene Felder.
