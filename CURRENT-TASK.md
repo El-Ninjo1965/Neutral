@@ -1,7 +1,7 @@
 # CURRENT TASK — Core-Freeze: User/Account/Lizenz und Live-Fixes
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** IN ARBEIT
+**Status:** ABGESCHLOSSEN · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
 **Grenzen:** Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace-/Community-/Messaging-Feature; P1/P4 und bestätigte Session-Deduplizierung erhalten; keine Secrets oder destruktiven Produktionsaktionen.
 
 ## Verbindliche Arbeitsliste
@@ -27,5 +27,5 @@
 19. [x] Echte JS-/DOM-/PHP-/DB-Integrationstests für sämtliche CODEX-Mindestfälle test-first ergänzen; reine Source-RegEx nicht als Abnahme verwenden.
 20. [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen.
 21. [x] `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `UI-UX.md`, `ModuleCreation.md`, Status-/Todo-/Changelog-Dokumente und vollständigen `CHATGPT.md`-Bericht wahrheitsgemäß aktualisieren.
-22. [ ] Commit/Push nach `main`; CodeQL/FTPS/sonstige CI terminal abwarten; `HEAD == origin/main`, sauberer Tree, GitHub-`CHATGPT.md`, Deploymentrevision, idempotente Migrationen, `migrationsReady:true` und sicheren read-only Produktionssmoke verifizieren.
+22. [x] Implementierung nach `main` übertragen; CodeQL `34340369880` und FTPS `34340370687` terminal erfolgreich; Deploymentrevision, idempotente Migration `0005`, `migrationsReady:true` und sicherer read-only Produktionssmoke bestätigt. Abschlussbericht separat übertragen und danach `HEAD == origin/main`, sauberer Tree und GitHub-`CHATGPT.md` abschließend verifizieren.
 23. [x] Kurze iPad/Chrome-Retestliste liefern; nicht real geprüfte Flächen als `DEVICE RETEST REQUIRED`, Hostabhängiges als `HOST ACTION REQUIRED` kennzeichnen und nichts unbelegt `LIVE BESTANDEN` nennen.

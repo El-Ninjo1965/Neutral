@@ -36,5 +36,5 @@
 ## Core-freeze external acceptance
 
 - [ ] **DEVICE RETEST REQUIRED:** iPad/Chrome – lokale Sessionzeit/iPadOS-Anzeige, einsprachiges GPS, echte Karten-Zoom-/Pan-Interaktion, Settings-Unterseiten, genau ein Active-State, In-place Save und Profile/Password prüfen.
-- [ ] **HOST ACTION REQUIRED:** Migration `2026_09_09_0005_account_license_foundation` idempotent anwenden und `migrationsReady:true` bestätigen; keine Produktionsdaten ausgeben und kein Restore.
+- [x] Migration `2026_09_09_0005_account_license_foundation` wurde über den idempotenten Deployvertrag angewendet; Produktionssmoke bestätigt `migrationsReady:true`.
 - [ ] Product configuration later: packages/licenses and organization managers are neutral foundations; no commercial tiers, Marketplace, Community, Messaging or CatchTrack features are configured by this task.

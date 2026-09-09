@@ -2,7 +2,7 @@
 
 **Datum:** 2026-09-09
 **Auftrag:** Core-Freeze-Blocker User/Account/Lizenz plus GPS-/Settings-Livefixes
-**Status:** CODE-SEITIG ERLEDIGT · DEPLOYMENT AUSSTEHEND · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
 
 ## Kurzfazit
 
@@ -47,7 +47,11 @@ P1 und P4 bleiben auf dem bereits vom Betreiber bestätigten Stand. Keine der ne
 
 ## Deployment und CI
 
-Commit, Push, terminale CodeQL-/FTPS-Läufe, Migration-/Deploymentrevision und read-only Produktionssmoke werden nach diesem Bericht ergänzt. Migration/Hostzustand bleibt bis dahin **HOST ACTION REQUIRED**.
+- Implementierungscommit `4dbefaad76345bc298fd4de4df15172614daf065` wurde nach `main` übertragen. CodeQL `34339850269` endete erfolgreich. Der erste FTPS-Run `34339850744` lud das Paket hoch, scheiterte danach aber korrekt im read-only Smoke an der noch ausstehenden Migration `0005`.
+- Root Cause des Deployfehlers: Der FTPS-Weg besitzt absichtlich keinen Host-Shell-/DB-Zugang; neue Migrationen wurden bisher erst beim nächsten erfolgreichen Login oder manuellen Hostrunner ausgeführt. Dadurch konnten Code und Schema zwischen Upload und erstem Login auseinanderliegen.
+- Fixcommit `9f1a0fdbdda652504e8750d8d45884d8e75cfcfd` prüft am PHP-API-Bootstrap die checksummed, repository-definierten Migrationen und führt ausschließlich ausstehende additive/idempotente Definitionen unter dem bestehenden DB-Lock aus. Setup/Readiness bleibt bei nicht erreichbarer DB diagnostizierbar; beliebiges Request-SQL ist unmöglich.
+- CodeQL `34340369880` und FTPS `34340370687` endeten terminal mit `success`. Deploy- und Report-Job waren grün. Der finale Produktionssmoke bestätigte Root/Rewrite/Status/Modulkatalog, geschützte Admin-/Corepfade, HTTPS, Viewer-GPS, zwei Modulverträge, exakt die Deploymentrevision sowie `migrationsReady:true`.
+- Die verbleibende **HOST ACTION REQUIRED** betrifft nur die bereits dokumentierte Backup-Key-/ACL-/Cron-Konfiguration, nicht mehr Migration `0005`. Kein Restore und keine destruktive Produktionsaktion wurden ausgeführt.
 
 ## Kurze iPad/Chrome-Retestliste
 

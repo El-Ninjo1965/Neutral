@@ -39,4 +39,4 @@
 ## Current external checks
 
 - **DEVICE RETEST REQUIRED:** gebündelte iPad/Chrome-Liste aus `CHATGPT.md` vollständig durchführen; neue Flächen bis dahin nicht `LIVE BESTANDEN` nennen.
-- **HOST ACTION REQUIRED:** Migration/Readiness des Account-License-Fundaments und bestehende Backup-Key/ACL/Cron-Punkte sicher hostseitig bestätigen; kein Produktions-Restore.
+- Migration/Readiness des Account-License-Fundaments ist deployed und bestätigt. **HOST ACTION REQUIRED** bleibt ausschließlich für Backup-Key/ACL/Cron; kein Produktions-Restore.
