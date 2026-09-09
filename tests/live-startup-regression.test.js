@@ -36,7 +36,7 @@ test('GPS module owns its title while the generic shell does not duplicate it', 
 test('navigation shows Start instead of the app name', () => {
   const source = read('Web-App/public/user-app.js');
 
-  assert.match(source, /id:\s*['"]home['"],\s*label:\s*['"]Start['"]/);
+  assert.match(source, /id:\s*['"]home['"],\s*label:\s*presentationLabel\('home', 'Start'\)/);
   assert.doesNotMatch(source, /id:\s*['"]home['"],\s*label:\s*getAppName\(\)/);
 });
 
@@ -153,7 +153,7 @@ test('Start navigation uses a local accessible home icon without changing its ro
   assert.ok(homeIcon, 'local home icon constant must exist');
   assert.match(homeIcon[1], /<svg/);
   assert.doesNotMatch(homeIcon[1], /https?:|<img|emoji/i);
-  assert.match(source, /id: 'home', label: 'Start', icon: HOME_ICON/);
+  assert.match(source, /id: 'home', label: presentationLabel\('home', 'Start'\), icon: HOME_ICON/);
   assert.match(source, /aria-label="\$\{escapeHtml\(item\.label\)\}"/);
   assert.match(source, /title="\$\{escapeHtml\(item\.label\)\}"/);
   assert.match(source, /data-user-nav="\$\{escapeHtml\(item\.id\)\}"/);
@@ -167,6 +167,19 @@ test('header theme toggle shares the persistent Settings theme state', () => {
   assert.match(source, /localStorage\.setItem\(USER_THEME_KEY/);
   assert.doesNotMatch(source, /id="userThemeSelect"|<h2>Appearance<\/h2>|Choose the theme used by this app/);
   assert.match(css, /\.user-theme-toggle[^}]*min-width:\s*44px/);
+});
+
+test('navigation presentation is local-first, accessible and supports generic labels', () => {
+  const source = fs.readFileSync(path.join(projectRoot, 'Web-App/public/user-app.js'), 'utf8');
+  assert.match(source, /navigation:\s*\{ display: 'icon-text', labels: \{\} \}/);
+  assert.match(source, /\['icon-text', 'icons', 'text'\]\.includes/);
+  assert.match(source, /NAV_LABEL_MAX = 32/);
+  assert.match(source, /presentationLabel\(`module:\$\{module\.id\}`/);
+  assert.match(source, /aria-label="\$\{escapeHtml\(item\.label\)\}"/);
+  assert.match(source, /title="\$\{escapeHtml\(item\.label\)\}"/);
+  assert.match(source, /data-navigation-label-reset/);
+  assert.match(source, /resetAllNavigationLabels/);
+  assert.doesNotMatch(source, />⚙\s*\$\{settingsLabel\}/);
 });
 
 test('user and GPS surfaces inherit central theme tokens', () => {
@@ -300,7 +313,7 @@ test('user shell is product-facing and keeps branding replaceable', () => {
   const appInfo = JSON.parse(fs.readFileSync(appInfoPath, 'utf8'));
 
   assert.doesNotMatch(`${source}\n${index}`, /Active application|Local workspace|Signed in as|userSettingsBackButton|user-app-count/);
-  assert.match(source, /label:\s*['"]Start['"]/);
+  assert.match(source, /presentationLabel\('home', 'Start'\)/);
   assert.match(source, /branding\.iconText/);
   assert.match(source, /branding\?\.logoUrl/);
   assert.equal(appInfo.branding.iconText, Array.from(appInfo.name)[0].toUpperCase());

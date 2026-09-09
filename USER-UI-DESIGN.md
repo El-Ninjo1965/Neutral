@@ -1,14 +1,16 @@
 # NEUTRAL – User-UI-Designvertrag
 
-**Status:** V1 IMPLEMENTIERT / WEITERE AUSBAUSTUFEN GEPLANT
+**Status:** V2 CODE-SEITIG IMPLEMENTIERT / WEITERE AUSBAUSTUFEN GEPLANT
 
-## Implementierter V1-Vertrag (2026-09-08)
+## Implementierter V2-Vertrag (2026-09-09)
 
-V1 stellt in `Admin → Appearance` getrennte Light-/Dark-Farben für App-Hintergrund, Surface, Primary, Text, Muted und Border bereit. Gemeinsame validierte Werte steuern Control-/Surface-Radius, Content-Max-Width und Basisschriftgröße. Eine isolierte Live-Preview nutzt dasselbe Token-Mapping; strukturierter Reset und getrenntes Custom-CSS-Clear verändern weder Start Page noch persönliche Themezustände.
+V2 erhält V1-Kompatibilität und stellt in `Admin → Appearance` getrennte Light-/Dark-Farben für App-Hintergrund, Surface, Primary, Text, Muted und Border bereit. Gemeinsame validierte Werte steuern Control-/Surface-Radius, Content-Max-Width und Basisschriftgröße. Eine isolierte Live-Preview nutzt dasselbe Token-Mapping; strukturierter Reset und getrenntes Custom-CSS-Clear verändern weder Start Page noch persönliche Themezustände.
 
 Die öffentliche Projektion `/api/settings/appearance` enthält ausschließlich den normalisierten Designzustand. Ein schema-versionierter öffentlicher LocalStorage-Cache wird vor dem Hauptstylesheet gelesen und im Hintergrund aktualisiert. Unbekannte Tokens, ungültige Hexfarben, Werte außerhalb definierter Grenzen, inkompatible Versionen sowie HTML-/JavaScript-/Remote-Import-Muster werden abgewiesen. Custom CSS ist auf 20.000 Zeichen begrenzt, wird über `textContent` ausschließlich in der User-App nach dem strukturierten Design angewendet und schwächt CSP, Sandbox oder Auth nicht.
 
-V1 führt bewusst keine Remote Fonts ein; Typografie beschränkt sich auf die robuste Basisschriftgröße und den vorhandenen sicheren lokalen Font-Stack. Weitere Skalen, Statusfarben, Schatten und Designparameter bleiben Zukunftsausbau.
+V2 ergänzt komponentenspezifische Primary-/Secondary-, aktive/inaktive Navigations- und Form-Control-Farben. Native Farbwähler besitzen sichtbare Swatches/Hexwerte; Gruppen und Advanced CSS nutzen progressive Disclosure. Lokale Navigation unterstützt Icon + Text, nur Icons und nur Text sowie sichere 32-Zeichen-Label-Overrides anhand stabiler Presentation-IDs; Reset fällt auf den jeweils offiziell/lokalisiert gelieferten Text zurück.
+
+V2 führt bewusst keine Remote Fonts ein; Typografie beschränkt sich auf die robuste Basisschriftgröße und den vorhandenen sicheren lokalen Font-Stack. Weitere Skalen, Statusfarben, Schatten und Designparameter bleiben Zukunftsausbau.
 
 ## Ziel
 

@@ -1,3 +1,11 @@
+## 2026-09-09 – Appearance UX V2 and local navigation personalization
+
+- Appearance color controls retain the native picker but now expose a touch-sized framed swatch and synchronized uppercase Hex value; token groups use progressive disclosure and Advanced Custom CSS is collapsed by default.
+- Design schema V2 adds independent Light/Dark Primary, Secondary/Header, active/inactive Navigation and Form-Control background/text/icon/border/focus colors. V1 records migrate through defaults, and Dark input defaults now provide clearer borders and focus.
+- Preview covers header, actions, active/inactive navigation, icons/text, card, normal/focus inputs and shared token mapping without styling Admin.
+- User Settings adds local/offline Icon + Text, Icons only and Text only modes plus 32-character plain-text label overrides and individual/all resets for stable central/module presentation keys. Official labels remain the reset/I18N fallback; routes, module IDs and permissions do not change.
+- Added local SVGs for Home, Settings, Login and GPS/module navigation; accessible names and titles remain independent from visible mode. P1/P4 remain LIVE BESTANDEN; I18N is not implemented.
+
 ## 2026-09-08 – Productive User UI Design editor and local-first appearance projection
 
 - Expanded Admin Appearance into Start Page, User UI Design and Advanced Custom CSS while retaining P1/P4 and the independent Admin/User theme toggles.

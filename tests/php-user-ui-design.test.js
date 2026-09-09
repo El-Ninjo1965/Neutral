@@ -14,6 +14,7 @@ test('PHP User UI design validator matches the public structured contract', () =
   assert.equal(value.light.primary, '#abcdef');
   assert.equal(value.dark.primary, '#123456');
   assert.equal(value.geometry.controlRadius, 8);
+  assert.equal(value.schemaVersion, 2);
 });
 
 test('PHP User UI design validator rejects unknown properties and CSS injection', () => {

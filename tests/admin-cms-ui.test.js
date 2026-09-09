@@ -162,7 +162,7 @@ test('Appearance homepage save preserves unrelated and legacy settings without r
   assert.equal(payload.settings.layout, 'compact');
   assert.deepEqual(payload.homepage, { mode: 'html', moduleId: '', content: '<h1>Start</h1>' });
   assert.deepEqual(payload.settings.homepage, payload.homepage);
-  assert.equal(payload.appearance.schemaVersion, 1);
+  assert.equal(payload.appearance.schemaVersion, 2);
 });
 
 test('Appearance title is consistent and preview uses the shared token mapping without styling admin shell', () => {
@@ -173,6 +173,18 @@ test('Appearance title is consistent and preview uses the shared token mapping w
   assert.match(appearance, /userUiDesignContract\.variables/);
   assert.match(appearance, /designPreview\.style\.setProperty/);
   assert.doesNotMatch(appearance, /document\.documentElement\.style\.setProperty/);
+});
+
+test('Appearance V2 keeps native color input while showing swatch hex and progressive expert UI', () => {
+  const appearance = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/appearance-view.js'), 'utf8');
+  assert.match(appearance, /type="color"/);
+  assert.match(appearance, /appearance-color-picker/);
+  assert.match(appearance, /data-color-value/);
+  assert.match(appearance, /output\.textContent = input\.value\.toUpperCase/);
+  for (const section of ['Base Colors', 'Actions & Buttons', 'Navigation', 'Forms', 'Geometry &amp; Typography']) assert.ok(appearance.includes(section), section);
+  assert.match(appearance, /<details class="appearance-advanced"><summary>Advanced Custom CSS/);
+  assert.doesNotMatch(appearance, /<details class="appearance-advanced" open/);
+  for (const sample of ['preview-primary', 'preview-secondary', 'preview-nav-active', 'preview-nav-inactive', 'preview-input-focus']) assert.match(appearance, new RegExp(sample));
 });
 
 test('admin logout returns to the deployed root entry', () => {

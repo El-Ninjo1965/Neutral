@@ -7,7 +7,7 @@
 - P4 configurable landing page: LIVE BESTANDEN
 - Settings / Appearance separation: LIVE BESTANDEN; obsolete Theme/Layout controls removed code-side
 - Theme consistency and quick toggle: LIVE BESTANDEN
-- User UI Design editor V1: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
+- Appearance UX V2 + local navigation personalization: CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED
 - Full i18n / other feature work: PENDING
 
 ## Action list

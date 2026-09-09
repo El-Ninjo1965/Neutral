@@ -249,3 +249,8 @@ Neue Produktmodule sollen dieses Qualitätsniveau möglichst automatisch erben k
 ## User UI Design V1 (2026-09-08)
 
 Admin Appearance implementiert nun den strukturierten zentralen Designvertrag mit getrennten Light-/Dark-Paletten, gemeinsamen Geometrie-/Basistypografiewerten, isolierter Preview, Reset und optionalem begrenztem Custom CSS. Die User-App konsumiert dieselben Tokens local-first; Admin-Theme und persönliche User-Theme-Auswahl bleiben unabhängig.
+
+
+## Appearance UX V2 und lokale Navigation (2026-09-09)
+
+Native Color Inputs werden durch sichtbaren gerahmten Swatch und Hexanzeige erklärt. Komponententokens trennen Actions, Navigation und Forms je Theme; die Preview verwendet denselben Mapper. User wählen lokal/offline Icon+Text, nur Icons oder nur Text und können ausschließlich sichtbare zentrale Navigationslabels bis 32 Zeichen überschreiben. Accessible Names, technische IDs, Routen und spätere I18N-Defaults bleiben davon unabhängig.

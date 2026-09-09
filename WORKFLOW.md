@@ -107,6 +107,7 @@ PHASE D – CLOSE
 - Folgetask durch Codex: Betreiber lokalisierte den letzten hellen Flash im statischen `Loading…` vor dem iframe. Pauschalen Shell-Status entfernt, persistiertes Theme vor dem render-blocking CSS auf Root-Tokens wirksam gemacht und echten Cold-Start-Status an semantische Tokens gebunden; Cache-/iframe-Verträge bleiben erhalten.
 - Abschlussbefund: Betreiber bestätigte den mehrfachen Dark-Warmstart ohne weißen Loading-/Flash-Zustand; bei vollständig bestätigtem P4-Pflichtscope gilt P4 nun `LIVE BESTANDEN`. Die funktionslosen serverseitigen Theme-/Layout-Controls wurden aus Appearance entfernt, ohne lokale Header-Themes, Homepagefunktion oder Altwerte zu zerstören.
 - Folgetask: produktiven User-UI-Designeditor mit allowlist-validierten Light-/Dark-Tokens, isolierter Preview, öffentlicher Local-first-Projektion und User-App-only Custom CSS implementiert; I18N und weitere Zukunftsfeatures bleiben ausgeschlossen.
+- Folgetask: Appearance UX V2 mit sichtbaren Swatches/Hexwerten, komponentenspezifischen Tokens, progressiver Preview und lokaler barrierefreier Navigationsdarstellung/-benennung umgesetzt; P1/P4 bleiben live, I18N bleibt Zukunft.
 
 Folgende Quellen werden bei normaler Implementierungsarbeit nicht automatisch als operative Wahrheit eingelesen:
 

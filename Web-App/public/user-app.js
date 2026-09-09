@@ -17,10 +17,16 @@
   const designContract = window.NeutralUserUiDesign || null;
   let userUiDesign = designContract && (designContract.read() || designContract.defaults());
   const HOME_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.75 12 3l9 7.75v9a1.25 1.25 0 0 1-1.25 1.25h-5.5v-6h-4.5v6h-5.5A1.25 1.25 0 0 1 3 19.75v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const SETTINGS_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0-5 1 2.2 2.4.6 2-1.3 1.6 1.6-1.3 2 .6 2.4 2.2 1v2.2l-2.2 1-.6 2.4 1.3 2-1.6 1.6-2-1.3-2.4.6-1 2.2H11l-1-2.2-2.4-.6-2 1.3L4 19.8l1.3-2-.6-2.4-2.2-1v-2.2l2.2-1 .6-2.4-1.3-2L5.6 5l2 1.3 2.4-.6 1-2.2h2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+  const LOGIN_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5V3H4v18h9v-2M9 12h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const LOCATION_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>`;
+  const MODULE_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
+  const NAV_LABEL_MAX = 32;
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
     theme: 'light',
+    navigation: { display: 'icon-text', labels: {} },
     privacy: {
       shareLocationContext: false,
       shareImages: false,
@@ -78,9 +84,16 @@
         return JSON.parse(JSON.stringify(defaultUserPreferences));
       }
 
+      const display = ['icon-text', 'icons', 'text'].includes(parsed.navigation?.display) ? parsed.navigation.display : 'icon-text';
+      const labels = {};
+      if (parsed.navigation?.labels && typeof parsed.navigation.labels === 'object') for (const [key, value] of Object.entries(parsed.navigation.labels)) {
+        const label = typeof value === 'string' ? value.trim().slice(0, NAV_LABEL_MAX) : '';
+        if (label && !/[<>]/.test(label)) labels[key] = label;
+      }
       return {
         visibleModuleIds: Array.isArray(parsed.visibleModuleIds) ? parsed.visibleModuleIds.filter((id) => typeof id === 'string' && id.trim()) : null,
         theme: parsed.theme === 'dark' ? 'dark' : 'light',
+        navigation: { display, labels },
         privacy: {
           shareLocationContext: !!parsed.privacy?.shareLocationContext,
           shareImages: !!parsed.privacy?.shareImages,
@@ -94,11 +107,18 @@
   };
 
   const saveUserPreferences = (preferences) => {
+    const display = ['icon-text', 'icons', 'text'].includes(preferences?.navigation?.display) ? preferences.navigation.display : 'icon-text';
+    const labels = {};
+    if (preferences?.navigation?.labels && typeof preferences.navigation.labels === 'object') for (const [key, value] of Object.entries(preferences.navigation.labels)) {
+      const label = typeof value === 'string' ? value.trim().slice(0, NAV_LABEL_MAX) : '';
+      if (label && !/[<>]/.test(label)) labels[key] = label;
+    }
     const nextPreferences = {
       visibleModuleIds: Array.isArray(preferences && preferences.visibleModuleIds)
         ? preferences.visibleModuleIds.filter((id) => typeof id === 'string' && id.trim())
         : null,
       theme: preferences && preferences.theme === 'dark' ? 'dark' : 'light',
+      navigation: { display, labels },
       privacy: {
         shareLocationContext: !!(preferences && preferences.privacy && preferences.privacy.shareLocationContext),
         shareImages: !!(preferences && preferences.privacy && preferences.privacy.shareImages),
@@ -120,6 +140,14 @@
     }
 
     return { ...nextPreferences, persisted };
+  };
+
+  const presentationLabel = (id, official) => readUserPreferences().navigation.labels[id] || official;
+  const presentationContent = (icon, label) => {
+    const display = readUserPreferences().navigation.display;
+    const iconMarkup = display === 'text' ? '' : `<span class="ui-button-icon">${icon}</span>`;
+    const textMarkup = display === 'icons' ? '' : `<span class="ui-button-label">${escapeHtml(label)}</span>`;
+    return `${iconMarkup}${textMarkup}`;
   };
 
   const escapeHtml = (value) => String(value ?? '')
@@ -446,13 +474,14 @@
   const renderActions = () => {
     if (!actions) return;
     const currentUser = getCurrentUser();
-    const settingsLabel = 'Settings';
-    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link" type="button" aria-label="${settingsLabel}">⚙ ${settingsLabel}</button>`;
+    const settingsLabel = presentationLabel('settings', 'Settings');
+    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link" type="button" aria-label="${escapeHtml(settingsLabel)}" title="${escapeHtml(settingsLabel)}">${presentationContent(SETTINGS_ICON, settingsLabel)}</button>`;
     const nextTheme = readUserTheme() === 'dark' ? 'light' : 'dark';
     const themeButton = `<button id="userThemeToggle" class="ui-button ui-button--icon user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
 
     if (!currentUser) {
-      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ui-button--primary user-app-action" type="button">Login</button>`;
+      const loginLabel = presentationLabel('login', 'Login');
+      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ui-button--primary user-app-action" type="button" aria-label="${escapeHtml(loginLabel)}" title="${escapeHtml(loginLabel)}">${presentationContent(LOGIN_ICON, loginLabel)}</button>`;
       const loginButton = document.getElementById('userLoginButton');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
@@ -511,8 +540,8 @@
     if (!nav) return;
     const modules = getVisibleModules();
     const items = [
-      { id: 'home', label: 'Start', icon: HOME_ICON },
-      ...modules.map((module) => ({ id: `module:${module.id}`, label: getModuleDisplayName(module) }))
+      { id: 'home', label: presentationLabel('home', 'Start'), icon: HOME_ICON },
+      ...modules.map((module) => ({ id: `module:${module.id}`, label: presentationLabel(`module:${module.id}`, getModuleDisplayName(module)), icon: module.id === 'gps' ? LOCATION_ICON : MODULE_ICON }))
     ];
     nav.innerHTML = items.map((item) => `
       <button
@@ -522,7 +551,7 @@
         aria-label="${escapeHtml(item.label)}"
         title="${escapeHtml(item.label)}"
         ${state.activeView === item.id ? 'aria-current="page"' : ''}
-      >${item.icon || escapeHtml(item.label)}</button>
+      >${presentationContent(item.icon || MODULE_ICON, item.label)}</button>
     `).join('');
     nav.querySelectorAll('[data-user-nav]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -647,6 +676,22 @@
           </div>
         </div>
         <div class="user-settings-card">
+          <h2>Navigation</h2>
+          <p>Choose how navigation actions appear on this device and optionally personalize their visible labels.</p>
+          <div class="form-field"><label for="navigationDisplay">Display style</label><select id="navigationDisplay" class="user-settings-select">
+            <option value="icon-text" ${preferences.navigation.display === 'icon-text' ? 'selected' : ''}>Icon + Text</option>
+            <option value="icons" ${preferences.navigation.display === 'icons' ? 'selected' : ''}>Icons only</option>
+            <option value="text" ${preferences.navigation.display === 'text' ? 'selected' : ''}>Text only</option>
+          </select></div>
+          <div class="user-navigation-labels">
+            ${[
+              ['home', 'Start'], ['settings', 'Settings'], ['login', 'Login'],
+              ...modules.map((module) => [`module:${module.id}`, getModuleDisplayName(module)])
+            ].map(([key, official]) => `<div class="user-navigation-label-row"><label>${escapeHtml(official)}<small>Default: ${escapeHtml(official)}</small><input type="text" maxlength="${NAV_LABEL_MAX}" data-navigation-label="${escapeHtml(key)}" value="${escapeHtml(preferences.navigation.labels[key] || '')}" placeholder="${escapeHtml(official)}"></label><button type="button" class="ui-button ui-button--secondary" data-navigation-label-reset="${escapeHtml(key)}">Reset</button></div>`).join('')}
+          </div>
+          <button type="button" class="ui-button ui-button--secondary" id="resetAllNavigationLabels">Reset all navigation labels</button>
+        </div>
+        <div class="user-settings-card">
           <h2>Privacy and sharing</h2>
           <div class="user-settings-list">
             <label class="user-settings-toggle" for="setting-location-context">
@@ -675,6 +720,13 @@
     `;
 
     const saveButton = document.getElementById('userSettingsSaveButton');
+    document.querySelectorAll('[data-navigation-label-reset]').forEach((button) => button.addEventListener('click', () => {
+      const input = document.querySelector(`[data-navigation-label="${button.dataset.navigationLabelReset}"]`);
+      if (input) input.value = '';
+    }));
+    document.getElementById('resetAllNavigationLabels')?.addEventListener('click', () => {
+      document.querySelectorAll('[data-navigation-label]').forEach((input) => { input.value = ''; });
+    });
     if (saveButton) {
       saveButton.addEventListener('click', () => {
         const moduleSelection = Array.from(document.querySelectorAll('[data-user-setting-module]:checked')).map((input) => input.dataset.userSettingModule).filter(Boolean);
@@ -682,11 +734,17 @@
         document.querySelectorAll('[data-user-setting-privacy]').forEach((input) => {
           privacySelection[input.dataset.userSettingPrivacy] = !!input.checked;
         });
+        const labels = {};
+        document.querySelectorAll('[data-navigation-label]').forEach((input) => {
+          const label = input.value.trim().slice(0, NAV_LABEL_MAX);
+          if (label && !/[<>]/.test(label)) labels[input.dataset.navigationLabel] = label;
+        });
 
         const nextPreferences = saveUserPreferences({
           visibleModuleIds: moduleSelection,
           privacy: privacySelection,
-          theme: readUserTheme()
+          theme: readUserTheme(),
+          navigation: { display: document.getElementById('navigationDisplay')?.value || 'icon-text', labels }
         });
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
           const currentUser = getCurrentUser();

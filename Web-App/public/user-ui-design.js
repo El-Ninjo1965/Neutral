@@ -5,14 +5,14 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = contract;
   if (root) root.NeutralUserUiDesign = contract;
 }(typeof window !== 'undefined' ? window : globalThis, () => {
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const STORAGE_KEY = 'neutral.public.user-ui-design.v1';
   const MAX_CUSTOM_CSS = 20000;
-  const colors = ['background', 'surface', 'primary', 'text', 'muted', 'border'];
+  const colors = ['background', 'surface', 'primary', 'text', 'muted', 'border', 'primaryBackground', 'primaryText', 'primaryIcon', 'primaryBorder', 'secondaryBackground', 'secondaryText', 'secondaryIcon', 'secondaryBorder', 'navActiveBackground', 'navActiveText', 'navActiveIcon', 'navActiveBorder', 'navInactiveBackground', 'navInactiveText', 'navInactiveIcon', 'navInactiveBorder', 'inputBackground', 'inputText', 'inputBorder', 'inputFocus'];
   const defaults = Object.freeze({
     schemaVersion: SCHEMA_VERSION,
-    light: Object.freeze({ background: '#f3f6fb', surface: '#ffffff', primary: '#2f6fed', text: '#1c2432', muted: '#5f7087', border: '#dfe7f3' }),
-    dark: Object.freeze({ background: '#0b1220', surface: '#111b2d', primary: '#7aa2ff', text: '#edf3ff', muted: '#9db0c8', border: '#23314d' }),
+    light: Object.freeze({ background: '#f3f6fb', surface: '#ffffff', primary: '#2f6fed', text: '#1c2432', muted: '#5f7087', border: '#dfe7f3', primaryBackground: '#2f6fed', primaryText: '#ffffff', primaryIcon: '#ffffff', primaryBorder: '#1d4fd7', secondaryBackground: '#ffffff', secondaryText: '#1c2432', secondaryIcon: '#1c2432', secondaryBorder: '#aebdd2', navActiveBackground: '#2f6fed', navActiveText: '#ffffff', navActiveIcon: '#ffffff', navActiveBorder: '#1d4fd7', navInactiveBackground: '#ffffff', navInactiveText: '#1c2432', navInactiveIcon: '#1c2432', navInactiveBorder: '#aebdd2', inputBackground: '#ffffff', inputText: '#1c2432', inputBorder: '#7b8da8', inputFocus: '#174db7' }),
+    dark: Object.freeze({ background: '#0b1220', surface: '#111b2d', primary: '#7aa2ff', text: '#edf3ff', muted: '#9db0c8', border: '#506584', primaryBackground: '#547bd5', primaryText: '#ffffff', primaryIcon: '#ffffff', primaryBorder: '#86a8fa', secondaryBackground: '#17263d', secondaryText: '#edf3ff', secondaryIcon: '#edf3ff', secondaryBorder: '#6f86a8', navActiveBackground: '#547bd5', navActiveText: '#ffffff', navActiveIcon: '#ffffff', navActiveBorder: '#a6bdff', navInactiveBackground: '#17263d', navInactiveText: '#edf3ff', navInactiveIcon: '#edf3ff', navInactiveBorder: '#6f86a8', inputBackground: '#0f1a2b', inputText: '#edf3ff', inputBorder: '#7890b4', inputFocus: '#a6bdff' }),
     geometry: Object.freeze({ controlRadius: 11, surfaceRadius: 18, contentMaxWidth: 1120 }),
     typography: Object.freeze({ baseFontSize: 16 }),
     customCss: ''
@@ -27,7 +27,7 @@
     const output = cloneDefaults();
     const errors = [];
     for (const key of Object.keys(candidate)) if (!['schemaVersion', 'light', 'dark', 'geometry', 'typography', 'customCss'].includes(key)) errors.push(`Unknown design property: ${key}`);
-    if (candidate.schemaVersion !== undefined && candidate.schemaVersion !== SCHEMA_VERSION) errors.push('Unsupported user UI design schemaVersion');
+    if (candidate.schemaVersion !== undefined && ![1, SCHEMA_VERSION].includes(candidate.schemaVersion)) errors.push('Unsupported user UI design schemaVersion');
     for (const mode of ['light', 'dark']) {
       const supplied = candidate[mode];
       if (supplied !== undefined && (!supplied || typeof supplied !== 'object' || Array.isArray(supplied))) errors.push(`${mode} must be an object`);
@@ -67,10 +67,14 @@
     return {
       '--bg': palette.background, '--bg-strong': palette.background, '--surface': palette.surface,
       '--surface-secondary': palette.surface, '--surface-tertiary': palette.surface,
-      '--primary': palette.primary, '--primary-strong': palette.primary,
+      '--primary': palette.primary, '--primary-strong': palette.primaryBorder,
       '--text': palette.text, '--text-muted': palette.muted, '--border': palette.border,
-      '--line-strong': palette.border, '--button-secondary-background': palette.surface,
-      '--button-secondary-border': palette.border, '--button-secondary-text': palette.text,
+      '--line-strong': palette.border, '--action-primary-bg': palette.primaryBackground,
+      '--action-primary-text': palette.primaryText, '--action-primary-icon': palette.primaryIcon, '--action-primary-border': palette.primaryBorder,
+      '--button-secondary-background': palette.secondaryBackground, '--button-secondary-border': palette.secondaryBorder, '--button-secondary-text': palette.secondaryText, '--action-secondary-icon': palette.secondaryIcon,
+      '--nav-active-bg': palette.navActiveBackground, '--nav-active-text': palette.navActiveText, '--nav-active-icon': palette.navActiveIcon, '--nav-active-border': palette.navActiveBorder,
+      '--nav-inactive-bg': palette.navInactiveBackground, '--nav-inactive-text': palette.navInactiveText, '--nav-inactive-icon': palette.navInactiveIcon, '--nav-inactive-border': palette.navInactiveBorder,
+      '--input-bg': palette.inputBackground, '--input-text': palette.inputText, '--input-border': palette.inputBorder, '--input-focus': palette.inputFocus,
       '--button-radius': `${value.geometry.controlRadius}px`, '--radius': `${value.geometry.surfaceRadius}px`,
       '--content-max-width': `${value.geometry.contentMaxWidth}px`, '--base-font-size': `${value.typography.baseFontSize}px`
     };
@@ -81,7 +85,7 @@
     return normalized;
   };
   const read = () => {
-    try { const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)); return parsed && parsed.public === true && parsed.schemaVersion === SCHEMA_VERSION && parsed.design?.schemaVersion === SCHEMA_VERSION ? normalize(parsed.design) : null; } catch { return null; }
+    try { const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)); return parsed && parsed.public === true && [1, SCHEMA_VERSION].includes(parsed.schemaVersion) && [1, SCHEMA_VERSION].includes(parsed.design?.schemaVersion) ? normalize(parsed.design) : null; } catch { return null; }
   };
   const write = (design) => {
     try { const normalized = normalize(design, { strict: true }); localStorage.setItem(STORAGE_KEY, JSON.stringify({ public: true, schemaVersion: SCHEMA_VERSION, design: normalized })); return normalized; } catch { return null; }

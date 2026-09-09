@@ -5,7 +5,7 @@ namespace Neutral\Core;
 
 final class UserUiDesign
 {
-    public const SCHEMA_VERSION = 1;
+    public const SCHEMA_VERSION = 2;
     public const MAX_CUSTOM_CSS = 20000;
 
     /** @return array<string,mixed> */
@@ -13,8 +13,8 @@ final class UserUiDesign
     {
         return [
             'schemaVersion' => self::SCHEMA_VERSION,
-            'light' => ['background' => '#f3f6fb', 'surface' => '#ffffff', 'primary' => '#2f6fed', 'text' => '#1c2432', 'muted' => '#5f7087', 'border' => '#dfe7f3'],
-            'dark' => ['background' => '#0b1220', 'surface' => '#111b2d', 'primary' => '#7aa2ff', 'text' => '#edf3ff', 'muted' => '#9db0c8', 'border' => '#23314d'],
+            'light' => ['background' => '#f3f6fb', 'surface' => '#ffffff', 'primary' => '#2f6fed', 'text' => '#1c2432', 'muted' => '#5f7087', 'border' => '#dfe7f3', 'primaryBackground' => '#2f6fed', 'primaryText' => '#ffffff', 'primaryIcon' => '#ffffff', 'primaryBorder' => '#1d4fd7', 'secondaryBackground' => '#ffffff', 'secondaryText' => '#1c2432', 'secondaryIcon' => '#1c2432', 'secondaryBorder' => '#aebdd2', 'navActiveBackground' => '#2f6fed', 'navActiveText' => '#ffffff', 'navActiveIcon' => '#ffffff', 'navActiveBorder' => '#1d4fd7', 'navInactiveBackground' => '#ffffff', 'navInactiveText' => '#1c2432', 'navInactiveIcon' => '#1c2432', 'navInactiveBorder' => '#aebdd2', 'inputBackground' => '#ffffff', 'inputText' => '#1c2432', 'inputBorder' => '#7b8da8', 'inputFocus' => '#174db7'],
+            'dark' => ['background' => '#0b1220', 'surface' => '#111b2d', 'primary' => '#7aa2ff', 'text' => '#edf3ff', 'muted' => '#9db0c8', 'border' => '#506584', 'primaryBackground' => '#547bd5', 'primaryText' => '#ffffff', 'primaryIcon' => '#ffffff', 'primaryBorder' => '#86a8fa', 'secondaryBackground' => '#17263d', 'secondaryText' => '#edf3ff', 'secondaryIcon' => '#edf3ff', 'secondaryBorder' => '#6f86a8', 'navActiveBackground' => '#547bd5', 'navActiveText' => '#ffffff', 'navActiveIcon' => '#ffffff', 'navActiveBorder' => '#a6bdff', 'navInactiveBackground' => '#17263d', 'navInactiveText' => '#edf3ff', 'navInactiveIcon' => '#edf3ff', 'navInactiveBorder' => '#6f86a8', 'inputBackground' => '#0f1a2b', 'inputText' => '#edf3ff', 'inputBorder' => '#7890b4', 'inputFocus' => '#a6bdff'],
             'geometry' => ['controlRadius' => 11, 'surfaceRadius' => 18, 'contentMaxWidth' => 1120],
             'typography' => ['baseFontSize' => 16],
             'customCss' => '',
@@ -28,8 +28,8 @@ final class UserUiDesign
         $result = self::defaults();
         $errors = [];
         foreach (array_keys($candidate) as $key) if (!in_array($key, ['schemaVersion', 'light', 'dark', 'geometry', 'typography', 'customCss'], true)) $errors[] = 'Unknown design property: ' . $key;
-        if (isset($candidate['schemaVersion']) && $candidate['schemaVersion'] !== self::SCHEMA_VERSION) $errors[] = 'Unsupported user UI design schemaVersion';
-        $colorKeys = ['background', 'surface', 'primary', 'text', 'muted', 'border'];
+        if (isset($candidate['schemaVersion']) && !in_array($candidate['schemaVersion'], [1, self::SCHEMA_VERSION], true)) $errors[] = 'Unsupported user UI design schemaVersion';
+        $colorKeys = ['background', 'surface', 'primary', 'text', 'muted', 'border', 'primaryBackground', 'primaryText', 'primaryIcon', 'primaryBorder', 'secondaryBackground', 'secondaryText', 'secondaryIcon', 'secondaryBorder', 'navActiveBackground', 'navActiveText', 'navActiveIcon', 'navActiveBorder', 'navInactiveBackground', 'navInactiveText', 'navInactiveIcon', 'navInactiveBorder', 'inputBackground', 'inputText', 'inputBorder', 'inputFocus'];
         foreach (['light', 'dark'] as $mode) {
             if (isset($candidate[$mode]) && !is_array($candidate[$mode])) $errors[] = $mode . ' must be an object';
             if (!is_array($candidate[$mode] ?? null)) continue;

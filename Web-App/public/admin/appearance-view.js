@@ -68,8 +68,14 @@ class AdminAppearanceView {
     const homepage = this.getHomepage();
     const startableModules = this.getStartableModules();
     const design = this.getDesign();
-    const colorFields = [['background', 'App / page background'], ['surface', 'Surface / card background'], ['primary', 'Primary / accent'], ['text', 'Primary text'], ['muted', 'Muted text'], ['border', 'Border']];
-    const palette = (mode) => colorFields.map(([key, label]) => `<div class="form-group"><label for="design-${mode}-${key}">${label}</label><input type="color" id="design-${mode}-${key}" name="design.${mode}.${key}" value="${design[mode][key]}"></div>`).join('');
+    const colorGroups = [
+      ['Base Colors', [['background', 'App / page background'], ['surface', 'Surface / card'], ['primary', 'Accent'], ['text', 'Primary text'], ['muted', 'Muted text'], ['border', 'Border']]],
+      ['Actions & Buttons', [['primaryBackground', 'Primary background'], ['primaryText', 'Primary text'], ['primaryIcon', 'Primary icon'], ['primaryBorder', 'Primary border'], ['secondaryBackground', 'Secondary background'], ['secondaryText', 'Secondary text'], ['secondaryIcon', 'Secondary icon'], ['secondaryBorder', 'Secondary border']]],
+      ['Navigation', [['navActiveBackground', 'Active background'], ['navActiveText', 'Active text'], ['navActiveIcon', 'Active icon'], ['navActiveBorder', 'Active border'], ['navInactiveBackground', 'Inactive background'], ['navInactiveText', 'Inactive text'], ['navInactiveIcon', 'Inactive icon'], ['navInactiveBorder', 'Inactive border']]],
+      ['Forms', [['inputBackground', 'Input background'], ['inputText', 'Input text'], ['inputBorder', 'Input border'], ['inputFocus', 'Input focus border / ring']]]
+    ];
+    const colorControl = (mode, key, label) => `<div class="form-group appearance-color-control"><label for="design-${mode}-${key}">${label}</label><span class="appearance-color-picker"><input type="color" id="design-${mode}-${key}" name="design.${mode}.${key}" value="${design[mode][key]}" aria-describedby="design-${mode}-${key}-value"><output id="design-${mode}-${key}-value" data-color-value="design.${mode}.${key}">${design[mode][key].toUpperCase()}</output></span></div>`;
+    const palette = (mode) => colorGroups.map(([title, fields], index) => `<details class="appearance-token-group" ${index === 0 ? 'open' : ''}><summary>${title}</summary><div class="appearance-color-grid">${fields.map(([key, label]) => colorControl(mode, key, label)).join('')}</div></details>`).join('');
     this.container.innerHTML = `
       <div class="admin-appearance-view">
         <div class="section-header"><h2>Appearance</h2></div>
@@ -105,22 +111,22 @@ class AdminAppearanceView {
             <legend>User UI Design</legend>
             <p>Defines how the User-App looks. Each user's Light/Dark selection remains independent.</p>
             <div class="appearance-design-grid"><section><h3>Light</h3>${palette('light')}</section><section><h3>Dark</h3>${palette('dark')}</section></div>
-            <div class="appearance-design-grid">
+            <details class="appearance-token-group"><summary>Geometry &amp; Typography</summary><div class="appearance-design-grid">
               <div class="form-group"><label for="design-control-radius">Button / control radius (px)</label><input type="number" min="0" max="32" id="design-control-radius" name="design.geometry.controlRadius" value="${design.geometry.controlRadius}"></div>
               <div class="form-group"><label for="design-surface-radius">Card / surface radius (px)</label><input type="number" min="0" max="48" id="design-surface-radius" name="design.geometry.surfaceRadius" value="${design.geometry.surfaceRadius}"></div>
               <div class="form-group"><label for="design-content-width">Content max width (px)</label><input type="number" min="320" max="1920" id="design-content-width" name="design.geometry.contentMaxWidth" value="${design.geometry.contentMaxWidth}"></div>
               <div class="form-group"><label for="design-font-size">Base font size (px)</label><input type="number" min="12" max="24" id="design-font-size" name="design.typography.baseFontSize" value="${design.typography.baseFontSize}"></div>
-            </div>
+            </div></details>
             <div class="form-actions"><button type="button" class="btn btn-secondary" data-design-reset>Reset to Defaults</button></div>
             <div class="form-group"><label for="designPreviewMode">Preview theme</label><select id="designPreviewMode"><option value="light">Light</option><option value="dark">Dark</option></select></div>
-            <div id="userUiDesignPreview" class="user-ui-design-preview" aria-label="User UI design preview"><header>App header</header><nav>Start · GPS</nav><article><h3>Example card</h3><p>Primary text</p><small>Muted supporting text</small><label>Input <input value="Example"></label><div><button type="button" class="preview-primary">Primary</button><button type="button">Secondary</button></div></article></div>
+            <div id="userUiDesignPreview" class="user-ui-design-preview" aria-label="User UI design preview"><header>App header <button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Header action</button></header><nav><button type="button" class="preview-nav-active"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Active</button><button type="button" class="preview-nav-inactive"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Inactive</button></nav><article><h3>Example card</h3><p>Primary text</p><small>Muted supporting text</small><label>Input <input value="Normal input"></label><label>Focus sample <input class="preview-input-focus" value="Focused input"></label><div><button type="button" class="preview-primary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Primary</button><button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Secondary</button></div></article></div>
           </fieldset>
-          <fieldset>
-            <legend>Advanced Custom CSS</legend>
-            <p><strong>Expert override.</strong> Applies only to the User-App after structured tokens. Maximum ${userUiDesignContract.MAX_CUSTOM_CSS} characters; HTML, JavaScript and remote imports are rejected.</p>
+          <details class="appearance-advanced"><summary>Advanced Custom CSS <span>Expert</span></summary>
+            <p>Use this optional expert override only when the structured design options are not sufficient.</p>
+            <details><summary>Technical limits</summary><p>Applies only to the User-App. Maximum ${userUiDesignContract.MAX_CUSTOM_CSS} characters; HTML, JavaScript and remote imports are rejected.</p></details>
             <div class="form-group"><label for="customCss">Custom CSS</label><textarea id="customCss" name="design.customCss" rows="8" maxlength="${userUiDesignContract.MAX_CUSTOM_CSS}">${escapeHtmlAppearance(design.customCss)}</textarea></div>
             <button type="button" class="btn btn-secondary" data-css-clear>Clear Custom CSS</button>
-          </fieldset>
+          </details>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Appearance</button>
             <button type="button" class="btn btn-secondary" data-appearance-reload>Reload</button>
@@ -140,6 +146,10 @@ class AdminAppearanceView {
     const designFromForm = () => this.readDesign(new FormData(form));
     const refreshDesign = () => {
       try {
+        form.querySelectorAll('input[type="color"]').forEach((input) => {
+          const output = form.querySelector(`[data-color-value="${input.name}"]`);
+          if (output) output.textContent = input.value.toUpperCase();
+        });
         const values = userUiDesignContract.variables(designFromForm(), previewMode.value);
         for (const [name, value] of Object.entries(values)) designPreview.style.setProperty(name, value);
         designPreview.dataset.theme = previewMode.value;
@@ -155,6 +165,10 @@ class AdminAppearanceView {
     mode.addEventListener('change', refresh);
     content.addEventListener('input', refresh);
     form.addEventListener('input', refreshDesign);
+    form.querySelectorAll('input[type="color"]').forEach((input) => input.addEventListener('input', () => {
+      const output = form.querySelector(`[data-color-value="${input.name}"]`);
+      if (output) output.textContent = input.value.toUpperCase();
+    }));
     previewMode.addEventListener('change', refreshDesign);
     this.container.querySelector('[data-design-reset]').addEventListener('click', () => {
       if (!AdminCommon.confirmAction('Reset structured User UI Design values to framework defaults?')) return;
@@ -180,7 +194,8 @@ class AdminAppearanceView {
 
   readDesign(data) {
     const value = { schemaVersion: userUiDesignContract.SCHEMA_VERSION, light: {}, dark: {}, geometry: {}, typography: {}, customCss: String(data.get('design.customCss') || '') };
-    for (const mode of ['light', 'dark']) for (const key of ['background', 'surface', 'primary', 'text', 'muted', 'border']) value[mode][key] = data.get(`design.${mode}.${key}`);
+    const keys = ['background', 'surface', 'primary', 'text', 'muted', 'border', 'primaryBackground', 'primaryText', 'primaryIcon', 'primaryBorder', 'secondaryBackground', 'secondaryText', 'secondaryIcon', 'secondaryBorder', 'navActiveBackground', 'navActiveText', 'navActiveIcon', 'navActiveBorder', 'navInactiveBackground', 'navInactiveText', 'navInactiveIcon', 'navInactiveBorder', 'inputBackground', 'inputText', 'inputBorder', 'inputFocus'];
+    for (const mode of ['light', 'dark']) for (const key of keys) value[mode][key] = data.get(`design.${mode}.${key}`);
     for (const key of ['controlRadius', 'surfaceRadius', 'contentMaxWidth']) value.geometry[key] = Number(data.get(`design.geometry.${key}`));
     value.typography.baseFontSize = Number(data.get('design.typography.baseFontSize'));
     return userUiDesignContract.normalize(value, { strict: true });
