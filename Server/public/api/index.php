@@ -364,7 +364,10 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
     $password = (string) ($payload['password'] ?? '');
     $clientIp = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     try {
-        (new SchemaMigrator($runtime->database()))->migrate();
+        // Schema readiness is handled once during API bootstrap. Re-running the
+        // migrator for every login needlessly requires a database advisory lock
+        // and turns otherwise valid authentication into a generic 503 on hosts
+        // where GET_LOCK is unavailable or temporarily contended.
         $loginLimiter = new LoginRateLimiter(
             new PdoLoginAttemptStore($runtime->database()),
             static fn (): int => time(),
@@ -501,9 +504,61 @@ if ($route === 'license/users' && $method === 'GET') {
 if ($route === 'license/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
     $payload=parse_json_body();
+    // Delegated managers create ordinary members only; role/core permission
+    // assignment remains a global administrator capability.
+    $payload['role']='user'; $payload['roles']=['user']; $payload['status']='active';
     $created=$userService->create($payload);
     $accountLicenseService->assignUser(identity_user_id($identity),(int)$created['id'],isset($payload['allowedDevices'])?(int)$payload['allowedDevices']:null);
     JsonResponse::success(['user'=>$created],201);
+}
+
+if (preg_match('#^license/users/(\d+)$#', $route, $matches) === 1 && $method === 'PATCH') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
+    $payload=parse_json_body(); $accountLicenseService->setMembershipStatus(identity_user_id($identity),(int)$matches[1],(string)($payload['status']??''));
+    $auditService->log('license.user.status', 'license-user', $matches[1], actor_user_id($identity), ['status'=>(string)($payload['status']??'')]);
+    JsonResponse::success(['updated'=>true]);
+}
+if (preg_match('#^license/users/(\d+)$#', $route, $matches) === 1 && $method === 'DELETE') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
+    $accountLicenseService->removeMembership(identity_user_id($identity),(int)$matches[1]);
+    $auditService->log('license.user.remove', 'license-user', $matches[1], actor_user_id($identity), []);
+    JsonResponse::success(['removed'=>true]);
+}
+if ($route === 'license/devices' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', false, $headers);
+    $target=isset($_GET['userId'])?(int)$_GET['userId']:null;
+    JsonResponse::success(['devices'=>$accountLicenseService->organizationDevices(identity_user_id($identity),$target)]);
+}
+if (preg_match('#^license/users/(\d+)/devices/([^/]+)/revoke$#', $route, $matches) === 1 && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
+    $accountLicenseService->revokeOrganizationDevice(identity_user_id($identity),(int)$matches[1],rawurldecode($matches[2]));
+    $auditService->log('license.device.revoke', 'license-device', rawurldecode($matches[2]), actor_user_id($identity), ['userId'=>$matches[1]]);
+    JsonResponse::success(['revoked'=>true]);
+}
+
+$mediaStorageRoot=$runtime->projectRoot().'/Server/runtime/user-media';
+if ($route === 'account/media' && $method === 'GET') {
+    if (!$identity || (($identity['via']??'')!=='session')) JsonResponse::error('User session required.',401);
+    JsonResponse::success(['media'=>$accountLicenseService->userMedia(identity_user_id($identity))]);
+}
+if ($route === 'account/media' && $method === 'POST') {
+    require_permission_or_fail($identity,$authManager,'profile.media.upload',true,$headers);
+    $bytes=file_get_contents('php://input');
+    try { $media=$accountLicenseService->createMedia(identity_user_id($identity),is_string($bytes)?$bytes:'',$mediaStorageRoot); }
+    catch (RuntimeException $exception) { JsonResponse::error($exception->getMessage(),422); }
+    $auditService->log('media.upload','media',(string)$media['id'],actor_user_id($identity),['status'=>'pending']);
+    JsonResponse::success(['media'=>$media],201);
+}
+if (preg_match('#^media/(\d+)$#',$route,$matches)===1 && $method==='GET') {
+    try { $delivery=$accountLicenseService->mediaDelivery((int)$matches[1],actor_user_id($identity),$authManager->hasPermission($identity,'media.moderate'),$mediaStorageRoot); }
+    catch (RuntimeException $exception) { JsonResponse::error('Media not found.',404); }
+    if (!is_file($delivery['path'])) JsonResponse::error('Media not found.',404);
+    header('Content-Type: '.$delivery['mimeType']); header('Content-Length: '.(string)filesize($delivery['path'])); header('X-Content-Type-Options: nosniff'); header('Cache-Control: private, no-store'); readfile($delivery['path']); exit;
+}
+if (preg_match('#^admin/media/(\d+)/(approve|reject|delete)$#',$route,$matches)===1 && $method==='POST') {
+    require_permission_or_fail($identity,$authManager,'media.moderate',true,$headers);$payload=parse_json_body();
+    try{$media=$accountLicenseService->moderateMedia(identity_user_id($identity),(int)$matches[1],$matches[2],(string)($payload['reason']??''),(string)($payload['note']??''));}catch(RuntimeException $exception){JsonResponse::error($exception->getMessage(),422);}
+    $auditService->log('media.'.$matches[2],'media',$matches[1],actor_user_id($identity),['status'=>$media['status']]);JsonResponse::success(['media'=>$media]);
 }
 
 if ($route === 'modules' && $method === 'GET') {

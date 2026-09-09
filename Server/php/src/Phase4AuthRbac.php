@@ -653,8 +653,8 @@ final class Phase4UserService
                 u.updated_at,
                 (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id=u.id) AS last_activity_at,
                 (SELECT COUNT(DISTINCT s.device_id) FROM sessions s WHERE s.user_id=u.id AND s.device_id<>'' AND s.status='active' AND s.expires_at>CURRENT_TIMESTAMP) AS used_devices,
-                (SELECT COALESCE(lu.device_limit,l.device_limit) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND l.status='active' LIMIT 1) AS allowed_devices,
-                (SELECT COUNT(*) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND l.status='active') AS has_license,
+                (SELECT COALESCE(lu.device_limit,l.device_limit) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1) AS allowed_devices,
+                (SELECT COUNT(*) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active') AS has_license,
                 GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR ',') AS role_keys
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
@@ -1355,7 +1355,7 @@ final class Phase4SessionRegistry
     public function licensedDeviceLimit(int $userId, int $fallback): ?int
     {
         try {
-            $statement = $this->requireDatabase()->connect()->prepare('SELECT COALESCE(lu.device_limit,l.device_limit) device_limit FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=:user AND l.status=\'active\' LIMIT 1');
+            $statement = $this->requireDatabase()->connect()->prepare('SELECT COALESCE(lu.device_limit,l.device_limit) device_limit FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=:user AND lu.membership_status=\'active\' AND l.status=\'active\' LIMIT 1');
             $statement->execute([':user'=>$userId]);
             $value = $statement->fetchColumn();
             return $value === false ? max(1, $fallback) : ($value === null ? null : max(1, (int)$value));

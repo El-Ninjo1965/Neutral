@@ -456,3 +456,11 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Enforced one password policy (8–25, no whitespace, no composition requirement), optional unique e-mail and username/e-mail login across PHP/Node/bootstrap paths; simplified Admin user creation and status handling.
 - Added normalized generic package/license/organization/profile/presence/media-moderation schema and server services for scoped license administration, limits, installation metrics and safe image validation. No commercial package names or product logic were added.
 - Production migration delivery now closes the code/schema race: API bootstrap applies only pending repository-defined idempotent migrations under the migration lock, because FTPS has no host-shell execution phase; setup/readiness remains fail-safe when the database is unavailable.
+
+## 2026-09-09 — P0 Auth/GPS and Core-freeze follow-up
+
+- Removed request-time schema migration locking from the login transaction; schema readiness remains the API-bootstrap/deployment responsibility, so valid user and admin authentication can no longer become a generic 503 because an advisory migration lock is unavailable.
+- Replaced tile-index-only GPS centering with one shared clamped Web-Mercator world-pixel projection for tiles, viewport center and marker; added deterministic Davao reference coverage and retained pan/zoom/recenter behavior.
+- OpenStreetMap now opens directly in a separate `noopener,noreferrer` browsing context while Google Maps retains its established navigation behavior.
+- Completed scoped license membership status/removal, device inventory/revoke, activity/usage projection and privacy-filtered organization users. Delegated creation is forced to the ordinary user role.
+- Completed permission-gated private media upload, pending moderation, controlled delivery, approve/reject/delete history and safe user status projection. Migration `2026_09_09_0006_license_media_workflow` adds scoped membership state.

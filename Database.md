@@ -123,3 +123,7 @@ For a `(user_id, device_id)` installation, only the newest successful login rema
 ## Migration `2026_09_09_0005_account_license_foundation`
 
 Adds nullable/optional user e-mail plus `user_profiles`, `packages`, `licenses`, `license_users`, `installation_presence`, `user_media`, and `media_moderation_history`. Package entitlements and limits are versionable JSON configuration; SQL relations enforce organization/user scope. A NULL license/device limit represents `unlimited`. Presence stores random installation ID, audience and server-contact timestamps only. Media rows and immutable moderation history support `pending/approved/rejected/deleted` without public publishing.
+
+## Migration 2026_09_09_0006
+
+`license_users.membership_status` provides scoped `active`/`blocked` membership without deleting or globally blocking the account. The indexed license/status projection supports organization administration. Existing `user_media` and `media_moderation_history` tables are now exercised by the production service/API workflow; media bytes remain outside publicly executable paths.

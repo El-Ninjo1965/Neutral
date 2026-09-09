@@ -723,25 +723,53 @@
             };
         },
 
+        projectWebMercator(latitudeValue, longitudeValue, zoomValue) {
+            const zoom = Math.max(0, Math.min(22, Math.trunc(Number(zoomValue))));
+            const latitude = Math.max(-85.05112878, Math.min(85.05112878, Number(latitudeValue)));
+            const longitude = ((((Number(longitudeValue) + 180) % 360) + 360) % 360) - 180;
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw new TypeError('Valid latitude and longitude are required.');
+            const worldSize = 256 * (2 ** zoom);
+            const sin = Math.sin(latitude * Math.PI / 180);
+            const pixelX = (longitude + 180) / 360 * worldSize;
+            const pixelY = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * worldSize;
+            return { latitude, longitude, zoom, worldSize, pixelX, pixelY, tileX: Math.floor(pixelX / 256), tileY: Math.floor(pixelY / 256) };
+        },
+
         mountInteractiveMap(host, position) {
             if (!host || !position) return;
             let zoom = 15;
-            let latitude = Number(position.latitude ?? position.lat);
-            let longitude = Number(position.longitude ?? position.lng);
+            const markerLatitude = Number(position.latitude ?? position.lat);
+            const markerLongitude = Number(position.longitude ?? position.lng);
+            let center = this.projectWebMercator(markerLatitude, markerLongitude, zoom);
             const renderTiles = () => {
+                const width = Number(host.clientWidth) || 512;
+                const height = Number(host.clientHeight) || 320;
+                const firstTileX = Math.floor((center.pixelX - width / 2) / 256);
+                const firstTileY = Math.floor((center.pixelY - height / 2) / 256);
+                const columns = Math.ceil(width / 256) + 2;
+                const rows = Math.ceil(height / 256) + 2;
                 const scale = 2 ** zoom;
-                const x = Math.floor((longitude + 180) / 360 * scale);
-                const latRad = latitude * Math.PI / 180;
-                const y = Math.floor((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2 * scale);
-                host.querySelector('.gps-map-tiles').innerHTML = [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => `<img alt="" draggable="false" src="https://tile.openstreetmap.org/${zoom}/${x + dx}/${y + dy}.png" style="grid-column:${dx + 2};grid-row:${dy + 2}">`)).join('');
+                const tiles = [];
+                for (let row = 0; row < rows; row += 1) for (let column = 0; column < columns; column += 1) {
+                    const rawX = firstTileX + column;
+                    const tileX = ((rawX % scale) + scale) % scale;
+                    const tileY = Math.max(0, Math.min(scale - 1, firstTileY + row));
+                    const left = rawX * 256 - (center.pixelX - width / 2);
+                    const top = tileY * 256 - (center.pixelY - height / 2);
+                    tiles.push(`<img alt="" draggable="false" src="https://tile.openstreetmap.org/${zoom}/${tileX}/${tileY}.png" style="position:absolute;left:${left}px;top:${top}px;width:256px;height:256px">`);
+                }
+                host.querySelector('.gps-map-tiles').innerHTML = tiles.join('');
+                const marker = this.projectWebMercator(markerLatitude, markerLongitude, zoom);
+                const markerNode = host.querySelector('.gps-map-marker');
+                if (markerNode && markerNode.style) markerNode.style.transform = `translate(${marker.pixelX - center.pixelX}px, ${marker.pixelY - center.pixelY}px)`;
                 host.querySelector('[data-map-zoom]').textContent = String(zoom);
             };
             host.innerHTML = `<div class="gps-map-toolbar"><button type="button" data-map-out aria-label="Zoom out">−</button><span data-map-zoom>${zoom}</span><button type="button" data-map-in aria-label="Zoom in">+</button></div><div class="gps-map-tiles" aria-label="Interactive OpenStreetMap"></div><span class="gps-map-marker" aria-hidden="true">●</span><a class="gps-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>`;
-            host.querySelector('[data-map-in]').addEventListener('click', () => { zoom = Math.min(19, zoom + 1); renderTiles(); });
-            host.querySelector('[data-map-out]').addEventListener('click', () => { zoom = Math.max(2, zoom - 1); renderTiles(); });
+            host.querySelector('[data-map-in]').addEventListener('click', () => { const next = Math.min(19, zoom + 1); center = this.projectWebMercator(center.latitude, center.longitude, next); zoom = next; renderTiles(); });
+            host.querySelector('[data-map-out]').addEventListener('click', () => { const next = Math.max(2, zoom - 1); center = this.projectWebMercator(center.latitude, center.longitude, next); zoom = next; renderTiles(); });
             let start = null;
-            host.addEventListener('pointerdown', (event) => { start = { x: event.clientX, y: event.clientY, latitude, longitude }; host.setPointerCapture?.(event.pointerId); });
-            host.addEventListener('pointermove', (event) => { if (!start) return; const factor = 360 / (256 * (2 ** zoom)); longitude = start.longitude - (event.clientX - start.x) * factor; latitude = Math.max(-85, Math.min(85, start.latitude + (event.clientY - start.y) * factor)); });
+            host.addEventListener('pointerdown', (event) => { start = { x: event.clientX, y: event.clientY, pixelX: center.pixelX, pixelY: center.pixelY }; host.setPointerCapture?.(event.pointerId); });
+            host.addEventListener('pointermove', (event) => { if (!start) return; const pixelX = start.pixelX - (event.clientX - start.x); const pixelY = start.pixelY - (event.clientY - start.y); const longitude = pixelX / center.worldSize * 360 - 180; const n = Math.PI - 2 * Math.PI * pixelY / center.worldSize; const latitude = 180 / Math.PI * Math.atan(Math.sinh(n)); center = this.projectWebMercator(latitude, longitude, zoom); renderTiles(); });
             host.addEventListener('pointerup', () => { if (start) renderTiles(); start = null; });
             renderTiles();
         },
@@ -753,6 +781,11 @@
                 return Promise.resolve({ ok: false, code: 'NO_POSITION_AVAILABLE' });
             }
             const mapUrl = provider === 'google' ? links.googleMaps : links.openStreetMap;
+            if (provider === 'openstreetmap' && typeof window !== 'undefined' && typeof window.open === 'function') {
+                const opened = window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                if (opened) opened.opener = null;
+                return Promise.resolve({ ok: true, method: provider, position, mapUrl });
+            }
             if (typeof window !== 'undefined' && window.location && typeof window.location.assign === 'function') {
                 window.location.assign(mapUrl);
                 return Promise.resolve({ ok: true, method: provider, position, mapUrl });

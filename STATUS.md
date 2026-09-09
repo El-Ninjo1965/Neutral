@@ -62,3 +62,7 @@ These entries remain in the archive and support root-cause analysis, but they do
 ## 2026-09-09 – Core-freeze account/license pass
 
 **CODE-SEITIG ERLEDIGT / DEPLOYED / DEVICE RETEST REQUIRED / HOST ACTION REQUIRED:** Session-Deduplizierung bleibt erhalten; UTC/lokale Anzeige, GPS-I18N/interaktive OSM-Karte, Settings-Unterseiten/Active-State, Profile/Privacy/Passwort, vereinfachtes User Management und das generische Package-/License-/Device-/Presence-/Mediafundament sind umgesetzt. Migration `0005`, Deploymentrevision und `migrationsReady:true` sind im erfolgreichen Produktionssmoke bestätigt. P1/P4 bleiben aus ihrer bestehenden Abnahme `LIVE BESTANDEN`; die neuen Flächen sind ohne Betreibercheck nicht live bestanden. Hostaktion bleibt ausschließlich für Backup-Key/ACL/Cron erforderlich.
+
+## 2026-09-09 P0/Core-freeze follow-up
+
+The six code-side gaps in the active handoff are implemented and locally verified. User/Admin auth, GPS position and external OSM behavior remain **DEVICE RETEST REQUIRED** because the reported production failures require a real operator login/device check after deployment. Scoped license and media flows are code-side present; host/database and operator acceptance remain required before any `LIVE BESTANDEN` statement.

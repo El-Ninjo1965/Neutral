@@ -162,3 +162,10 @@ default home instead of leaving an empty view.
 - `AccountLicenseService` validates private profiles/default-off sharing, verifies current-password changes, resolves exact license-manager scope, assigns seats, projects entitlement module states, records privacy-minimal server presence, aggregates installation metrics and validates profile images.
 - `Phase4SessionRegistry::licensedDeviceLimit` resolves per-user/per-license limits with configured fallback; configured privileged roles can be unlimited without using UA data as identity.
 - User Settings has four responsive internal sections and preserves the selected section after save. GPS registers translations through Core I18N and uses a local OSM tile viewport with real zoom/pan.
+
+## Completed freeze follow-up functions (2026-09-09)
+
+- Login without request-time migration locks for both user and separate admin scopes.
+- Deterministic Web-Mercator projection, responsive tile placement and safe external OSM navigation.
+- Scoped organization members (create/list/block/remove), usage/activity, devices and revoke.
+- Private validated image submission, owner status, controlled delivery and audited moderation lifecycle.

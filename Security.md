@@ -140,3 +140,7 @@ The complete Audit reset is deliberately unavailable in production (404), requir
 - Server-uploaded profile images are limited to validated JPEG/PNG/WebP up to 5 MB and enter `pending`; `approved`, `rejected` and `deleted` transitions retain moderation reason/note history. Anonymous viewers cannot upload and nothing is automatically public.
 
 Schema migration is not controlled by request input: API bootstrap may apply only the checksummed migration definitions shipped in the deployed revision, under the existing database advisory lock. It never accepts arbitrary SQL. Readiness remains false when application fails, and the standalone CLI remains available for host diagnostics.
+
+## Auth availability, delegated scope and media (2026-09-09)
+
+Login never runs DDL or acquires a schema advisory lock inside the credential transaction. Deployment/API bootstrap owns idempotent migrations; authentication owns throttle, password, scoped session, device ID and CSRF only. License managers cannot choose global roles and every target query/mutation joins through their own managed license. Media upload is decode/MIME/size validated, stored with private permissions below `Server/runtime`, starts pending, and is delivered only by an ownership/moderation/status checked endpoint with `nosniff`.

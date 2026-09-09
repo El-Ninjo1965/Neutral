@@ -75,3 +75,31 @@ test('interactive GPS map zoom controls rerender OSM tiles without external navi
   assert.match(host.innerHTML, /© OpenStreetMap contributors/);
   delete global.window; delete global.navigator;
 });
+
+test('GPS Web-Mercator projection matches independent Davao reference values', () => {
+  global.window = {};
+  Object.defineProperty(global, 'navigator', { value: { language: 'en' }, configurable: true });
+  delete require.cache[require.resolve('../Web-App/app/modules/gps/index.js')];
+  const gps = require('../Web-App/app/modules/gps/index.js');
+  const point = gps.projectWebMercator(7.105691769982597, 125.63707611554916, 15);
+  assert.equal(point.tileX, 27819);
+  assert.equal(point.tileY, 15735);
+  assert.ok(Math.abs(point.pixelX - 7121860.06055418) < 0.01);
+  assert.ok(Math.abs(point.pixelY - 4028303.3079026104) < 0.01);
+  delete global.window; delete global.navigator;
+});
+
+test('OpenStreetMap opens a safe new browsing context while Google retains existing behavior', async () => {
+  const calls = [];
+  global.window = { open: (...args) => { calls.push(['open', ...args]); return { opener: 'set' }; }, location: { assign: (url) => calls.push(['assign', url]) } };
+  Object.defineProperty(global, 'navigator', { value: { language: 'en' }, configurable: true });
+  delete require.cache[require.resolve('../Web-App/app/modules/gps/index.js')];
+  const gps = require('../Web-App/app/modules/gps/index.js');
+  gps.lastPosition = { latitude: 7.105691769982597, longitude: 125.63707611554916 };
+  assert.equal((await gps.openCurrentPosition('openstreetmap')).ok, true);
+  assert.deepEqual(calls[0].slice(0, 3), ['open', gps.locationLinks(gps.lastPosition).openStreetMap, '_blank']);
+  assert.match(calls[0][3], /noopener/);
+  await gps.openCurrentPosition('google');
+  assert.equal(calls[1][0], 'assign');
+  delete global.window; delete global.navigator;
+});

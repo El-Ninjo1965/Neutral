@@ -116,3 +116,9 @@ PHP responses retain the canonical `{ok,data}` envelope and all Admin views cons
 - `GET /api/admin/installations/metrics` – Admin-only server-seen installation totals and 1/7/30-day audience counts.
 
 Package/module states are `available`, `locked` or `hidden`. They are display projections only; server permissions and license scope remain authoritative.
+
+## License delegation and media workflow (2026-09-09)
+
+`GET/POST /api/v1/license/users`, `PATCH/DELETE /api/v1/license/users/{id}`, `GET /api/v1/license/devices` and `POST /api/v1/license/users/{id}/devices/{sessionId}/revoke` are restricted to `license.manage`, the actor's own managed license, CSRF for mutations, and audit logging. Delegated user creation can create only ordinary `user` members.
+
+`GET/POST /api/v1/account/media`, controlled `GET /api/v1/media/{id}`, and `POST /api/v1/admin/media/{id}/{approve|reject|delete}` implement the neutral media lifecycle. Upload requires `profile.media.upload`; moderation requires `media.moderate`; pending/rejected media is available only to its owner or a moderator and every decision is recorded.

@@ -98,12 +98,12 @@ final class AccountLicenseService
     {
         $licenseId = $this->managedLicenseId($actorUserId);
         if ($licenseId < 1) throw new \RuntimeException('License manager scope is unavailable.');
-        $statement = $this->database->connect()->prepare('SELECT u.id,u.username,u.status,u.created_at,lu.device_limit,p.public_nickname,p.phone,p.address,p.birthday,p.privacy_json FROM license_users lu JOIN users u ON u.id=lu.user_id LEFT JOIN user_profiles p ON p.user_id=u.id WHERE lu.license_id=:license ORDER BY u.username');
+        $statement = $this->database->connect()->prepare("SELECT u.id,u.username,lu.membership_status status,u.created_at,lu.device_limit,p.public_nickname,p.phone,p.address,p.birthday,p.privacy_json,(SELECT COUNT(*) FROM sessions s WHERE s.user_id=u.id AND s.status='active' AND s.expires_at>CURRENT_TIMESTAMP) used_devices,(SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id=u.id) last_activity_at FROM license_users lu JOIN users u ON u.id=lu.user_id LEFT JOIN user_profiles p ON p.user_id=u.id WHERE lu.license_id=:license ORDER BY u.username");
         $statement->execute([':license'=>$licenseId]);
         $result = [];
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $privacy = self::normalizePrivacy((array)(json_decode((string)($row['privacy_json']??'{}'), true) ?: []));
-            $entry = ['id'=>(string)$row['id'],'username'=>(string)$row['username'],'status'=>(string)$row['status'],'createdAt'=>(string)$row['created_at'],'allowedDevices'=>$row['device_limit']===null?null:(int)$row['device_limit']];
+            $entry = ['id'=>(string)$row['id'],'username'=>(string)$row['username'],'status'=>(string)$row['status'],'createdAt'=>(string)$row['created_at'],'lastActivityAt'=>(string)($row['last_activity_at']??''),'usedDevices'=>(int)($row['used_devices']??0),'allowedDevices'=>$row['device_limit']===null?null:(int)$row['device_limit']];
             foreach (['publicNickname'=>'public_nickname','phone'=>'phone','address'=>'address','birthday'=>'birthday'] as $public=>$column) if ($privacy[$public]) $entry[$public]=(string)($row[$column]??'');
             $result[]=$entry;
         }
@@ -120,6 +120,72 @@ final class AccountLicenseService
         if ($seatLimit!==null && $seatLimit!==false && (int)$count->fetchColumn()>=(int)$seatLimit) throw new \RuntimeException('License seat limit reached.');
         $pdo->prepare("INSERT INTO license_users(license_id,user_id,license_role,device_limit) VALUES(:license,:user,'member',:limit) ON DUPLICATE KEY UPDATE device_limit=VALUES(device_limit)")->execute([':license'=>$licenseId,':user'=>$targetUserId,':limit'=>$deviceLimit]);
     }
+
+    public function setMembershipStatus(int $actorUserId, int $targetUserId, string $status): void
+    {
+        if (!in_array($status, ['active', 'blocked'], true)) throw new \RuntimeException('Invalid membership status.');
+        $licenseId = $this->managedLicenseId($actorUserId);
+        $statement = $this->database->connect()->prepare('UPDATE license_users SET membership_status=:status WHERE license_id=:license AND user_id=:user');
+        $statement->execute([':status'=>$status, ':license'=>$licenseId, ':user'=>$targetUserId]);
+        if ($statement->rowCount() < 1) throw new \RuntimeException('License user not found.');
+    }
+
+    public function removeMembership(int $actorUserId, int $targetUserId): void
+    {
+        $licenseId = $this->managedLicenseId($actorUserId);
+        $statement = $this->database->connect()->prepare("DELETE FROM license_users WHERE license_id=:license AND user_id=:user AND license_role<>'manager'");
+        $statement->execute([':license'=>$licenseId, ':user'=>$targetUserId]);
+        if ($statement->rowCount() < 1) throw new \RuntimeException('License user not found or cannot be removed.');
+    }
+
+    /** @return list<array<string,mixed>> */
+    public function organizationDevices(int $actorUserId, ?int $targetUserId = null): array
+    {
+        $licenseId = $this->managedLicenseId($actorUserId);
+        $sql = "SELECT s.session_id,s.user_id,s.device_id,s.device_label,s.last_seen_at,s.expires_at,s.status FROM sessions s JOIN license_users lu ON lu.user_id=s.user_id WHERE lu.license_id=:license AND s.device_id<>''";
+        $params = [':license'=>$licenseId];
+        if ($targetUserId !== null) { $sql .= ' AND s.user_id=:user'; $params[':user']=$targetUserId; }
+        $sql .= ' ORDER BY s.last_seen_at DESC';
+        $statement=$this->database->connect()->prepare($sql); $statement->execute($params);
+        return array_map(static fn(array $row): array => ['sessionId'=>(string)$row['session_id'],'userId'=>(string)$row['user_id'],'deviceId'=>(string)$row['device_id'],'deviceLabel'=>(string)$row['device_label'],'lastActivityAt'=>(string)$row['last_seen_at'],'expiresAt'=>(string)$row['expires_at'],'status'=>(string)$row['status']], $statement->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    public function revokeOrganizationDevice(int $actorUserId, int $targetUserId, string $sessionId): void
+    {
+        $licenseId=$this->managedLicenseId($actorUserId);
+        $statement=$this->database->connect()->prepare("UPDATE sessions s JOIN license_users lu ON lu.user_id=s.user_id SET s.status='revoked',s.revoked_at=CURRENT_TIMESTAMP WHERE lu.license_id=:license AND s.user_id=:user AND s.session_id=:session AND s.status='active'");
+        $statement->execute([':license'=>$licenseId,':user'=>$targetUserId,':session'=>$sessionId]);
+        if ($statement->rowCount()<1) throw new \RuntimeException('License device not found.');
+    }
+
+    /** @return array<string,mixed> */
+    public function createMedia(int $userId, string $bytes, string $storageRoot): array
+    {
+        $validated=self::validateProfileImage($bytes); $id=bin2hex(random_bytes(16));
+        if (!is_dir($storageRoot) && !mkdir($storageRoot, 0700, true) && !is_dir($storageRoot)) throw new \RuntimeException('Media storage unavailable.');
+        $extension=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'][$validated['mimeType']];
+        $path=$id.'.'.$extension; $absolute=rtrim($storageRoot,'/').'/'.$path;
+        if (file_put_contents($absolute,$bytes,LOCK_EX)!==strlen($bytes)) throw new \RuntimeException('Media storage failed.');
+        @chmod($absolute,0600);
+        try { $statement=$this->database->connect()->prepare("INSERT INTO user_media(user_id,media_type,storage_path,mime_type,byte_size,moderation_status) VALUES(:user,'profile',:path,:mime,:size,'pending')"); $statement->execute([':user'=>$userId,':path'=>$path,':mime'=>$validated['mimeType'],':size'=>$validated['byteSize']]); $mediaId=(int)$this->database->connect()->lastInsertId(); $this->recordMediaHistory($mediaId,$userId,null,'pending',null,null); }
+        catch (\Throwable $exception) { @unlink($absolute); throw $exception; }
+        return ['id'=>(string)$mediaId,'status'=>'pending','mimeType'=>$validated['mimeType'],'byteSize'=>$validated['byteSize']];
+    }
+
+    /** @return list<array<string,mixed>> */
+    public function userMedia(int $userId): array
+    { $s=$this->database->connect()->prepare('SELECT id,media_type,mime_type,byte_size,moderation_status,rejection_reason,created_at,updated_at FROM user_media WHERE user_id=:user ORDER BY id DESC'); $s->execute([':user'=>$userId]); return array_map(static fn(array $r):array=>['id'=>(string)$r['id'],'type'=>(string)$r['media_type'],'mimeType'=>(string)$r['mime_type'],'byteSize'=>(int)$r['byte_size'],'status'=>(string)$r['moderation_status'],'rejectionReason'=>(string)($r['rejection_reason']??''),'createdAt'=>(string)$r['created_at'],'updatedAt'=>(string)$r['updated_at']],$s->fetchAll(\PDO::FETCH_ASSOC)); }
+
+    /** @return array<string,mixed> */
+    public function moderateMedia(int $actorUserId, int $mediaId, string $action, string $reason='', string $note=''): array
+    { if(!in_array($action,['approve','reject','delete'],true)) throw new \RuntimeException('Invalid moderation action.'); if($action==='reject'&&trim($reason)==='') throw new \RuntimeException('Rejection reason is required.'); $pdo=$this->database->connect(); $q=$pdo->prepare('SELECT moderation_status FROM user_media WHERE id=:id');$q->execute([':id'=>$mediaId]);$from=$q->fetchColumn();if($from===false)throw new \RuntimeException('Media not found.');$to=['approve'=>'approved','reject'=>'rejected','delete'=>'deleted'][$action];$u=$pdo->prepare('UPDATE user_media SET moderation_status=:status,rejection_reason=:reason,moderator_note=:note WHERE id=:id');$u->execute([':status'=>$to,':reason'=>$action==='reject'?trim($reason):null,':note'=>trim($note)===''?null:trim($note),':id'=>$mediaId]);$this->recordMediaHistory($mediaId,$actorUserId,(string)$from,$to,$reason,$note);return ['id'=>(string)$mediaId,'status'=>$to]; }
+
+    /** @return array{path:string,mimeType:string} */
+    public function mediaDelivery(int $mediaId, ?int $requesterId, bool $canModerate, string $storageRoot): array
+    { $q=$this->database->connect()->prepare('SELECT user_id,storage_path,mime_type,moderation_status FROM user_media WHERE id=:id');$q->execute([':id'=>$mediaId]);$r=$q->fetch(\PDO::FETCH_ASSOC);if(!is_array($r)||((string)$r['moderation_status']!=='approved'&&(int)$r['user_id']!==$requesterId&&!$canModerate))throw new \RuntimeException('Media not found.');$name=basename((string)$r['storage_path']);if($name!==(string)$r['storage_path'])throw new \RuntimeException('Invalid media path.');return ['path'=>rtrim($storageRoot,'/').'/'.$name,'mimeType'=>(string)$r['mime_type']]; }
+
+    private function recordMediaHistory(int $mediaId, ?int $actorId, ?string $from, string $to, ?string $reason, ?string $note): void
+    { $s=$this->database->connect()->prepare('INSERT INTO media_moderation_history(media_id,actor_user_id,from_status,to_status,reason,note) VALUES(:media,:actor,:from,:to,:reason,:note)');$s->execute([':media'=>$mediaId,':actor'=>$actorId,':from'=>$from,':to'=>$to,':reason'=>trim((string)$reason)===''?null:trim((string)$reason),':note'=>trim((string)$note)===''?null:trim((string)$note)]); }
 
     /** @return array<string,int> */
     public function installationMetrics(): array

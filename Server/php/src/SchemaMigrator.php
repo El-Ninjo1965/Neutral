@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_09_0005';
+    public const SCHEMA_VERSION = '2026_09_09_0006';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -253,6 +253,10 @@ final class SchemaMigrator
             "CREATE TABLE IF NOT EXISTS media_moderation_history (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, media_id BIGINT UNSIGNED NOT NULL, actor_user_id BIGINT UNSIGNED NULL, from_status VARCHAR(32) NULL, to_status VARCHAR(32) NOT NULL, reason VARCHAR(255) NULL, note TEXT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), KEY ix_media_history_media(media_id), CONSTRAINT fk_media_history_media FOREIGN KEY(media_id) REFERENCES user_media(id) ON DELETE CASCADE, CONSTRAINT fk_media_history_actor FOREIGN KEY(actor_user_id) REFERENCES users(id) ON DELETE SET NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "INSERT INTO permissions (permission_key,description,scope) VALUES ('license.manage','Manage users and devices within an assigned license','license'),('profile.media.upload','Upload profile media when entitled','user-media'),('media.moderate','Review submitted user media','admin') ON DUPLICATE KEY UPDATE description=VALUES(description),scope=VALUES(scope)",
         ];
+        $licenseMediaWorkflowStatements = [
+            "ALTER TABLE license_users ADD COLUMN membership_status VARCHAR(32) NOT NULL DEFAULT 'active' AFTER license_role",
+            "CREATE INDEX ix_license_users_status ON license_users (license_id, membership_status)",
+        ];
 
         return [
             [
@@ -279,6 +283,11 @@ final class SchemaMigrator
                 'key' => '2026_09_09_0005_account_license_foundation',
                 'checksum' => sha1(implode("\n", $accountLicenseStatements)),
                 'statements' => $accountLicenseStatements,
+            ],
+            [
+                'key' => '2026_09_09_0006_license_media_workflow',
+                'checksum' => sha1(implode("\n", $licenseMediaWorkflowStatements)),
+                'statements' => $licenseMediaWorkflowStatements,
             ],
         ];
     }
@@ -380,6 +389,10 @@ final class SchemaMigrator
             if ($isDeviceIndex && $driverCode === 1061) {
                 return;
             }
+            $isMembershipColumn = preg_match('/^ALTER\s+TABLE\s+license_users\s+ADD\s+COLUMN\s+membership_status\b/i', trim($statement)) === 1;
+            if ($isMembershipColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
+            $isMembershipIndex = preg_match('/^CREATE\s+INDEX\s+ix_license_users_status\b/i', trim($statement)) === 1;
+            if ($isMembershipIndex && $driverCode === 1061) return;
             throw $exception;
         }
     }

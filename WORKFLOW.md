@@ -163,3 +163,7 @@ Historische Fehlversuche bleiben als historische Evidenz erhalten, sind aber nic
 - Keine fremden Änderungen verwerfen.
 - Keine Abschlussmeldung, solange selbst ausführbare Punkte offen sind.
 - Folgetask durch Codex (2026-09-09): verbindliche iPad/Chrome-Livebefunde test-first bearbeitet; Installationssessions dedupliziert, Admin-Reauth und Navigation stabilisiert, Dashboard/Infrastruktur/Audit bereinigt, Host-Backupführung konkretisiert, bestehenden generischen Modulvertrag gegen den Core-Freeze geprüft und GPS-Basis um OSM/ausdrückliche Share-Auswahl ergänzt. Kein GPS Pro, keine CatchTrack-/i18n-/Appearance-Neuentwicklung; Live-Retest und Hostaktion bleiben extern.
+
+## 2026-09-09 — P0 Auth/GPS and freeze follow-up (Codex)
+
+Codex traced the live generic auth error to schema migration locking inside both login routes, corrected the shared auth path, rebuilt GPS around one independently tested projection, and completed the scoped license/media service and API contracts. Verification and deployment evidence are recorded in `CHATGPT.md`; device/host-dependent checks remain explicitly external.

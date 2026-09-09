@@ -263,3 +263,7 @@ Ein Produktfeature darf bestehende Coredateien nicht für seine konkrete Fachlog
 ## Entitlement projection contract
 
 A module may receive a server-authoritative entitlement projection of `available`, `locked`, or `hidden`. `locked` may be rendered with a generic required-entitlement notice; `hidden` is not rendered. Neither client state grants permissions. Package names remain configuration, never Core constants. Product modules must continue to use server permission checks and may not inspect organization names or commercial tiers in Core code.
+
+## Media and location reuse
+
+Modules use the published permission/API contracts for media and the GPS module's coordinate output. They must not bypass controlled media delivery, infer organization scope client-side, or duplicate the Web-Mercator projection with swapped latitude/longitude.

@@ -317,6 +317,16 @@ class ApiClient {
     return this.post('/api/account/password', { currentPassword, newPassword });
   }
 
+  async getLicenseUsers() { return this.get('/api/license/users'); }
+  async createLicenseUser(user) { return this.post('/api/license/users', user); }
+  async setLicenseUserStatus(userId, status) { return this.patch(`/api/license/users/${userId}`, { status }); }
+  async removeLicenseUser(userId) { return this.delete(`/api/license/users/${userId}`); }
+  async getLicenseDevices(userId = '') { return this.get(`/api/license/devices${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`); }
+  async revokeLicenseDevice(userId, sessionId) { return this.post(`/api/license/users/${userId}/devices/${encodeURIComponent(sessionId)}/revoke`, {}); }
+  async getMyMedia() { return this.get('/api/account/media'); }
+  async uploadMyMedia(blob) { return this.upload('/api/account/media', blob); }
+  async moderateMedia(mediaId, action, reason = '', note = '') { return this.post(`/api/admin/media/${mediaId}/${action}`, { reason, note }); }
+
   async deleteUser(userId) {
     return this.delete(`/api/admin/users/${userId}`);
   }

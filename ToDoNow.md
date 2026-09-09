@@ -40,3 +40,8 @@
 
 - **DEVICE RETEST REQUIRED:** gebündelte iPad/Chrome-Liste aus `CHATGPT.md` vollständig durchführen; neue Flächen bis dahin nicht `LIVE BESTANDEN` nennen.
 - Migration/Readiness des Account-License-Fundaments ist deployed und bestätigt. **HOST ACTION REQUIRED** bleibt ausschließlich für Backup-Key/ACL/Cron; kein Produktions-Restore.
+
+## Current external checks
+
+- Real iPad/Chrome retest for the four live regressions after the follow-up deployment.
+- Controlled operator acceptance for scoped license management and media moderation. Code/CI/smoke do not by themselves constitute `LIVE BESTANDEN`.
