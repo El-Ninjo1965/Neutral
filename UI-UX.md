@@ -262,3 +262,7 @@ Permission registry is read-only and scannable by key, description, area and sou
 ## Phase 2 Admin corrections
 
 Admin errors are route-scoped by default and are removed on navigation; only explicitly global alerts persist. Audit filters have visible labels in addition to programmatic names. Backup interval and retention are separate controls; retention is displayed as a number of backup files (1–100), never as an unexplained day value.
+
+## 2026-09-09 Admin tablet follow-up
+
+Audit filtering and destructive retention are separate visual/semantic sections. At tablet width filters use bounded two-column tracks and actions occupy their own row; mobile collapses to one column. Retention always states “Delete audit entries older than X days” and requires confirmation. Admin form borders, code details and GPS map surfaces use shared Light/Dark tokens. Infrastructure views omit empty JSON panels and read-only Connections provides no misleading save action.

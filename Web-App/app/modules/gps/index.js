@@ -696,6 +696,21 @@
             };
         },
 
+        locationLinks(position) {
+            const latitude = Number(position?.latitude ?? position?.lat);
+            const longitude = Number(position?.longitude ?? position?.lng);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+            const lat = encodeURIComponent(latitude);
+            const lon = encodeURIComponent(longitude);
+            const delta = 0.006;
+            const bbox = [longitude - delta, latitude - delta, longitude + delta, latitude + delta].map(encodeURIComponent).join('%2C');
+            return {
+                googleMaps: `https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}`,
+                openStreetMap: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`,
+                embedMap: `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lon}`
+            };
+        },
+
         shareCurrentPosition(options = {}) {
             const requirePosition = options.requirePosition === true;
             const position = options.position || this.lastPosition || lastPosition || this.getLastPosition();
@@ -708,7 +723,12 @@
 
             const latitude = Number(position.latitude ?? position.lat ?? 0);
             const longitude = Number(position.longitude ?? position.lng ?? 0);
-            const mapUrl = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(latitude)}&mlon=${encodeURIComponent(longitude)}&zoom=18`;
+            const links = this.locationLinks(position);
+            const mapUrl = options.provider === 'openstreetmap' ? links.openStreetMap : links.googleMaps;
+            if (options.provider === 'google' || options.provider === 'openstreetmap') {
+                if (typeof window !== 'undefined' && typeof window.open === 'function') window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                return Promise.resolve({ ok: true, method: options.provider, position, mapUrl });
+            }
             const text = `Standort: ${latitude}, ${longitude}`;
             const payload = {
                 title: 'Standort',
@@ -813,6 +833,7 @@
                 if (Number.isNaN(date.getTime())) return '—';
                 return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
             };
+            const links = position ? GpsModule.locationLinks(position) : null;
             const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>Zeitpunkt</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
             const shareDisabled = !position || !allowedToUse || !active;
             const browserDeniedMessage = 'Standortzugriff nicht erlaubt. Bitte Standortzugriff für diese Seite in den Browser- bzw. Geräteeinstellungen aktivieren.';
@@ -826,7 +847,8 @@
             const modalMarkup = showConsentModal
                 ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
                 : '';
-            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-action="share" ${shareDisabled ? 'disabled' : ''}>Position teilen</button></div><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            const mapMarkup = links ? `<a class="gps-map-link" href="${links.openStreetMap}" target="_blank" rel="noopener noreferrer" aria-label="Position in OpenStreetMap öffnen"><iframe class="gps-map" title="OpenStreetMap – aktuelle Position" src="${links.embedMap}" loading="lazy" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe></a>` : '';
+            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${mapMarkup}${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-share="google" ${shareDisabled ? 'disabled' : ''}>Position teilen · Google Maps</button><button type="button" data-gps-share="openstreetmap" ${shareDisabled ? 'disabled' : ''}>OpenStreetMap</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>Andere Apps</button></div><p class="form-help">Bewusstes Teilen sendet nur diese gewählten Koordinaten. „Allow Location Context Sharing“ steuert ausschließlich automatische modulübergreifende Weitergabe.</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
 
             const autoSetting = container.querySelector('[data-gps-setting="autoRequestOnOpen"]');
             if (autoSetting) {
@@ -855,13 +877,16 @@
                 });
             }
 
-            const shareButton = container.querySelector('[data-gps-action="share"]');
-            if (shareButton) {
+            const shareButtons = typeof container.querySelectorAll === 'function'
+                ? Array.from(container.querySelectorAll('[data-gps-share]'))
+                : [];
+            shareButtons.forEach((shareButton) => {
                 shareButton.addEventListener('click', async () => {
-                    const result = await GpsModule.shareCurrentPosition({ requirePosition: true });
+                    const provider = shareButton.dataset.gpsShare;
+                    const result = await GpsModule.shareCurrentPosition({ requirePosition: true, provider: provider === 'system' ? undefined : provider });
                     render(result.ok ? 'Position geteilt.' : result.code === 'NO_POSITION_AVAILABLE' ? 'Keine gültige Position zum Teilen vorhanden.' : 'Position konnte nicht geteilt werden.', !result.ok);
                 });
-            }
+            });
 
             const confirmationYes = container.querySelector('[data-gps-confirm="yes"]');
             if (confirmationYes) {
@@ -930,6 +955,7 @@
         }).catch(() => {});
     };
 
-    window.GpsModule = GpsModule;
+    if (typeof window !== 'undefined') window.GpsModule = GpsModule;
+    if (typeof module !== 'undefined' && module.exports) module.exports = GpsModule;
 
 })();

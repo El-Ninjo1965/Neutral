@@ -47,7 +47,7 @@ test('admin operations UX exposes catalog filters, device sessions, backup delet
   assert.match(admin, /All sources/);
   assert.match(admin, /Current session/);
   assert.match(admin, /data-backup-delete/);
-  assert.match(audit, /Purge older entries/);
+  assert.match(audit, /Delete entries older than/);
   assert.match(audit, /<details>/);
 });
 

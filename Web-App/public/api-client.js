@@ -64,8 +64,11 @@ class ApiClient {
   }
 
   deviceLabel() {
-    const platform = navigator.userAgentData?.platform || navigator.platform || 'Device';
-    return String(platform).slice(0, 80);
+    const agent = String(navigator.userAgent || '');
+    const ios = /iPad|iPhone|iPod/i.test(agent) || (/Macintosh/i.test(agent) && /Mobile\//i.test(agent));
+    const platform = ios ? 'iPadOS' : (navigator.userAgentData?.platform || navigator.platform || 'Device');
+    const browser = /CriOS\//.test(agent) ? 'Chrome' : (/FxiOS\//.test(agent) ? 'Firefox' : (/EdgiOS\/|Edg\//.test(agent) ? 'Edge' : (/Safari\//.test(agent) ? 'Safari' : 'Browser')));
+    return `${platform} · ${browser}`.slice(0, 80);
   }
 
   setSessionScope(scope = 'user') {

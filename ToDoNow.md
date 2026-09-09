@@ -26,3 +26,6 @@
 
 - [ ] DEVICE RETEST REQUIRED: execute the concise Admin Phase-2 checklist in `CHATGPT.md`.
 - [ ] HOST-CHECK REQUIRED: migration readiness and backup prerequisite booleans must be green before live Admin completion.
+
+- DEVICE RETEST REQUIRED: gebündelten iPad/Chrome-Live-Follow-up prüfen.
+- HOST ACTION REQUIRED: Backup-Key/ACL/Cron sicher gemäß Installationsanleitung aktivieren; kein Restore auf Produktion.

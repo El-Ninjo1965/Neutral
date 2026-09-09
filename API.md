@@ -100,3 +100,9 @@ Admin-only endpoints include device-session listing/revocation, the read-only cl
 ## Phase 2 Admin response and readiness contract
 
 PHP responses retain the canonical `{ok,data}` envelope and all Admin views consume it through `AdminCommon.unwrapData`. `GET /api/v1/system/readiness` exposes only database/migration readiness and pending count for non-destructive deployment verification. `GET /api/admin/backups/readiness` is permission-protected and returns boolean key/crypto/database/schema/storage prerequisites. Backup errors provide stable safe codes without paths or values. Release status derives version, abbreviated commit and build time from the deployed `manifest.json`.
+
+## 2026-09-09 Live follow-up contracts
+
+- Admin session lists contain only active, unexpired installation sessions; successful re-login with the same installation ID replaces the preceding session.
+- Audit entries may expose the actor username/handle together with stable numeric ID to authorized auditors. Settings no-op submissions create neither a persistence write nor a `settings.update` event; real changes report `changedFields` plus safe app-name before/after metadata.
+- GPS remains a module. Explicit location sharing offers Google Maps, OpenStreetMap and system share without adding a Core provider dependency or automatic background disclosure.

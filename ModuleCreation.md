@@ -111,6 +111,7 @@ Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` 
 - Serverseitige Daten/Actions benötigen zwingend serverseitige Permission- und CSRF-Prüfung.
 - Defaultrollen sind Installationsdefaults, keine unveränderliche Autorisierung.
 - Browser-Geheimnisse, DB-Zugangsdaten und Admin-Tokens sind verboten.
+- Jede Permission wird ausschließlich im Modulmanifest unter `permissions` mit stabilem `<module-id>.<action>`-Key, konkreter menschenlesbarer `description` und überprüften `defaultRoles` deklariert. Dieselben Keys werden in `access` und bei Serverrouten referenziert. Installation synchronisiert diese Definitionen in den read-only Permission Catalog; die Adminoberfläche erstellt, editiert oder löscht keine Keys.
 - Der öffentliche PHP-Modulkatalog verwendet für Besucher ohne Login ausschließlich die gespeicherten Modulrechte der Systemrolle `viewer`. Nur aktive Module mit Sichtrecht werden ausgeliefert; `clientAccess.canUse` benötigt zusätzlich das Nutzungsrecht.
 - `clientAccess` ist eine bereinigte Browserentscheidung und niemals ein Ersatz für Session-, Permission- oder CSRF-Prüfung an Serverendpunkten.
 
@@ -248,3 +249,7 @@ Discovery erfolgt ausschließlich einmal in `CoreStartup.startBackground()`. Ein
 ## Permission domain
 
 Modules declare their permissions in the module contract. These permissions are classified as User-App/Module in the registry unless a separately reviewed administrative module contract says otherwise. Modules must not reuse Core Admin permission keys to make User-App features function, and the Admin UI does not create arbitrary permission keys.
+
+## Freeze-Entscheidung für neue Produktmodule
+
+Ein Produktfeature darf bestehende Coredateien nicht für seine konkrete Fachlogik patchen. Vor einem Core-Änderungswunsch ist der Referenzablauf aus Manifest, Browserentry, `module.php`, generischem `/api/v1/modules/<id>/…`-Dispatch, Modulmigrationen, Permissionregistry, Adminsettings und Lifecycle vollständig auszuschöpfen. Nur eine mit einem neutralen Contract-Test belegte allgemeine Frameworklücke rechtfertigt einen kleinen Core-Extension-Point; andernfalls bleibt die Änderung im Modul.

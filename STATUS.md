@@ -50,3 +50,7 @@ These entries remain in the archive and support root-cause analysis, but they do
 - 2026-09-09: Admin operations implementation completed code-side: role cleanup migration, device sessions, classified registry, authoritative infrastructure, persistent maintenance, backup lifecycle/cron/retention and audited audit retention. P1/P4 remain `LIVE BESTANDEN`.
 
 - 2026-09-09 Phase 2 Admin reality fixes: CODE-SEITIG ERLEDIGT; deployment/CI and host readiness checks tracked in `CHATGPT.md`; DEVICE RETEST REQUIRED. No new LIVE-BESTANDEN claim for these Admin paths. P1/P4 status unchanged.
+
+## 2026-09-09 — Live-Retest-Follow-up
+
+**CODE-SEITIG ERLEDIGT, DEPLOY/DEVICE/HOST-ABNAHME AUSSTEHEND:** Device-Relogin dedupliziert pro Installation, Admin-Reauth/Router stabilisiert, Dashboard/Infrastruktur/Audit bereinigt, Core-Freeze-Vertrag geprüft und GPS-Basis ergänzt. Automatisierte Regression ist grün. Reale iPad/Chrome-Abnahme und hostseitige Backup-Key/ACL/Cron-Aktivierung bleiben erforderlich; diese Bereiche sind nicht `LIVE BESTANDEN`. P1 und P4 bleiben unverändert `LIVE BESTANDEN` aus ihrer bestehenden Betreiberabnahme.

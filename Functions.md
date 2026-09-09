@@ -148,3 +148,10 @@ default home instead of leaving an empty view.
 - Persistent maintenance mode with User-App maintenance projection and Admin-safe control.
 - Encrypted backup create/list/upload/download/restore/delete plus retention and CLI automatic trigger.
 - Filterable, folded-detail audit log and audited age-based retention purge.
+
+## 2026-09-09 Live follow-up behavior
+
+- `Phase4SessionRegistry::replaceActiveInstallation(userId, deviceId, currentSessionId)` retires older active logins for exactly one installation.
+- `ApiClient.deviceLabel()` honestly labels detectable iOS/iPadOS browser tokens, including `CriOS` as Chrome, without hardware fingerprinting.
+- `AdminRouter.showView()` swaps to a route-owned host immediately and contains late/failing view work.
+- `GpsModule.locationLinks(position)` creates neutral Google Maps, OpenStreetMap and OSM embed URLs from an explicitly selected current position.

@@ -151,7 +151,7 @@ function render_access_denied_page(AppConfig $config): void
       <h2>Access denied</h2>
       <p class="subtle">Administrative access requires an authorized role.</p>
       <div class="action-list">
-        <a class="nav-item" href="<?= htmlspecialchars($config->publicUrl(''), ENT_QUOTES, 'UTF-8') ?>">Return to platform</a>
+        <a class="nav-item" href="<?= htmlspecialchars($config->publicUrl('admin.php'), ENT_QUOTES, 'UTF-8') ?>">Back to admin login</a>
       </div>
     </div>
   </div>
@@ -219,6 +219,13 @@ if ($status !== '' && $status !== 'active') {
 
 $roles = normalize_roles_from_identity($identity['roles'] ?? []);
 if (!in_array('admin', $roles, true)) {
+    // Clear only the isolated Admin session. The User-App cookie/session remains untouched.
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'] ?? '/', $params['domain'] ?? '', (bool) ($params['secure'] ?? false), (bool) ($params['httponly'] ?? true));
+    }
+    session_destroy();
     render_access_denied_page($runtime->config());
     exit;
 }

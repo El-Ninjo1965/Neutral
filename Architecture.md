@@ -256,3 +256,9 @@ User-App/module permissions and Admin/System permissions are separate domains. T
 ## Phase 2 operational DTO flow
 
 Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` → `AdminCommon.unwrapData` → view DTO. Release identity comes from the package manifest; maintenance remains database state. Runtime/database/connection/diagnostic views use the same protected configuration and health sources instead of placeholder fallbacks.
+
+## 2026-09-09 Live-Retest-Follow-up und Core-Freeze
+
+Device sessions identify one browser installation by its random client installation ID. A successful re-login replaces older active server sessions for the same user and installation before registering the current session; dashboards and session views consume the same active registry projection. Admin view navigation owns an isolated per-navigation host and revision, so a late or failed view cannot block or overwrite a newer route.
+
+The Core-1.0 module audit found no missing generic extension point: the GPS and reference-notes contracts already exercise generic client entries, lifecycle, declarative permissions/settings, PHP services/routes, limits and migrations without feature branches in the central router. The freeze decision in `CORE-1.0.md` is authoritative; product behavior stays in modules.

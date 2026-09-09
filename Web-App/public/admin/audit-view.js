@@ -24,16 +24,15 @@ class AdminAuditView {
         <div class="section-header">
           <h2>Audit Log</h2>
         </div>
-        <form id="audit-filter-form" class="inline-form audit-filter-grid">
+        <section class="audit-filter-section" aria-labelledby="audit-filter-heading"><h3 id="audit-filter-heading">Filter entries</h3><form id="audit-filter-form" class="audit-filter-grid">
           <label>Action<input type="text" id="auditAction" placeholder="e.g. settings.update" value="${this.escape(this.filters.action)}" /></label>
           <label>Resource<input type="text" id="auditResource" placeholder="e.g. settings" value="${this.escape(this.filters.resource)}" /></label>
           <label>Actor user ID<input type="text" id="auditUser" inputmode="numeric" value="${this.escape(this.filters.user)}" /></label>
           <label>Result<select id="auditResult"><option value="">All results</option><option value="ok">OK</option><option value="error">Error</option></select></label>
           <label for="auditFrom">From date<input type="date" id="auditFrom" value="${this.escape(this.filters.from)}" /></label><label for="auditTo">To date<input type="date" id="auditTo" value="${this.escape(this.filters.to)}" /></label>
-          <button type="submit" class="btn btn-secondary">Apply</button>
-          <button type="button" class="btn btn-secondary" onclick="adminAudit.resetFilters()">Reset</button>
-          <label>Audit retention<select id="auditRetention"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></label><button type="button" class="btn btn-danger" id="auditPurge">Purge older entries</button>
-        </form>
+          <div class="audit-filter-actions"><button type="submit" class="btn btn-secondary">Apply filters</button><button type="button" class="btn btn-secondary" onclick="adminAudit.resetFilters()">Reset filters</button></div>
+        </form></section>
+        <section class="audit-retention-section" aria-labelledby="audit-retention-heading"><div><h3 id="audit-retention-heading">Retention action</h3><p class="form-help" id="audit-purge-explanation">Delete audit entries older than 90 days. This cannot be undone and the purge itself is audited.</p></div><label>Retention period<select id="auditRetention"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></label><button type="button" class="btn btn-danger" id="auditPurge">Delete entries older than 90 days</button></section>
         <div id="audit-table"></div>
       </div>
     `;
@@ -50,7 +49,15 @@ class AdminAuditView {
         this.renderTable();
       });
     }
-    document.getElementById('auditPurge')?.addEventListener('click', async () => {
+    const retention = document.getElementById('auditRetention');
+    const purge = document.getElementById('auditPurge');
+    const explanation = document.getElementById('audit-purge-explanation');
+    retention?.addEventListener('change', () => {
+      const days = Number(retention.value || 90);
+      if (purge) purge.textContent = `Delete entries older than ${days} days`;
+      if (explanation) explanation.textContent = `Delete audit entries older than ${days} days. This cannot be undone and the purge itself is audited.`;
+    });
+    purge?.addEventListener('click', async () => {
       const retentionDays = Number(document.getElementById('auditRetention')?.value || 90);
       if (!AdminCommon.confirmAction(`Permanently purge audit entries older than ${retentionDays} days? The purge itself will be audited.`)) return;
       const result = await this.api.post('/api/admin/audit/purge', { retentionDays });
@@ -94,7 +101,7 @@ class AdminAuditView {
               <td>${this.escape(entry.createdAt || '—')}</td>
               <td>${this.escape(entry.action || '—')}</td>
               <td>${this.escape(entry.resource || '—')}</td>
-              <td>${this.escape(entry.actorUserId || '—')}</td>
+              <td>${entry.actorUsername ? `${this.escape(entry.actorUsername)} <span class="small-muted">#${this.escape(entry.actorUserId || '')}</span>` : this.escape(entry.actorUserId ? `#${entry.actorUserId}` : 'System')}</td>
               <td>${this.escape(entry.result || 'ok')}</td>
               <td><details><summary>View details</summary><pre class="code-block">${this.escape(JSON.stringify(entry.details || {}, null, 2))}</pre></details></td>
             </tr>

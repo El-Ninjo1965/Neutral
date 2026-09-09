@@ -5,7 +5,7 @@
     "displayName": "GPS",
     "version": "1.0.0",
     "type": "module",
-    "description": "Neutral GPS tracking module. Provides geolocation access, position events and track storage.",
+    "description": "Neutral location reference module for a current position, accuracy, explicit sharing and an OpenStreetMap view.",
     "entry": "index.js",
     "globalName": "GpsModule",
     "permissions": [
@@ -20,7 +20,7 @@
       },
       {
         "key": "gps.use",
-        "description": "Allows a user to request positions and start GPS tracking.",
+        "description": "Allows a user to request and deliberately share the current position.",
         "defaultRoles": [
           "admin",
           "developer",

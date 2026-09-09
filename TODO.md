@@ -21,3 +21,8 @@
 
 - [ ] DEVICE RETEST REQUIRED: Phase-2 Admin sessions, infrastructure, release, settings, alerts and Audit labels on iPad/Safari.
 - [ ] HOST-CHECK REQUIRED: run packaged Core migrator and verify boolean backup prerequisites; configure external backup cron without exposing values.
+
+## Externe Abnahme nach Live-Follow-up
+
+- **DEVICE RETEST REQUIRED:** iPad/Chrome-Retest für Session-Re-Login, Admin-Reauth, schnelle Navigation, Dashboard/Infrastruktur, Audit-Tablet-Layout und GPS-Karte/Share.
+- **HOST ACTION REQUIRED:** Backup-Key, geschützte Dateirechte und cPanel-Cron gemäß `Install-README-Server.md` hostseitig aktivieren und nur über boolesche Readiness bestätigen; kein Produktions-Restore.

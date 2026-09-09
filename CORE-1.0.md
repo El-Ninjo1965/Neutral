@@ -80,3 +80,16 @@ Diese Ziele dürfen später ergänzt werden, ohne die PHP-Referenzimplementierun
 ## Abnahmeentscheidung
 
 Core 1.0 erhält den Status **BESTANDEN** ausschließlich, wenn alle Releaseanforderungen entweder nachweislich `VORHANDEN` sind oder ausdrücklich aus diesem Vertrag entfernt wurden. `TEILWEISE`, `GEPLANT`, `FEHLT` und `BLOCKIERT` reichen für die finale Abnahme nicht aus.
+
+## Fachlicher Core-Freeze
+
+Nach dem Core-1.0-Freeze werden normale Produktfähigkeiten ausschließlich als Module umgesetzt. Ein Modul muss über deklarierte Manifeste und die vorhandenen generischen Verträge vollständig entdeckt, registriert, installiert, migriert, berechtigt, aktiviert/deaktiviert sowie in User-UI und Modul-API eingebunden werden können, ohne fachlichen Code in bestehenden Core-Dateien oder im zentralen PHP-Router zu ergänzen.
+
+Jeder spätere Wunsch nach einer Core-Änderung durchläuft vor Implementierung diese Entscheidung:
+
+1. Kann das Ziel mit dem dokumentierten Manifest-, Lifecycle-, Service-, Route-, Permission-, Settings-, Event- oder Storagevertrag umgesetzt werden, gehört es ins Modul.
+2. Fehlt nach einem ausführbaren neutralen Referenzfall eine allgemein nutzbare Frameworkfähigkeit, darf ein kleiner, versionierter und getesteter Extension Point vorgeschlagen werden.
+3. Security-, Runtime-, Browser- und Datenbankkompatibilitätskorrekturen sowie echte Frameworkfehler bleiben zulässige Core-Arbeit.
+4. Produktnamen, Produktworkflows und vorsorgliche Hooks sind kein zulässiger Core-Grund.
+
+Der aktuelle Audit der fachlich verschiedenen Referenzen `gps` und `reference-notes` belegt Discovery, Cliententry, serverseitige Services/Routen, Permissions, Limits, Settings, Migration und Lifecycle bereits ohne fachlichen Routerzweig. Es wurde daher vor dem Freeze keine weitere generische Schnittstelle auf Vorrat ergänzt.

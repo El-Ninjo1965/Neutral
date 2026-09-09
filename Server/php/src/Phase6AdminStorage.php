@@ -76,6 +76,10 @@ final class Phase6SettingsService
            'settings' => $settings,
        ];
 
+       if ($next === $current) {
+           return $current;
+       }
+
        try {
            $pdo = $this->database->connect();
            $this->upsert($pdo, 'core.app.name', ['value' => $next['appName']], $updatedBy);
@@ -339,22 +343,22 @@ final class Phase6AuditService
             $where = [];
             $params = [];
             if (trim((string) ($filters['action'] ?? '')) !== '') {
-                $where[] = 'action = :action';
+                $where[] = 'a.action = :action';
                 $params[':action'] = trim((string) $filters['action']);
             }
             if (trim((string) ($filters['resource'] ?? '')) !== '') {
-                $where[] = 'resource = :resource';
+                $where[] = 'a.resource = :resource';
                 $params[':resource'] = trim((string) $filters['resource']);
             }
-            if (trim((string) ($filters['result'] ?? '')) !== '') { $where[] = 'result = :result'; $params[':result'] = trim((string) $filters['result']); }
-            if (ctype_digit(trim((string) ($filters['user'] ?? '')))) { $where[] = 'actor_user_id = :user'; $params[':user'] = (int) $filters['user']; }
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['from'] ?? ''))) { $where[] = 'created_at >= :from'; $params[':from'] = $filters['from'] . ' 00:00:00'; }
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['to'] ?? ''))) { $where[] = 'created_at < DATE_ADD(:to, INTERVAL 1 DAY)'; $params[':to'] = $filters['to'] . ' 00:00:00'; }
-            $sql = 'SELECT id, action, resource, resource_id, actor_user_id, details_json, result, created_at FROM audit_log';
+            if (trim((string) ($filters['result'] ?? '')) !== '') { $where[] = 'a.result = :result'; $params[':result'] = trim((string) $filters['result']); }
+            if (ctype_digit(trim((string) ($filters['user'] ?? '')))) { $where[] = 'a.actor_user_id = :user'; $params[':user'] = (int) $filters['user']; }
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['from'] ?? ''))) { $where[] = 'a.created_at >= :from'; $params[':from'] = $filters['from'] . ' 00:00:00'; }
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['to'] ?? ''))) { $where[] = 'a.created_at < DATE_ADD(:to, INTERVAL 1 DAY)'; $params[':to'] = $filters['to'] . ' 00:00:00'; }
+            $sql = 'SELECT a.id, a.action, a.resource, a.resource_id, a.actor_user_id, u.username AS actor_username, a.details_json, a.result, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_user_id';
             if ($where !== []) {
                 $sql .= ' WHERE ' . implode(' AND ', $where);
             }
-            $sql .= ' ORDER BY id DESC LIMIT ' . $limit;
+            $sql .= ' ORDER BY a.id DESC LIMIT ' . $limit;
             $statement = $pdo->prepare($sql);
             $statement->execute($params);
 
@@ -373,6 +377,7 @@ final class Phase6AuditService
                     'resource' => (string) ($row['resource'] ?? ''),
                     'resourceId' => (string) ($row['resource_id'] ?? ''),
                     'actorUserId' => $row['actor_user_id'] !== null ? (string) $row['actor_user_id'] : null,
+                    'actorUsername' => (string) ($row['actor_username'] ?? ''),
                     'details' => $details,
                     'result' => (string) ($row['result'] ?? 'ok'),
                     'createdAt' => (string) ($row['created_at'] ?? ''),

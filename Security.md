@@ -117,3 +117,9 @@ Threats addressed include stolen cookies (server revocation, expiry, CSRF and ro
 ## Phase 2 operations hardening
 
 Operational readiness endpoints expose booleans/counts only and never configuration values, paths or credentials. Backup failures use stable safe codes while detailed causes remain in protected server diagnostics. Core migrations and automatic backups are CLI-only; production restore remains prohibited as a deployment smoke. Device identifiers remain random installation-local identifiers, not hardware fingerprints or authentication secrets.
+
+## 2026-09-09 Device and Admin re-authentication clarification
+
+A device ID identifies a browser installation, not a login attempt. On successful authentication, older active sessions for the same user/device ID are marked replaced; a different valid installation ID remains independent and device limits count distinct active IDs. User-Agent parsing is presentation-only and never a fingerprint or authorization input.
+
+A non-admin identity in the isolated Admin cookie is cleared when the protected Admin entry renders Access Denied. The recovery link returns to `admin.php`, while the independent User-App session remains untouched. This changes no authorization decision and grants no permission.

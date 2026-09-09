@@ -1155,6 +1155,9 @@ final class Phase4SettingsService
            'appearance' => $appearance,
            'settings' => $settings,
        ];
+       if ($next === $current) {
+           return $current;
+       }
        $this->store->write(self::FILE, $next);
        return $next;
     }
@@ -1330,6 +1333,26 @@ final class Phase4SessionRegistry
         return (int) $statement->fetchColumn();
     }
 
+    public function replaceActiveInstallation(int $userId, string $deviceId, string $currentSessionId): void
+    {
+        if ($userId <= 0 || preg_match('/^[a-f0-9]{32}$/', $deviceId) !== 1 || $currentSessionId === '') {
+            throw new \RuntimeException('A valid device session is required.');
+        }
+        $statement = $this->requireDatabase()->connect()->prepare(<<<'SQL'
+        UPDATE sessions
+        SET status = 'replaced', expires_at = CURRENT_TIMESTAMP
+        WHERE user_id = :user_id
+          AND device_id = :device_id
+          AND session_id <> :session_id
+          AND status = 'active'
+        SQL);
+        $statement->execute([
+            ':user_id' => $userId,
+            ':device_id' => $deviceId,
+            ':session_id' => $currentSessionId,
+        ]);
+    }
+
     public function revokeAllForUser(int $userId): void
     {
         $statement = $this->requireDatabase()->connect()->prepare("UPDATE sessions SET status = 'revoked', expires_at = CURRENT_TIMESTAMP WHERE user_id = :user_id AND status = 'active'");
@@ -1345,8 +1368,10 @@ final class Phase4SessionRegistry
 
     private function platformLabel(string $agent): string
     {
-        $platform = preg_match('/iPad|iPhone/i', $agent) ? 'iOS/iPadOS' : (preg_match('/Android/i', $agent) ? 'Android' : (preg_match('/Windows/i', $agent) ? 'Windows' : (preg_match('/Macintosh/i', $agent) ? 'macOS' : (preg_match('/Linux/i', $agent) ? 'Linux' : 'Other'))));
-        $browser = preg_match('/Edg\//', $agent) ? 'Edge' : (preg_match('/Firefox\//', $agent) ? 'Firefox' : (preg_match('/Chrome\//', $agent) ? 'Chrome' : (preg_match('/Safari\//', $agent) ? 'Safari' : 'Browser')));
+        $ios = preg_match('/iPad|iPhone|iPod/i', $agent) === 1
+            || (preg_match('/Macintosh/i', $agent) === 1 && preg_match('/Mobile\//i', $agent) === 1);
+        $platform = $ios ? 'iPadOS' : (preg_match('/Android/i', $agent) ? 'Android' : (preg_match('/Windows/i', $agent) ? 'Windows' : (preg_match('/Macintosh/i', $agent) ? 'macOS' : (preg_match('/Linux/i', $agent) ? 'Linux' : 'Other'))));
+        $browser = preg_match('/CriOS\//', $agent) ? 'Chrome' : (preg_match('/FxiOS\//', $agent) ? 'Firefox' : (preg_match('/EdgiOS\/|Edg\//', $agent) ? 'Edge' : (preg_match('/Chrome\//', $agent) ? 'Chrome' : (preg_match('/Safari\//', $agent) ? 'Safari' : 'Browser'))));
         return $platform . ' · ' . $browser;
     }
 
@@ -1479,6 +1504,7 @@ final class Phase4AuthManager
             'deviceLabel' => trim($deviceLabel) !== '' ? trim($deviceLabel) : 'Browser installation',
         ];
         $csrf = Security::ensureCsrfToken();
+        $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id());
         $this->sessions->upsert(session_id(), $_SESSION['auth_identity']);
 
         return [

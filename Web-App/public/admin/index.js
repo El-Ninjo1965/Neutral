@@ -124,13 +124,14 @@ class AdminDashboardView {
 
   async init(container) {
     this.container = container;
-    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult] = await Promise.all([
+    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult, backupReadinessResult] = await Promise.all([
       this.api.get('/api/status'),
       this.api.get('/api/admin/system/health'),
       this.api.getUsers(),
       this.api.getSessions(),
       this.api.getAdminModules(),
-      this.api.getSettings()
+      this.api.getSettings(),
+      this.api.get('/api/admin/backups/readiness')
     ]);
 
     const runtime = statusResult.ok ? AdminCommon.unwrapData(statusResult, null, {}) : {};
@@ -142,6 +143,7 @@ class AdminDashboardView {
     const sessions = sessionsResult.ok ? AdminCommon.unwrapData(sessionsResult, 'sessions', []) : [];
     const modules = modulesResult.ok ? AdminCommon.unwrapData(modulesResult, 'modules', []) : [];
     const settings = settingsResult.ok ? AdminCommon.unwrapData(settingsResult, 'settings', {}) : {};
+    const backupReadiness = backupReadinessResult.ok ? AdminCommon.unwrapData(backupReadinessResult, 'readiness', {}) : {};
 
     this.snapshot = {
       runtime,
@@ -149,7 +151,8 @@ class AdminDashboardView {
       users,
       sessions,
       modules,
-      settings
+      settings,
+      backupReadiness
     };
 
     this.render();
@@ -162,11 +165,12 @@ class AdminDashboardView {
     const sessions = this.snapshot?.sessions || [];
     const modules = this.snapshot?.modules || [];
     const settings = this.snapshot?.settings || {};
+    const backupReadiness = this.snapshot?.backupReadiness || {};
     const appName = settings.appName || settings.settings?.appName || 'Neutral Platform';
     const appId = settings.appId || settings.settings?.appId || 'neutral-app';
     const systemStatus = health && typeof health === 'object' && (health.status || health.state) ? String(health.status || health.state) : (runtime.status || 'healthy');
     const moduleActiveCount = modules.filter((module) => module && (module.lifecycleState === 'ACTIVE' || module.status === 'active' || module.active)).length;
-    const activeSessions = sessions.filter((session) => String(session.status || 'active').toLowerCase() !== 'expired').length;
+    const activeSessions = sessions.filter((session) => String(session.status || 'active').toLowerCase() === 'active').length;
     const metrics = [
       { label: 'Status', value: systemStatus, tone: 'ok' },
       { label: 'Users', value: String(users.length), tone: 'neutral' },
@@ -178,8 +182,8 @@ class AdminDashboardView {
       ['Application', appName],
       ['App ID', appId],
       ['Runtime', String(runtime.environment || runtime.runtime || 'PHP/LiteSpeed')],
-      ['Database', String(runtime.database || runtime.databaseStatus || 'configured')],
-      ['Last check', String(runtime.timestamp || runtime.generatedAt || new Date().toISOString())]
+      ['Database', this.readableStatus(runtime.database || runtime.databaseStatus || health.database || 'configured')],
+      ['Last check', this.formatDate(runtime.timestamp || runtime.generatedAt || new Date().toISOString())]
     ];
 
     this.container.innerHTML = `
@@ -187,6 +191,7 @@ class AdminDashboardView {
         <div class="section-header">
           <h2>Dashboard</h2>
         </div>
+        ${backupReadiness.keyConfigured === false ? '<div class="admin-state admin-state-warning" role="status"><strong>Backup action required:</strong> configure the host-only encryption key before creating backups.</div>' : ''}
         <div class="stat-grid">
           ${metrics.map((metric) => `
             <div class="stat-card">
@@ -215,12 +220,22 @@ class AdminDashboardView {
           <div class="card panel-box">
             <div class="card-header"><h3>Session overview</h3></div>
             ${sessions.length
-              ? `<ul class="mini-list">${sessions.slice(0, 5).map((session) => `<li>${session.username || session.userId || 'Session'} <span>${session.status || 'active'}</span></li>`).join('')}</ul>`
+              ? `<ul class="mini-list">${sessions.slice(0, 8).map((session) => `<li><span>${session.deviceLabel || 'Browser installation'} · ${session.platform || 'Browser'}${session.current ? ' (current)' : ''}</span><span>${session.username ? `@${session.username}` : session.userId || 'User'}</span></li>`).join('')}</ul>`
               : '<p class="empty-state">No active sessions recorded.</p>'}
           </div>
         </div>
       </div>
     `;
+  }
+
+  readableStatus(value) {
+    if (value && typeof value === 'object') return String(value.status || value.state || (value.ready === true ? 'ready' : 'configured'));
+    return String(value);
+  }
+
+  formatDate(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Not recorded' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
   }
 }
 
@@ -404,19 +419,13 @@ class AdminInfrastructureView {
             <div class="card-header"><h3>Current connection</h3></div>
             <dl class="detail-list">
               <div><dt>Name</dt><dd>${primaryConnection.connectionId || primaryConnection.name || '—'}</dd></div>
-              <div><dt>Type</dt><dd>${primaryConnection.connectionType || primaryConnection.storageType || '—'}</dd></div>
+              <div><dt>Type</dt><dd>${primaryConnection.connectionType || primaryConnection.storageType || primaryConnection.type || 'MySQL'}</dd></div>
               <div><dt>Status</dt><dd>${primaryConnection.status || 'unknown'}</dd></div>
-              <div><dt>Default</dt><dd>${primaryConnection.default ? 'yes' : 'no'}</dd></div>
+              <div><dt>Role</dt><dd>${primaryConnection.default === false ? 'Configured database' : 'Primary database'}</dd></div>
             </dl>
           </div>
         </div>
         <div class="card panel-box"><div class="card-header"><h3>Configuration source</h3></div><p class="form-help">Connections are read-only here and come from authoritative host/runtime configuration. Optional external providers are configured only through reviewed provider contracts; secrets are never displayed.</p></div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Save connection</button>
-              <button type="button" class="btn btn-secondary" data-action="reload-connections">Reload</button>
-            </div>
-          </form>
-        </div>
       </div>
     `;
 
@@ -437,14 +446,10 @@ class AdminInfrastructureView {
             <div class="card-header"><h3>Runtime status</h3></div>
             <dl class="detail-list">
               <div><dt>Status</dt><dd>${server.status || 'unknown'}</dd></div>
-              <div><dt>Reachable</dt><dd>${server.reachable === undefined ? '—' : server.reachable ? 'yes' : 'no'}</dd></div>
+              ${server.reachable === undefined ? '' : `<div><dt>Reachable</dt><dd>${server.reachable ? 'yes' : 'no'}</dd></div>`}
               <div><dt>Target</dt><dd>${currentUrl}</dd></div>
               <div><dt>API Base</dt><dd>${server.apiBase || setup.serverState?.apiBase || window.NeutralPublicPath.api('')}</dd></div>
             </dl>
-          </div>
-          <div class="card panel-box">
-            <div class="card-header"><h3>Framework metadata</h3></div>
-            <pre class="code-block">${this.safeJson(this.snapshot.setup || {})}</pre>
           </div>
         </div>
         <div class="card panel-box">
@@ -495,12 +500,8 @@ class AdminInfrastructureView {
               <div><dt>Type</dt><dd>${database.type || dbConfig.type || 'mysql'}</dd></div>
               <div><dt>Host</dt><dd>${database.host || dbConfig.host || '—'}</dd></div>
               <div><dt>Name</dt><dd>${database.name || dbConfig.name || '—'}</dd></div>
-              <div><dt>Username</dt><dd>${database.username || dbConfig.username || '—'}</dd></div>
+              ${(database.username || dbConfig.username) ? `<div><dt>Username</dt><dd>${this.escape(database.username || dbConfig.username)}</dd></div>` : ''}
             </dl>
-          </div>
-          <div class="card panel-box">
-            <div class="card-header"><h3>Setup state</h3></div>
-            <pre class="code-block">${this.safeJson(dbConfig)}</pre>
           </div>
         </div>
         <div class="card panel-box">
@@ -731,10 +732,7 @@ class AdminDiagnosticsView {
               ${detailEntries.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
             </dl>
           </div>
-          <div class="card panel-box">
-            <div class="card-header"><h3>Framework summary</h3></div>
-            <pre class="code-block">${JSON.stringify(framework, null, 2)}</pre>
-          </div>
+          ${Object.keys(framework).length ? `<div class="card panel-box"><div class="card-header"><h3>Framework summary</h3></div><dl class="detail-list"><div><dt>Modules</dt><dd>${AdminCommon.formatValue(framework.modulesCount ?? health.modules ?? 'Not reported')}</dd></div><div><dt>Apps</dt><dd>${AdminCommon.formatValue(framework.appsCount ?? health.apps ?? 'Not reported')}</dd></div></dl></div>` : ''}
         </div>
       </div>
     `;
@@ -787,12 +785,23 @@ class AdminRouter {
     }
     AdminCommon.clearRouteAlerts();
     const mainContainer = document.getElementById('admin-main');
+    const viewContainer = document.createElement('div');
+    viewContainer.className = 'admin-view-host';
+    const revision = (this.navigationRevision || 0) + 1;
+    this.navigationRevision = revision;
     const title = this.formatViewName(viewName);
     this.shell.setActive(viewName);
     this.shell.setTitle(title);
-    await view.init(mainContainer);
     this.currentView = viewName;
-    this.shell.focusTitle();
+    mainContainer.replaceChildren(viewContainer);
+    try {
+      await view.init(viewContainer);
+      if (revision === this.navigationRevision) this.shell.focusTitle();
+    } catch (error) {
+      if (revision === this.navigationRevision) {
+        viewContainer.innerHTML = `<div class="admin-state admin-state-error" role="alert">${AdminCommon.formatValue(error?.message || 'This view could not be loaded.')}</div>`;
+      }
+    }
   }
 
   formatViewName(name) {
@@ -832,4 +841,5 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminRouter;
   module.exports.AdminInfrastructureView = AdminInfrastructureView;
   module.exports.AdminDiagnosticsView = AdminDiagnosticsView;
+  module.exports.AdminDashboardView = AdminDashboardView;
 }

@@ -142,6 +142,15 @@ Produktionspaket, Basispfadvertrag, wertfreie Vorlagen, lokaler Bootstrap und Of
 
 Automatic backups require a host scheduler; the Settings checkbox alone does not pretend to be a daemon. Configure cPanel Cron to invoke `php <project>/scripts/run-automatic-backup.php` daily. The CLI runner reads the persisted enabled/interval/retention settings, skips runs that are not due, encrypts with the host-only `NEUTRAL_BACKUP_KEY`, and records only a safe success/error state. Never put the key in the cron command or repository.
 
+### HOST ACTION REQUIRED: Backup-Voraussetzungen sicher aktivieren
+
+1. Im cPanel-Dateimanager bestätigen, dass die produktive, nicht öffentlich auslieferbare `.env` außerhalb des Webzugriffs liegt und nur der Hosting-Benutzer sie lesen kann; niemals `777` verwenden.
+2. Einen kryptografisch zufälligen Wert mit mindestens 32 Zeichen in einem lokalen Passwortmanager erzeugen. Den Wert ausschließlich über den geschützten cPanel-Environment-/Secret-Editor oder direkt im geschützten `.env`-Editor als `NEUTRAL_BACKUP_KEY` setzen. Nicht in Shellargumente, Cronzeile, Tickets, Browser-UI, Logs oder Git kopieren.
+3. Im Adminbereich nur die boolesche Readiness prüfen: Encryption key, Crypto, Database/schema und Protected storage müssen `Ready` sein. Der Wert selbst darf dort nie erscheinen.
+4. Erst danach ein manuelles Backup erstellen und herunterladen. Auf Produktion keinen Restore-Test durchführen.
+5. Bestätigen, dass die deployte Datei `scripts/run-automatic-backup.php` existiert. Dann im cPanel-Cron täglich ausschließlich `php <project>/scripts/run-automatic-backup.php` aufrufen; weder Key noch andere Secrets in die Cronzeile schreiben. Intervall und Retention werden aus den persistierten Systemeinstellungen gelesen.
+6. Einen Cronlauf und dessen sicheren Status kontrollieren. Erst wenn Runner, Key, Schreibrechte und Scheduler real bestätigt sind, darf Automatisierung als betriebsbereit bezeichnet werden.
+
 ## Core migrations before production verification
 
 Run `php scripts/run-core-migrations.php` through the protected cPanel terminal/CLI after uploading a release and before considering deployment complete. It is idempotent, emits counts only and exits non-zero on failure or remaining migrations. Both this entrypoint and `scripts/run-automatic-backup.php` are part of the production package. The HTTP smoke checks boolean migration readiness and performs no mutation or restore.

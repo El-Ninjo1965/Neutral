@@ -618,11 +618,19 @@ if ($route === 'admin/settings' && $method === 'GET') {
 if ($route === 'admin/settings' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'settings.write', true, $headers);
     $payload = parse_json_body();
+    $before = $settingsService->getAll();
     $updated = $settingsService->update($payload, actor_user_id($identity));
-    $auditService->log('settings.update', 'settings', 'core', actor_user_id($identity), [
-        'appId' => (string) ($updated['appId'] ?? ''),
-        'appName' => (string) ($updated['appName'] ?? ''),
-    ]);
+    if ($updated !== $before) {
+        $changedFields = [];
+        foreach (['appName', 'homepage', 'appearance', 'settings'] as $field) {
+            if (($before[$field] ?? null) !== ($updated[$field] ?? null)) $changedFields[] = $field;
+        }
+        $auditService->log('settings.update', 'settings', 'core', actor_user_id($identity), [
+            'changedFields' => $changedFields,
+            'before' => ['appName' => (string) ($before['appName'] ?? '')],
+            'after' => ['appName' => (string) ($updated['appName'] ?? '')],
+        ]);
+    }
     JsonResponse::success(['settings' => $updated]);
 }
 

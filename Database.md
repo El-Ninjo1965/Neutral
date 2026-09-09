@@ -115,3 +115,7 @@ Migration `2026_09_09_0004_operations_device_sessions` adds random device identi
 ## Explicit production migrations
 
 `scripts/run-core-migrations.php` is the idempotent cPanel/CLI entrypoint. Setup and login remain fallback safety lines, but deployment smoke now fails when `system/readiness` reports pending Core migrations. Partial Device Session migrations tolerate already-existing expected columns/index and the migration table remains authoritative.
+
+## 2026-09-09 Session and audit semantics
+
+For a `(user_id, device_id)` installation, only the newest successful login remains active; preceding active rows become `replaced` and no longer contribute to active counts. Audit queries join the actor handle for authorized display while retaining `actor_user_id` as the stable reference. Unchanged settings payloads do not update settings rows and do not append audit events.

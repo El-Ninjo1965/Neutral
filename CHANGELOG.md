@@ -430,3 +430,12 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Unified nested PHP response-envelope consumption across infrastructure, backup, release and diagnostics views; API failures now remain visible.
 - Added CLI core migration entrypoint, production readiness smoke and packaged both migration and automatic-backup runners.
 - Added safe backup prerequisite/error codes, manifest-backed release information, validated numeric backup retention, route-scoped alerts and visible Audit filter labels.
+
+## 2026-09-09 — Live admin follow-up, Core freeze and GPS basis
+
+- Reused one active server session per browser installation, corrected iPad Chrome presentation and aligned dashboard/session counts.
+- Removed the Admin access-denied dead end and isolated asynchronous Admin routes from failed/late views.
+- Removed misleading infrastructure placeholders, exposed actionable backup readiness and corrected dashboard formatting.
+- Separated Audit filters from confirmed retention, added actor handles and suppressed settings no-op writes/audit events.
+- Documented the Core-1.0 feature freeze after the existing two-module contract audit found no need for speculative hooks.
+- Rounded out the GPS reference UI with an OSM map and explicit Google/OSM/system sharing choices; no GPS Pro or product-specific logic was added.
