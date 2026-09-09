@@ -1,7 +1,7 @@
 # CURRENT TASK — Live Admin Reality Check Phase 2
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** in Bearbeitung
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST-CHECK REQUIRED
 **Grenzen:** Root-Cause-Reparatur, keine Appearance-/i18n-Neuentwicklung, keine Secrets, kein destruktiver Produktions-Restore; P1/P4 regressionsfrei.
 
 ## Verbindliche Reihenfolge

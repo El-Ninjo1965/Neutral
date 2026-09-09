@@ -1,6 +1,87 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-09
+**Auftrag:** Live Admin Reality Check — Phase 2 Reparatur
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · Backup-Hostvoraussetzungen: HOST-CHECK REQUIRED
+
+## Ergebnis
+
+Die in Phase 1 belegten Root Causes wurden in der vorgeschriebenen Reihenfolge repariert, mit ausführbaren PHP-/JS-Integrationstests abgesichert und als Commit `9d0f7e16b17a4b5b1f713a94bca0377bd460fb47` produktiv ausgeliefert. P1 und P4 blieben in der vollständigen Regression grün; es wurde keine Appearance-/i18n-Neuentwicklung begonnen.
+
+### 1. Device Sessions
+
+- Das fehlerhafte, in mehrere PDO-Argumente zerlegte SQL wurde durch ein Nowdoc mit genau einem vollständigen Queryargument ersetzt.
+- Der Test verwendet echte PHP-Klassen, injiziert einen PDO-Testadapter, führt `listPublic()` aus und prüft vollständiges SQL sowie `Current session`.
+- Aktive Liste, autoritativer Widerruf, Expiryfilter, 30-Tage-Cleanup, zufällige Installations-ID und zentrales Device-Limit bleiben erhalten.
+- Die Device-Migration toleriert nach Teilanläufen bereits vorhandene erwartete Spalten/Indizes; der zweite vollständige Lauf bleibt über die Migrationstabelle idempotent.
+
+### 2. Admin-Envelope und Infrastruktur
+
+- Alle Infrastructure-Payloads laufen nun zentral durch `AdminCommon.unwrapData`; der Integrationstest verwendet das reale doppelte PHP-Envelope `{ok:true,data:{...}}`.
+- Verbindungs-, Provider-, Backup-, Release-, Setup-, DB-, Server- und Diagnosticsdaten werden nicht mehr durch `{}`/`[]` verworfen.
+- Fehler bleiben als sichtbare Adminzustände erhalten. Optional fehlende Provider werden ausdrücklich als nicht konfiguriert dargestellt.
+- Server- und DB-Test prüfen ausschließlich die aktuelle geschützte Runtimekonfiguration; die UI nimmt keine alternativen Ziele oder Passwörter mehr entgegen.
+- Connection-Ping ist fehlertolerant. Diagnostics entpackt dieselbe autoritative Health-/Modulprojektion; GPS bleibt Teil der echten Registryzählung.
+
+### 3. Migration und Deployment
+
+- `scripts/run-core-migrations.php` ist ein CLI-only, idempotenter cPanel-Entrypoint mit sicheren Count-/Exit-Statusmeldungen.
+- Beide Operationsrunner werden jetzt in das Produktionspaket aufgenommen.
+- `GET /api/v1/system/readiness` liefert nur sichere DB-/Migrationsbereitschaft und Pending-Anzahl.
+- Der permanente read-only Produktionssmoke verlangt `migrationsReady: true`; ein Deploy mit ausstehenden Coremigrationen kann nicht mehr still grün werden.
+
+### 4. Backup/Restore
+
+- Backupfehler besitzen stabile sichere Codes für Key, Crypto, DB/Schema, Storage, Export, Encryption und Write, ohne Werte oder Pfade auszugeben.
+- `GET /api/admin/backups/readiness` projiziert nur fünf boolesche Voraussetzungen: Key, Crypto, DB, Managed Tables und Storage.
+- Manuelle Backups sind weiterhin unabhängig vom externen Cron. AES-256-GCM, Format-/Integritätsprüfung, Sessions-/Throttle-Ausschluss, Upload/Download/Restore/Delete und Retention bleiben erhalten.
+- `scripts/run-automatic-backup.php` liegt nun wirklich im Produktionspaket. Ob der Host-Key gesetzt, das Verzeichnis schreibbar und cPanel Cron eingerichtet ist, bleibt **HOST-CHECK REQUIRED**; keine Secretwerte wurden geprüft oder angefordert.
+
+### 5. Release, Settings, Alerts und Audit
+
+- Releaseversion, gekürzter Commit und Buildzeit kommen aus dem ausgelieferten `manifest.json`; Maintenance bleibt separater persistenter DB-State. Ein Self-Updater wird nicht suggeriert.
+- Backup Interval (`daily|weekly|monthly`) und Backup Retention (**Anzahl Backups**) sind getrennt. Retention ist frei als Ganzzahl 1–100 validiert; bestehende 7/14/30 bleiben kompatibel und Reload erhält den exakten Wert.
+- Alerts sind standardmäßig routenlokal und werden beim Viewwechsel entfernt. Nur explizit globale Alerts bleiben bestehen; Error-Timeouts wurden nicht als Kaschierung eingeführt.
+- Auditfilter besitzen sichtbare Labels für Action, Resource, User, Result, From, To und Retention; ARIA/native Dateinputs und responsive Einspalten-Breakpoints bleiben erhalten.
+
+## Verifikation
+
+- Test-first Reproduktion: neue Phase-2-Tests waren vor der Reparatur 0/3 rot (PDO-TypeError, fehlender Export/Unwrap, fehlende Operationsrunner).
+- Fokussierte Phase-2-/Backup-/Package-/Smoke-Tests: 42/42 grün; erweitertes Smoke-Paket 16/16 grün.
+- Vollständige Suite: 453/453 grün, 0 Fehler, 0 übersprungen.
+- PHP-Lint: 39 Dateien grün; JavaScript-Syntax vollständig grün; `git diff --check` grün.
+- Produktionspaket: 110 Dateien; Coremigrator, Backup-Runner, SchemaMigrator, PHP-API und Admin-UI explizit enthalten.
+- CodeQL Run `34314789156`: SUCCESS.
+- FTPS Run `34314789330`: SUCCESS einschließlich Tests, Paket, Upload und read-only Smoke.
+- Sicherer Produktionssmoke: Root 200, Status 200, Module 200, Admin unauthentifiziert 401, Revision bestätigt, `migrationsReady:true`, zwei Modulverträge, Viewer-GPS und HTTPS bestätigt.
+- Keine destruktive Produktionsaktion und insbesondere kein Restore wurde ausgeführt.
+
+## Kurzer iPad-/Safari-Retest
+
+1. Sessions öffnen: aktuelle und weitere Geräte sichtbar; `Current session`; fremde Session widerrufen und deren Reload prüfen.
+2. Connections/Providers: Primary DB real; optionale Provider klar `not configured`; kein `unknown` bei Erfolg.
+3. Server/Database/Diagnostics: sichere Runtimewerte und korrekte GPS-Modulzahl.
+4. Manuelles Backup erstellen, Liste aktualisieren und herunterladen; **kein Restore auf Produktion**.
+5. Maintenance an/aus, Reason prüfen, Admin bleibt erreichbar.
+6. Version, Commit und Buildzeit unter Maintenance & Updates prüfen.
+7. Daily/Weekly/Monthly und freie Retention (z. B. 23 Backups) speichern und reloaden.
+8. Backupfehler erzeugen nur falls ein sicherer Host-Prerequisite-Fehler besteht; zu Audit wechseln, Alert muss verschwinden.
+9. Auditfilterlabels und Dateinputs im Hoch-/Querformat prüfen.
+10. P1/P4 Kurzregression durchführen.
+
+## Verbleibende externe Abnahme
+
+- **HOST-CHECK REQUIRED:** In Admin → Backups die fünf Bereitschaftswerte prüfen; falls nötig Key/ACL/Cron ausschließlich hostseitig korrigieren. Keine Werte an Codex/Chat übermitteln.
+- **DEVICE RETEST REQUIRED:** obige Liste auf iPad/Safari.
+- Die reparierten Adminbereiche werden bis zu diesen Checks ausdrücklich **nicht** als `LIVE BESTANDEN` bezeichnet.
+
+---
+
+# Historische Evidenz — Phase-1-Diagnose und frühere Berichte
+
+# NEUTRAL — CODEX → CHATGPT/LEA
+
+**Datum:** 2026-09-09
 **Auftrag:** Live Admin Reality Check — Phase 1 Diagnose / keine Fixes
 **Status:** Diagnose vollständig; keine Produktcodeänderung; Phase 2 erforderlich
 
