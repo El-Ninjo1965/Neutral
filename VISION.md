@@ -2,8 +2,8 @@
 
 **Status:** LANGFRISTIGES ZIELBILD
 
-**Geprüft:** 2026-09-04
-**Einordnung:** Umfang und Abnahme der ersten stabilen Version stehen in [`CORE-1.0.md`](CORE-1.0.md). Der aktuelle Stand steht in [`STATUS.md`](STATUS.md).
+**Geprüft:** 2026-09-09
+**Einordnung:** Umfang und Abnahme der ersten stabilen Version stehen in [`CORE-1.0.md`](CORE-1.0.md). Der aktuelle Stand steht in [`STATUS.md`](STATUS.md). Der detaillierte Benutzer-/Lizenz-/Privacy-Vertrag steht in [`USER-ACCOUNT-LICENSE-MODEL.md`](USER-ACCOUNT-LICENSE-MODEL.md).
 
 ## 1. Identität und Zweck
 
@@ -164,3 +164,80 @@ Der aktuelle Referenzvertrag zeigt eine vorhandene lokale Position sofort. Eine 
 Eine Fähigkeit gilt erst als tragfähig, wenn ihr Vertrag dokumentiert, ihre Fehlerfälle definiert und relevante Tests bestanden sind. Architekturstatus wird ehrlich als **IST**, **GEPLANT** oder **FEHLT** dokumentiert. Zielbeschreibungen dürfen nicht als bereits implementiert ausgegeben werden.
 
 NEUTRAL erreicht sein Ziel, wenn neue Erweiterungen über stabile Verträge ergänzt, betrieben, aktualisiert und entfernt werden können, ohne den neutralen Core für einzelne Features umzubauen und ohne die Web-App an eine konkrete Serverinfrastruktur zu binden.
+
+## 12. Benutzeridentität, Profil und Privacy
+
+NEUTRAL trennt künftig drei Ebenen strikt:
+
+1. **Login-Identität** – technisch für Authentifizierung; Benutzername ist Pflicht und global eindeutig. E-Mail ist optional und darf, wenn vorhanden, zusätzlich als Login-Identifier dienen. Passwörter werden ausschließlich gehasht gespeichert.
+2. **Privates/Vereinsprofil** – optionale Kontaktdaten wie E-Mail, Telefon, Adresse und Geburtstag. Jedes Feld ist standardmäßig privat und wird nur nach expliziter, widerrufbarer Freigabe an einen berechtigten Lizenz-/Organisationsverwalter sichtbar.
+3. **Öffentliches Profil** – verwendet ausschließlich einen frei wählbaren öffentlichen Nickname/Handle und ausdrücklich freigegebene öffentliche Angaben. Reale Namen, E-Mail, Adresse und andere private Daten werden nicht automatisch veröffentlicht.
+
+Das User-Settings-Konzept erhält einen eigenen Bereich `Profile`. Lokale, nur auf dem Gerät gespeicherte Profilinformationen bleiben privat und interessieren den Server nicht. Serverseitige Speicherung erfolgt nur für Funktionen, die eine zentrale Nutzung tatsächlich benötigen.
+
+## 13. Rollen, Permissions, Pakete und Lizenzen
+
+Rollen, Permissions und kommerzielle/organisatorische Pakete sind getrennte Konzepte:
+
+- **Rolle:** administrative/sicherheitstechnische Identität, z. B. Admin oder User.
+- **Permission:** einzelne technische Fähigkeit, die serverseitig geprüft wird.
+- **Paket/Entitlement:** definiert, welche Module/Funktionen und Mengenlimits ein Kunde nutzen darf.
+- **Lizenz/Organisation:** besitzt ein Paket und eine bestimmte Anzahl von Seats/Geräten/Nutzern.
+
+Nicht freigeschaltete Module dürfen optional sichtbar bleiben, aber klar als gesperrt dargestellt werden und auf das benötigte Paket hinweisen. Die App enthält die Module bereits; Freischaltung geschieht über serverseitige Entitlements, nicht durch Nachinstallation aus einem Store.
+
+Ein Lizenz-/Organisationsverwalter erhält **keine System-Adminrechte**. Er darf ausschließlich die eigenen Seats, Nutzer und Geräte innerhalb seiner Lizenz verwalten. Beispiel: Ein Angelverein mit 50 Lizenzen kann selbst Mitglieder anlegen, Geräte freigeben und ausgeschiedene Mitglieder entfernen, ohne den Systemadministrator zu benötigen.
+
+## 14. Geräte- und Installationsmodell
+
+Geräteidentität basiert auf einer zufälligen, persistenten Installations-ID und niemals auf Betriebssystemnamen, User-Agent oder Hardwarefingerprints. Plattform-/Browserangaben sind reine Anzeigeinformationen.
+
+Paket/Lizenz kann ein maximales Geräte-/Seat-Limit definieren. Admin-/Developer-Sonderrollen können unbegrenzt sein. User Management zeigt mindestens:
+
+- erlaubte Geräte/Seats,
+- verwendete Geräte/Seats,
+- letzte Aktivität,
+- Drill-down zu den registrierten Installationen,
+- Freigeben/Widerrufen innerhalb des jeweiligen Administrationsscopes.
+
+## 15. Anonyme Nutzung und Installationsstatistik
+
+Viewer ohne Login bleiben Offline-First. NEUTRAL soll keine versteckten Onlinezwänge einführen. Eine anonyme Installation darf erst gezählt werden, wenn sie tatsächlich freiwillig/technisch notwendig den Server kontaktiert.
+
+Datensparsame Kennzahlen können sein:
+
+- bekannte Installationen gesamt,
+- aktive Installationen heute / 7 / 30 Tage,
+- angemeldete Installationen,
+- anonyme Viewer-Installationen.
+
+Diese Statistik ist keine Personenverfolgung. Keine Hardwarefingerprints, keine Standortdaten und keine unnötigen personenbezogenen Daten für Analytics.
+
+## 16. Medien, Moderation und Freigabe
+
+Serverseitig veröffentlichte Nutzerbilder und späterer Community-/Marketplace-Content durchlaufen einen generischen Moderationsstatus: `pending → approved/rejected/deleted`.
+
+- Bilder sollen clientseitig vor Upload soweit sinnvoll optimiert und serverseitig zusätzlich validiert/normalisiert werden.
+- Ein Upload wird nicht automatisch öffentlich.
+- Admin/Moderator kann freigeben, ablehnen oder löschen.
+- Ablehnung besitzt standardisierte Gründe plus optionale Notiz für den Nutzer.
+- System führt nachvollziehbare Moderationshistorie und Zähler für abgelehnte Inhalte/Verwarnungen.
+- Wiederholter Missbrauch kann zur Accountsperre führen.
+
+Viewer ohne Login erhalten keine serverseitige Uploadfunktion. Ein Paket kann Uploadrechte zusätzlich einschränken. Ein lokal ausgewähltes Bild ohne Serverupload bleibt private Endgerätedaten.
+
+## 17. Messaging / Inbox als generische Zukunftsfähigkeit
+
+Eine spätere Inbox/Community-Kommunikation soll als generische Plattformfähigkeit entstehen, nicht als CatchTrack-Sondercode. Grundvertrag:
+
+- private Nachrichten standardmäßig Text,
+- serverseitige Längen- und Rate-Limits gegen Spam,
+- Nutzer können andere Nutzer blockieren/melden,
+- Admin/Organisation darf Moderations- und Rundnachrichten senden,
+- Anhänge/Bilder nur bei expliziter Paket-/Permissionfreigabe und unter denselben Moderationsregeln wie andere Medien.
+
+Marketplace, Ranglisten, Vereinsfunktionen oder andere Fachmodule verwenden diesen Vertrag, implementieren aber ihre Fachlogik selbst.
+
+## 18. Zukunftsmodule bleiben Module
+
+Ein Marketplace, CatchTrack-spezifische Fangbilder, Ranglisten, GPS Pro und Vereinsfachfunktionen sind **keine Core-Fachlogik**. Sie werden später als Module entwickelt und nutzen lediglich die generischen Coreverträge für Identität, Entitlements, Geräte, Privacy, Messaging, Medien und Moderation.
