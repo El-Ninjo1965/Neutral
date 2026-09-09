@@ -1113,6 +1113,7 @@ final class Phase4SettingsService
        $homepage = $this->normalizeHomepage($current['homepage'] ?? ($current['settings']['homepage'] ?? null));
        $appearance = UserUiDesign::normalize($current['appearance'] ?? ($current['settings']['appearance'] ?? null));
        $settings = is_array($current['settings'] ?? null) ? $current['settings'] : [];
+       $settings = $this->normalizeOperationsSettings($settings);
        $settings['homepage'] = $homepage;
        $settings['appearance'] = $appearance;
        return [
@@ -1138,6 +1139,7 @@ final class Phase4SettingsService
        $settings = is_array($payload['settings'] ?? null)
            ? $payload['settings']
            : (is_array($current['settings'] ?? null) ? $current['settings'] : []);
+       $settings = $this->normalizeOperationsSettings($settings, true);
        $homepage = $this->normalizeHomepage(
            $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
        );
@@ -1174,6 +1176,24 @@ final class Phase4SettingsService
            'content' => $content,
            'moduleId' => $moduleId,
        ];
+    }
+
+    private function normalizeOperationsSettings(array $settings, bool $strict = false): array
+    {
+        $interval = (string) ($settings['backupInterval'] ?? 'daily');
+        if (!in_array($interval, ['daily', 'weekly', 'monthly'], true)) {
+            if ($strict) throw new \RuntimeException('Backup interval is not supported.');
+            $interval = 'daily';
+        }
+        $retention = filter_var($settings['backupRetention'] ?? 14, FILTER_VALIDATE_INT);
+        if ($retention === false || $retention < 1 || $retention > 100) {
+            if ($strict) throw new \RuntimeException('Backup retention must be a whole number from 1 to 100 backups.');
+            $retention = 14;
+        }
+        $settings['backupInterval'] = $interval;
+        $settings['backupRetention'] = $retention;
+        $settings['backupEnabled'] = ($settings['backupEnabled'] ?? true) === true;
+        return $settings;
     }
 }
 
@@ -1255,7 +1275,7 @@ final class Phase4SessionRegistry
     public function listPublic(): array
     {
         $pdo = $this->requireDatabase()->connect();
-        $statement = $pdo->query("
+        $statement = $pdo->query(<<<'SQL'
         SELECT s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at,
                s.device_id, s.device_label, s.user_agent,
                GROUP_CONCAT(r.role_key ORDER BY r.role_key SEPARATOR ",") AS role_keys
@@ -1267,7 +1287,7 @@ final class Phase4SessionRegistry
         GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at, s.device_id, s.device_label, s.user_agent
         ORDER BY s.last_seen_at DESC
         LIMIT 500
-        ");
+        SQL);
         if ($statement === false) {
             throw new \RuntimeException('Could not read sessions.');
         }
@@ -1646,6 +1666,7 @@ final class Phase4AuthManager
      */
     public function listSessions(): array
     {
+        $this->sessions->cleanup(30);
         return $this->sessions->listPublic();
     }
 

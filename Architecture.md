@@ -252,3 +252,7 @@ Nach mindestens einem erfolgreichen Online-Start registriert die User-Shell unte
 ## Administrative operations boundary (2026-09-09)
 
 User-App/module permissions and Admin/System permissions are separate domains. The User-App consumes only public projections and module APIs. Users, roles, permission catalog, device sessions, audit, maintenance, infrastructure and backups remain Admin API/UI concerns with server-side permission and CSRF enforcement. Runtime health, database status, connection inventory and diagnostics derive from the same PHP runtime/configuration and module registry rather than independent UI placeholders.
+
+## Phase 2 operational DTO flow
+
+Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` → `AdminCommon.unwrapData` → view DTO. Release identity comes from the package manifest; maintenance remains database state. Runtime/database/connection/diagnostic views use the same protected configuration and health sources instead of placeholder fallbacks.

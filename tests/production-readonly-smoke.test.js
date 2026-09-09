@@ -25,6 +25,7 @@ function productionFixture(overrides = {}) {
     '/app/': response(200, '<title data-app-title>Example App</title>'),
     '/admin.php': response(401, '<input id="loginUsername" type="text">'),
     '/api/v1/status': response(200, JSON.stringify({ ok: true, data: { status: 'ACTIVE' } })),
+    '/api/v1/system/readiness': response(200, JSON.stringify({ ok: true, data: { readiness: { database: true, migrationsReady: true, pendingMigrationCount: 0 } } })),
     '/api/v1/modules': response(200, JSON.stringify({
       ok: true,
       data: {
@@ -155,6 +156,7 @@ test('production smoke emits only bounded status evidence for a valid deployment
     rewrite: 200,
     adminProtected: 401,
     statusApi: 200,
+    migrationsReady: true,
     moduleCatalog: 200,
     internalCoreProtected: 403,
     deploymentRevision: true,

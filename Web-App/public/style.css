@@ -809,6 +809,14 @@ body[data-theme="dark"] .theme-toggle {
   min-width: 0;
 }
 
+.audit-filter-grid label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .badge-active,
 .badge-ok {
   background: var(--success-soft);

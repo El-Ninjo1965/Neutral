@@ -15,6 +15,7 @@ const REQUIRED_ENTRIES = [
   'Server/public',
   'Web-App'
 ];
+const OPERATIONAL_ENTRYPOINTS = ['scripts/run-automatic-backup.php', 'scripts/run-core-migrations.php'];
 const REQUIRED_PRODUCTION_ENTRYPOINTS = [
   'Web-App/public/public-path.js',
   'Web-App/public/service-worker.js',
@@ -198,6 +199,12 @@ function collectProductionFiles(sourceRoot) {
     } else {
       walk(entry);
     }
+  }
+  for (const entry of OPERATIONAL_ENTRYPOINTS) {
+    const fullPath = path.join(resolvedSourceRoot, entry);
+    if (!fs.existsSync(fullPath)) continue;
+    assertRegularFileOrDirectory(fullPath, entry, 'file');
+    files.push(entry);
   }
 
   return files.sort();

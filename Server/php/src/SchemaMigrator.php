@@ -348,6 +348,14 @@ final class SchemaMigrator
                 $this->verifyExistingModuleMigrationColumn($pdo, strtolower($matches[1]));
                 return;
             }
+            $isDeviceColumn = preg_match('/^ALTER\s+TABLE\s+sessions\s+ADD\s+COLUMN\s+(device_id|device_label)\b/i', trim($statement)) === 1;
+            if ($isDeviceColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) {
+                return;
+            }
+            $isDeviceIndex = preg_match('/^CREATE\s+INDEX\s+ix_sessions_user_device\b/i', trim($statement)) === 1;
+            if ($isDeviceIndex && $driverCode === 1061) {
+                return;
+            }
             throw $exception;
         }
     }

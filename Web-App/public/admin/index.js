@@ -242,6 +242,7 @@ class AdminInfrastructureView {
       connections: this.api.get('/api/admin/connections'),
       providers: this.api.get('/api/admin/providers'),
       backups: this.api.get('/api/admin/backups'),
+      backupReadiness: this.api.get('/api/admin/backups/readiness'),
       release: this.api.get('/api/admin/release/status'),
       setup: this.api.get('/api/setup/status'),
       database: this.api.get('/api/admin/database'),
@@ -251,21 +252,30 @@ class AdminInfrastructureView {
     const results = await Promise.all(Object.entries(requests).map(([key, promise]) => promise.then((result) => [key, result])));
     const snapshot = {};
     for (const [key, result] of results) {
+      const payload = AdminCommon.unwrapData(result, null, null);
+      if (!result.ok || !payload) {
+        snapshot[`${key}Error`] = result.error || 'The service is temporarily unavailable.';
+        continue;
+      }
       if (key === 'connections') {
-        snapshot.connections = result.ok && Array.isArray(result.data?.connections) ? result.data.connections : [];
+        snapshot.connections = Array.isArray(payload.connections) ? payload.connections : [];
+        snapshot.connectionsStatus = payload.status || 'available';
       } else if (key === 'providers') {
-        snapshot.providers = result.ok && Array.isArray(result.data?.providers) ? result.data.providers : [];
+        snapshot.providers = Array.isArray(payload.providers) ? payload.providers : [];
+        snapshot.providersStatus = payload.status || 'available';
       } else if (key === 'backups') {
-        snapshot.backups = result.ok && Array.isArray(result.data?.backups) ? result.data.backups : [];
-        snapshot.backupAutomation = result.ok ? (result.data?.automation || {}) : {};
+        snapshot.backups = Array.isArray(payload.backups) ? payload.backups : [];
+        snapshot.backupAutomation = payload.automation || {};
+      } else if (key === 'backupReadiness') {
+        snapshot.backupReadiness = payload.readiness || {};
       } else if (key === 'release') {
-        snapshot.release = result.ok && result.data && result.data.release ? result.data.release : {};
+        snapshot.release = payload.release || {};
       } else if (key === 'setup') {
-        snapshot.setup = result.ok && result.data && result.data.setup ? result.data.setup : {};
+        snapshot.setup = payload.setup || {};
       } else if (key === 'database') {
-        snapshot.database = result.ok && result.data && result.data.database ? result.data.database : {};
+        snapshot.database = payload.database || {};
       } else if (key === 'server') {
-        snapshot.server = result.ok ? (result.data?.server || result.data?.result || {}) : {};
+        snapshot.server = payload.server || payload.result || {};
       }
     }
     this.snapshot = snapshot;
@@ -380,12 +390,15 @@ class AdminInfrastructureView {
         <div class="section-header">
           <h2>Connections</h2>
         </div>
+        ${this.snapshot.connectionsError ? `<div class="admin-state admin-state-error" role="alert">${this.escape(this.snapshot.connectionsError)}</div>` : ''}
         <div class="card-grid">
           <div class="card panel-box">
             <div class="card-header"><h3>Active providers</h3></div>
             ${providers.length
               ? `<ul class="mini-list">${providers.map((entry) => `<li>${entry.name || entry.providerId || 'Provider'} <span>${entry.active ? 'active' : 'inactive'}</span></li>`).join('')}</ul>`
-              : '<p class="empty-state">No providers configured.</p>'}
+              : this.snapshot.providersError
+                ? `<p class="admin-state admin-state-error" role="alert">${this.escape(this.snapshot.providersError)}</p>`
+                : '<p class="empty-state">Optional providers are not configured.</p>'}
           </div>
           <div class="card panel-box">
             <div class="card-header"><h3>Current connection</h3></div>
@@ -418,6 +431,7 @@ class AdminInfrastructureView {
         <div class="section-header">
           <h2>Server</h2>
         </div>
+        ${this.snapshot.serverError ? `<div class="admin-state admin-state-error" role="alert">${this.escape(this.snapshot.serverError)}</div>` : ''}
         <div class="card-grid">
           <div class="card panel-box">
             <div class="card-header"><h3>Runtime status</h3></div>
@@ -437,8 +451,7 @@ class AdminInfrastructureView {
           <div class="card-header"><h3>Test server endpoint</h3></div>
           <form id="server-form" class="admin-form compact-form">
             <div class="form-grid">
-              <label>Server URL<input name="serverUrl" value="${this.escape(currentUrl)}" /></label>
-              <label>API Base<input name="apiBase" value="${this.escape(server.apiBase || setup.serverState?.apiBase || window.NeutralPublicPath.api(''))}" /></label>
+              <p class="form-help">Tests the configured server runtime and API route without accepting alternate targets or credentials.</p>
             </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Test server</button>
@@ -452,12 +465,7 @@ class AdminInfrastructureView {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(form);
-        const payload = {
-          serverUrl: formData.get('serverUrl') || currentUrl,
-          apiBase: formData.get('apiBase') || window.NeutralPublicPath.api('')
-        };
-        const result = await this.api.post('/api/server/test', payload);
+        const result = await this.api.get('/api/server/test');
         const response = result.ok && result.data && result.data.result ? result.data.result : result.data || {};
         if (result.ok) {
           this.notify(`Server test result: ${response.status || 'ready'}`, 'success');
@@ -478,6 +486,7 @@ class AdminInfrastructureView {
         <div class="section-header">
           <h2>Database</h2>
         </div>
+        ${this.snapshot.databaseError ? `<div class="admin-state admin-state-error" role="alert">${this.escape(this.snapshot.databaseError)}</div>` : ''}
         <div class="card-grid">
           <div class="card panel-box">
             <div class="card-header"><h3>Current database status</h3></div>
@@ -495,17 +504,9 @@ class AdminInfrastructureView {
           </div>
         </div>
         <div class="card panel-box">
-          <div class="card-header"><h3>Test database configuration</h3></div>
+          <div class="card-header"><h3>Test current database</h3></div>
           <form id="database-form" class="admin-form compact-form">
-            <div class="form-grid">
-              <label>Type<select name="type"><option value="mysql" ${((dbConfig.type || database.type || 'mysql') === 'mysql') ? 'selected' : ''}>MySQL</option><option value="sqlite" ${(dbConfig.type === 'sqlite') ? 'selected' : ''}>SQLite</option><option value="postgresql" ${(dbConfig.type === 'postgresql') ? 'selected' : ''}>PostgreSQL</option></select></label>
-              <label>Host<input name="host" value="${this.escape(dbConfig.host || database.host || '')}" /></label>
-              <label>Port<input type="number" name="port" value="${this.escape(dbConfig.port || database.port || 3306)}" /></label>
-              <label>Name<input name="name" value="${this.escape(dbConfig.name || database.name || '')}" /></label>
-              <label>Username<input name="username" value="${this.escape(dbConfig.username || database.username || '')}" /></label>
-              <label>Credential reference<input name="credentialsRef" value="" placeholder="Prefer a credential reference instead of plain text" /></label>
-              <label>Password<input type="password" name="password" value="" placeholder="Only when needed for live test" /></label>
-            </div>
+            <p class="form-help">Uses only the existing protected runtime configuration. No password or connection secret is accepted by this view.</p>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Test database</button>
             </div>
@@ -518,17 +519,7 @@ class AdminInfrastructureView {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(form);
-        const payload = {
-          type: formData.get('type') || 'mysql',
-          host: formData.get('host') || '',
-          port: Number(formData.get('port') || 3306),
-          name: formData.get('name') || '',
-          username: formData.get('username') || '',
-          password: formData.get('password') || '',
-          credentialsRef: formData.get('credentialsRef') || ''
-        };
-        const result = await this.api.post('/api/database/status', payload);
+        const result = await this.api.get('/api/admin/database');
         if (result.ok) {
           this.notify('Database test passed successfully', 'success');
           await this.init(this.container);
@@ -552,7 +543,9 @@ class AdminInfrastructureView {
             <dl class="detail-list">
               <div><dt>Status</dt><dd>${release.maintenanceMode ? 'Maintenance mode' : 'Operational'}</dd></div>
               <div><dt>Version</dt><dd>${release.version || '—'}</dd></div>
-              <div><dt>Updated</dt><dd>${release.updatedAt || '—'}</dd></div>
+              <div><dt>Commit</dt><dd><code>${this.escape(release.commit || 'Unavailable')}</code></dd></div>
+              <div><dt>Built</dt><dd>${this.escape(release.buildAt || 'Unavailable')}</dd></div>
+              <div><dt>Updater</dt><dd>${release.updateActionsSupported ? 'Available' : 'Not supported; releases are deployed externally'}</dd></div>
             </dl>
           </div>
           <div class="card panel-box">
@@ -590,13 +583,16 @@ class AdminInfrastructureView {
   renderBackups() {
     const backups = this.snapshot.backups || [];
     const automation = this.snapshot.backupAutomation || {};
+    const readiness = this.snapshot.backupReadiness || {};
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header"><h2>Backups & Restore</h2></div>
+        ${this.snapshot.backupsError ? `<div class="admin-state admin-state-error" role="alert">${this.escape(this.snapshot.backupsError)}</div>` : ''}
         <div class="card panel-box">
           <div class="card-header"><h3>Encrypted database backups</h3></div>
           <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
           <p class="form-help">Automatic scheduler: ${this.escape(automation.scheduler || 'external-cron-required')}. Last success: ${this.escape(automation.lastSuccess ? new Date(Number(automation.lastSuccess) * 1000).toISOString() : 'No scheduled backup recorded')}. ${automation.lastError ? `Last error: ${this.escape(automation.lastError)}` : ''}</p>
+          <dl class="detail-list"><div><dt>Encryption key</dt><dd>${readiness.keyConfigured ? 'Ready' : 'Host configuration required'}</dd></div><div><dt>Crypto</dt><dd>${readiness.cryptoAvailable ? 'Ready' : 'Unavailable'}</dd></div><div><dt>Database/schema</dt><dd>${readiness.databaseReady && readiness.managedTablesReady ? 'Ready' : 'Host check required'}</dd></div><div><dt>Protected storage</dt><dd>${readiness.storageReady ? 'Ready' : 'Host check required'}</dd></div></dl>
           ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button><button class="btn btn-sm btn-danger" data-backup-delete="${this.escape(backup.backupId)}">Delete</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
           <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary">Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
         </div>
@@ -701,8 +697,9 @@ class AdminDiagnosticsView {
     ]);
 
     this.snapshot = {
-      health: healthResult.ok && healthResult.data && healthResult.data.health ? healthResult.data.health : {},
-      framework: frameworkResult.ok && frameworkResult.data && frameworkResult.data.framework ? frameworkResult.data.framework : {}
+      health: AdminCommon.unwrapData(healthResult, 'health', null),
+      framework: AdminCommon.unwrapData(frameworkResult, 'framework', null),
+      error: !healthResult.ok ? healthResult.error : (!frameworkResult.ok ? frameworkResult.error : null)
     };
     this.render();
   }
@@ -726,6 +723,7 @@ class AdminDiagnosticsView {
         <div class="section-header">
           <h2>Diagnostics</h2>
         </div>
+        ${this.snapshot.error ? `<div class="admin-state admin-state-error" role="alert">${AdminCommon.formatValue(this.snapshot.error)}</div>` : ''}
         <div class="card-grid">
           <div class="card panel-box">
             <div class="card-header"><h3>System check</h3></div>
@@ -787,6 +785,7 @@ class AdminRouter {
     if (!view) {
       return;
     }
+    AdminCommon.clearRouteAlerts();
     const mainContainer = document.getElementById('admin-main');
     const title = this.formatViewName(viewName);
     this.shell.setActive(viewName);
@@ -831,4 +830,6 @@ if (typeof window !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminRouter;
+  module.exports.AdminInfrastructureView = AdminInfrastructureView;
+  module.exports.AdminDiagnosticsView = AdminDiagnosticsView;
 }

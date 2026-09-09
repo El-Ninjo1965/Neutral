@@ -48,3 +48,5 @@ The following remain as historical evidence and must not be promoted to active s
 These entries remain in the archive and support root-cause analysis, but they do not override the current live operator confirmation.
 
 - 2026-09-09: Admin operations implementation completed code-side: role cleanup migration, device sessions, classified registry, authoritative infrastructure, persistent maintenance, backup lifecycle/cron/retention and audited audit retention. P1/P4 remain `LIVE BESTANDEN`.
+
+- 2026-09-09 Phase 2 Admin reality fixes: CODE-SEITIG ERLEDIGT; deployment/CI and host readiness checks tracked in `CHATGPT.md`; DEVICE RETEST REQUIRED. No new LIVE-BESTANDEN claim for these Admin paths. P1/P4 status unchanged.

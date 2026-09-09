@@ -23,3 +23,6 @@
 - They are not the current active status once the real operator live test is successful.
 
 - [ ] Host operator only: configure `scripts/run-automatic-backup.php` as documented in cPanel Cron and verify first scheduled run.
+
+- [ ] DEVICE RETEST REQUIRED: execute the concise Admin Phase-2 checklist in `CHATGPT.md`.
+- [ ] HOST-CHECK REQUIRED: migration readiness and backup prerequisite booleans must be green before live Admin completion.

@@ -423,3 +423,10 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Replaced short login records with persistent, revocable, limited device sessions and privacy-safe Admin presentation.
 - Connected permissions, infrastructure, maintenance, backups and audit retention to authoritative protected server operations.
 - Added encrypted backup deletion/retention and a real cPanel-compatible automatic backup CLI trigger.
+
+## 2026-09-09 — Admin reality check Phase 2
+
+- Fixed the Device Session query and added executable PHP integration coverage for its complete SQL/current-session path.
+- Unified nested PHP response-envelope consumption across infrastructure, backup, release and diagnostics views; API failures now remain visible.
+- Added CLI core migration entrypoint, production readiness smoke and packaged both migration and automatic-backup runners.
+- Added safe backup prerequisite/error codes, manifest-backed release information, validated numeric backup retention, route-scoped alerts and visible Audit filter labels.

@@ -24,15 +24,15 @@ class AdminAuditView {
         <div class="section-header">
           <h2>Audit Log</h2>
         </div>
-        <form id="audit-filter-form" class="inline-form">
-          <input type="text" id="auditAction" placeholder="Action (e.g. settings.update)" value="${this.escape(this.filters.action)}" />
-          <input type="text" id="auditResource" placeholder="Resource (e.g. settings)" value="${this.escape(this.filters.resource)}" />
-          <input type="text" id="auditUser" inputmode="numeric" placeholder="Actor user ID" value="${this.escape(this.filters.user)}" />
-          <select id="auditResult"><option value="">All results</option><option value="ok">OK</option><option value="error">Error</option></select>
-          <input type="date" id="auditFrom" value="${this.escape(this.filters.from)}" aria-label="From date" /><input type="date" id="auditTo" value="${this.escape(this.filters.to)}" aria-label="To date" />
+        <form id="audit-filter-form" class="inline-form audit-filter-grid">
+          <label>Action<input type="text" id="auditAction" placeholder="e.g. settings.update" value="${this.escape(this.filters.action)}" /></label>
+          <label>Resource<input type="text" id="auditResource" placeholder="e.g. settings" value="${this.escape(this.filters.resource)}" /></label>
+          <label>Actor user ID<input type="text" id="auditUser" inputmode="numeric" value="${this.escape(this.filters.user)}" /></label>
+          <label>Result<select id="auditResult"><option value="">All results</option><option value="ok">OK</option><option value="error">Error</option></select></label>
+          <label for="auditFrom">From date<input type="date" id="auditFrom" value="${this.escape(this.filters.from)}" /></label><label for="auditTo">To date<input type="date" id="auditTo" value="${this.escape(this.filters.to)}" /></label>
           <button type="submit" class="btn btn-secondary">Apply</button>
           <button type="button" class="btn btn-secondary" onclick="adminAudit.resetFilters()">Reset</button>
-          <select id="auditRetention"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select><button type="button" class="btn btn-danger" id="auditPurge">Purge older entries</button>
+          <label>Audit retention<select id="auditRetention"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></label><button type="button" class="btn btn-danger" id="auditPurge">Purge older entries</button>
         </form>
         <div id="audit-table"></div>
       </div>

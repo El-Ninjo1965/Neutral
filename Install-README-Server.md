@@ -141,3 +141,7 @@ Produktionspaket, Basispfadvertrag, wertfreie Vorlagen, lokaler Bootstrap und Of
 ## Automatic backup cron
 
 Automatic backups require a host scheduler; the Settings checkbox alone does not pretend to be a daemon. Configure cPanel Cron to invoke `php <project>/scripts/run-automatic-backup.php` daily. The CLI runner reads the persisted enabled/interval/retention settings, skips runs that are not due, encrypts with the host-only `NEUTRAL_BACKUP_KEY`, and records only a safe success/error state. Never put the key in the cron command or repository.
+
+## Core migrations before production verification
+
+Run `php scripts/run-core-migrations.php` through the protected cPanel terminal/CLI after uploading a release and before considering deployment complete. It is idempotent, emits counts only and exits non-zero on failure or remaining migrations. Both this entrypoint and `scripts/run-automatic-backup.php` are part of the production package. The HTTP smoke checks boolean migration readiness and performs no mutation or restore.

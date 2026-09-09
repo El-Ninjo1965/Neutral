@@ -23,6 +23,7 @@ use Neutral\Core\Security;
 use Neutral\Core\LoginRateLimiter;
 use Neutral\Core\PdoLoginAttemptStore;
 use Neutral\Core\DatabaseBackupService;
+use Neutral\Core\BackupRuntimeException;
 use Neutral\Core\SchemaMigrator;
 
 $runtime = neutral_bootstrap();
@@ -316,6 +317,15 @@ if ($route === 'status') {
             'state' => $dbState,
         ],
     ]);
+}
+
+if ($route === 'system/readiness' && $method === 'GET') {
+    try {
+        $migration = (new SchemaMigrator($database))->status();
+        JsonResponse::success(['readiness' => ['database' => true, 'migrationsReady' => $migration['pending'] === [], 'pendingMigrationCount' => count($migration['pending'])]]);
+    } catch (Throwable $exception) {
+        JsonResponse::success(['readiness' => ['database' => false, 'migrationsReady' => false, 'pendingMigrationCount' => null]]);
+    }
 }
 
 if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'POST') {
@@ -1016,11 +1026,18 @@ if ($route === 'admin/release/status' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
     $statement = $database->connect()->query('SELECT version, environment, status, maintenance_mode, maintenance_reason, checked_at FROM release_state WHERE id = 1');
     $state = $statement ? $statement->fetch(PDO::FETCH_ASSOC) : false;
+    $manifest = [];
+    $manifestPath = $runtime->projectRoot() . '/manifest.json';
+    if (is_readable($manifestPath)) {
+        $decodedManifest = json_decode((string) file_get_contents($manifestPath), true);
+        $manifest = is_array($decodedManifest) ? $decodedManifest : [];
+    }
     JsonResponse::success([
         'release' => [
-            'status' => is_array($state) ? (string) ($state['status'] ?? 'available') : 'release-information-only',
-            'version' => is_array($state) ? (string) ($state['version'] ?? '1.0.0') : '1.0.0',
-            'updatedAt' => is_array($state) ? (string) ($state['checked_at'] ?? '') : '',
+            'status' => is_array($state) && (int) ($state['maintenance_mode'] ?? 0) === 1 ? 'maintenance' : 'operational',
+            'version' => (string) ($manifest['appVersion'] ?? (is_array($state) ? ($state['version'] ?? '') : '')),
+            'commit' => substr((string) ($manifest['sourceCommit'] ?? ''), 0, 12),
+            'buildAt' => (string) ($manifest['generatedAt'] ?? ''),
             'maintenanceMode' => is_array($state) && (int) ($state['maintenance_mode'] ?? 0) === 1,
             'reason' => is_array($state) ? (string) ($state['maintenance_reason'] ?? '') : '',
             'updateActionsSupported' => false,
@@ -1058,10 +1075,11 @@ if ($route === 'providers' && $method === 'GET') {
 
 if ($route === 'admin/connections' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
+    try { $connectionReady = $database->ping(); } catch (Throwable $exception) { $connectionReady = false; }
     JsonResponse::success([
         'connections' => [[
             'id' => 'primary-database', 'name' => 'Primary database', 'type' => 'database_mysql',
-            'status' => $database->ping() ? 'ready' : 'unavailable', 'source' => 'Runtime configuration',
+            'status' => $connectionReady ? 'ready' : 'unavailable', 'source' => 'Runtime configuration',
         ]],
     ]);
 }
@@ -1093,8 +1111,10 @@ if ($route === 'admin/backups' && $method === 'GET') {
                 'lastError' => is_array($automaticState) ? ($automaticState['lastError'] ?? null) : null,
             ],
         ]);
+    } catch (BackupRuntimeException $exception) {
+        JsonResponse::error('Backup prerequisites are not ready.', 503, ['code' => $exception->safeCode()]);
     } catch (Throwable $exception) {
-        JsonResponse::error('Backup service temporarily unavailable.', 503);
+        JsonResponse::error('Backup database prerequisites are not ready.', 503, ['code' => 'BACKUP_DATABASE_UNAVAILABLE']);
     }
 }
 
@@ -1108,9 +1128,25 @@ if ($route === 'admin/backups' && $method === 'POST') {
         $backupService->enforceRetention($retention);
         $auditService->log('backup.create', 'backup', $backup['backupId'], actor_user_id($identity), ['size' => $backup['size']]);
         JsonResponse::success(['backup' => $backup], 201);
+    } catch (BackupRuntimeException $exception) {
+        JsonResponse::error('Backup could not be created because a runtime prerequisite is unavailable.', 503, ['code' => $exception->safeCode()]);
     } catch (Throwable $exception) {
-        JsonResponse::error('Backup service temporarily unavailable.', 503);
+        JsonResponse::error('Backup export could not be completed.', 503, ['code' => 'BACKUP_EXPORT_FAILED']);
     }
+}
+
+if ($route === 'admin/backups/readiness' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
+    $checks = ['keyConfigured' => strlen($config->backupKey()) >= 32, 'cryptoAvailable' => function_exists('openssl_encrypt'), 'databaseReady' => false, 'managedTablesReady' => false, 'storageReady' => false];
+    try {
+        $checks['databaseReady'] = $database->ping();
+        $migrator = new SchemaMigrator($database);
+        $checks['managedTablesReady'] = $migrator->status()['pending'] === [];
+    } catch (Throwable $exception) { /* Boolean-only safe projection. */ }
+    $backupDir = $runtime->projectRoot() . '/Server/runtime/backups';
+    $parent = dirname($backupDir);
+    $checks['storageReady'] = (is_dir($backupDir) && is_writable($backupDir)) || (!is_dir($backupDir) && is_dir($parent) && is_writable($parent));
+    JsonResponse::success(['readiness' => $checks]);
 }
 
 if (preg_match('#^admin/backups/([a-f0-9]{32})$#', $route, $backupMatches) === 1 && $method === 'DELETE') {

@@ -172,9 +172,10 @@ const AdminCommon = {
   },
 
   // Create an alert/notification
-  showAlert(message, type = 'info') {
+  showAlert(message, type = 'info', options = {}) {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
+    alert.dataset.alertScope = options.global === true ? 'global' : 'route';
     alert.innerHTML = `
       <div class="alert-content">
         ${escapeHtmlCommon(message)}
@@ -187,6 +188,11 @@ const AdminCommon = {
     if (type !== 'error') {
       setTimeout(() => alert.remove(), 5000);
     }
+  },
+
+  clearRouteAlerts() {
+    if (typeof document === 'undefined') return;
+    document.querySelectorAll('.alert[data-alert-scope="route"]').forEach((alert) => alert.remove());
   },
 
   // Format data for display

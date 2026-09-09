@@ -258,3 +258,7 @@ Native Color Inputs werden durch sichtbaren gerahmten Swatch und Hexanzeige erkl
 ## Operations UI contract (2026-09-09)
 
 Permission registry is read-only and scannable by key, description, area and source. Session Overview represents devices, marks the current session and presents registration/last-activity rather than raw duplicate login rows. Infrastructure panels distinguish measured values from “Unavailable on this runtime”. Audit JSON is escaped, formatted and folded by default. Destructive backup, restore, revoke and retention actions require explicit confirmation. Maintenance reasons are inserted as text, never HTML.
+
+## Phase 2 Admin corrections
+
+Admin errors are route-scoped by default and are removed on navigation; only explicitly global alerts persist. Audit filters have visible labels in addition to programmatic names. Backup interval and retention are separate controls; retention is displayed as a number of backup files (1–100), never as an unexplained day value.

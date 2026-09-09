@@ -100,7 +100,7 @@ class AdminSettingsView {
             Enable Automatic Backups
           </label>
         </div>
-        <div class="form-group"><label for="backupRetention">Retain backups</label><select id="backupRetention" name="backupRetention"><option value="7" ${this.getSetting('backupRetention', 14) === 7 ? 'selected' : ''}>7</option><option value="14" ${this.getSetting('backupRetention', 14) === 14 ? 'selected' : ''}>14</option><option value="30" ${this.getSetting('backupRetention', 14) === 30 ? 'selected' : ''}>30</option></select><small>Automatic execution requires the documented protected cron trigger.</small></div>
+        <div class="form-group"><label for="backupRetention">Backup Retention (number of backups)</label><input id="backupRetention" name="backupRetention" type="number" min="1" max="100" step="1" required value="${escapeHtmlSettings(this.getSetting('backupRetention', 14))}" /><small>Keep between 1 and 100 encrypted backup files. Existing values such as 7, 14 and 30 remain valid. Automatic execution requires the documented external cron trigger.</small></div>
 
         <div class="form-group">
           <label for="backupInterval">Backup Interval</label>

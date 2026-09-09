@@ -27,6 +27,7 @@ final class Phase6SettingsService
             $appName = $this->readValue($rows['core.app.name'] ?? null, 'Neutral Platform');
             $appId = $this->readValue($rows['core.app.id'] ?? null, 'neutral-app');
             $settings = $this->readObjectValue($rows['core.ui.settings'] ?? null);
+           $settings = $this->normalizeOperationsSettings($settings);
            $homepage = $this->normalizeHomepage($settings['homepage'] ?? null);
            $appearance = UserUiDesign::normalize($settings['appearance'] ?? null);
            $settings['homepage'] = $homepage;
@@ -53,6 +54,7 @@ final class Phase6SettingsService
        $settings = is_array($payload['settings'] ?? null)
            ? $payload['settings']
            : (is_array($current['settings'] ?? null) ? $current['settings'] : []);
+       $settings = $this->normalizeOperationsSettings($settings, true);
        $homepage = $this->normalizeHomepage(
            $payload['homepage'] ?? ($settings['homepage'] ?? ($current['homepage'] ?? null))
        );
@@ -184,6 +186,24 @@ final class Phase6SettingsService
            'content' => $content,
            'moduleId' => $moduleId,
        ];
+    }
+
+    private function normalizeOperationsSettings(array $settings, bool $strict = false): array
+    {
+        $interval = (string) ($settings['backupInterval'] ?? 'daily');
+        if (!in_array($interval, ['daily', 'weekly', 'monthly'], true)) {
+            if ($strict) throw new \RuntimeException('Backup interval is not supported.');
+            $interval = 'daily';
+        }
+        $retention = filter_var($settings['backupRetention'] ?? 14, FILTER_VALIDATE_INT);
+        if ($retention === false || $retention < 1 || $retention > 100) {
+            if ($strict) throw new \RuntimeException('Backup retention must be a whole number from 1 to 100 backups.');
+            $retention = 14;
+        }
+        $settings['backupInterval'] = $interval;
+        $settings['backupRetention'] = $retention;
+        $settings['backupEnabled'] = ($settings['backupEnabled'] ?? true) === true;
+        return $settings;
     }
 
     /**

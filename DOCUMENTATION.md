@@ -50,3 +50,5 @@ Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertra
 Abgehakte historische Aufgaben gehören nicht dauerhaft in `TODO.md`; sie werden im Changelog bewahrt.
 
 Operations contracts for device sessions, permission domains, maintenance, infrastructure truth, audit retention and backup automation are authoritative in `Security.md`, `Architecture.md`, `API.md`, `Database.md` and `Install-README-Server.md`.
+
+The Phase-2 operations response, migration, backup-readiness, release and Admin UI contracts are recorded in `API.md`, `Database.md`, `Security.md`, `Architecture.md`, `UI-UX.md` and `Install-README-Server.md`.

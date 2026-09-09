@@ -18,3 +18,6 @@
 4. Remove obsolete Theme/Layout controls from Admin Appearance while preserving local header themes and homepage settings. Status: DONE CODE-SIDE / SHORT OPERATOR VISUAL CONTROL RECOMMENDED
 
 - [ ] Operator: configure the documented daily cPanel Cron command for automatic backups and confirm the first encrypted inventory entry; this is host configuration, not an application-code gap.
+
+- [ ] DEVICE RETEST REQUIRED: Phase-2 Admin sessions, infrastructure, release, settings, alerts and Audit labels on iPad/Safari.
+- [ ] HOST-CHECK REQUIRED: run packaged Core migrator and verify boolean backup prerequisites; configure external backup cron without exposing values.

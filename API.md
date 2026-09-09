@@ -96,3 +96,7 @@ Der anonyme Zugriff auf `/api/modules` überträgt keine Viewer-Identität und k
 ## Operations endpoints (2026-09-09)
 
 Admin-only endpoints include device-session listing/revocation, the read-only classified permission registry, authoritative server/database/connection diagnostics, maintenance state changes, encrypted backup lifecycle (create/list/upload/download/restore/delete), and audit retention purge. Mutations require an Admin-scope cookie session, permission and CSRF. `GET /api/settings/maintenance` exposes only active state, display-safe reason and update time so the User-App can show a maintenance page; it exposes no actor or infrastructure metadata.
+
+## Phase 2 Admin response and readiness contract
+
+PHP responses retain the canonical `{ok,data}` envelope and all Admin views consume it through `AdminCommon.unwrapData`. `GET /api/v1/system/readiness` exposes only database/migration readiness and pending count for non-destructive deployment verification. `GET /api/admin/backups/readiness` is permission-protected and returns boolean key/crypto/database/schema/storage prerequisites. Backup errors provide stable safe codes without paths or values. Release status derives version, abbreviated commit and build time from the deployed `manifest.json`.

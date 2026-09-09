@@ -119,6 +119,7 @@ async function runSmoke({
   results.admin = await readResponse(fetchImpl, publicBase, '/admin.php');
   results.status = await readResponse(fetchImpl, publicBase, '/api/v1/status');
   results.modules = await readResponse(fetchImpl, publicBase, '/api/v1/modules');
+  results.readiness = await readResponse(fetchImpl, publicBase, '/api/v1/system/readiness');
   results.internal = await readResponse(fetchImpl, publicBase, '/Server/php/bootstrap.php');
 
   requireCondition(results.root.status === 200, 'Öffentlicher Root ist nicht erreichbar.');
@@ -135,6 +136,9 @@ async function runSmoke({
   requireCondition(results.status.status === 200, 'Status-API ist nicht erreichbar.');
   const statusPayload = parseJson(results.status.body, 'Status-API');
   requireCondition(statusPayload && statusPayload.ok === true && statusPayload.data, 'Status-API besitzt nicht den erwarteten Vertrag.');
+  requireCondition(results.readiness.status === 200, 'Migrationsbereitschaft ist nicht erreichbar.');
+  const readinessPayload = parseJson(results.readiness.body, 'Migrationsbereitschaft');
+  requireCondition(readinessPayload?.ok === true && readinessPayload.data?.readiness?.migrationsReady === true, 'Notwendige Coremigrationen sind in Produktion noch nicht vollständig angewendet.');
 
   requireCondition(results.modules.status === 200, 'Öffentlicher Modulkatalog ist nicht erreichbar.');
   const modulePayload = parseJson(results.modules.body, 'Modulkatalog');
@@ -213,6 +217,7 @@ async function runSmoke({
     rewrite: results.rewrite.status,
     adminProtected: results.admin.status,
     statusApi: results.status.status,
+    migrationsReady: true,
     moduleCatalog: results.modules.status,
     internalCoreProtected: results.internal.status,
     deploymentRevision: true,

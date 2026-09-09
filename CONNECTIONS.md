@@ -283,3 +283,7 @@ Bestätigt ist der Weg `PC → GitHub → GitHub Actions → FTPS → Webserver 
 ## Admin runtime inventory
 
 The Admin connection view reports only authoritative configured connection types and health. It never displays passwords, tokens, raw environment values, or example URLs as active configuration. Optional provider integrations are explicitly reported as not configured. Database metadata is restricted to safe operational fields in the protected Admin domain.
+
+## Operations readiness
+
+Connection status is derived from the configured primary runtime database with a bounded safe ping. Optional providers are explicitly `not_configured`. Failures are shown as unavailable/error states and never replaced by example endpoints or exposed credentials.

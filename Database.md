@@ -111,3 +111,7 @@ IndexedDB wird in P3 ausschließlich in `CoreStartup.startBackground()` geöffne
 ## Operations migration (2026-09-09)
 
 Migration `2026_09_09_0004_operations_device_sessions` adds random device identity/label fields and an indexed user/device/session lookup, and removes legacy Admin permission grants from `viewer` and `user`. `release_state` is the authoritative persistent maintenance/release record. Device sessions and login throttling remain excluded from logical backups; restore clears both before re-login.
+
+## Explicit production migrations
+
+`scripts/run-core-migrations.php` is the idempotent cPanel/CLI entrypoint. Setup and login remain fallback safety lines, but deployment smoke now fails when `system/readiness` reports pending Core migrations. Partial Device Session migrations tolerate already-existing expected columns/index and the migration table remains authoritative.

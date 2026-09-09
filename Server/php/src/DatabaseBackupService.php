@@ -3,6 +3,15 @@ declare(strict_types=1);
 
 namespace Neutral\Core;
 
+final class BackupRuntimeException extends \RuntimeException
+{
+    public function __construct(private readonly string $safeCode, string $internalMessage)
+    {
+        parent::__construct($internalMessage);
+    }
+    public function safeCode(): string { return $this->safeCode; }
+}
+
 final class DatabaseBackupService
 {
     private const FORMAT = 'neutral-logical-backup-v1';
@@ -13,6 +22,7 @@ final class DatabaseBackupService
     private \Closure $importer;
     private string $key;
     private string $backupDirectory;
+    private bool $usesDatabaseExporter;
 
     /**
      * @param callable(list<string>):array<string,list<array<string,mixed>>>|null $exporter
@@ -28,16 +38,17 @@ final class DatabaseBackupService
     ) {
         $configuredKey = $config->backupKey();
         if (strlen($configuredKey) < 32) {
-            throw new \RuntimeException('NEUTRAL_BACKUP_KEY must contain at least 32 characters.');
+            throw new BackupRuntimeException('BACKUP_KEY_NOT_CONFIGURED', 'Backup encryption key must contain at least 32 characters.');
         }
         if (!function_exists('openssl_encrypt') || !function_exists('openssl_decrypt')) {
-            throw new \RuntimeException('OpenSSL is required for encrypted backups.');
+            throw new BackupRuntimeException('BACKUP_CRYPTO_UNAVAILABLE', 'OpenSSL is unavailable.');
         }
         $this->key = hash('sha256', $configuredKey, true);
         $this->backupDirectory = rtrim($projectRoot, "/\\") . '/Server/runtime/backups';
         $this->exporter = $exporter === null
             ? \Closure::fromCallable([$this, 'exportDatabase'])
             : \Closure::fromCallable($exporter);
+        $this->usesDatabaseExporter = $exporter === null;
         $this->importer = $importer === null
             ? \Closure::fromCallable([$this, 'importDatabase'])
             : \Closure::fromCallable($importer);
@@ -47,10 +58,28 @@ final class DatabaseBackupService
     public function create(): array
     {
         $this->ensureDirectory();
+        try {
+            if (!$this->usesDatabaseExporter) {
+                $migrationReady = true;
+            } else {
+                $migrationReady = $this->migrator->status()['pending'] === [];
+            }
+            if (!$migrationReady) {
+                throw new BackupRuntimeException('BACKUP_SCHEMA_NOT_READY', 'Managed database migrations are pending.');
+            }
+        } catch (BackupRuntimeException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            throw new BackupRuntimeException('BACKUP_DATABASE_UNAVAILABLE', 'Could not verify managed database tables.');
+        }
         $backupId = bin2hex(random_bytes(16));
         $createdAt = gmdate('c');
         $allowed = $this->portableTables();
-        $exported = ($this->exporter)($allowed);
+        try {
+            $exported = ($this->exporter)($allowed);
+        } catch (\Throwable $exception) {
+            throw new BackupRuntimeException('BACKUP_EXPORT_FAILED', 'Managed database export failed.');
+        }
         $tables = [];
         foreach ($allowed as $table) {
             $rows = $exported[$table] ?? [];
@@ -71,7 +100,7 @@ final class DatabaseBackupService
         $tag = '';
         $ciphertext = openssl_encrypt($plaintext, 'aes-256-gcm', $this->key, OPENSSL_RAW_DATA, $nonce, $tag, $backupId, 16);
         if (!is_string($ciphertext) || strlen($tag) !== 16) {
-            throw new \RuntimeException('Backup encryption failed.');
+            throw new BackupRuntimeException('BACKUP_ENCRYPT_FAILED', 'Backup encryption failed.');
         }
         $envelope = $this->encode([
             'envelope' => self::ENVELOPE,
@@ -83,7 +112,7 @@ final class DatabaseBackupService
         ]);
         $path = $this->pathForDownload($backupId);
         if (file_put_contents($path, $envelope, LOCK_EX) === false) {
-            throw new \RuntimeException('Could not persist encrypted backup.');
+            throw new BackupRuntimeException('BACKUP_WRITE_FAILED', 'Could not persist encrypted backup.');
         }
         @chmod($path, 0600);
         return ['backupId' => $backupId, 'status' => 'created', 'createdAt' => $createdAt, 'size' => strlen($envelope)];
@@ -362,9 +391,12 @@ final class DatabaseBackupService
     private function ensureDirectory(): void
     {
         if (!is_dir($this->backupDirectory) && !mkdir($this->backupDirectory, 0700, true) && !is_dir($this->backupDirectory)) {
-            throw new \RuntimeException('Could not create backup directory.');
+            throw new BackupRuntimeException('BACKUP_STORAGE_UNAVAILABLE', 'Could not create the protected backup directory.');
         }
         @chmod($this->backupDirectory, 0700);
+        if (!is_writable($this->backupDirectory)) {
+            throw new BackupRuntimeException('BACKUP_STORAGE_UNAVAILABLE', 'Protected backup directory is not writable.');
+        }
     }
 
     private function validBackupId(string $backupId): bool
