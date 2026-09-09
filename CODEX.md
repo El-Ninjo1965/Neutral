@@ -1,508 +1,295 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER AUFTRAG – PHASE 2 REPARATUR / TEST-FIRST  
+**Status:** AKTIVER AUFTRAG – LIVE RETEST FOLLOW-UP + CORE-FREEZE + GPS BASIS  
 **Datum:** 2026-09-09
 
 # Aktueller Auftrag
 
-## Live Admin Reality Check – Phase 2: Root Causes beheben und produktiv verifizieren
+## Admin-Livebefunde final bereinigen, Core 1.0 einfrierbar machen und GPS-Basismodul abrunden
 
-Phase 1 ist abgeschlossen. Die Root Causes sind in `CHATGPT.md` dokumentiert und gelten als verbindliche Ausgangslage für diesen Auftrag.
+Der Phase-2-Deploy ist erfolgt. Der anschließende reale iPad/Chrome-Betreibercheck hat mehrere verbleibende Fehler und UX-Lücken gezeigt. Diese Befunde sind verbindliche Live-Wahrheit und haben Vorrang vor zuvor grünen Tests.
 
-Ziel dieser Phase ist **nicht** neue Featurearbeit, sondern die nachgewiesenen Fehler aus dem Live-Admin-Reality-Check systematisch zu beheben, mit echten Integrationstests abzusichern, sauber zu deployen und den realen Produktionszustand soweit möglich zu verifizieren.
+Dieser Auftrag bündelt bewusst zusammengehörige Restarbeiten. Arbeite autonom und test-first. Keine GPS-Pro-Entwicklung und keine allgemeine i18n-Erweiterung.
 
-P1 und P4 bleiben `LIVE BESTANDEN` und dürfen nicht regressieren.
-
-Keine Appearance-/i18n-Weiterentwicklung in diesem Auftrag.
+P1/P4 dürfen nicht regressieren.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Vollständig mit `origin/main` synchronisieren.
-2. Vollständig lesen:
-   - `CHATGPT.md`
-   - `CODEX.md`
-   - `CURRENT-TASK.md`
-   - `STATUS.md`
-   - `TODO.md`
-   - `ToDoNow.md`
-   - `WORKFLOW.md`
-   - `CHANGELOG.md`
-   - `Architecture.md`
-   - `Security.md`
-   - `API.md`
-   - `Database.md`
-   - `Functions.md`
-   - `CONNECTIONS.md`
-   - `UI-UX.md`
-   - `Install-README-Server.md`
-   - relevante Backup-/Deployment-Dokumentation
-3. Danach alle in der Phase-1-Diagnose genannten Implementierungs-, Test-, Migrations- und Deploymentdateien vollständig lesen.
-4. Diesen Auftrag vollständig nach `CURRENT-TASK.md` übernehmen.
-5. Vor Implementierung prüfen und dokumentieren:
-
-`CODEX.md == CURRENT-TASK-Anforderungen`
-
-6. Test-first arbeiten. Kein symptomatischer Schnellfix ohne reproduzierbaren Fehlerfall.
-7. Keine Secrets, Credentials, Backup-Keys, internen sensitiven Pfade oder personenbezogenen Produktionsdaten ausgeben.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `CORE-1.0.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, `Modules.md`, relevante Install-/Deployment-/Backup-Dokumentation sowie alle betroffenen Implementierungs-/Testdateien.
+3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen und vor Implementierung dokumentieren: `CODEX.md == CURRENT-TASK-Anforderungen`.
+4. Für jeden Livefehler zuerst reproduzierenden Test bzw. belastbare Root-Cause-Evidenz herstellen; keine symptomatischen Schnellfixes.
+5. Keine Secrets oder sensitiven Produktionsdaten ausgeben. Keine destruktiven Restore-Tests auf Produktion.
 
 ---
 
-# 2. Reparaturreihenfolge – verbindlich
+# 2. Verbindliche Admin-Grundregel
 
-Arbeite in dieser Reihenfolge, weil spätere Punkte auf den früheren Datenverträgen aufbauen:
+Adminseiten und Felder existieren nur, wenn sie einen realen administrativen Nutzen besitzen.
 
-1. Session-SQL und Device-Session-Datenfluss
-2. gemeinsames API-Envelope-Unwrapping / Admin-DTOs
-3. Migration-/Deploymentvertrag
-4. Backup/Restore + Cron-Paketierung + sichere Fehlerklassifikation
-5. Release-/Updateinformationen
-6. Settings-Vertrag für Intervall/Retention
-7. Alert-Lebenszyklus
-8. Audit-Filter/Labels
-9. echte Integrationstests / CI-Smokes
-10. vollständige Regression / Deploy / Live-Verifikation / Dokumentation
+- Keine dekorativen `{}`, `[object Object]`, `—`, `unknown`, `Not found` oder dauerhaft nutzlosen `Unavailable`-Felder.
+- Wenn eine Information sicher und autoritativ ermittelbar ist: korrekt und menschenlesbar anzeigen.
+- Wenn sie nicht sinnvoll ermittelbar ist und keinen Handlungswert besitzt: Feld/Panel entfernen.
+- Wenn ein echter administrativ relevanter Fehler vorliegt: verständlich und handlungsfähig anzeigen.
+- Keine Fake-/Placeholderdaten.
+
+Diese Regel gilt insbesondere für Dashboard, Connections, Server, Database und Diagnostics.
 
 ---
 
-# 3. Device Sessions – P0
-
-## Nachgewiesene Root Cause
-
-In `Server/php/src/Phase4AuthRbac.php` liegt das Session-SQL mit `GROUP_CONCAT(... SEPARATOR ",")` in einem PHP-Doppelquote-String und wird dadurch falsch als mehrere Argumente an `PDO::query` übergeben.
-
-Zusätzlich ist die produktive Anwendung der Device-Session-Migration nicht garantiert, weil der FTPS-Deploy selbst keine Coremigration ausführt.
-
-## Auftrag
-
-- Schreibe zuerst einen reproduzierenden PHP-Test für den fehlerhaften Session-Query-Pfad.
-- Korrigiere das SQL robust und lesbar; keine fragilen Quote-Konstruktionen.
-- Prüfe vollständigen Session-Datenfluss: create/register → persist → list → current marking → revoke → cleanup.
-- Bestehende gültige Sessions nicht unnötig löschen.
-- Current-Session-Markierung zuverlässig erhalten.
-- Keine Hardwarefingerprints; keine langlebigen Authsecrets in localStorage.
-- Serverwiderruf bleibt autoritativ.
-- Device-Limitvertrag unverändert erhalten.
-- Migration `2026_09_09_0004_operations_device_sessions` auf Idempotenz und Bestandsinstallationen prüfen.
-
-## Abnahme
-
-Mindestens Tests für:
-
-- bestehende Sessionliste liefert Datensätze ohne PHP/PDO-Fehler;
-- aktuelle Session korrekt markiert;
-- widerrufene/abgelaufene Sessions nicht als aktiv dargestellt;
-- einzelne fremde Device-Session widerrufbar;
-- bestehende Installation mit altem Schema migriert sauber;
-- erneutes Migrieren bleibt idempotent.
-
----
-
-# 4. Gemeinsamer Admin-API-Datenvertrag – P0
-
-## Nachgewiesene Root Cause
-
-Mehrere Adminansichten lesen PHP-`JsonResponse`-Antworten eine Ebene zu flach. Dadurch werden erfolgreiche Payloads für Server, Database, Connections, Providers, Backups und Release verworfen bzw. als leer/unknown dargestellt.
-
-## Auftrag
-
-- Definiere einen einzigen klaren Admin-Response-Vertrag.
-- Nutze bevorzugt eine gemeinsame zentrale Funktion wie `AdminCommon.unwrapData(...)` oder den bereits passenden vorhandenen Mechanismus.
-- Keine Bereich-spezifischen Sonder-Unwrapper, wenn dasselbe Envelope vorliegt.
-- Korrigiere alle betroffenen Views konsistent.
-- API-Fehler dürfen nicht still zu `{}`, `[]`, `unknown` oder falscher Null normalisiert werden.
-- UI soll sauber unterscheiden zwischen:
-  - erfolgreich + Daten,
-  - erfolgreich + optional nicht konfiguriert,
-  - temporär nicht verfügbar,
-  - echter API-/Runtimefehler.
-
-## Betroffene Bereiche mindestens
-
-- Sessions
-- Connections & Providers
-- Server
-- Database
-- Diagnostics
-- Backups & Restore
-- Maintenance & Release Information
-
-## Abnahme
-
-- Echte Fixture-/Integrationstests mit dem realen PHP-Envelope ergänzen.
-- Tests müssen beweisen, dass doppelte/verschachtelte Shapes nicht mehr durch Mock-Abkürzungen verborgen werden.
-- Kein produktiver Adminbereich darf erfolgreiche Payloads wegen falscher Ebene verwerfen.
-
----
-
-# 5. Connections / Providers / Server / Database / Diagnostics – P0/P1
-
-## Auftrag
-
-Nach dem Envelope-Fix jeden Bereich fachlich prüfen:
-
-### Connections & Providers
-
-- primäre reale DB-/Systemconnection aus autoritativer Quelle anzeigen;
-- optionale Provider ehrlich als `not configured` darstellen;
-- keine Beispielwerte wie `api.example.com`;
-- keine Secrets darstellen;
-- DB-/Connection-Ping fehlertolerant und verständlich klassifizieren.
-
-### Server
-
-- reale sichere PHP-/Runtime-/Host-/Releaseinformationen aus autoritativer Quelle anzeigen;
-- `Test server` muss echten sicheren Testpfad nutzen;
-- keine statischen `unknown`-Füllwerte bei erfolgreicher Antwort.
-
-### Database
-
-- reale sichere DB-Metadaten und Status anzeigen;
-- niemals Passwort oder sensitive Connectiondetails;
-- DB-Fehler verständlich klassifizieren, ohne interne Pfade/Secrets zu leaken.
-
-### Diagnostics
-
-- reale Werte aus Runtime/DB/Modulregistry;
-- installierte GPS-Modulanzahl korrekt;
-- Werte, die Shared Hosting nicht sicher liefern kann, explizit `Unavailable on this runtime` statt falscher `0`/`N/A`-Semantik;
-- keine vier konkurrierenden Wahrheiten zwischen Server/DB/Connections/Diagnostics.
-
----
-
-# 6. Migration und Deployment – P0
-
-## Nachgewiesene Lücke
-
-FTPS-Deploy führt derzeit keine Coremigration aus. Migrationen dürfen nicht zufällig erst beim nächsten Login angewendet werden.
-
-## Auftrag
-
-- Entwirf einen expliziten, idempotenten und sicheren Migrationsschritt für Deployment/CLI/Hostbetrieb.
-- Shared-Hosting/cPanel-Kompatibilität erhalten.
-- Kein automatischer destruktiver Datenumbau ohne kontrollierten Migrator.
-- Migrationserfolg/-fehler ohne Secrets protokollieren.
-- Produktionsdeployment darf bei notwendiger fehlgeschlagener Migration nicht still als vollständig erfolgreich gelten.
-- Bestehende Setup-/Login-Migration darf als zusätzliche Sicherheitslinie bestehen bleiben, aber nicht einzige Produktionsstrategie sein.
-
-## Verifikation
-
-- Testinstallation mit altem Schema → Deploy/Migrate → neues Schema korrekt.
-- zweiter Migrationslauf → keine Änderung/kein Fehler.
-- fehlgeschlagene Migration → klarer sicherer Fehlerzustand.
-
----
-
-# 7. Backup & Restore – P0
-
-## Nachgewiesene Probleme
-
-- GET-Payload wird durch Envelopefehler als leere Liste dargestellt.
-- POST reduziert unterschiedliche Ursachen auf dieselbe Meldung `Backup service temporarily unavailable.`
-- `scripts/run-automatic-backup.php` fehlt im Produktionspaket.
-- Hostlokaler Backup-Key, Directory-Schreibbarkeit und Managed Tables konnten in Phase 1 nicht verifiziert werden.
-
-## Auftrag
-
-### Manueller Backup-Pfad
-
-- `Create backup` muss real funktionieren, sofern Runtimevoraussetzungen erfüllt sind.
-- AES-256-GCM-Vertrag erhalten.
-- Sessions/Login-Throttling weiterhin ausgeschlossen.
-- sichere Integritäts-/Schema-/Tabellenprüfung erhalten.
-- Liste, Download, Upload, Validate, Restore und Delete nicht regressieren.
-
-### Sichere Fehlerklassifikation
-
-Unterscheide intern mindestens:
-
-- Backup-Key fehlt/ungültig,
-- Crypto/OpenSSL nicht verfügbar,
-- DB/Managed Tables nicht bereit,
-- Backupverzeichnis nicht erzeugbar/schreibbar,
-- Export-/Encrypt-/Write-Fehler,
-- ungültiges Backupformat.
-
-Nach außen nur sichere, handlungsfähige Meldungen/Codes ohne Secretwerte oder sensitive Pfade.
-
-### Automatische Backups
-
-- `scripts/run-automatic-backup.php` in das reale Produktionspaket aufnehmen.
-- cPanel-kompatiblen CLI-only-Vertrag beibehalten.
-- Schedulerstatus nicht vortäuschen.
-- Wenn kein Host-Cron konfiguriert ist, UI klar `external cron required` anzeigen.
-- Cron darf keine Voraussetzung für manuelles Backup sein.
-- Retention tatsächlich anwenden.
-
-### Host-Checks
-
-Soweit ohne Secret-Ausgabe möglich, eine sichere Diagnosemöglichkeit bereitstellen für:
-
-- Backup-Key vorhanden/ausreichend konfiguriert: ja/nein;
-- Backupdirectory nutzbar: ja/nein;
-- Managed Tables vollständig: ja/nein;
-- Crypto verfügbar: ja/nein.
-
-Keine Werte oder Pfade offenlegen.
-
----
-
-# 8. Maintenance & Release Information – P1
-
-## Nachgewiesene Probleme
-
-- Releaseversion ist statisch `1.0.0`.
-- `Updated` hängt an `release_state.checked_at`, nicht am tatsächlichen Build/Deploy.
-- Buildmanifest enthält bereits `sourceCommit/generatedAt`, ist aber nicht mit dem Release-DTO verbunden.
-
-## Auftrag
-
-- Maintenance-State und Release-Information fachlich trennen.
-- Wartungsmodus unverändert persistent, sicher und auditierbar halten.
-- Release-/Buildinformationen aus einer belastbaren versionierten Quelle ableiten, bevorzugt Produktionsmanifest/Buildmanifest.
-- Mindestens anzeigen, soweit verfügbar:
-  - Release/App-Version,
-  - Deployment-/Build-Commit kurz,
-  - Build-/Generated-Zeitpunkt.
-- Wenn kein Self-Updater existiert, weiterhin keinen Updater suggerieren.
-- `Operational` nur aus realem Health-/Maintenancezustand ableiten, nicht statisch.
-
----
-
-# 9. Settings – Backup Interval und Retention – P1
-
-## Nachgewiesene Semantik
-
-Der sichtbare Wert `14` ist **Retention = Anzahl aufzubewahrender Backups**, nicht 14 Tage. Der bisherige Code bietet 7/14/30; eine freie manuelle Auswahl wurde nie implementiert.
+# 3. Device Sessions – verbleibender P0-Livefehler
+
+Realer iPad/Chrome-Befund:
+
+- Ein einziger physischer iPad/Chrome-Betrieb erzeugt mehrere gleichzeitig `active` dargestellte Bootstrap-Administrator-Sessions.
+- Dashboard meldet 8 aktive Sessions, Session Overview zeigt mehrfach denselben Developer und nur einen Teil der Gesamtzahl.
+- Plattform wird fälschlich als `macOS · Safari` dargestellt, obwohl Betreiber ein iPad mit Google Chrome verwendet.
+- Device-Bezeichnung ist teils generisch `Browser installation`, teils `MacIntel`.
+- `Current session` funktioniert grundsätzlich.
 
 ## Zielvertrag
 
-- `Backup Interval` und `Backup Retention` visuell und technisch eindeutig trennen.
-- Intervall nur tatsächlich unterstützte Schedulerwerte anbieten.
-- Retention mit klarer Einheit darstellen: **Anzahl Backups**, nicht Tage.
-- Zusätzlich die gewünschte manuelle Retention ermöglichen, sofern sicher sinnvoll.
+Eine Geräte-Session entspricht einer Browser-/App-Installation, nicht einem Loginversuch.
 
-## Manuelle Retention
+- Wiederholter Login derselben Installation darf nicht immer neue parallele aktive Device-Sessions erzeugen.
+- Bestehende aktive Installation wiederverwenden/rotieren/ersetzen gemäß sicherem Authvertrag.
+- Logout/Widerruf bleiben autoritativ.
+- Mehrere echte Geräte/Installationen bleiben erlaubt bis zum zentralen Device-Limit.
+- Dashboard und Session Overview müssen dieselbe autoritative aktive Anzahl verwenden.
+- Historische/ersetzte Sessions dürfen nicht als aktiv zählen.
+- Session Overview soll Geräte/Installationen sinnvoll unterscheiden.
 
-Implementiere einen klaren Zahlenvertrag statt Freitext-Chaos:
+## Browser-/Plattformerkennung
 
-- positive Ganzzahl;
-- serverseitige Validierung;
-- vernünftige Unter-/Obergrenzen auf Basis bestehender Runtime/Storage-Annahmen;
-- UI zeigt Einheit und Validierungsfehler sichtbar;
-- gespeicherter Wert wird nach Reload exakt wieder dargestellt;
-- bestehende 7/14/30-Werte bleiben kompatibel.
+Safari auf iOS/iPadOS maskiert Browserengines; Chrome auf iOS/iPadOS nutzt ebenfalls WebKit. Trotzdem soll die UI aus dem verfügbaren User-Agent/Client-Kontext bestmöglich und ehrlich `iPadOS/iOS` sowie `Chrome` erkennen, wenn Chrome-identifizierende Tokens vorhanden sind. Keine Hardwarefingerprints. Wenn eine genaue Unterscheidung technisch nicht belastbar möglich ist, lieber `iPadOS · Browser` als nachweislich falsches `macOS · Safari`.
 
-Falls die bestehende Architektur einen zwingenden Grund gegen freie Retention enthält, diesen zuerst technisch belegen und einen gleichwertigen klaren Alternativvertrag implementieren; nicht still beim alten Dropdown bleiben.
+Tests für gleiche Installation/re-login, zweites echtes Installations-ID-Szenario, Current, Revoke, Logout, aktive Zählung und iPad Chrome UA ergänzen.
 
 ---
 
-# 10. Globaler Alert-Lebenszyklus – P1
+# 4. Admin-Login-Sackgasse – P0
 
-## Nachgewiesene Root Cause
+Reproduzierter Livebefund:
 
-Error-Alerts werden global an `document.body` angehängt, besitzen absichtlich keinen Timeout und werden beim Routerwechsel nicht bereinigt.
+- Nicht-administrativer Tester versucht Adminzugang.
+- Korrekt erscheint `Access denied – Administrative access requires an authorized role.`
+- Es existiert nur `Return to platform`.
+- Dieser Link führt zur User-App statt zum Admin-Login.
+- Reload lässt den Betreiber in der Access-denied-Sackgasse; er kann sich nicht unmittelbar wieder als Admin anmelden.
+- User-App-Login/Logout ist korrekt getrennt und behebt den Adminzustand nicht.
+
+## Zielvertrag
+
+- Admin-Domäne bleibt von der User-App getrennt.
+- Nach falschem Passwort, falschem Benutzer oder nicht autorisierter Rolle muss immer ein klarer Weg zurück zur **Admin-Anmeldung** bestehen.
+- Kein verpflichtender Redirect zur User-App.
+- Access-denied-Seite bietet `Back to admin login` / sinngemäß und löscht/invalidiert nur den ungeeigneten Admin-Authzustand soweit erforderlich.
+- Ein nicht autorisierter User darf dadurch selbstverständlich keine Adminrechte erhalten.
+- Refresh/Back/erneuter Adminlogin müssen deterministisch funktionieren.
+
+Echte Integrationstests für falsches Passwort, gültiger User ohne Adminrolle, danach erfolgreicher Adminlogin sowie P1-Sessiontrennung ergänzen.
+
+---
+
+# 5. Admin-Navigation / Hänger
+
+Betreiber beobachtet sporadisch: Wechsel über linke Adminnavigation reagiert sehr lange oder erst nach vollständigem Browserreload.
+
+Root Cause systematisch untersuchen: Routerzustand, laufende Fetches, Fehlerpromises, View-Cleanup, Overlay/disabled state, Sessionrefresh und Eventhandler. Nicht durch pauschale Timeouts kaschieren.
+
+Abnahme: wiederholtes schnelles Wechseln zwischen Dashboard, Sessions, Server, Database, Diagnostics, Audit und Settings bleibt responsiv; Fehler eines Views blockiert Navigation zu anderem View nicht.
+
+---
+
+# 6. Dashboard korrigieren
+
+Realer Befund:
+
+- `Database [object Object]` ist klarer Renderingfehler.
+- `Active sessions 8` übernimmt den fehlerhaften Sessionzustand.
+- Session Overview zeigt nur fünf Zeilen und mehrfach `Developer active`, ohne Gerätewert.
+- `Last check` ist roher ISO-Zeitstempel.
+- Dashboard verschweigt den administrativ wichtigen Zustand `Backup encryption key / host configuration required`.
+
+## Ziel
+
+- DB-Zustand menschenlesbar, keine Objektstringifizierung.
+- Aktive Sessions aus derselben autoritativen Device-Sessionprojektion; kompakte sinnvolle Übersicht statt redundanter identischer Userzeilen.
+- Zeit lokal/menschenlesbar darstellen, technischer ISO-Wert höchstens ergänzend.
+- Relevante Warnungen/Action-needed-Zustände wie nicht betriebsbereites Backup sichtbar machen, ohne Dashboard zu überladen.
+- Module 1/2 und Status nur aus realen Daten.
+
+---
+
+# 7. Server / Database / Diagnostics / Connections bereinigen
+
+Livebefunde nach Phase 2:
+
+### Server
+- Status `healthy`, Target und API Base vorhanden.
+- `Reachable` nur `—`.
+- `Framework metadata` zeigt `{}`.
+
+### Database
+- Status ready, MySQL, localhost und DB-Name vorhanden.
+- Username `—` kann aus Securitygründen legitim sein, soll dann aber nicht als leeres Informationsfeld wirken.
+- `Setup state` zeigt `{}`.
+
+### Diagnostics
+- System check liefert reale Werte: status, PHP 8.5.9/litespeed, production, memory, disk, modules 2, apps 1.
+- Direkt unter Überschrift steht fehlerhaft `Not found`.
+- `Framework summary` zeigt `{}`.
+
+### Connections
+- Primary database und status ready sichtbar.
+- `Type` ist `—`.
+- `Default` ist `no`, obwohl die Verbindung `Primary database` heißt; Semantik prüfen.
+- Optional providers not configured ist akzeptabel und ehrlich.
+- `Save connection` ist fragwürdig, wenn die Seite laut eigener Beschreibung read-only aus autoritativer Host/runtime configuration kommt. Entweder reale sichere Funktion belegen oder entfernen.
 
 ## Auftrag
 
-- Alert-Lebenszyklus an Route/View binden.
-- Seitenlokale Fehler beim Wechsel der Adminansicht entfernen.
-- Wirklich globale Systemmeldungen nur dann persistent lassen, wenn ihr Vertrag dies ausdrücklich verlangt.
-- Keine bloße pauschale Timeout-Lösung für Fehler.
-- Bestehende Accessibility-Ankündigungen erhalten.
-
-## Abnahme
-
-- Backupfehler sichtbar auf Backupseite.
-- Wechsel zu Audit → Backupfehler verschwindet.
-- global definierte Meldung bleibt nur gemäß explizitem Vertrag.
+Gemäß Admin-Grundregel jedes Feld prüfen. Reale Informationen liefern oder nutzlose Felder/Buttons entfernen. Keine leeren JSON-Panels. `Not found` beseitigen. Widerspruch Primary/Default klären. Keine Secrets anzeigen.
 
 ---
 
-# 11. Audit Log Filter / sichtbare Labels – P1
+# 8. Backup Host-Prerequisite und Betreiberführung
 
-## Nachgewiesene Lücke
+Live:
 
-Datumsfelder besitzen zwar ARIA-Namen, aber keine sichtbaren Labels. Auf iPad/Safari ist die Filterleiste dadurch nicht selbsterklärend.
+- Crypto Ready
+- Database/schema Ready
+- Protected storage Ready
+- Encryption key: `Host configuration required`
+- Create backup scheitert korrekt mit sicherer Meldung `runtime prerequisite is unavailable`.
+
+Damit ist der Codepfad handlungsfähiger, aber Backup bleibt real nicht nutzbar.
 
 ## Auftrag
 
-- sichtbare Labels für alle Filter, insbesondere From/To bzw. Zeitraum;
-- ARIA-Zuordnung korrekt erhalten;
-- Tablet-/Mobile-/Desktop-Layout klar gruppieren;
-- keine Placeholder-only-Erklärung;
-- native Safari-Dateinputs berücksichtigen;
-- bestehende Auditfilter und Retention/Purge nicht regressieren.
+- Bestehende sichere Readiness beibehalten.
+- Dokumentation/Betreiberführung so konkret machen, dass der Hostbetreiber den Encryption-Key sicher konfigurieren kann, ohne Schlüsselwert in UI/Logs/Git zu schreiben.
+- Prüfen, ob vorhandene cPanel-/Installationsdokumentation den exakten sicheren Konfigurationsweg enthält; falls nicht ergänzen.
+- Cron erst als betriebsbereit bezeichnen, wenn der reale deployte Runner und Hostkonfiguration zusammenpassen.
+- Keine automatische Secretgenerierung in eine öffentlich/versionskontrollierte Datei.
+- Kein Restore auf Produktion.
+
+Falls Hostzugriff weiterhin nötig ist: `HOST ACTION REQUIRED` mit exakten sicheren Schritten dokumentieren.
 
 ---
 
-# 12. Tests – diesmal echte End-to-End-Verträge
+# 9. Audit Log – Semantik und UX
 
-Die Phase-1-Diagnose hat gezeigt, dass bisherige grüne Tests viele Fehler nicht erkennen konnten, weil sie überwiegend Source-RegEx oder vereinfachte Mocks verwendeten.
+Live positiv: Filterlabels und View Details funktionieren.
 
-## Verbindlich ergänzen
+Verbleibende Probleme:
 
-### PHP-Integration
+1. Filter-/Action-Layout überlappt auf iPad: `Apply` ragt in/über das `To date`-Eingabefeld. Das ist ein echter Layoutbug.
+2. Dark Mode: Input-Borders sind zu schwach; Eingabefelder müssen klar erkennbar sein.
+3. Light Mode: Apply/Reset/Purge Größen und Grid wirken uneinheitlich; keine Überlagerung, konsistente Höhen und sinnvolle inhalts-/gridgerechte Breiten.
+4. `View details` JSON-Box soll Theme-Tokens folgen; Light darf hell und Dark dunkel sein, sofern Lesbarkeit/Codecharakter erhalten bleiben.
+5. Mehrere Details dürfen geöffnet sein, aber Layout darf dadurch nicht brechen. Optional Accordion nur wenn UX klar besser, nicht zwingend.
+6. Actor zeigt nur numerische ID. Ergänze einen verständlichen Benutzernamen/Handle soweit ohne PII-Leak und mit stabiler ID ergänzend.
+7. Purge-UX ist unklar: From/To-Filter, `Apply`, Retention-Auswahl und `Purge older entries` wirken wie ein gemeinsamer Vorgang. Trenne Filterung klar von destruktiver Retention-Aktion. Vor Purge deutlich anzeigen: `Delete audit entries older than X days`; Bestätigung erforderlich. Kein `All`-Purge in Produktion.
+8. Audit erzeugt offenbar mehrfach identische `settings.update`-Einträge mit Details, die nur denselben `appId/appName`-Zustand zeigen. Prüfe Root Cause. Kein Audit-/Write-Ereignis für echte No-op-Saves, sofern nichts geändert wurde. Bei Änderungen Details möglichst als `before`/`after` oder `changedFields` darstellen, ohne Secrets. Audit bleibt append-only außer kontrollierter Retention.
 
-Echte Tests gegen reale Klassen/DTOs für:
-
-- Device Sessions und Session-SQL;
-- SchemaMigrator/Bestandsmigration;
-- Server/Database/Connections/Diagnostics Responses;
-- Maintenance/Release DTO;
-- Backup-Service Konstruktion und sichere Fehlercodes;
-- Settingsvalidation für Interval/Retention.
-
-### JS/Admin Integration
-
-Mit realistischen PHP-Response-Envelopes testen:
-
-- gemeinsames unwrap;
-- erfolgreiche Daten;
-- optional nicht konfiguriert;
-- API-Fehler;
-- Backup-Liste;
-- Releaseanzeige;
-- Sessionliste;
-- Route-scoped Alerts;
-- Auditlabels.
-
-### Paket-/Deploymenttests
-
-Produktionspaket muss enthalten:
-
-- alle nötigen Migrationen;
-- `scripts/run-automatic-backup.php`;
-- Buildmanifest/Releasequelle;
-- alle betroffenen PHP-/Adminassets.
-
-### Smoke
-
-Nichtdestruktive Smokes soweit technisch sicher für:
-
-- Revision;
-- Migrationsbereitschaft/status;
-- reale öffentliche Basisendpunkte;
-- sichere Admin-DTO-Vertragsprüfung nur wenn ohne Credential-Leak möglich.
-
-Keine Restore-Aktion in Produktion.
+Tests für iPad-Breakpoint, Theme, Purge-Semantik, no-op update und echte Change-Details.
 
 ---
 
-# 13. Vollständige Regression
+# 10. Permission Catalog – Registry bleibt read-only
 
-Nach fokussierten Tests vollständige Suite ausführen, mindestens inklusive:
+Keine manuelle Permission-Erstellung einführen. Core und installierte Module liefern ihre Permission-Keys deklarativ über Registry/Manifest; Admin weist sie Rollen zu.
 
-- P1 User-App/Admin-Trennung;
-- P4 Homepage module/html;
-- Warmstart;
-- Light/Dark Theme;
-- Appearance V2 bestehender Stand;
-- lokale Navigation;
-- GPS;
-- Login/Logout;
-- Rollen/Permissions;
-- Device Sessions;
-- Maintenance;
-- Backup/Restore Unit/Integration ohne destruktiven Produktionsrestore;
-- Audit;
-- Service Worker;
-- Packaging/Base Path;
-- FTPS/Revision Smoke;
-- Secret-/Artefaktprüfung;
-- PHP lint;
-- JS syntax;
-- `git diff --check`.
+Verbesserungen:
 
-Keine bestehenden grünen Pfade opfern, um Adminseiten zu reparieren.
+- Platzhalterartige Beschreibungen wie `Permission admin.read` durch verständliche, konkrete Beschreibungen ersetzen.
+- Core- und Modulpermissions gleicher Qualitätsstandard.
+- Suche/Area/Source erhalten.
+- Optional sortierbare Spalten und sticky table header, wenn tablet-/mobile-sicher und ohne unnötige Komplexität.
+- Keine Delete/Edit-Funktion für Keys.
+
+`ModuleCreation.md` muss klar dokumentieren, wie ein Modul eigene Permissions deklarativ registriert.
 
 ---
 
-# 14. Deployment und Produktionsverifikation
+# 11. Core 1.0 – fachlicher Freeze-Vertrag
 
-Nach grüner Suite:
+Ziel des Projekts: Nach Fertigstellung des Neutral Core sollen normale neue Produktfunktionen ausschließlich über Module entstehen.
 
-1. Produktionspaket bauen.
-2. Paketinhalt explizit gegen Phase-2-Pflichtdateien prüfen.
-3. Commit und Push nach `main` gemäß `WORKFLOW.md`.
-4. Erforderliche CI-/Deploy-Runs terminal abwarten.
-5. `HEAD == origin/main` und sauberer Working Tree.
-6. Deploymentrevision verifizieren.
-7. Soweit ohne Betreiberinteraktion möglich sichere Produktionschecks ausführen.
-8. Keine destruktiven Produktionsaktionen.
+Verbindliches Abnahmekriterium:
 
-## Hostabhängige Punkte
+> Ein neues fachliches Modul muss vollständig implementierbar, registrierbar, installierbar, migrierbar, berechtigbar, aktivierbar/deaktivierbar und in die vorgesehenen UI-/API-Flächen integrierbar sein, ohne bestehende Core-Dateien für das konkrete Produktfeature ändern zu müssen.
 
-Wenn Backup-Key, ACL oder produktive Migration nur hostseitig endgültig verifizierbar sind:
+## Auftrag
 
-- sichere read-only/diagnostische Prüfmöglichkeit bereitstellen;
-- exakt dokumentieren, welchen Betreibercheck Lea/L anschließend durchführen soll;
-- keine Secretwerte anfordern oder anzeigen.
+- `CORE-1.0.md`, `Architecture.md`, `ModuleCreation.md`, `Functions.md`, `API.md`, `Database.md`, Modulregistry, Hooks/Extension Points und vorhandene GPS-/Reference-Module gegen dieses Kriterium auditieren.
+- Jetzt vor dem Freeze fehlende **generische** Extension Points identifizieren und nur wenn wirklich erforderlich ergänzen.
+- Keine CatchTrack-spezifische oder zukünftige GPS-Pro-Logik in Core einbauen.
+- Core darf später weiterhin aus echter technischer Notwendigkeit geändert werden (Security, Runtime-/Browser-/DB-Kompatibilität, Framework-Bug); nicht für normale Produktfeatures.
+- Dokumentiere einen klaren `Core Freeze`-Vertrag und eine Entscheidungsregel: Core-Änderungswunsch zuerst darauf prüfen, ob generische Frameworkfähigkeit fehlt oder Modulvertrag verletzt wird.
+- Ergänze einen automatisierten Referenz-/Contract-Test, der beweist, dass ein neues Beispielmodul über deklarative Verträge eingebunden werden kann, ohne Core-Featurecode zu patchen.
+
+Nicht vorsorglich Dutzende unbenutzte Hooks hinzufügen. YAGNI: nur generische Lücken, die aus aktuellem Modulvertrag oder Referenztest nachweisbar sind.
 
 ---
 
-# 15. Erforderlicher Betreiber-Retest nach Deployment
+# 12. GPS-Basismodul abrunden – kein GPS Pro
 
-In `CHATGPT.md` eine kurze, klare iPad/Safari-Retestliste hinterlassen für:
+GPS ist das neutrale Basismodul/Referenzmodul und soll standardmäßig im Paket bleiben, aber über Admin → Apps & Modules aktivier-/deaktivierbar sein. Deaktivieren bedeutet nicht deinstallieren.
 
-1. Sessions sichtbar + Current session + Einzelwiderruf.
-2. Connections/Providers reale/optionale Zustände.
-3. Server/Database/Diagnostics reale sichere Werte + GPS-Modulanzahl.
-4. Manuelles Backup erstellen + Liste/Download; kein destruktiver Restore auf Produktion.
-5. Maintenance an/aus + Reason + Admin bleibt erreichbar.
-6. Release-/Deployinformation sichtbar.
-7. Settings: Interval + Retention mit klarer Einheit + manuelle Retention speichern/reloaden.
-8. Backupfehler-Alert verschwindet beim Seitenwechsel.
-9. Auditfilter mit sichtbaren Labels im Hoch-/Querformat.
-10. P1/P4 Kurzregression.
+## Basisumfang
 
----
+- aktuelle Position
+- Genauigkeit soweit verfügbar
+- `Position aktualisieren`
+- `Position teilen`
+- **kein Tracking hinzufügen**
+- darunter einfache OpenStreetMap-Kartenanzeige mit Marker der aktuellen Position
+- Klick/Tap auf Karte öffnet dieselbe Position in OpenStreetMap
 
-# 16. Dokumentation und Abschluss
+## Teilen / Navigation
 
-Erst nach tatsächlicher Verifikation aktualisieren:
+- Google Maps als **Default/erste Option**, nicht erzwungen.
+- Weitere Optionen: OpenStreetMap und System-Share/andere Apps.
+- Neutral übergibt nur die vom Nutzer bewusst gewählten Koordinaten/Location-Link; keine automatische Hintergrundweitergabe.
+- `Allow Location Context Sharing` betrifft automatische/modulübergreifende Kontextweitergabe, nicht die bewusste manuelle Aktion `Position teilen`. UI-Hilfetext muss diese Trennung eindeutig erklären.
+- Interne Karte bleibt providerneutral/OpenStreetMap; Google Maps wird nicht zur Core-Abhängigkeit.
 
-- `CHATGPT.md`
-- `CURRENT-TASK.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
-- `CHANGELOG.md`
-- `Security.md`
-- `API.md`
-- `Database.md`
-- `Architecture.md`
-- `CONNECTIONS.md`
-- `UI-UX.md`
-- `Install-README-Server.md`
-- relevante Backup-/Deploymentdokumentation.
+## Wiederverwendung
 
-Regeln:
+Karten-/Location-Vertrag so gestalten, dass spätere Apps/Module ihn wiederverwenden können, ohne CatchTrack-Logik einzubauen.
 
-- `CURRENT-TASK.md` am Ende korrekt auf abgeschlossen setzen, wenn wirklich abgeschlossen.
-- Keine Behauptung `LIVE BESTANDEN` für Punkte, die nur code-seitig getestet wurden und noch Betreiber-Retest benötigen.
-- Klar unterscheiden zwischen:
-  - CODE-SEITIG ERLEDIGT,
-  - DEPLOYED,
-  - HOST-CHECK REQUIRED,
-  - DEVICE RETEST REQUIRED,
-  - LIVE BESTANDEN.
-- Historische Phase-1-Diagnose nicht löschen; nur als überholte Evidenz einordnen.
+`GPS Pro` ist ausschließlich Zukunftsplanung: separates erweitertes Modul, das später je App zusätzliche Funktionen haben kann. Nicht implementieren, nicht detailliert spezifizieren. Wenn GPS Pro später verwendet wird, können GPS und GPS Pro parallel installiert sein; Admin kann GPS deaktivieren und GPS Pro aktivieren.
 
 ---
 
-# 17. Grenzen
+# 13. Appearance / UI-Grundqualität
 
-- Keine Appearance-/i18n-Neuentwicklung.
-- Keine neuen Produktfeatures außerhalb der genannten Reparaturen.
-- Keine Fake-/Placeholder-Daten.
-- Keine Secrets.
-- Keine Hardwarefingerprints.
-- Kein destruktiver Restore auf Produktion.
-- Keine stillen Datenbankänderungen außerhalb des Migrators.
-- Keine kosmetische Symptombehandlung ohne den belegten Daten-/Runtimevertrag zu korrigieren.
-- Keine Abschlussmeldung, solange Tests/Deployment nicht terminal verifiziert sind.
+Keine große neue Appearance-Phase starten. Die in diesem Auftrag berührten Adminviews müssen aber in Light/Dark und iPad-Breakpoints konsistent sein:
 
-**Ziel:** Die in Phase 1 nachgewiesenen Diskrepanzen zwischen Code, Deployment und realem Adminverhalten werden systematisch behoben, test-first abgesichert und so weit wie technisch möglich produktiv verifiziert. Danach erhält Lea einen präzisen Betreiber-Retest statt einer voreiligen "alles erledigt"-Meldung.
+- Inputs klar erkennbare Borders/Focusstates;
+- keine Überlagerungen;
+- Buttons konsistente Höhe und sinnvolle Breite;
+- Theme-Tokens statt hartkodierter fremder Flächen;
+- Touchziele ausreichend groß;
+- keine Layoutregression in User-App/P4.
+
+---
+
+# 14. Test- und Abnahmevertrag
+
+Verbindlich echte Integration/DOM/Contract-Tests ergänzen, nicht nur Regex-Sourcechecks.
+
+Mindestens:
+
+- gleiche Device-ID + mehrfacher Login → eine aktive Installation;
+- zweite Device-ID → zweite aktive Installation;
+- iPad Chrome wird nicht fälschlich als macOS Safari ausgegeben, sofern UA unterscheidbar;
+- Dashboard-Sessioncount entspricht Sessionregistry;
+- Admin access denied → zurück zum Adminlogin → erfolgreicher Adminlogin;
+- Adminnavigation bleibt nach View-/Fetchfehler bedienbar;
+- keine `[object Object]`, `{}`-Leerpanels
