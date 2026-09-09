@@ -1,7 +1,7 @@
 # CURRENT TASK — Live-Retest-Follow-up, Core Freeze und GPS-Basis
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** CODE-SEITIG ERLEDIGT · COMMIT/DEPLOY/CI AUSSTEHEND · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
 **Grenzen:** P1/P4 regressionsfrei; kein GPS Pro; keine CatchTrack-Logik; keine i18n-/Appearance-Neuentwicklung; keine Secrets; kein destruktiver Produktions-Restore.
 
 ## Verbindliche Arbeitsliste

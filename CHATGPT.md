@@ -1,6 +1,99 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-09
+**Auftrag:** Live-Retest-Follow-up, Core-1.0-Freeze und GPS-Basis
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
+
+## Kurzfazit
+
+Die aktuellen iPad/Chrome-Livebefunde wurden als Wahrheit behandelt. Die nachweisbaren Root Causes wurden test-first im gebündelten Auftrag repariert und als Implementierungscommit `300739b64554bccbf7f123872a4d699ee3459bc9` nach `main` übertragen. CodeQL `34320104666` und FTPS `34320104797` endeten erfolgreich; der read-only Produktionssmoke bestätigte exakt diese Deploymentrevision und `migrationsReady:true`. P1/P4 regressierten in 457 Tests nicht. Es wurde weder GPS Pro noch CatchTrack-, i18n- oder neue Appearance-Logik implementiert.
+
+## Ergebnisse nach Datenfluss
+
+### Device Sessions
+
+- Root Cause: `session_regenerate_id(true)` erzeugte bei jedem erfolgreichen Login einen neuen DB-Datensatz, während die stabile Installations-ID nur für das Device-Limit verwendet wurde. Alte aktive Zeilen derselben Installation wurden nie ersetzt.
+- Reparatur: Vor dem Upsert wird jede andere aktive Session desselben Users und derselben validen Installations-ID als `replaced` beendet. Andere Installations-IDs bleiben unabhängig; Current, Revoke, Logout, Expiry und Cleanup bleiben autoritativ.
+- Dashboard und Session Overview verwenden dieselbe aktive Sessionprojektion. Dashboard zeigt Geräte/Plattform statt redundanter Benutzerzeilen.
+- Die bestmögliche, nicht sicherheitsrelevante UA-Darstellung erkennt `CriOS` als Chrome und `Macintosh + Mobile` als iPadOS; keine Hardwarefingerprints.
+
+### Admin-Login und Navigation
+
+- Root Cause der Sackgasse: Die 403-Seite verlinkte ausschließlich zur User-App und behielt die ungeeignete Adminsession.
+- Reparatur: Nur die isolierte Adminsession wird verworfen; `Back to admin login` führt zu `admin.php`. Die User-App-Session bleibt unangetastet und keine Rolle wird aufgewertet.
+- Root Cause des Navigationsrisikos: Views renderten asynchron in denselben Host; ein Fehler propagierte aus `showView`, und verspätete Views konnten den aktuellen Inhalt überschreiben.
+- Reparatur: Jede Navigation erhält sofort einen eigenen Host und eine Revision. Fehler bleiben im betroffenen View; alte Promise-Ergebnisse rendern nur in ihren entfernten Host und blockieren keinen Folgeklick.
+
+### Dashboard und Infrastruktur
+
+- DB-Objekte werden als Status statt `[object Object]` dargestellt, Zeiten lokal formatiert und aktive Sessions aus der Registry gezählt.
+- Fehlender Backup-Key erscheint als kompakter Action-needed-Zustand.
+- Connections ist wahrheitsgemäß read-only; der funktionslose Save-Button wurde entfernt, Typ/Primary-Rolle wurden geklärt.
+- Leere Framework-/Setup-JSON-Panels, bedeutungslose Username-/Reachable-Felder und das Diagnostics-Leerpanel wurden entfernt. Reale Fehler bleiben sichtbar.
+
+### Backup
+
+- Die boolesche sichere Readiness bleibt unverändert. `Install-README-Server.md` enthält jetzt exakte hostseitige Schritte für geschützte `.env`, Passwortmanager-generierten Key, ACL, boolesche Readiness und secretfreie Cronzeile.
+- Kein Key wurde erzeugt, gelesen, ausgegeben oder committed. Kein Restore wurde auf Produktion ausgeführt.
+- Der Runner ist deployed; Key, ACL und realer cPanel-Cron sind weiterhin **HOST ACTION REQUIRED** und Automatisierung ist bis dahin nicht live freigegeben.
+
+### Audit und Settings
+
+- Filter und destruktive Retention sind getrennte Sections. Der Button sagt dynamisch `Delete entries older than X days`; die erlaubte Auswahl und explizite Bestätigung bleiben Pflicht, ein All-Purge existiert nicht.
+- Tabletgrid, Buttonzeile, stärkere Theme-Borders und tokenbasierte JSON-Details verhindern die gemeldete Überlagerung und verbessern Light/Dark.
+- Autorisierte Auditdaten ergänzen den Username/Handle zur stabilen Actor-ID.
+- Root Cause der doppelten `settings.update`: jeder Submit schrieb und auditierte unabhängig von einer Zustandsänderung. Phase4/Phase6 überspringen jetzt identische Writes; die API auditiert nur echte Änderungen mit `changedFields` und sicheren App-Name-before/after-Werten.
+
+### Permission Catalog und Core Freeze
+
+- Der Catalog bleibt read-only. Corebeschreibungen sind konkret; Modulbeschreibungen stammen deklarativ aus dem Manifest. `ModuleCreation.md` beschreibt Key, Description, Defaultrollen, Access-/Route-Referenz und Installationssync.
+- Der Audit der bestehenden fachlich verschiedenen Module `gps` und `reference-notes` belegt Browserentry, Discovery, Installation, Lifecycle, Aktivierung, Permissions, Settings, generische PHP-Routen/Services, Limits und Migrationen ohne fachlichen zentralen Routerzweig.
+- Ergebnis: keine nachgewiesene generische Frameworklücke, daher keine spekulativen Hooks. `CORE-1.0.md` enthält Freeze- und Entscheidungsregel; Security/Runtime/Browser/DB-Kompatibilität und echte Frameworkbugs bleiben legitime Coregründe.
+
+### GPS-Basis
+
+- Das neutrale Referenzmodul zeigt unter den Koordinaten eine OpenStreetMap-Karte mit Marker; Tap öffnet dieselbe OSM-Position.
+- Bewusstes Teilen bietet Google Maps zuerst, dann OpenStreetMap und System Share/andere Apps. Nur die gewählte aktuelle Position wird übergeben; Google ist keine Coreabhängigkeit.
+- Hilfetext trennt manuelles Teilen von automatischer modulübergreifender `Allow Location Context Sharing`-Freigabe.
+- Kein Tracking wurde der UI hinzugefügt, GPS Pro wurde nicht implementiert oder detailliert spezifiziert, und keine produktspezifische Logik gelangte in Neutral.
+
+## Verifikation
+
+- Test-first: der neue Follow-up-Test startete 0/3 rot (fehlende Installationsersetzung, propagierter Routerfehler, fehlender Location-Link-Vertrag) und endete 4/4 grün einschließlich Dashboard-DOM-Vertrag.
+- Vollständige Suite: 457/457 bestanden, 0 Fehler, 0 übersprungen.
+- PHP-Lint: 39 Dateien bestanden; JavaScript-Syntax und `git diff --check` bestanden.
+- Produktionspaket: 110 Dateien, inklusive PHP/API/Admin/GPS und Operationsrunnern.
+- CodeQL Run `34320104666`: SUCCESS.
+- FTPS Run `34320104797`: SUCCESS einschließlich Test, Package, Upload und read-only Smoke.
+- Produktionssmoke: Root 200, Rewrite 200, Admin unauthentifiziert 401, Status 200, Modulcatalog 200, interner Core 403, zwei Modulverträge, Viewer-GPS, HTTPS, `migrationsReady:true` und Deploymentrevision bestätigt.
+- Screenshot: In der Codex-Sandbox ist kein Chromium-/Chrome-Binary installiert; ein lokaler Screenshot war deshalb nicht ausführbar. Das ersetzt den echten Gerätetest nicht.
+
+## Kurze Betreiber-Retestliste (iPad/Chrome)
+
+1. Dieselbe Browserinstallation zweimal als Admin anmelden: Session Overview und Dashboard müssen genau eine aktive Installation dafür zeigen; `Current session` muss stimmen.
+2. Eine zweite echte Browser-/App-Installation anmelden: genau eine zweite aktive Installation; diese widerrufen und deren Reload prüfen.
+3. Plattformtext auf dem iPad in Chrome prüfen: `iPadOS · Chrome`, nicht `macOS · Safari`.
+4. Mit falschem Passwort und danach mit einem User ohne Adminrolle testen; `Back to admin login` wählen und anschließend erfolgreich als Admin anmelden. Parallel angemeldete User-App muss ihre Identität behalten.
+5. Dashboard, Sessions, Server, Database, Diagnostics, Audit und Settings mehrfach schnell wechseln, auch nach einem Netzwerkfehler; Navigation darf nicht hängen.
+6. Dashboard prüfen: kein `[object Object]`, korrekter Sessioncount, lokale Checkzeit und sichtbare Backup-Key-Warnung.
+7. Connections/Server/Database/Diagnostics prüfen: keine `{}`-/`Not found`-/nutzlosen Leerfelder, kein Save-Connection-Button, reale Modulzahl.
+8. Audit in Hoch-/Querformat und Light/Dark prüfen: keine Überlagerung, klare Borders, Actor Handle plus ID, Detailsbox lesbar; Filter und Retention klar getrennt. Purge nur nach bewusster Bestätigung.
+9. Unveränderte Settings speichern: kein neues `settings.update`; danach einen Wert ändern und `changedFields` im neuen Auditdetail prüfen.
+10. GPS aktivieren: Position aktualisieren, OSM-Markerkarte antippen sowie Google Maps, OSM und System Share bewusst testen; danach P1/P4-Kurzregression.
+
+## Externe Restpunkte
+
+- **HOST ACTION REQUIRED:** Backup-Key ausschließlich hostlokal setzen, sichere ACL/readiness prüfen und cPanel-Cron ohne Secret in der Befehlszeile real ausführen. Kein Produktions-Restore.
+- **DEVICE RETEST REQUIRED:** obige zehn Punkte auf iPad/Chrome.
+- Diese Follow-up-Flächen werden bis zur jeweiligen realen Abnahme ausdrücklich nicht als `LIVE BESTANDEN` bezeichnet. P1 und P4 behalten ausschließlich ihren bereits real bestätigten Status.
+
+---
+
+# Historische Berichte
+
+# NEUTRAL — CODEX → CHATGPT/LEA
+
+**Datum:** 2026-09-09
 **Auftrag:** Live Admin Reality Check — Phase 2 Reparatur
 **Status:** CODE-SEITIG ERLEDIGT · DEPLOYED · DEVICE RETEST REQUIRED · Backup-Hostvoraussetzungen: HOST-CHECK REQUIRED
 
