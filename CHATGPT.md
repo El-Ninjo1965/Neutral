@@ -6,9 +6,12 @@
 
 ## Konkrete Root Cause
 
-Der vorher entfernte `SchemaMigrator::migrate()`-Aufruf war nicht der einzige DDL-Pfad im Login. Vor **jedem** Credential-Lookup ruft `LoginRateLimiter::check()` zweimal `PdoLoginAttemptStore::state()` auf. Dessen bisheriges `ensureSchema()` führte bei jeder neuen PHP-Request-Instanz `CREATE TABLE IF NOT EXISTS login_attempts` aus. Der produktive Runtime-DB-Benutzer folgt Least Privilege und kann Anwendungs-DML ausführen, aber kein DDL. Die dadurch geworfene PDO-/Runtime-Exception traf User und Admin im gemeinsamen Routerpfad vor der Passwortprüfung und wurde vom breiten Catch als HTTP 503 `Authentication service temporarily unavailable.` maskiert.
+Die sichere Produktionsklassifikation trennte zwei aufeinanderfolgende Fehler:
 
-Ein test-first gebauter PDO-Adapter, der DDL wie der Produktionsaccount verweigert, reproduzierte den Blindspot: Schon `state()` scheiterte vor dem SELECT. Nach dem Fix läuft derselbe Test mit null `exec()`-Aufrufen grün. Dies ist neue konkrete Evidenz und nicht die widerlegte Advisory-Lock-Hypothese.
+1. `PdoLoginAttemptStore::ensureSchema()` führte vor jedem Throttle-Read Request-time-DDL aus. Dies war ein echter Blindspot und wurde test-first entfernt.
+2. Der anschließend deployte Auth-Smoke erreichte danach `AUTH_USER_LOOKUP_UNAVAILABLE`. Damit war konkret belegt, dass der verbleibende 503 im Userlookup entstand. `Phase4UserService::authenticate()` verwendete denselben Named Placeholder `:username` zweimal (Username und E-Mail). Produktion verwendet bewusst `PDO::ATTR_EMULATE_PREPARES=false`; native PDO-MySQL-Prepares erlauben die Wiederverwendung eines Named Parameters nicht und werfen `HY093 Invalid parameter number` vor jedem `fetch()`. Deshalb waren bestehende User und Admin gleichermaßen betroffen, während Node-/Mocktests grün blieben.
+
+Der Query verwendet jetzt zwei eindeutige Bindings (`:username_name`, `:username_email`) und behandelt nullable Legacy-/aktuelles E-Mail-Schema explizit. Ein PDO-Testadapter mit nativer MySQL-Placeholder-Regel deckt genau diesen bisherigen Blindspot ab.
 
 ## Fix
 

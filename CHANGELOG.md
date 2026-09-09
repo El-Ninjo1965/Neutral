@@ -471,3 +471,7 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Login-attempt schema ownership remains exclusively in the checksummed migrator. Auth failures now expose safe stage codes and a random correlation ID without SQL, credentials, cookies or PII.
 - A successful durable login no longer fails because cleanup of old throttle counters fails. Critical identity/session persistence still fails closed, while device-limit retains its dedicated 409 contract.
 - Production smoke now posts two intentionally invalid, non-account credentials and requires 401 for both canonical user and admin login routes.
+
+### Production-classified follow-up
+
+The first classified smoke reached `AUTH_USER_LOOKUP_UNAVAILABLE`, proving throttle DDL was no longer the active failure. The credential query then exposed the decisive native-PDO incompatibility: it reused named parameter `:username` twice while `PDO::ATTR_EMULATE_PREPARES=false`, which MySQL rejects as `HY093`. Username and optional-email comparisons now use distinct bound parameters.

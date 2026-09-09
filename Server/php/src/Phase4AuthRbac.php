@@ -829,11 +829,11 @@ final class Phase4UserService
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             LEFT JOIN roles r ON r.id = ur.role_id
-            WHERE LOWER(u.username) = LOWER(:username) OR (u.email <> \'\' AND LOWER(u.email) = LOWER(:username))
+            WHERE LOWER(u.username) = LOWER(:username_name) OR (u.email IS NOT NULL AND u.email <> \'\' AND LOWER(u.email) = LOWER(:username_email))
             GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
             LIMIT 1
         ');
-        $statement->execute([':username' => $username]);
+        $statement->execute([':username_name' => $username, ':username_email' => $username]);
         $row = $statement->fetch(\PDO::FETCH_ASSOC);
         if (!is_array($row)) {
             return null;

@@ -89,3 +89,13 @@ $config=new Neutral\\Core\\AppConfig(['APP_ENV'=>'test','DB_TYPE'=>'mysql','DB_H
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.deepEqual(JSON.parse(result.stdout), { state: null, execs: 0 });
 });
+
+test('PHP user lookup uses unique native MySQL placeholders for username-or-email login', () => {
+  const result = runPhp(`
+require getenv('NEUTRAL_TEST_ROOT') . '/Server/php/bootstrap.php';
+class NativeStatement extends PDOStatement { public array $params=[]; public function execute(?array $params=null):bool{$this->params=$params??[];return true;} public function fetch(int $mode=PDO::FETCH_DEFAULT,int $orientation=PDO::FETCH_ORI_NEXT,int $offset=0):mixed{return false;} }
+class NativePdo extends PDO { public function __construct(){} public function prepare(string $query,array $options=[]):PDOStatement|false{preg_match_all('/:([a-zA-Z_][a-zA-Z0-9_]*)/',$query,$m);if(count($m[1])!==count(array_unique($m[1])))throw new PDOException('HY093 duplicate native placeholder');return new NativeStatement();} }
+$root=getenv('NEUTRAL_TEST_ROOT');$config=new Neutral\\Core\\AppConfig(['APP_ENV'=>'test','DB_TYPE'=>'mysql','DB_HOST'=>'x','DB_NAME'=>'x','DB_USER'=>'x'],$root);$db=new Neutral\\Core\\Database($config);$pdo=new NativePdo();$property=new ReflectionProperty($db,'pdo');$property->setAccessible(true);$property->setValue($db,$pdo);$store=new Neutral\\Core\\Phase4JsonStore(sys_get_temp_dir().'/neutral-native-placeholders');$roles=new Neutral\\Core\\Phase4RoleService($store,$db);$users=new Neutral\\Core\\Phase4UserService($store,$roles,$config,$db);echo json_encode(['result'=>$users->authenticate('missing-user','invalid-password')]);`);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(JSON.parse(result.stdout), { result: null });
+});
