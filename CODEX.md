@@ -1,422 +1,271 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER AUFTRAG
+**Status:** AKTIVER AUFTRAG – PHASE 1 DIAGNOSE / NO FIXES  
+**Datum:** 2026-09-09
 
 # Aktueller Auftrag
 
-## Admin Operations Reality Check + Access/Permission Cleanup + Device Sessions
+## Live Admin Reality Check – Produktionsbefund gegen dokumentierten Abschluss prüfen
 
-Dies ist bewusst ein größeres, zusammenhängendes Arbeitspaket aus dem realen Betreiber-iPad-Retest. Nicht nur Screens kosmetisch korrigieren: bestehende Verträge und reale Runtime prüfen, Root Causes beheben und Adminseiten an autoritative Datenquellen anbinden.
+Der letzte Admin-Operations-Auftrag wurde code-seitig und in `CHATGPT.md` als abgeschlossen gemeldet. Der aktuelle reale iPad/Safari-Betreibercheck zeigt jedoch mehrere Abweichungen zwischen Dokumentation/Tests und dem tatsächlich ausgelieferten Produktionszustand.
 
-Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
+**In dieser Phase nichts reparieren, nichts refactoren und keine neue Featurearbeit beginnen.** Zuerst systematisch die Root Causes ermitteln und einen belastbaren Ist-Bericht erstellen.
 
-Lies vollständig mindestens:
-
-- `WORKFLOW.md`
-- `DOCUMENTATION.md`
-- `CODEX.md`
-- `CURRENT-TASK.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
-- `CHANGELOG.md`
-- `CORE-1.0.md`
-- `Architecture.md`
-- `Security.md`
-- `API.md`
-- `Database.md`
-- `Functions.md`
-- `ModuleCreation.md`
-- `CONNECTIONS.md`
-- `UI-UX.md`
-- Install-/Deployment-/Backup-Dokumentation
-- alle relevanten Auth-, Session-, Role-/Permission-, Module-, Admin-, Settings-, Backup-, Maintenance-, Health-/Diagnostics-, Runtime-, Database-, Audit-, PHP-/Node-, Migration- und Testdateien.
-
-Übernimm den Auftrag vollständig nach `CURRENT-TASK.md` und prüfe vor Implementierung:
-
-`CODEX.md == CURRENT-TASK-Anforderungen`
-
-P1 und P4 bleiben `LIVE BESTANDEN` und dürfen nicht regressieren.
+P1 und P4 bleiben `LIVE BESTANDEN` und dürfen durch spätere Arbeiten nicht regressieren.
 
 ---
 
-# 1. Architekturentscheidung: User-App hat keine Admin-Funktionen
+# 1. Pflicht-Preflight
 
-Die User-App und die Admin-UI sind getrennte Produktebenen.
-
-Verbindlicher Vertrag:
-
-- **User-App enthält keinerlei Admin-Funktionen.**
-- Adminverwaltung, Userverwaltung, Rollen, Permissions, Sessions, Audit, Infrastruktur, Backups, Maintenance und Diagnostics existieren ausschließlich in der Admin-UI/API-Sicherheitsdomäne.
-- Normale User-/Viewer-Rollen dürfen nicht deshalb Admin-Leserechte erhalten, nur damit die User-App funktioniert.
-- User-App-Permissions sind ausschließlich fachliche App-/Modulrechte.
-- Admin-Permissions sind ausschließlich administrative/Betriebsrechte.
-
-Prüfe Code, Seed-Daten, Defaultrollen, APIs und Dokumentation gegen diesen Vertrag.
-
----
-
-# 2. Permission-Audit und Defaultrollen bereinigen
-
-Realer Befund: Systemrolle `viewer` besitzt aktuell u. a. `admin.read`, `audit.read`, `auth.read`, `role.read`, `session.read`, `settings.read`, `user.read` zusätzlich zu GPS-Rechten. Das passt nicht mehr zur getrennten Architektur.
-
-## Auftrag
-
-- Audit aller Core- und Modulpermissions.
-- Klassifiziere semantisch mindestens in `admin/system` und `user-app/module`.
-- Entferne Adminrechte aus normalen User-/Viewer-Defaultrollen, sofern keine fachlich zwingende serverseitige Notwendigkeit besteht.
-- Keine Security nur über versteckte Navigation: Serverendpunkte müssen weiterhin Permissionchecks erzwingen.
-- Prüfe `auth.read`/ähnliche Altkeys kritisch: nur behalten, wenn ein realer, dokumentierter Zweck existiert.
-- Bestehende Installationen sauber migrieren; keine bloße Änderung nur neuer Seeds.
-- Systemrollen weiterhin geschützt.
-- Modulrechte bleiben deklarativ durch Core/Modulvertrag registriert.
-
-Keine manuelle freie Permission-Erstellung im normalen Admin-UI einführen. Permissions entstehen aus Core und installierten Modulen; Admin weist sie Rollen zu.
+1. Vollständig mit `origin/main` synchronisieren und sicherstellen, dass gegen den aktuellen Stand gearbeitet wird.
+2. Vollständig lesen:
+   - `CHATGPT.md`
+   - `CODEX.md`
+   - `CURRENT-TASK.md`
+   - `STATUS.md`
+   - `TODO.md`
+   - `ToDoNow.md`
+   - `WORKFLOW.md`
+   - `CHANGELOG.md`
+   - `Architecture.md`
+   - `Security.md`
+   - `API.md`
+   - `Database.md`
+   - `Functions.md`
+   - `CONNECTIONS.md`
+   - `UI-UX.md`
+   - relevante Install-/Deployment-/Backup-Dokumentation
+3. Danach die tatsächlich betroffenen Implementierungs-, API-, Migration-, Test- und Deploymentdateien vollständig prüfen.
+4. Abgleichen, welcher Commit aktuell auf `main` liegt und welcher Build/Commit produktiv ausgeliefert wurde.
+5. Keine Secrets ausgeben oder in Diagnoseartefakte schreiben.
 
 ---
 
-# 3. Permission Catalog UX neu ordnen
+# 2. Reale Betreiberbefunde vom 2026-09-09
 
-Realer Befund: Permission-Key, Beschreibung und Scope laufen optisch zusammen und sind kaum lesbar.
+## A. Sessions
 
-Baue eine klare read-only Registry, bevorzugt Tabelle/Responsive Cards mit mindestens:
+Realer Befund: In der Admin-UI sind keine bzw. nicht die erwarteten Geräte-Sessions sichtbar.
 
-- Permission Key
-- verständliche Beschreibung
-- Bereich/Scope (`Admin`, `User-App`, ggf. `System`)
-- Quelle (`Core` oder konkretes Modul)
+Das widerspricht dem letzten Abschlussbericht, laut dem persistente Device Sessions und eine Session Overview implementiert wurden.
 
-Ergänze sinnvolle Suche/Filter, mindestens nach Admin/User-App und Core/Module, sofern auf Tablet/Mobile sauber.
+Prüfen:
 
-Keine Delete-/Edit-Funktion für Registry-Keys im normalen Adminbereich.
+- Werden Device Sessions tatsächlich erzeugt und in der produktiven DB gespeichert?
+- Wird die korrekte Session-/Device-Registry abgefragt?
+- Gibt es Migrationen, die auf Produktion nicht ausgeführt wurden?
+- Filtert die UI fälschlich alle Sessions heraus?
+- Werden aktuelle Sessions durch Cleanup/Expiry/Revocation sofort entfernt?
+- Existiert ein Deployment-/Schema-Drift zwischen Code und Produktion?
 
----
+Noch keine Änderung vornehmen.
 
-# 4. Device Sessions statt kurzlebiger 12h-Login-Sessions
+## B. Connections & Providers
 
-Zielvertrag des Produkts:
+Realer Befund: weiterhin keine verwertbaren realen Informationen sichtbar.
 
-- Ein Nutzer meldet sich auf einem Endgerät grundsätzlich einmal an und bleibt angemeldet, bis Logout, Widerruf oder ein relevantes Security-Ereignis die Geräte-Session beendet.
-- Eine App-/Browserinstallation entspricht einer Geräte-Session.
-- Keine invasive Hardware-ID/Fingerprinting-Lösung.
-- Neutral erzeugt eine kryptographisch zufällige Installations-/Device-ID und bindet die serverseitige Session daran.
-- Geräte-Sessions sind serverseitig widerrufbar.
-- Ein Zweitgerät erzeugt eine zweite Geräte-Session.
-- Tarif/Paket kann künftig/maximal eine bestimmte Anzahl aktiver Geräte erlauben. Implementiere mindestens einen sauberen zentralen Limitvertrag/Hook bzw. vorhandenen quantitativen Vertrag; keine verstreuten Hardcodes.
-- Bei erreichtem Limit nicht still zusätzliche Geräte zulassen. Liefere einen klaren, sicheren Fehler-/Managementpfad.
-- Logout beendet die aktuelle Geräte-Session.
-- Admin kann einzelne Geräte-Sessions widerrufen.
-- Security-Ereignisse müssen alle Sessions eines Users widerrufen können.
+Prüfen:
 
-WICHTIG: Persistenter Login bedeutet nicht „unwiderrufbares Cookie für immer“. Entwirf einen sicheren persistenten Geräte-Session-/Remember-Vertrag mit Rotation/Erneuerung soweit nötig, serverseitigem Widerruf und sicheren Cookieflags. Keine langlebigen Secrets in localStorage.
+- Welche autoritative Quelle sollte diese Seite laut aktuellem Code verwenden?
+- Liefert der Server echte Runtime-/Providerdaten oder nur leere/optionale Zustände?
+- Kommt die Antwort in Produktion an?
+- Unterscheidet die UI korrekt zwischen "nicht konfiguriert" und "Fehler/keine Daten"?
+- Wurde die zuletzt dokumentierte Umstellung auf autoritative Daten tatsächlich produktiv deployt?
 
-Bestehende 12h-Sessions sicher migrieren/ablösen. Dokumentiere Threat Model und Entscheidung in `Security.md`.
+## C. Server
 
----
+Realer Befund: weiterhin im Wesentlichen wie vor dem letzten Auftrag; die erwarteten realen Runtime-/Healthinformationen sind nicht erkennbar.
 
-# 5. Session Overview auf Geräteverwaltung umbauen
+Prüfen:
 
-Realer Befund: viele nahezu identische Sessions, rohe Issued/Expires-Zeiten, keine Geräteinformation.
+- reale API-Antwort,
+- Health-/Runtime-Service,
+- Berechtigungen,
+- Base-Path/Endpoint-Routing,
+- Deploymentstand,
+- UI-Binding/Rendering.
 
-Adminansicht soll mindestens zeigen:
+## D. Database
 
-- User
-- Rolle nur soweit hilfreich
-- Gerät/Installation verständlich identifizierbar
-- Plattform/Browser soweit datenschutzfreundlich aus vorhandenen Requestdaten ableitbar
-- erstellt/registriert
-- letzte Aktivität
-- Status
-- `Current session` eindeutig markieren
-- einzelne fremde/andere Geräte-Session widerrufen
+Realer Befund: ebenfalls weiterhin wie vorher; erwartete sichere reale DB-Metadaten fehlen.
 
-Keine IP unnötig prominent anzeigen/speichern; nur falls Securityvertrag dies wirklich benötigt, datensparsam behandeln.
+Prüfen:
 
-Abgelaufene/widerrufene Alt-Sessions nicht als endlose aktive Liste darstellen. Retention/Cleanup definieren.
+- DB-Statusquelle und API,
+- Produktionskonfiguration,
+- Migration/Schema,
+- Permission-/Admin-Scope,
+- UI-Binding,
+- ob Fehler absichtlich zu stark in "unavailable" normalisiert werden und dadurch Root Causes unsichtbar bleiben.
 
----
+## E. Backups & Restore
 
-# 6. Infrastructure & Monitoring Reality Check
+Realer Screenshot-Befund:
 
-Die folgenden realen Adminseiten zeigen aktuell teilweise Gerüste/Platzhalter trotz funktionierender Installation:
+`Backup creation failed: Backup service temporarily unavailable.`
 
-## Connections & Providers
+Seite zeigt gleichzeitig:
 
-Befund:
+- `Encrypted database backups`
+- `Automatic scheduler: external-cron-required.`
+- `Last success: No scheduled backup recorded.`
+- `No backups available yet.`
+- Button `Create backup`
 
-- `No providers configured`
-- Current connection `unknown`
-- gleichzeitig Formularplatzhalter wie `default-connection`, `neutral-app`, `https://api.example.com`.
+Prüfen und exakt lokalisieren:
 
-Auditieren:
+- Welcher Endpoint/Service beantwortet `Create backup`?
+- Welche konkrete interne Fehlerbedingung wird auf `Backup service temporarily unavailable.` reduziert?
+- Ist der Backup-Key vorhanden/lesbar?
+- Sind Backup-Verzeichnis und Dateirechte korrekt?
+- Ist die DB-Verbindung verfügbar?
+- Sind alle verwalteten Tabellen vorhanden?
+- Wurden alle Backup-Migrationen produktiv ausgeführt?
+- Ist der Pfad auf Shared Hosting korrekt?
+- Blockiert ein fehlender Cron fälschlich auch manuelle Backups? Das darf funktional nicht vermischt werden.
+- Gibt es einen Unterschied zwischen Tests/Sandbox und Shared-Hosting-Produktion?
 
-- Welchen realen Zweck hat Connections/Providers in der aktuellen Architektur?
-- Reale Provider/Connections aus autoritativer Konfiguration anzeigen.
-- Beispielwerte nicht als produktive Konfiguration darstellen.
-- Falls ein Teil nur zukünftiger Vertrag ist: klar als nicht konfiguriert/optional darstellen statt falschen Runtimezustand zu suggerieren.
-- Secrets niemals anzeigen.
+**Wichtig:** Keine Secrets, Schlüssel oder sensitive Pfade in den Bericht schreiben. Sensitive Details nur als vorhanden/fehlend/zugreifbar klassifizieren.
 
-## Server
+## F. Maintenance & Updates
 
-Befund:
+Realer Befund: weiterhin keine bzw. nicht die erwarteten verwertbaren Release-/Updateinformationen.
 
-- reale Domain vorhanden, aber Status `unknown`, Reachable `—`, Framework metadata `{}`.
+Prüfen:
 
-An reale Health-/Runtimequelle anbinden. `Test server` muss einen echten sicheren Test ausführen und verständliches Ergebnis liefern.
+- Welche Datenquelle ist laut Code autoritativ?
+- Werden Build-/Releaseinformationen im Produktionspaket überhaupt mitgeliefert?
+- Ist der Deploy-Zeitpunkt ableitbar?
+- Ist die UI aktuell oder läuft noch eine ältere Version?
+- Gibt es einen Unterschied zwischen Maintenance-State und Release-Information, der in der UI nicht korrekt abgebildet wird?
 
-## Database
+## G. Settings – Backup-Intervall / manuelle Auswahl
 
-Befund:
+Realer Betreiberbefund: Die gewünschte Auswahl ist weiterhin nicht vorhanden; angezeigt wird weiterhin ein fest/vorgegeben wirkender Wert von `14 Tage`.
 
-- MySQL wird real produktiv genutzt, Admin zeigt dennoch Status `unknown`, Host/Name/User `—`, Setup `{}`.
+Prüfen:
 
-An autoritativen DB-/Setupstatus anbinden. Nur sichere Metadaten anzeigen; niemals Passwort/Secrets. Keine interne Fehler-/Pfadleaks.
+- Welche Setting-ID/Quelle erzeugt diesen Wert?
+- Ist dies Backup-Retention, Backup-Intervall oder ein anderer 14-Tage-Vertrag?
+- Welche Auswahloptionen sind im aktuellen Code tatsächlich vorgesehen?
+- Wurde die gewünschte manuelle/konfigurierbare Auswahl implementiert, aber nicht deployed, oder nie implementiert?
+- Stimmen `Settings`, Backend-Schema, Defaults und Dokumentation überein?
 
-## Diagnostics
+Keine UX-Änderung vornehmen, bevor die Bedeutung des 14-Tage-Werts eindeutig geklärt ist.
 
-Befund:
+## H. Globaler Alert bleibt beim Seitenwechsel sichtbar
 
-- Status `unknown`
-- Memory/Disk `N/A`
-- Modules `0` trotz installiertem GPS
-- Apps `0`
-- Framework Summary `{}`.
+Screenshot-Befund: Die Backup-Fehlermeldung bleibt oben sichtbar, nachdem zu `Audit Log` navigiert wurde.
 
-Diagnostics muss reale, sichere Daten zeigen. Werte, die auf Shared Hosting nicht zuverlässig verfügbar sind, lieber als `Unavailable on this runtime` erklären statt falsche Nullen/N/A. Modulanzahl aus realer Registry. Keine vertraulichen Environmentdetails.
+Prüfen:
 
-## Gemeinsamer Vertrag
+- Ist der Alert globaler persistenter State?
+- Wird Seiten-/Routenwechsel nicht zum Clear genutzt?
+- Ist Persistenz absichtlich oder ein UI-State-Leak?
+- Welche Alerttypen sollen global bleiben und welche nur seitenlokal sein?
 
-Server, Database, Connections und Diagnostics dürfen keine vier konkurrierenden Wahrheiten besitzen. Nutze gemeinsame autoritative Services/DTOs, wo fachlich sinnvoll.
+## I. Audit Log UX
 
----
+Screenshot-Befund: Teile der Filterleiste, insbesondere Datums-/Zeitraumfelder, sind nicht ausreichend selbsterklärend bzw. erscheinen ohne klare sichtbare Beschriftung.
 
-# 7. Maintenance & Updates fertigstellen
+Prüfen:
 
-Realer Befund:
+- existierende Labels/ARIA-Zuordnung,
+- Tablet-/Safari-Darstellung,
+- responsive Grid-Berechnung,
+- Placeholder-only-UX,
+- ob visuelle Labels durch CSS/Breakpoints verschwinden.
 
-- Status `Operational`
-- Version `—`
-- Updated `—`
-- Maintenance-Schalter + Reason vorhanden
-- unklar, ob realer Wartungsmodus/Updatevertrag dahinterliegt.
-
-## Maintenance Mode
-
-Prüfe und implementiere/finalisiere:
-
-- persistenter serverseitiger Maintenance-State;
-- normale User-App wird bei aktivem Maintenance Mode kontrolliert blockiert bzw. erhält eine klare Wartungsseite/Antwort;
-- Admin-UI bleibt für autorisierte Admins erreichbar;
-- optionaler Wartungsgrund wird sicher/escaped angezeigt;
-- Zeitpunkt und ggf. auslösender Admin intern nachvollziehbar;
-- klarer Active/Inactive-Status;
-- keine Lockout-Falle, die Admin selbst aussperrt.
-
-## Release/Updates
-
-- reale Framework-/Release-/Buildversion und letzter Deploy-/Updatezeitpunkt anzeigen, sofern aus versionierter Build-/Releasequelle belastbar ableitbar;
-- `Operational` nicht statisch vortäuschen;
-- wenn kein selbstständiger Update-Mechanismus existiert, keinen funktionierenden Updater suggerieren;
-- UI ehrlich zwischen Release Information und tatsächlich unterstützten Updateaktionen unterscheiden.
+Noch keine kosmetische Änderung vornehmen; zuerst Ursache und Sollvertrag benennen.
 
 ---
 
-# 8. Backup & Restore vollständig auditieren/finalisieren
+# 3. Dokumentationswiderspruch ausdrücklich prüfen
 
-Security-Vertrag erhalten: verwaltete Neutral-Tabellen, Sessions/Login-Throttling ausgeschlossen, AES-256-GCM, hostlokaler Schlüssel, Integritäts-/Format-/Tabellenprüfung vor Restore.
+`CHATGPT.md` meldet u. a. Device Sessions, autoritative Infrastrukturinformationen und Backup/Restore als abgeschlossen. Der reale Betreiberzustand widerspricht dem zumindest teilweise.
 
-Realer Befund:
+Zusätzlich ist `CURRENT-TASK.md` noch als `in Bearbeitung` markiert, obwohl alle Punkte abgehakt sind und der Auftrag in `CHATGPT.md` als abgeschlossen beschrieben wird.
 
-- Settings zeigt seit Beginn `Enable Automatic Backups` aktiviert und Interval `Daily`.
-- Backup-Seite zeigt trotzdem `No backups available yet`.
+Prüfe für jeden betroffenen Bereich getrennt:
 
-Das ist zu klären und zu beheben: Scheduler/Trigger läuft nicht oder Liste ist nicht mit realen Backups verbunden.
+1. **Code vorhanden?**
+2. **Tests vorhanden und sinnvoll?**
+3. **Migration vorhanden?**
+4. **Migration produktiv angewendet?**
+5. **Build enthält Änderung?**
+6. **FTPS-Deploy enthält Änderung?**
+7. **Produktionsendpoint liefert erwartete Daten?**
+8. **UI konsumiert diese Daten korrekt?**
+9. **Dokumentation entspricht dem realen Zustand?**
 
-## Funktionaler Zielumfang
-
-- `Create backup` erstellt real verschlüsseltes Backup.
-- Liste zeigt reale Backups mit Datum/Zeit, Größe, Format-/Schema-/Appversion soweit sinnvoll und Status.
-- Download vorhandener Backups.
-- Restore nach Integritäts-/Kompatibilitätsprüfung und deutlicher Bestätigung.
-- Upload eines verschlüsselten Neutral-Backups + sichere Validierung + Restore.
-- Delete für nicht benötigte Backups mit Bestätigung.
-- automatische Backups funktionieren tatsächlich.
-- `Daily` darf in der Entwicklungsphase Default/aktiver Wert bleiben.
-- konfigurierbare Retention, damit Backups nicht unbegrenzt wachsen; wähle einen sicheren vernünftigen Default und dokumentiere ihn.
-- Fehler des letzten automatischen Backups im Admin sichtbar, ohne Secrets.
-- Restore invalidiert erforderliche Sessions und erzwingt sauberen Re-Login gemäß Sicherheitsvertrag.
-
-Wenn Shared Hosting keinen permanenten Scheduler besitzt, entwirf einen realistischen host-kompatiblen Triggervertrag (z. B. cPanel Cron/geschützter serverseitiger Trigger) und dokumentiere die Betriebsanforderung. Keine Fake-Automatik nur über UI-Checkbox.
+Keine Aussage "erledigt", nur weil Tests grün sind.
 
 ---
 
-# 9. Audit Log: lesbar + Retention/Purge
+# 4. Systematische Diagnose – verbindliches Vorgehen
 
-Audit Log bleibt grundsätzlich append-only/unveränderlich; keine normalen Einzel-Edit/Delete-Aktionen.
+Für jedes Problem:
 
-Verbessere UX:
+1. Fehler reproduzieren bzw. den Produktionspfad anhand vorhandener sicherer Diagnosemöglichkeiten nachvollziehen.
+2. Letzte relevante Commits und Deployments prüfen.
+3. Datenfluss rückwärts verfolgen: UI → API → Service → Runtime/DB/Filesystem/Migration.
+4. Vergleich mit funktionierenden benachbarten Adminseiten/Services.
+5. Eine konkrete Root-Cause-Hypothese pro Problem formulieren und mit Evidenz belegen.
+6. Noch keine Reparatur durchführen.
 
-- lesbare Spalten/Responsive Darstellung;
-- Details/JSON standardmäßig kompakt/einklappbar und formatiert;
-- Suche/Filter nach Zeitraum, Eventtyp, Bereich, Status/User soweit sinnvoll;
-- keine Secret-/PII-Leaks in Details.
+Wenn Produktionszugriff für einen Teil nicht möglich ist, exakt trennen zwischen:
 
-## Retention
+- **nachgewiesen**, 
+- **starke Evidenz**, 
+- **nicht prüfbar ohne Betreiber-/Hostzugriff**.
 
-Adminfunktion für kontrollierte Bereinigung:
-
-- z. B. älter als 30/90/180/365 Tage bzw. konfigurierbarer Retentionvertrag;
-- deutliche Bestätigung;
-- Bereinigungsaktion selbst auditieren, bevor alte Einträge entfernt werden;
-- optionaler vollständiger Clear ausschließlich für expliziten Development/Test-Kontext, nicht als normale Produktionsaktion;
-- keine Möglichkeit, gezielt belastende einzelne Auditzeilen unbemerkt zu entfernen.
+Nicht raten.
 
 ---
 
-# 10. System Settings konsistent machen
+# 5. Erwartetes Ergebnis dieser Phase
 
-Prüfe die vorhandenen Settings:
+Erstelle nach Abschluss der Diagnose einen kompakten, aber vollständigen Bericht mit Tabelle:
 
-- Application Name
-- unveränderliche Application ID
-- Log Level Debug/Info/Warning/Error
-- Automatic Backups
-- Backup Interval
+| Bereich | Live-Befund | Code-Stand | Produktionsstand | Root Cause | Evidenz | Fix nötig? | Priorität |
 
-Anforderungen:
+Mindestens für:
 
-- Produktionsdefault Log Level sinnvoll (`Info` oder `Warning`; begründe anhand bestehender Loggingarchitektur), nicht unbeabsichtigt dauerhaft Debug.
-- Automatic-Backup-UI muss dem realen Backupvertrag entsprechen.
-- Interval nur Optionen anbieten, die tatsächlich ausführbar sind.
-- Retention ergänzen, wenn dies hier UX-seitig am sinnvollsten ist.
-- keine Einstellungen anbieten, die keinerlei Runtimewirkung besitzen.
+- Sessions
+- Connections & Providers
+- Server
+- Database
+- Backups & Restore
+- Maintenance & Updates
+- Settings / 14-Tage-Wert
+- globaler Alert-State
+- Audit-Log-Filter/Labels
+- Dokumentationsstatus `CURRENT-TASK.md`
 
----
+Danach zusätzlich:
 
-# 11. Sicherheit / Datenschutz / Migration
+1. Liste der exakt zu ändernden Dateien für Phase 2.
+2. Liste nötiger Migrationen/Deploymentmaßnahmen.
+3. Liste notwendiger Live-Retests auf iPad/Safari.
+4. Klare Trennung zwischen Codefehler, Deploymentdrift, Konfigurationsproblem und externer Hostaufgabe.
+5. Empfehlung für die Reihenfolge der Reparaturen.
 
-- Auth, CSRF, Sessiontrennung und P1 nicht schwächen.
-- keine Secrets in Adminstatus, Logs, Diagnostics oder Backups.
-- keine Hardwarefingerprints.
-- sichere Cookieflags unter HTTPS.
-- langlebige Geräteauth serverseitig widerrufbar und rotierbar.
-- Migrationen für bestehende Sessions, Rollenpermissions und neue Betriebsdaten test-first.
-- Backup/Restore muss neue relevante persistente Konfiguration berücksichtigen, aber Sessiongeheimnisse weiterhin ausschließen.
-- Admin-UI bleibt die einzige Verwaltungsoberfläche.
+**Noch keine Implementierung. Noch kein Commit mit Codefixes.**
 
----
-
-# 12. Test-first / Abnahme
-
-Ergänze fokussierte Tests und vollständige Regression mindestens für:
-
-## Permissions
-
-- Viewer/User besitzt keine Adminrechte per Default.
-- Adminendpunkte bleiben serverseitig geschützt.
-- Modulpermissions registrieren sich deklarativ.
-- Catalog klassifiziert Quelle/Scope korrekt.
-
-## Device Sessions
-
-- persistenter Login über normalen bisherigen 12h-Zeitraum hinaus;
-- Logout widerruft aktuelle Geräte-Session;
-- Admin widerruft einzelne Geräte-Session;
-- Geräte-ID zufällig/installation-local, kein Hardwarefingerprint;
-- Limitvertrag blockiert zusätzliches Gerät kontrolliert;
-- Current session markiert;
-- keine Authsecrets in localStorage.
-
-## Infrastructure
-
-- Server/DB/Diagnostics liefern reale sichere Daten aus autoritativer Quelle;
-- GPS-Modul wird korrekt gezählt;
-- keine `{}`/`unknown`/falsche `0` bei tatsächlich ermittelbarem Zustand;
-- unavailable Werte ehrlich behandelt;
-- Beispiel-URLs nicht als aktive Produktionsverbindung.
-
-## Maintenance
-
-- User-App bei aktivem Maintenance blockiert;
-- Admin bleibt erreichbar;
-- Reason escaped;
-- State persistent;
-- Deaktivierung stellt Normalbetrieb wieder her.
-
-## Backup
-
-- create/list/download/delete;
-- encrypted upload/restore;
-- falsches/tampered Backup abgewiesen;
-- Automatic Backup Trigger;
-- Retention;
-- Sessions ausgeschlossen;
-- Restore-Sessionverhalten korrekt.
-
-## Audit
-
-- Details lesbar/escaped;
-- Filter;
-- Retention purge;
-- Purge selbst auditiert;
-- kein willkürliches Einzeldelete.
-
-## Regression
-
-- P1 und P4;
-- Homepage Local-first/Warmstart ohne Loading/White-Flash;
-- User/Admin Theme;
-- Appearance V2;
-- Navigation-Personalisierung;
-- GPS;
-- Login;
-- Userverwaltung;
-- Rollen;
-- Module Lifecycle;
-- Service Worker;
-- Packaging/Base Path;
-- FTPS/Smoke;
-- Secret-/Artefaktprüfung.
+Der Diagnosebericht soll am Ende in `CHATGPT.md` als neuer aktueller Übergabestand dokumentiert werden, ohne historische Evidenz zu löschen. `CURRENT-TASK.md` darf nur dann angepasst werden, wenn dies zur wahrheitsgemäßen Kennzeichnung dieses neuen Diagnoseauftrags nötig ist; keine vorzeitige "DONE"-Markierung.
 
 ---
 
-# 13. Dokumentation
+# 6. Grenzen
 
-Nach tatsächlicher Implementierung alle betroffenen Verträge wahrheitsgemäß aktualisieren, insbesondere:
+- Keine Appearance-/i18n-Weiterentwicklung in diesem Auftrag.
+- Keine neuen Features.
+- Keine Änderung von P1/P4-Verträgen.
+- Keine Fake-/Placeholder-Daten als "Fix".
+- Keine Secret-Ausgabe.
+- Keine symptomatischen Schnellfixes ohne Root Cause.
+- Keine Produktionsdaten löschen.
+- Keine Backup-/Restore-Experimente mit destruktivem Restore auf Produktion.
 
-- `Security.md`
-- `Architecture.md`
-- `API.md`
-- `Database.md`
-- `Functions.md`
-- `CONNECTIONS.md`
-- `UI-UX.md`
-- `ModuleCreation.md`
-- Backup-/Install-/Deploymentdokumentation
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
-- `CHANGELOG.md`
-
-Dokumentiere klar, was vollständig implementiert ist und welche hostseitige Betriebsanforderung (z. B. Cron) eventuell noch vom Betreiber konfiguriert werden muss. Keine UI-Funktion als aktiv behaupten, wenn sie nur vorbereitet ist.
-
----
-
-# 14. Abschluss gemäß WORKFLOW.md
-
-Vollständig:
-
-- fokussierte Tests;
-- vollständige Test-Suite;
-- PHP-Lint;
-- JavaScript-Syntaxcheck;
-- `git diff --check`;
-- Produktionspaket;
-- Secret-/Artefaktprüfung;
-- Commit + Push nach `main`;
-- `HEAD == origin/main`;
-- Working Tree sauber;
-- FTPS + CodeQL terminal abwarten;
-- vollständigen Abschlussbericht in `CHATGPT.md` schreiben und nach `main` pushen;
-- `CHATGPT.md` auf GitHub verifizieren
+**Ziel dieser Phase ist ausschließlich: die Diskrepanz zwischen dokumentiertem Abschluss und realem Produktionszustand vollständig erklären.**
