@@ -54,4 +54,9 @@ final class Security
         $forwardedProto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
         return $forwardedProto === 'https';
     }
+
+    public static function allowsAuditClear(string $environment): bool
+    {
+        return in_array(strtolower(trim($environment)), ['development', 'test'], true);
+    }
 }

@@ -4,6 +4,7 @@ class AdminAuditView {
   constructor(apiClient) {
     this.api = apiClient;
     this.entries = [];
+    this.allowClearAll = false;
     this.filters = { action: '', resource: '', result: '', user: '', from: '', to: '' };
   }
 
@@ -16,6 +17,7 @@ class AdminAuditView {
   async loadEntries() {
     const result = await this.api.getAuditEntries(this.filters);
     this.entries = result.ok ? AdminCommon.unwrapData(result, 'entries', []) : [];
+    this.allowClearAll = result.ok && AdminCommon.unwrapData(result, 'allowClearAll', false) === true;
   }
 
   render() {
@@ -33,6 +35,7 @@ class AdminAuditView {
           <div class="audit-filter-actions"><button type="submit" class="btn btn-secondary">Apply filters</button><button type="button" class="btn btn-secondary" onclick="adminAudit.resetFilters()">Reset filters</button></div>
         </form></section>
         <section class="audit-retention-section" aria-labelledby="audit-retention-heading"><div><h3 id="audit-retention-heading">Retention action</h3><p class="form-help" id="audit-purge-explanation">Delete audit entries older than 90 days. This cannot be undone and the purge itself is audited.</p></div><label>Retention period<select id="auditRetention"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></label><button type="button" class="btn btn-danger" id="auditPurge">Delete entries older than 90 days</button></section>
+        ${this.allowClearAll ? '<section class="audit-clear-section" aria-labelledby="audit-clear-heading"><div><h3 id="audit-clear-heading">Development reset</h3><p class="form-help">Delete all audit entries. Available only outside production; the request record is necessarily removed with the log.</p></div><button type="button" class="btn btn-danger" id="auditClearAll">Delete all audit entries</button></section>' : ''}
         <div id="audit-table"></div>
       </div>
     `;
@@ -61,8 +64,14 @@ class AdminAuditView {
       const retentionDays = Number(document.getElementById('auditRetention')?.value || 90);
       if (!AdminCommon.confirmAction(`Permanently purge audit entries older than ${retentionDays} days? The purge itself will be audited.`)) return;
       const result = await this.api.post('/api/admin/audit/purge', { retentionDays });
-      if (result.ok) { AdminCommon.showAlert('Audit retention applied.', 'success'); await this.init(this.container); }
+      if (result.ok) { const payload = AdminCommon.unwrapData(result, null, {}); AdminCommon.showAlert(`${Number(payload.purged || 0)} audit entries deleted.`, 'success'); await this.init(this.container); }
       else AdminCommon.showAlert(`Audit purge failed: ${result.error || 'Unknown error'}`, 'error');
+    });
+    document.getElementById('auditClearAll')?.addEventListener('click', async () => {
+      if (!AdminCommon.confirmAction('Delete all audit entries? This development/test reset cannot be undone.')) return;
+      const result = await this.api.post('/api/admin/audit/clear', {});
+      if (result.ok) { const payload = AdminCommon.unwrapData(result, null, {}); AdminCommon.showAlert(`${Number(payload.deleted || 0)} audit entries deleted.`, 'success'); await this.init(this.container); }
+      else AdminCommon.showAlert(`Audit clear failed: ${result.error || 'Unknown error'}`, 'error');
     });
 
     this.renderTable();

@@ -350,7 +350,8 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
             $password,
             $sessionScope,
             strtolower(trim((string) ($headers['x-neutral-device-id'] ?? ''))),
-            trim((string) ($headers['x-neutral-device-label'] ?? ''))
+            trim((string) ($headers['x-neutral-device-label'] ?? '')),
+            trim((string) ($headers['x-neutral-client-platform'] ?? ''))
         );
         if (!$result) {
             $rateState = $loginLimiter->registerFailure($username, $clientIp);
@@ -645,7 +646,20 @@ if ($route === 'admin/audit' && $method === 'GET') {
         'to' => (string) ($_GET['to'] ?? ''),
         'limit' => (int) ($_GET['limit'] ?? 100),
     ];
-    JsonResponse::success(['entries' => $auditService->list($filters)]);
+    JsonResponse::success([
+        'entries' => $auditService->list($filters),
+        'allowClearAll' => Security::allowsAuditClear($config->environment()),
+    ]);
+}
+
+if ($route === 'admin/audit/clear' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'admin.write', $headers);
+    if (!Security::allowsAuditClear($config->environment())) JsonResponse::error('Audit clear is not available in production.', 404);
+    $statement = $database->connect()->query('SELECT COUNT(*) FROM audit_log');
+    $count = $statement ? (int) $statement->fetchColumn() : 0;
+    $auditService->log('audit.clear.requested', 'audit', null, actor_user_id($identity), ['entriesBeforeClear' => $count]);
+    $deleted = $database->connect()->exec('DELETE FROM audit_log');
+    JsonResponse::success(['deleted' => $deleted === false ? 0 : $deleted]);
 }
 
 if ($route === 'admin/audit/purge' && $method === 'POST') {

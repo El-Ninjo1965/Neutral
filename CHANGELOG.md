@@ -135,6 +135,14 @@
 
 # NEUTRAL – Changelog
 
+## 2026-09-09 – Device sessions and responsive User-UI follow-up
+
+- Fixed the proven duplicate-session root cause: the standalone Admin login now uses the shared `ApiClient`, so its persistent installation ID survives login, logout, access-denied navigation and reload. Blank legacy session rows no longer count as active and are retired on the next identified login; independent users and real second installations remain separate.
+- Added privacy-minimal client platform classification for iPadOS desktop-UA browsers and strict server-side display-label validation, avoiding `MacIntel` as a device name without treating the hint as authentication evidence.
+- Made the dashboard session list an explicit `showing X of Y` preview, disabled backup creation until every boolean readiness prerequisite is satisfied, and added exact audit purge counts plus a fail-closed development/test-only clear-all operation.
+- Corrected GPS actions to distinguish navigation from sharing, removed deliberate blank-tab creation, made the embedded OpenStreetMap iframe interactive, and introduced the shared responsive User content-grid contract used by GPS and Settings.
+- Clarified all Core permission descriptions, Admin/User-App/System area semantics, the `gps.admin` boundary, and the single evidenced generic UI addition before the Core 1.0 freeze. No GPS Pro, CatchTrack, i18n or Appearance expansion was introduced.
+
 ## 2026-09-07 – Documentation: Current-task initialization and repository status correction
 
 - The repository was re-checked against the current git state, documentation set, and live device findings.

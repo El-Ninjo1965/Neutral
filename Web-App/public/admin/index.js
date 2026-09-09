@@ -218,14 +218,16 @@ class AdminDashboardView {
             </div>
           </div>
           <div class="card panel-box">
-            <div class="card-header"><h3>Session overview</h3></div>
+            <div class="card-header"><h3>Session overview</h3><span class="small-muted">Showing ${Math.min(sessions.length, 8)} of ${sessions.length}</span></div>
             ${sessions.length
               ? `<ul class="mini-list">${sessions.slice(0, 8).map((session) => `<li><span>${session.deviceLabel || 'Browser installation'} · ${session.platform || 'Browser'}${session.current ? ' (current)' : ''}</span><span>${session.username ? `@${session.username}` : session.userId || 'User'}</span></li>`).join('')}</ul>`
               : '<p class="empty-state">No active sessions recorded.</p>'}
+            ${sessions.length > 8 ? '<button type="button" class="btn btn-secondary" data-dashboard-all-sessions>View all device sessions</button>' : ''}
           </div>
         </div>
       </div>
     `;
+    this.container.querySelector('[data-dashboard-all-sessions]')?.addEventListener('click', () => window.adminRouter?.showView('sessions'));
   }
 
   readableStatus(value) {
@@ -585,6 +587,8 @@ class AdminInfrastructureView {
     const backups = this.snapshot.backups || [];
     const automation = this.snapshot.backupAutomation || {};
     const readiness = this.snapshot.backupReadiness || {};
+    const backupReady = readiness.keyConfigured === true && readiness.cryptoAvailable === true
+      && readiness.databaseReady === true && readiness.managedTablesReady === true && readiness.storageReady === true;
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header"><h2>Backups & Restore</h2></div>
@@ -594,8 +598,9 @@ class AdminInfrastructureView {
           <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
           <p class="form-help">Automatic scheduler: ${this.escape(automation.scheduler || 'external-cron-required')}. Last success: ${this.escape(automation.lastSuccess ? new Date(Number(automation.lastSuccess) * 1000).toISOString() : 'No scheduled backup recorded')}. ${automation.lastError ? `Last error: ${this.escape(automation.lastError)}` : ''}</p>
           <dl class="detail-list"><div><dt>Encryption key</dt><dd>${readiness.keyConfigured ? 'Ready' : 'Host configuration required'}</dd></div><div><dt>Crypto</dt><dd>${readiness.cryptoAvailable ? 'Ready' : 'Unavailable'}</dd></div><div><dt>Database/schema</dt><dd>${readiness.databaseReady && readiness.managedTablesReady ? 'Ready' : 'Host check required'}</dd></div><div><dt>Protected storage</dt><dd>${readiness.storageReady ? 'Ready' : 'Host check required'}</dd></div></dl>
+          ${backupReady ? '' : '<p class="admin-state admin-state-warning" id="backup-readiness-help">Host encryption key must be configured before manual or automatic encrypted backups can run.</p>'}
           ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button><button class="btn btn-sm btn-danger" data-backup-delete="${this.escape(backup.backupId)}">Delete</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
-          <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary">Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
+          <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary" ${backupReady ? '' : 'disabled aria-disabled="true" aria-describedby="backup-readiness-help"'}>Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
         </div>
       </div>`;
 

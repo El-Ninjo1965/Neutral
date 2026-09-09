@@ -37,7 +37,7 @@
       },
       {
         "key": "gps.admin",
-        "description": "Allows a user to administer the GPS module lifecycle and role assignments.",
+        "description": "Allows module-scoped GPS settings and state to be administered; Core lifecycle and role assignment still require Core Admin permissions.",
         "defaultRoles": [
           "admin",
           "developer"

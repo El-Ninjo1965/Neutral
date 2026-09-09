@@ -250,6 +250,12 @@ Discovery erfolgt ausschließlich einmal in `CoreStartup.startBackground()`. Ein
 
 Modules declare their permissions in the module contract. These permissions are classified as User-App/Module in the registry unless a separately reviewed administrative module contract says otherwise. Modules must not reuse Core Admin permission keys to make User-App features function, and the Admin UI does not create arbitrary permission keys.
 
+`Area` identifies the security/product surface (`Admin`, `User-App`, or `System`), not the noun in a permission key. A module permission such as `gps.admin` may control module-scoped settings, but Core module lifecycle and role assignment continue to require the separately enforced Core Admin permissions.
+
+## Responsive User content
+
+Module user interfaces use the shared `.user-content-grid` contract for groups of cards instead of device-specific widths. The grid fills available content width with `auto-fit`/`minmax`, collapses naturally on small viewports, and allows a module-specific modifier only to express content proportions. Cards remain token-based and touch-safe; modules do not hardcode iPad model dimensions.
+
 ## Freeze-Entscheidung für neue Produktmodule
 
 Ein Produktfeature darf bestehende Coredateien nicht für seine konkrete Fachlogik patchen. Vor einem Core-Änderungswunsch ist der Referenzablauf aus Manifest, Browserentry, `module.php`, generischem `/api/v1/modules/<id>/…`-Dispatch, Modulmigrationen, Permissionregistry, Adminsettings und Lifecycle vollständig auszuschöpfen. Nur eine mit einem neutralen Contract-Test belegte allgemeine Frameworklücke rechtfertigt einen kleinen Core-Extension-Point; andernfalls bleibt die Änderung im Modul.

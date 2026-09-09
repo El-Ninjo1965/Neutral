@@ -54,3 +54,7 @@ These entries remain in the archive and support root-cause analysis, but they do
 ## 2026-09-09 — Live-Retest-Follow-up
 
 **CODE-SEITIG ERLEDIGT, DEPLOY/DEVICE/HOST-ABNAHME AUSSTEHEND:** Device-Relogin dedupliziert pro Installation, Admin-Reauth/Router stabilisiert, Dashboard/Infrastruktur/Audit bereinigt, Core-Freeze-Vertrag geprüft und GPS-Basis ergänzt. Automatisierte Regression ist grün. Reale iPad/Chrome-Abnahme und hostseitige Backup-Key/ACL/Cron-Aktivierung bleiben erforderlich; diese Bereiche sind nicht `LIVE BESTANDEN`. P1 und P4 bleiben unverändert `LIVE BESTANDEN` aus ihrer bestehenden Betreiberabnahme.
+
+## 2026-09-09 — Device-/Responsive-Follow-up
+
+**CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED / HOST ACTION REQUIRED:** Der verbliebene Sessionfehler lag im eigenständigen Admin-Login, das die persistente Installations-ID des API-Clients umging. Admin-Logins verwenden nun denselben lokalen Device-Vertrag; aktive Legacyzeilen ohne Device-ID werden nicht mehr gezählt und bei einem qualifizierten Relogin sicher ersetzt. Dashboardvorschau, Backup-Readiness, Audit-Ergebnisse, GPS-Öffnen/Teilen, interaktive OSM-Karte und das generische responsive User-Grid sind korrigiert. Alte zufällige, aber nicht leere Device-IDs können ohne Risiko für echte Zweitgeräte nicht automatisch zusammengeführt werden und müssen einmalig über die Sessionverwaltung geprüft werden. P1/P4 bleiben aufgrund ihrer bestehenden Liveabnahme unverändert; die neuen Flächen sind nicht als live bestanden erklärt.

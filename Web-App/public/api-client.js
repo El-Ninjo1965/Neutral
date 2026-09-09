@@ -45,6 +45,7 @@ class ApiClient {
     if (deviceId) {
       this.defaultHeaders['x-neutral-device-id'] = deviceId;
       this.defaultHeaders['x-neutral-device-label'] = this.deviceLabel();
+      this.defaultHeaders['x-neutral-client-platform'] = this.clientPlatform();
     }
   }
 
@@ -65,10 +66,23 @@ class ApiClient {
 
   deviceLabel() {
     const agent = String(navigator.userAgent || '');
-    const ios = /iPad|iPhone|iPod/i.test(agent) || (/Macintosh/i.test(agent) && /Mobile\//i.test(agent));
-    const platform = ios ? 'iPadOS' : (navigator.userAgentData?.platform || navigator.platform || 'Device');
-    const browser = /CriOS\//.test(agent) ? 'Chrome' : (/FxiOS\//.test(agent) ? 'Firefox' : (/EdgiOS\/|Edg\//.test(agent) ? 'Edge' : (/Safari\//.test(agent) ? 'Safari' : 'Browser')));
+    const platform = this.clientPlatform();
+    const browser = /CriOS\/|Chrome\//.test(agent) ? 'Chrome' : (/FxiOS\//.test(agent) ? 'Firefox' : (/EdgiOS\/|Edg\//.test(agent) ? 'Edge' : (/Safari\//.test(agent) ? 'Safari' : 'Browser')));
     return `${platform} · ${browser}`.slice(0, 80);
+  }
+
+  clientPlatform() {
+    const agent = String(navigator.userAgent || '');
+    const navigatorPlatform = String(navigator.userAgentData?.platform || navigator.platform || '');
+    const ipad = /iPad|iPhone|iPod/i.test(agent)
+      || (/Macintosh/i.test(agent) && /Mobile\//i.test(agent))
+      || (navigatorPlatform === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1);
+    if (ipad) return 'iPadOS';
+    if (/Android/i.test(agent)) return 'Android';
+    if (/Windows/i.test(agent)) return 'Windows';
+    if (/Macintosh|MacIntel/i.test(agent + navigatorPlatform)) return 'macOS';
+    if (/Linux/i.test(agent)) return 'Linux';
+    return 'Device';
   }
 
   setSessionScope(scope = 'user') {

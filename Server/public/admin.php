@@ -65,6 +65,7 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
   </div>
   <script>window.NeutralConfig = <?= $publicConfigJson ?>;</script>
   <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/public-path.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/api-client.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
   (function () {
     const loginButton = document.getElementById('loginBtn');
@@ -92,20 +93,12 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
       loginButton.disabled = true;
       setMessage('Signing in...', 'info');
       try {
-        const response = await fetch(window.NeutralPublicPath.api('admin/auth/login'), {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-framework-role': 'admin',
-            'x-session-scope': 'admin',
-          },
-          body: JSON.stringify({ username: username, password: password }),
-        });
-        const payload = await response.json().catch(function () { return {}; });
-        if (!response.ok || !payload || payload.ok !== true) {
-          const message = payload && payload.error && payload.error.message
-            ? payload.error.message
+        const client = new window.ApiClient();
+        client.setSessionScope('admin');
+        const result = await client.login(username, password);
+        if (!result.ok) {
+          const message = result.error
+            ? result.error
             : 'Authentication failed.';
           setMessage(message, 'error');
           return;

@@ -93,3 +93,5 @@ Jeder spätere Wunsch nach einer Core-Änderung durchläuft vor Implementierung 
 4. Produktnamen, Produktworkflows und vorsorgliche Hooks sind kein zulässiger Core-Grund.
 
 Der aktuelle Audit der fachlich verschiedenen Referenzen `gps` und `reference-notes` belegt Discovery, Cliententry, serverseitige Services/Routen, Permissions, Limits, Settings, Migration und Lifecycle bereits ohne fachlichen Routerzweig. Es wurde daher vor dem Freeze keine weitere generische Schnittstelle auf Vorrat ergänzt.
+
+Der reale Tablet-Retest belegte als einzige zusätzliche generische UI-Lücke ein responsives Content-Card/Grid-System. Der zentrale `.user-content-grid`-Vertrag wurde deshalb vor dem Freeze ergänzt und steht allen Modulen zur Verfügung; GPS verwendet nur einen neutralen Proportionsmodifier. Dies ist kein neuer fachlicher Hook.

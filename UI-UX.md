@@ -266,3 +266,9 @@ Admin errors are route-scoped by default and are removed on navigation; only exp
 ## 2026-09-09 Admin tablet follow-up
 
 Audit filtering and destructive retention are separate visual/semantic sections. At tablet width filters use bounded two-column tracks and actions occupy their own row; mobile collapses to one column. Retention always states “Delete audit entries older than X days” and requires confirmation. Admin form borders, code details and GPS map surfaces use shared Light/Dark tokens. Infrastructure views omit empty JSON panels and read-only Connections provides no misleading save action.
+
+## Responsive User content-card contract
+
+`.user-app-panel` may use the full controlled application content width. Groups of User-App cards use `.user-content-grid`: mobile resolves to one full-width column, tablet uses available width through `repeat(auto-fit, minmax(...))`, and desktop remains bounded by the central content maximum. GPS uses `.gps-content-grid` only to give its interactive map more room than the coordinate card on wide layouts; User Settings uses the same base grid. No device-model pixel branches are permitted.
+
+An embedded map is interactive content, never wrapped in a navigation link. External map navigation is a separate labelled action. `Open in …` and `Share position` are distinct verbs: the former navigates the current tab through a universal HTTPS URL, while the latter invokes the native share sheet when available.

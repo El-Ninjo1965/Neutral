@@ -29,3 +29,9 @@
 
 - DEVICE RETEST REQUIRED: gebündelten iPad/Chrome-Live-Follow-up prüfen.
 - HOST ACTION REQUIRED: Backup-Key/ACL/Cron sicher gemäß Installationsanleitung aktivieren; kein Restore auf Produktion.
+
+## Aktuelle externe Abschlusskontrollen
+
+- **DEVICE RETEST REQUIRED:** Einmalige Sichtung/Widerruf historischer zufälliger Session-IDs, danach Relogin-Deduplizierung und ehrliche iPadOS-/Chrome-Anzeige auf dem Betreibergerät prüfen.
+- **DEVICE RETEST REQUIRED:** Google-/OSM-Öffnen, System-Share, eingebettete Karteninteraktion und responsive GPS-/Settings-Karten auf iPad prüfen.
+- **HOST ACTION REQUIRED:** Verschlüsselungs-Key, geschützte Ablage und Cron hostseitig aktivieren; der UI-Button wird erst bei vollständig grüner Readiness aktiv.

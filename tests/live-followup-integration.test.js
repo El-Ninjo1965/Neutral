@@ -53,7 +53,7 @@ test('dashboard renders authoritative device count and readable nested database 
   global.AdminCommon = { formatValue: String };
   const Router = require('../Web-App/public/admin/index.js');
   const view = new Router.AdminDashboardView({});
-  view.container = { innerHTML: '' };
+  view.container = { innerHTML: '', querySelector() { return null; } };
   view.snapshot = {
     runtime: { database: { status: 'ready' }, timestamp: '2026-09-09T12:00:00Z' }, health: { status: 'healthy' }, users: [],
     sessions: [{ status: 'active', deviceLabel: 'iPadOS · Chrome', platform: 'iPadOS · Chrome', username: 'admin', current: true }],

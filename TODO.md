@@ -26,3 +26,9 @@
 
 - **DEVICE RETEST REQUIRED:** iPad/Chrome-Retest für Session-Re-Login, Admin-Reauth, schnelle Navigation, Dashboard/Infrastruktur, Audit-Tablet-Layout und GPS-Karte/Share.
 - **HOST ACTION REQUIRED:** Backup-Key, geschützte Dateirechte und cPanel-Cron gemäß `Install-README-Server.md` hostseitig aktivieren und nur über boolesche Readiness bestätigen; kein Produktions-Restore.
+
+## Externe Abnahme nach Device-/Responsive-Follow-up
+
+- [ ] **DEVICE RETEST REQUIRED:** Auf demselben iPad/Chrome alte eindeutig historische Sessions einmalig widerrufen, zweimal neu anmelden und bestätigen, dass danach genau eine aktive Installation mit `iPadOS · Chrome` bleibt; echte Zweitgeräte dürfen nicht gelöscht werden.
+- [ ] **DEVICE RETEST REQUIRED:** GPS-Öffnen ohne `about:blank`, nativen Share, interaktive OSM-Karte sowie das responsive GPS-/Settings-Grid in Hoch-/Querformat prüfen.
+- [ ] **HOST ACTION REQUIRED:** Host-Key/ACL/Cron konfigurieren und danach ausschließlich die boolesche Backup-Readiness und einen nicht-destruktiven Backup-Lauf bestätigen; kein Produktions-Restore.

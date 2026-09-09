@@ -1201,7 +1201,7 @@ test('gps never triggers the first browser permission prompt automatically', { s
   gps.renderUserInterface(container);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(geolocationState.currentPositionCalls, 0);
-  assert.match(container.innerHTML, /Position aktualisieren/);
+  assert.match(container.innerHTML, /Update position/);
 });
 
 test('gps asks for explicit user confirmation before requesting location in prompt state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {

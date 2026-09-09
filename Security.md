@@ -123,3 +123,9 @@ Operational readiness endpoints expose booleans/counts only and never configurat
 A device ID identifies a browser installation, not a login attempt. On successful authentication, older active sessions for the same user/device ID are marked replaced; a different valid installation ID remains independent and device limits count distinct active IDs. User-Agent parsing is presentation-only and never a fingerprint or authorization input.
 
 A non-admin identity in the isolated Admin cookie is cleared when the protected Admin entry renders Access Denied. The recovery link returns to `admin.php`, while the independent User-App session remains untouched. This changes no authorization decision and grants no permission.
+
+## Permission areas and development audit reset
+
+Permission `Area` names the protected product/security surface, not the grammatical subject of a key. Thus `user.read` means viewing user management in the **Admin** area; module keys remain **User-App** unless a separately reviewed Core-Admin contract protects the operation. GPS module permissions never replace `admin.read`, `admin.write` or `role.write` for Core lifecycle and role management.
+
+The complete Audit reset is deliberately unavailable in production (404), requires an Admin session plus `admin.write`, and appears only in Development/Test. The request is logged immediately before deletion, but a successful complete reset necessarily deletes that request record as well; this limitation is displayed and documented. Production retains append-only audit history except confirmed bounded retention.

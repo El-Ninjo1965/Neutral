@@ -711,6 +711,20 @@
             };
         },
 
+        openCurrentPosition(provider) {
+            const position = this.lastPosition || lastPosition || this.getLastPosition();
+            const links = this.locationLinks(position);
+            if (!links || !['google', 'openstreetmap'].includes(provider)) {
+                return Promise.resolve({ ok: false, code: 'NO_POSITION_AVAILABLE' });
+            }
+            const mapUrl = provider === 'google' ? links.googleMaps : links.openStreetMap;
+            if (typeof window !== 'undefined' && window.location && typeof window.location.assign === 'function') {
+                window.location.assign(mapUrl);
+                return Promise.resolve({ ok: true, method: provider, position, mapUrl });
+            }
+            return Promise.resolve({ ok: false, code: 'NAVIGATION_UNAVAILABLE' });
+        },
+
         shareCurrentPosition(options = {}) {
             const requirePosition = options.requirePosition === true;
             const position = options.position || this.lastPosition || lastPosition || this.getLastPosition();
@@ -724,11 +738,7 @@
             const latitude = Number(position.latitude ?? position.lat ?? 0);
             const longitude = Number(position.longitude ?? position.lng ?? 0);
             const links = this.locationLinks(position);
-            const mapUrl = options.provider === 'openstreetmap' ? links.openStreetMap : links.googleMaps;
-            if (options.provider === 'google' || options.provider === 'openstreetmap') {
-                if (typeof window !== 'undefined' && typeof window.open === 'function') window.open(mapUrl, '_blank', 'noopener,noreferrer');
-                return Promise.resolve({ ok: true, method: options.provider, position, mapUrl });
-            }
+            const mapUrl = links.openStreetMap;
             const text = `Standort: ${latitude}, ${longitude}`;
             const payload = {
                 title: 'Standort',
@@ -847,8 +857,8 @@
             const modalMarkup = showConsentModal
                 ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
                 : '';
-            const mapMarkup = links ? `<a class="gps-map-link" href="${links.openStreetMap}" target="_blank" rel="noopener noreferrer" aria-label="Position in OpenStreetMap öffnen"><iframe class="gps-map" title="OpenStreetMap – aktuelle Position" src="${links.embedMap}" loading="lazy" sandbox="allow-scripts allow-same-origin" tabindex="-1"></iframe></a>` : '';
-            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${mapMarkup}${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Position aktualisieren</button><button type="button" data-gps-share="google" ${shareDisabled ? 'disabled' : ''}>Position teilen · Google Maps</button><button type="button" data-gps-share="openstreetmap" ${shareDisabled ? 'disabled' : ''}>OpenStreetMap</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>Andere Apps</button></div><p class="form-help">Bewusstes Teilen sendet nur diese gewählten Koordinaten. „Allow Location Context Sharing“ steuert ausschließlich automatische modulübergreifende Weitergabe.</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            const mapMarkup = links ? `<div class="gps-map-frame"><iframe class="gps-map" title="OpenStreetMap – aktuelle Position" src="${links.embedMap}" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe></div>` : '';
+            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="user-content-grid gps-content-grid"><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${mapMarkup}</div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Update position</button><button type="button" data-gps-open="google" ${shareDisabled ? 'disabled' : ''}>Open in Google Maps</button><button type="button" data-gps-open="openstreetmap" ${shareDisabled ? 'disabled' : ''}>Open in OpenStreetMap</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>Share position</button></div><p class="form-help">Manual sharing sends only the current coordinates you choose. “Allow Location Context Sharing” controls automatic cross-module context sharing only.</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
 
             const autoSetting = container.querySelector('[data-gps-setting="autoRequestOnOpen"]');
             if (autoSetting) {
@@ -887,6 +897,13 @@
                     render(result.ok ? 'Position geteilt.' : result.code === 'NO_POSITION_AVAILABLE' ? 'Keine gültige Position zum Teilen vorhanden.' : 'Position konnte nicht geteilt werden.', !result.ok);
                 });
             });
+            const openButtons = typeof container.querySelectorAll === 'function'
+                ? Array.from(container.querySelectorAll('[data-gps-open]'))
+                : [];
+            openButtons.forEach((openButton) => openButton.addEventListener('click', async () => {
+                const result = await GpsModule.openCurrentPosition(openButton.dataset.gpsOpen);
+                if (!result.ok) render('Position could not be opened.', true);
+            }));
 
             const confirmationYes = container.querySelector('[data-gps-confirm="yes"]');
             if (confirmationYes) {

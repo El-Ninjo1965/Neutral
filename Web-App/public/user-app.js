@@ -671,7 +671,7 @@
             <h1>Settings</h1>
           </div>
         </div>
-        <div class="user-settings-card">
+        <div class="user-content-grid user-settings-grid"><div class="user-settings-card">
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
@@ -707,7 +707,7 @@
           <div class="user-settings-list">
             <label class="user-settings-toggle" for="setting-location-context">
               <input id="setting-location-context" type="checkbox" data-user-setting-privacy="shareLocationContext" ${preferences.privacy.shareLocationContext ? 'checked' : ''} />
-              <span>Allow location context sharing</span>
+              <span>Allow location context sharing<small>Allows automatic cross-module context only. Manually sharing your current position remains a separate, deliberate action.</small></span>
             </label>
             <label class="user-settings-toggle" for="setting-media-sharing">
               <input id="setting-media-sharing" type="checkbox" data-user-setting-privacy="shareImages" ${preferences.privacy.shareImages ? 'checked' : ''} />
@@ -723,7 +723,7 @@
             </label>
           </div>
         </div>
-        <div class="user-settings-actions">
+        </div><div class="user-settings-actions">
           <button id="userSettingsSaveButton" type="button" class="primary">Save settings</button>
         </div>
         <p id="userSettingsStatus" class="user-settings-status" aria-live="polite"></p>

@@ -525,10 +525,10 @@ final class Phase4PermissionService
     {
         $labels = [
             'admin.read' => 'View the administration shell and operational status.', 'admin.write' => 'Change administrative platform state.',
-            'auth.read' => 'View authentication operations.', 'auth.write' => 'Manage authentication operations.',
-            'user.read' => 'View users.', 'user.write' => 'Manage users.', 'role.read' => 'View roles and permission registry.',
-            'role.write' => 'Manage role assignments.', 'settings.read' => 'View system settings.', 'settings.write' => 'Change system settings.',
-            'session.read' => 'View device sessions.', 'session.write' => 'Revoke device sessions.', 'audit.read' => 'View the audit log.',
+            'auth.read' => 'View authentication state in administration.', 'auth.write' => 'Manage administrative authentication state.',
+            'user.read' => 'View users in administration.', 'user.write' => 'Create or update users in administration.', 'role.read' => 'View roles and the read-only permission registry.',
+            'role.write' => 'Assign permissions and manage roles.', 'settings.read' => 'View system settings in administration.', 'settings.write' => 'Change system settings in administration.',
+            'session.read' => 'View active device sessions in administration.', 'session.write' => 'Revoke device sessions in administration.', 'audit.read' => 'View security and operations audit entries.',
             'backups.view' => 'View encrypted backup inventory.', 'backups.manage' => 'Create, transfer, restore and delete encrypted backups.',
         ];
         return $labels[$key] ?? ('Use module capability ' . $key . '.');
@@ -1286,7 +1286,7 @@ final class Phase4SessionRegistry
         LEFT JOIN users u ON u.id = s.user_id
         LEFT JOIN user_roles ur ON ur.user_id = s.user_id
         LEFT JOIN roles r ON r.id = ur.role_id
-        WHERE s.status = 'active' AND s.expires_at > CURRENT_TIMESTAMP
+        WHERE s.status = 'active' AND s.expires_at > CURRENT_TIMESTAMP AND s.device_id <> ''
         GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at, s.device_id, s.device_label, s.user_agent
         ORDER BY s.last_seen_at DESC
         LIMIT 500
@@ -1312,7 +1312,7 @@ final class Phase4SessionRegistry
                 'updatedAt' => (string) ($session['last_seen_at'] ?? ''),
                 'deviceId' => (string) ($session['device_id'] ?? ''),
                 'deviceLabel' => (string) ($session['device_label'] ?? 'Browser installation'),
-                'platform' => $this->platformLabel((string) ($session['user_agent'] ?? '')),
+                'platform' => $this->platformLabel((string) ($session['user_agent'] ?? ''), (string) ($session['device_label'] ?? '')),
                 'current' => hash_equals((string) ($session['session_id'] ?? ''), session_id()),
             ];
         }
@@ -1322,7 +1322,7 @@ final class Phase4SessionRegistry
     public function activeDeviceCount(int $userId, string $exceptDeviceId = ''): int
     {
         $pdo = $this->requireDatabase()->connect();
-        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND status = 'active' AND expires_at > CURRENT_TIMESTAMP";
+        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND device_id <> '' AND status = 'active' AND expires_at > CURRENT_TIMESTAMP";
         $params = [':user_id' => $userId];
         if ($exceptDeviceId !== '') {
             $sql .= ' AND device_id <> :device_id';
@@ -1342,7 +1342,7 @@ final class Phase4SessionRegistry
         UPDATE sessions
         SET status = 'replaced', expires_at = CURRENT_TIMESTAMP
         WHERE user_id = :user_id
-          AND device_id = :device_id
+          AND (device_id = :device_id OR device_id = '')
           AND session_id <> :session_id
           AND status = 'active'
         SQL);
@@ -1366,8 +1366,11 @@ final class Phase4SessionRegistry
         $statement->execute();
     }
 
-    private function platformLabel(string $agent): string
+    private function platformLabel(string $agent, string $deviceLabel = ''): string
     {
+        if (preg_match('/^iPadOS\s*·\s*(Chrome|Safari|Firefox|Edge|Browser)$/', $deviceLabel, $match) === 1) {
+            return 'iPadOS · ' . $match[1];
+        }
         $ios = preg_match('/iPad|iPhone|iPod/i', $agent) === 1
             || (preg_match('/Macintosh/i', $agent) === 1 && preg_match('/Mobile\//i', $agent) === 1);
         $platform = $ios ? 'iPadOS' : (preg_match('/Android/i', $agent) ? 'Android' : (preg_match('/Windows/i', $agent) ? 'Windows' : (preg_match('/Macintosh/i', $agent) ? 'macOS' : (preg_match('/Linux/i', $agent) ? 'Linux' : 'Other'))));
@@ -1462,7 +1465,7 @@ final class Phase4AuthManager
     /**
      * @return array<string,mixed>|null
      */
-    public function authenticate(string $username, string $password, ?string $scope = null, string $deviceId = '', string $deviceLabel = ''): ?array
+    public function authenticate(string $username, string $password, ?string $scope = null, string $deviceId = '', string $deviceLabel = '', string $clientPlatform = ''): ?array
     {
         $scope = $this->normalizeSessionScope($scope);
         $this->startSession($scope);
@@ -1501,7 +1504,10 @@ final class Phase4AuthManager
             'expiresAt' => gmdate('c', $expiresAt),
             'status' => 'active',
             'deviceId' => $deviceId,
-            'deviceLabel' => trim($deviceLabel) !== '' ? trim($deviceLabel) : 'Browser installation',
+            'deviceLabel' => preg_match('/^(iPadOS|iOS|Android|Windows|macOS|Linux|Device)\s*·\s*(Chrome|Safari|Firefox|Edge|Browser)$/', trim($deviceLabel)) === 1
+                && ($clientPlatform === '' || str_starts_with(trim($deviceLabel), $clientPlatform . ' ·'))
+                ? trim($deviceLabel)
+                : 'Browser installation',
         ];
         $csrf = Security::ensureCsrfToken();
         $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id());
