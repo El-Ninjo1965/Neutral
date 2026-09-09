@@ -145,6 +145,8 @@ Der Server ist für die endgültige Identitäts- und Berechtigungsentscheidung v
 
 Secrets bleiben außerhalb des Repositorys und außerhalb ausgelieferter Clientdateien. Lokal gespeicherte personenbezogene oder gerätebezogene Daten werden minimiert, zweckgebunden behandelt und mit Lösch-, Export- und Schutzkonzepten versehen. Logging darf keine Passwörter, Session-Geheimnisse oder unnötigen personenbezogenen Inhalte enthalten.
 
+**Passwort-UX folgt dem Prinzip „einfach, aber kontrolliert“:** keine erzwungene Mischung aus Groß-/Kleinschreibung, Zahlen oder Sonderzeichen, keine Leerzeichen, klar begrenzte Länge, ausschließlich sichere serverseitige Hash-Speicherung und Rate-Limiting gegen automatisierte Loginversuche. Die konkrete verbindliche Passwortspanne und Validierungsregel steht im `USER-ACCOUNT-LICENSE-MODEL.md` und in `Security.md`, damit die Vision nicht mit Implementierungsdetails überladen wird.
+
 ## 10. GPS als technische Referenzerweiterung
 
 GPS ist keine Kernfunktion und keine fachliche Ausrichtung von NEUTRAL. GPS ist derzeit die konkrete technische Referenzerweiterung zur Validierung von:
