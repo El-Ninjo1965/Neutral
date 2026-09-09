@@ -1,31 +1,26 @@
-# CURRENT TASK — Admin Operations, Permissions and Device Sessions
+# CURRENT TASK — Live Admin Reality Check (Diagnose, keine Fixes)
 
-**Quelle:** `CODEX.md` (aktiver Betreiberauftrag)
-**Status:** in Bearbeitung
-**Scope:** P1/P4 regressionsfrei; User-App ohne Adminfunktionen; keine Geheimnisse.
+**Quelle:** `CODEX.md`, 2026-09-09
+**Status:** Diagnose abgeschlossen; Phase 2 noch nicht begonnen
+**Grenzen:** Keine Reparatur, kein Refactoring, keine Appearance-/i18n-Arbeit, keine destruktive Produktionsaktion, keine Secret-Ausgabe.
 
-## Verbindliche Arbeitsliste
+## Arbeitsliste
 
-1. [x] Umgebung `Neutral`, `GH_TOKEN`, Repository, `origin/main` und GitHub-Schreibweg secretsicher prüfen; vollständig mit `origin/main` synchronisieren.
-2. [x] `CODEX.md` und `WORKFLOW.md` vollständig lesen; Auftrag vollständig erfassen und Gleichheit `CODEX.md == CURRENT-TASK-Anforderungen` prüfen.
-3. [x] Alle ausdrücklich geforderten Projekt-, Installations-, Deployment-, Backup- und relevanten Implementierungs-/Testdateien vollständig auditieren.
-4. [x] Architekturgrenze durchsetzen: User-App enthält keine Adminfunktionen; Admin-/Systemrechte und User-App-/Modulrechte in Defaults, Seeds, APIs und Dokumentation sauber trennen.
-5. [x] Permission-Defaults bestehender Installationen migrieren; Viewer/User von Adminrechten bereinigen; deklarative Core-/Modulregistry und serverseitige Checks erhalten.
-6. [x] Permission Catalog als lesbare, responsive, read-only Registry mit Key, Beschreibung, Scope und Quelle sowie sinnvollen Filtern umsetzen.
-7. [x] Sichere persistente Geräte-Sessions implementieren: zufällige Installations-ID, serverseitige Bindung/Widerruf/Rotation, sichere Cookies, zentrales Gerätelimit, Migration alter 12h-Sessions, Logout und Security-Revoke-all; keine Hardwarefingerprints/Secrets in localStorage.
-8. [x] Admin Session Overview zur datensparsamen Geräteverwaltung mit verständlicher Plattform, Registrierung, letzter Aktivität, Status, Current-Markierung, Einzelwiderruf und Cleanup/Retention umbauen.
-9. [x] Connections, Server, Database und Diagnostics an gemeinsame autoritative sichere Runtime-/Healthdaten anbinden; Beispiel-/Fakewerte entfernen und nicht verfügbare Werte ehrlich kennzeichnen.
-10. [x] Persistenten Maintenance Mode mit sicherer User-Sperre, erreichbarer Admin-UI, escaptem Grund und Auditdaten fertigstellen; reale Release-/Buildinformationen statt statischer Updatebehauptung zeigen.
-11. [x] Backup/Restore vollständig auditieren und finalisieren: verschlüsselte create/list/download/upload/validate/restore/delete-Flows, automatische hostkompatible Trigger, Retention, Fehlerstatus und Sessioninvalidierung bei Restore.
-12. [x] Audit Log lesbar/filterbar und detailsicher darstellen; kontrollierten Retention-Purge mit Bestätigung und eigener Auditspur, ohne Einzeldelete, implementieren.
-13. [x] System Settings auf wirksame Optionen ausrichten: Production-Loglevel, echte Backup-Automatik/Intervalle/Retention, unveränderliche App-ID; tote Einstellungen entfernen.
-14. [x] Sicherheit, Datenschutz und Migrationen test-first absichern (CSRF, getrennte Sessions, Cookieflags, keine Secrets/PII/Fingerprints, Backupausschlüsse); P1/P4 unverändert erhalten.
-15. [x] Fokussierte Abnahmetests für Permissions, Device Sessions, Infrastructure, Maintenance, Backup und Audit ergänzen und ausführen.
-16. [x] Vollständige Regression inklusive P1/P4, Homepage-Warmstart, Themes, Appearance V2, Navigation, GPS, Login, User/Rollen/Module, Service Worker, Packaging/Base Path, FTPS/Smoke und Secret-/Artefaktprüfung ausführen.
-17. [x] Betroffene Verträge wahrheitsgemäß aktualisieren: `Security.md`, `Architecture.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, Backup-/Install-/Deploymentdokumentation, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`; externe Cron-Anforderung klar markieren.
-18. [x] Abschluss gemäß `WORKFLOW.md`: diff/static checks, Produktionspaket, Commit und Push `main`, `HEAD == origin/main`, sauberer Working Tree, alle erforderlichen CI-Läufe terminal abwarten.
-19. [x] Vollständigen Abschlussbericht in `CHATGPT.md` schreiben, separat nach `main` pushen und Datei/Blob auf GitHub `main` verifizieren.
+1. [x] Mit `origin/main` synchronisieren und Commit-/Deploymentbasis feststellen.
+2. [x] `CODEX.md`, `WORKFLOW.md`, `CHATGPT.md`, den bisherigen `CURRENT-TASK.md`, `STATUS.md`, `TODO.md` und `ToDoNow.md` vollständig lesen; Diagnoseauftrag vollständig erfassen.
+3. [x] Alle im Auftrag genannten Architektur-, Security-, API-, DB-, Functions-, Connections-, UI-/UX-, Changelog-, Installations-, Deployment- und Backupdokumente vollständig lesen.
+4. [x] Betroffene UI-, API-, Service-, Runtime-/DB-/Filesystem-, Migrations-, Test-, Packaging- und Deploymentpfade vollständig auditieren, ohne Änderungen am Produktcode.
+5. [x] Für Sessions Datenfluss und Produktionszustand einschließlich Schema-/Migrationsdrift, Filter, Expiry/Revocation und Registry prüfen.
+6. [x] Für Connections/Providers, Server und Database autoritative Quelle, API-Antwort, Berechtigung, Routing, UI-Binding und Produktionsstand prüfen.
+7. [x] Backupfehler bis zur konkreten internen Bedingung verfolgen; Key nur als vorhanden/fehlend, Verzeichnis nur als zugreifbar/nicht zugreifbar und DB/Tabellen/Migrationen sicher klassifizieren; Cron und manuellen Pfad trennen.
+8. [x] Maintenance/Release/Build-/Deployinformationen und deren UI-Binding prüfen.
+9. [x] Bedeutung und Implementierungsstand des sichtbaren 14-Tage-Werts über Settings/UI/Backend/Defaults/Dokumentation klären.
+10. [x] Globalen Alert-State beim Routing und Audit-Filterlabels einschließlich Safari/Responsive-CSS prüfen.
+11. [x] Für jeden Bereich Code, Tests, Migration, produktive Anwendung, Build, FTPS, Liveendpoint, UI-Konsum und Dokumentationswahrheit getrennt bewerten.
+12. [x] Kompakten vollständigen Diagnosebericht mit geforderter Tabelle, Root-Cause-Evidenz, Phase-2-Dateiliste, nötigen Migrationen/Deploymaßnahmen, iPad-Retests, Fehlerklassifikation und Reparaturreihenfolge erstellen.
+13. [x] Diagnosebericht als aktuellen Übergabestand in `CHATGPT.md` dokumentieren, ohne historische Evidenz zu löschen; keine vorzeitige DONE-Kennzeichnung.
+14. [x] Nur Dokumentationsänderungen prüfen, committen und nach `main` übertragen; erforderliche CI terminal abwarten, GitHub-Datei verifizieren und sauberen synchronen Git-Stand herstellen.
 
 ## Capture-Prüfung
 
-Die Punkte 1–19 decken alle Abschnitte 1–14 des aktiven Auftrags ab, einschließlich Architektur, Permission-Audit/-UX/-Migration, Geräte-Sessions/-Verwaltung/-Limit, Infrastrukturwahrheit, Maintenance/Release, Backup/Restore/Automation, Audit-Retention, wirksamen Settings, Sicherheits-/Datenschutzregeln, Testmatrix, Dokumentation und vollständigem GitHub-/CI-/Übergabeabschluss. Damit gilt vor Implementierungsbeginn: **`CODEX.md == CURRENT-TASK-Anforderungen` — BESTANDEN.**
+Die Punkte 1–14 bilden sämtliche Pflichtprüfungen, die Bereiche A–I, den Dokumentationswiderspruch, die geforderte Evidenztrennung und alle Ergebnisartefakte aus `CODEX.md` ab. **`CODEX.md == CURRENT-TASK-Anforderungen` — bestanden.**

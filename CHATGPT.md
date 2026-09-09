@@ -1,6 +1,105 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-09
+**Auftrag:** Live Admin Reality Check — Phase 1 Diagnose / keine Fixes
+**Status:** Diagnose vollständig; keine Produktcodeänderung; Phase 2 erforderlich
+
+## Kurzfazit
+
+Der Produktionsstand enthält nachweislich die Implementierungsdateien des Abschlusscommits: FTPS-Run `34308483460` für `30f5ef8` und der nachfolgende Run `34311095095` für `8b3cba3` endeten erfolgreich und bestätigten jeweils die Deploymentrevision. Der aktuelle Betreiber-Screenshot zeigt außerdem eindeutig die neue Backup-Oberfläche (`external-cron-required`, Retention-UI). Ein pauschaler alter Frontend-Deploy ist daher **nicht** die gemeinsame Ursache.
+
+Die Hauptdiskrepanz entsteht aus mehreren konkreten Codefehlern und einem nicht nachweisbar ausgeführten Produktionsschema:
+
+1. Die Infrastrukturansicht liest PHP-`JsonResponse`-Antworten eine Ebene zu flach und verwirft dadurch erfolgreiche Server-, DB-, Connection-, Provider-, Backup- und Releasepayloads.
+2. Die Sessionabfrage zerlegt durch ein falsch begrenztes PHP-Stringliteral das SQL in zwei Argumente für `PDO::query`; zusätzlich führt das Deployment keine Coremigration aus. Bei einer weiterverwendeten Adminsession kann das neue Device-Schema daher fehlen.
+3. Backup-GET-Fehler werden von der UI als leere Liste mit erfundenem Fallback-Scheduler dargestellt. Backup-POST reduziert jede konkrete Ursache auf dieselbe 503-Meldung. Der hostlokale Backup-Key und die Schreibbarkeit sind aus dieser Umgebung nicht prüfbar. Zudem wird der dokumentierte Cron-Runner vom Produktionspaket überhaupt nicht mitgeliefert.
+4. Releaseinformationen sind statisch (`1.0.0`) beziehungsweise an `release_state.checked_at` gebunden, nicht an das Buildmanifest oder den Deployzeitpunkt.
+5. Der sichtbare Wert 14 ist **Retention (Anzahl Backups)**, nicht Intervall/Tage. Es wurden nur feste Optionen 7/14/30 implementiert; eine freie manuelle Auswahl wurde nie umgesetzt.
+6. Error-Alerts sind absichtlich ohne Timeout und werden beim Routerwechsel nicht entfernt. Audit-Datumsfelder besitzen nur ARIA-Namen, keine sichtbaren Labels.
+
+## Befundtabelle
+
+| Bereich | Live-Befund | Code-Stand | Produktionsstand | Root Cause | Evidenz / Sicherheit | Fix nötig? | Priorität |
+|---|---|---|---|---|---|---|---|
+| Sessions | Keine erwarteten Geräte-Sessions sichtbar | Device-Insert, Registry und UI vorhanden | Dateien deployed; Schema nicht verifiziert | **Codefehler:** `GROUP_CONCAT(... SEPARATOR ",")` liegt in einem PHP-Doppelquote-String und wird als zwei `PDO::query`-Argumente ausgewertet. **Zusätzlich mögliche Schemadrift:** Migration läuft nur bei Setup oder Login, nicht beim Deploy. | Stringauswertung lokal reproduziert: 2 Queryargumente. Workflow enthält keinen Migrationsschritt. Produktive Migrationstabelle ohne Host-/DB-Zugriff nicht prüfbar. | Ja | P0 |
+| Connections & Providers | Keine verwertbaren Informationen | Admin-API liefert eine minimale DB-Connection; Provider absichtlich leer | Neue UI nachweislich deployed | **UI-Bindingfehler:** Zugriff auf `result.data.connections`, obwohl PHP `{ok,data:{connections}}` liefert. Provider besitzt zudem keine reale Registryquelle. DB-Ping im Connectionendpoint ist nicht fehlertolerant. | `JsonResponse::success` + `loadData()` direkt verglichen; Betreiberbild konsistent. | Ja | P0/P1 |
+| Server | Erwartete Runtimeinformationen fehlen | `/api/admin/server` liefert sichere Runtimewerte | API/PHP und UI deployed | **UI-Bindingfehler:** `result.data.server` statt entpacktem `result.data.data.server`. Form-/Testpfad nutzt daneben andere Shapes. | Statischer End-to-End-Datenfluss eindeutig. Authentifizierte Liveantwort hier nicht abrufbar. | Ja | P0 |
+| Database | Sichere DB-Metadaten fehlen | Endpoint pingt DB und liefert Status/Metadaten | API/PHP und UI deployed | Derselbe **Envelope-Bindingfehler**. Fehler werden im UI anschließend zu leerem Objekt/`unknown` normalisiert. | Codevergleich eindeutig; tatsächlicher produktiver Ping ohne Admincookie nicht prüfbar. | Ja | P0 |
+| Backups & Restore | `Backup service temporarily unavailable`; gleichzeitig scheinbar leere Liste | Manueller Endpoint konstruiert AES-GCM-Service, exportiert DB und schreibt Runtime-Datei | Neue UI deployed; Cron-Datei **nicht** im 108-Dateien-Paket | **Nachgewiesen:** POST fängt alle Constructor-/DB-/Filesystem-/Tabellenfehler und verwirft Ursache. GET wird durch Envelopefehler unabhängig vom Ergebnis als leer gezeigt. **Nicht weiter auflösbar ohne Hostprüfung:** Der hostlokale `NEUTRAL_BACKUP_KEY` ist die erste Constructor-Prüfung; danach folgen OpenSSL, DB/Tabellen und Filesystem. Die generische 503-Antwort erlaubt keine belastbare Auswahl zwischen diesen Ursachen. **Deploymentfehler:** `scripts/run-automatic-backup.php` fehlt im Produktionsmanifest, daher kann dokumentierter Cronpfad nicht existieren. Cron blockiert manuelle Erstellung im Code nicht. | Constructor-Reihenfolge, Catch und Paketmanifest geprüft. Keywert, Directory-ACL und Tabellenbestand benötigen Hostdiagnose; keine Secrets abgefragt. | Ja | P0 |
+| Maintenance & Updates | Keine verwertbaren Release-/Updatedaten | Maintenance-State persistent; Releaseversion hart `1.0.0`, Zeitpunkt ist DB-`checked_at` | Code deployed | Envelope-Bindingfehler leert Anzeige. Darüber hinaus existiert **keine** Verbindung von `manifest.json.sourceCommit/generatedAt` zu Release-DTO; Maintenance und Release werden semantisch vermischt. | Codepfad und Manifestmodell eindeutig. | Ja | P1 |
+| Settings / 14 | Fester 14-Tage-Eindruck, gewünschte Auswahl fehlt | `backupRetention` bietet 7/14/30; `backupInterval` separat daily/weekly/monthly | UI deployed (Screenshot passt) | Wert 14 ist Default-Anzahl aufzubewahrender Backups, wird aber ohne Einheit erklärt. Freie/manuelle Retention wurde **nie implementiert**. Backend speichert nur generisches Settings-JSON, ohne eigenen Vertrag. | IDs, Optionen und Save-Payload geprüft. | Ja | P1 |
+| Globaler Alert | Backupfehler bleibt nach Navigation zu Audit sichtbar | Error-Alert wird an `document.body` gehängt und hat absichtlich keinen Timeout | Verhalten entspricht deployed Code | **UI-State-Leak:** Router `showView()` räumt globale Alerts nicht ab; nur Nichtfehler verschwinden nach fünf Sekunden. Keine Seiten-/Owner-Zuordnung. | `AdminCommon.showAlert` und Routerfluss eindeutig. | Ja | P1 |
+| Audit Filter/Labels | Datumsfelder nicht selbsterklärend | Inputs besitzen `aria-label`, aber keine sichtbaren `<label>`; gesamte Toolbar ist eine generische Gridzeile | UI deployed | **UX-Vertragslücke:** accessibility name ersetzt keine sichtbare Erklärung. Bei Tabletbreakpoint wird alles einspaltig, aber es entsteht trotzdem kein sichtbarer Feldname; native Safari-Date-Darstellung verstärkt das Problem. | Markup und Breakpoints geprüft; visueller Betreiberbefund bestätigt. | Ja | P1 |
+| `CURRENT-TASK.md` | Alter Auftrag trotz Abschluss als „in Bearbeitung“ | Alle alten Punkte waren abgehakt | Dokumentationscommit auf main | **Dokumentationsfehler:** Statuskopf wurde im Abschlusscommit nicht auf abgeschlossen gesetzt. Für diesen Auftrag wurde die Datei korrekt durch die Diagnose-Arbeitsliste ersetzt und bleibt bis Abschluss als Diagnose markiert. | Git-Historie `30f5ef8`/`8b3cba3` und Dateiinhalt. | Ja, dokumentarisch | P2 |
+
+## Code, Tests, Migration, Build und Livewahrheit
+
+- **Code vorhanden:** Die beanspruchten Komponenten existieren überwiegend, aber mehrere End-to-End-Verträge sind fehlerhaft verdrahtet.
+- **Tests:** Die neuen `admin-operations-contract`-Tests prüfen überwiegend reguläre Ausdrücke im Quelltext. Die Admin-CMS-Tests mocken Payloads und erkennen weder das doppelte PHP-Envelope noch den `PDO::query`-Argumentfehler. Es fehlt ein echter PHP-Integrationstest für Sessions, Infrastruktur, Release/Maintenance, Backup-Fehlerklassifikation und Migration gegen das produzierte Paket.
+- **Migration vorhanden:** `2026_09_09_0004_operations_device_sessions` existiert im Paket. Ihre produktive Anwendung ist **nicht nachgewiesen**. Der FTPS-Workflow führt keine Migration aus; nur Setup und ein neuer Login rufen `migrate()` auf.
+- **Build/Deploy:** Das Paket enthält API, RBAC, Migrator und Admin-JavaScript. FTPS und read-only Smoke bestätigten Revision und allgemeine öffentliche Endpunkte, prüfen aber keine authentifizierten Admin-DTOs, keine DB-Spalten und keine Backup-Erstellung.
+- **Produktionsendpoint:** Direkte sichere HTTP-Probes aus dieser Sandbox wurden vom Netzwerk-Tunnel mit 403 blockiert; authentifizierte Adminprobes wären ohne Betreibercookie ohnehin nicht zulässig. Die Action-Smokes belegen Root/status/module/revision, nicht die betroffenen Adminpfade.
+- **Dokumentation:** Der vorige Abschlussbericht war zu weitgehend. Er setzte Vorhandensein plus Source-Tests mit funktionierendem Live-Datenfluss gleich.
+
+## Exakt betroffene Dateien für Phase 2
+
+1. `Server/php/src/Phase4AuthRbac.php` — Session-SQL, Registryfehlerbehandlung, Cleanup-/Current-Vertrag.
+2. `Server/php/src/SchemaMigrator.php` — migrationssichere/idempotente Device-Änderung und verifizierbarer Status.
+3. `Server/public/api/index.php` — sichere Admin-Diagnose-DTOs, Fehlercodes, Backupursachen ohne Secret-/Pfadleak, Releasequelle.
+4. `Web-App/public/admin/index.js` — einheitliches `AdminCommon.unwrapData`, echte Fehlerzustände statt `{}`/`[]`, Session/Infrastructure/Backup/Release-Binding.
+5. `Web-App/public/admin/common.js`, `Web-App/public/admin/shell.js` — Alert-Lebenszyklus pro Route.
+6. `Web-App/public/admin/audit-view.js`, `Web-App/public/style.css` — sichtbare Labels und tabletfähige Filtergruppen.
+7. `Web-App/public/admin/settings-view.js`, `Server/php/src/Phase6AdminStorage.php` — eindeutiger Interval-/Retentionvertrag und Validierung.
+8. `Server/php/src/DatabaseBackupService.php`, `scripts/run-automatic-backup.php`, `scripts/lib/portable-install.js` — sichere Diagnose, Runner-Paketierung und Runtime-Verzeichnisvertrag.
+9. `.github/workflows/ftp-upload.yml`, `scripts/production-readonly-smoke.js` — nichtdestruktive Migrations-/Adminvertrag-Prüfung; kein automatischer Restore.
+10. `tests/admin-operations-contract.test.js`, `tests/admin-cms-ui.test.js`, `tests/admin-php-entry.test.js`, `tests/php-backup.test.js` plus neue echte PHP-Operationsintegrationstests.
+11. `CHATGPT.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `Security.md`, `API.md`, `Database.md`, `Install-README-Server.md` — erst nach realer Phase-2-Abnahme wahrheitsgemäß aktualisieren.
+
+## Nötige Migrationen und Deploymentmaßnahmen
+
+- Produktive Migrationstabelle read-only prüfen: Vorhandensein/Status von `2026_09_09_0004_operations_device_sessions` sowie Device-Spalten/Index, ohne Nutzdaten auszugeben.
+- Migration nach Korrektur über einen expliziten, idempotenten, authentifizierten/CLI-Deployschritt ausführen; nicht von einem zufälligen nächsten Login abhängig machen.
+- Hostlokal ausschließlich klassifizieren: Backup-Key vorhanden und Mindestlänge erfüllt; Backupverzeichnis erzeugbar/schreibbar; alle Managed Tables vorhanden. Keine Werte oder Pfade loggen.
+- Cron-Runner in das Produktionspaket aufnehmen oder einen tatsächlich deployten geschützten Server-Entrypoint definieren; anschließend cPanel Cron mit diesem realen Pfad konfigurieren.
+- Admin-DTO-Smoke mit sicherem kurzlebigem CI-/Hostmechanismus ergänzen, ohne Credentials oder Metadaten zu protokollieren.
+
+## Erforderliche Live-Retests auf iPad/Safari
+
+1. Neue und bestehende User-/Admin-Gerätesession sichtbar; `Current session`; Zweitgerät; Einzelwiderruf; Reload nach Widerruf.
+2. Connections/Providers unterscheiden echte primäre DB, optional nicht konfiguriert und Fehler sichtbar.
+3. Server/Database/Diagnostics zeigen reale sichere Werte und GPS-Modulanzahl, ohne `{}`, `unknown` oder falsche Null.
+4. Manuelles Backup erstellen, Liste aktualisieren, Download; Upload/tampered rejection und Restore nur in sicherer Testinstanz — niemals destruktiv auf Produktion ausprobieren.
+5. Maintenance an/aus, Reason, Admin erreichbar, reale Release-/Deployinformation.
+6. Settings: Intervall und Retention mit sichtbarer Einheit und gewünschter Auswahl speichern/reloaden.
+7. Fehleralert verschwindet beim Seitenwechsel; bewusst globale Meldungen bleiben nur gemäß neuem Vertrag.
+8. Auditfilter mit sichtbaren Labels im Hoch-/Querformat und Safari-Date-Control prüfen.
+9. P1 und P4 Kurzregression nach Deployment.
+
+## Fehlerklassifikation und Reparaturreihenfolge
+
+1. **P0 Codefehler:** Session-SQL und gemeinsames Envelope-Unwrapping beheben; echte Fehlerzustände rendern.
+2. **P0 Deployment-/Schemadrift:** Migration explizit prüfen/ausführen und Sessionpfad live abnehmen.
+3. **P0 Konfiguration/Filesystem:** Backup-Key/Directory/Managed-Tables hostseitig sicher klassifizieren; erst danach konkrete Serviceursache beheben. Cron-Runner paketieren.
+4. **P1 Code-/Vertragsfehler:** Release aus Manifest ableiten, Connections/Provider ehrlich modellieren, Settingssemantik validieren.
+5. **P1 UI-State/UX:** Alerts routenlokal machen, Auditfelder sichtbar beschriften.
+6. **P1 Tests/CI:** End-to-End-PHP-DTO-, Migration- und paketierte Operationsregressionen ergänzen.
+7. **Live-Abnahme:** oben genannte iPad-/Safari-Matrix; erst dann Dokumentation wieder als abgeschlossen markieren.
+
+## Grenzen dieser Diagnose
+
+**Nachgewiesen:** Code-/Envelope-/SQL-/Alert-/Label-/Paketierungsfehler, fehlender Deploy-Migrationsschritt, statische Releasequelle und Semantik des 14-Werts.
+**Starke Evidenz:** Bei einer seit vor dem Deploy weiterverwendeten Session konnte die login-gebundene Migration noch nicht gelaufen sein; unabhängig davon bricht der nachgewiesene Session-SQL-Fehler die Liste.
+**Nicht prüfbar ohne Betreiber-/Hostzugriff:** tatsächliche Migrationstabellenzeile, Backup-Key-Status, Verzeichnis-ACL, konkrete Managed-Table-Vollständigkeit und authentifizierte Produktionsantworten. Dafür sind ausschließlich read-only beziehungsweise nichtdestruktive Hostprüfungen erforderlich.
+
+**Keine Reparatur oder destruktive Produktionsaktion wurde in Phase 1 vorgenommen.**
+
+---
+
+# Historische Evidenz — vorheriger Abschlussbericht
+
+# NEUTRAL — CODEX → CHATGPT/LEA
+
+**Datum:** 2026-09-09
 **Auftrag:** Admin Operations Reality Check, Permission-Bereinigung und Device Sessions
 **Ergebnis:** vollständig code-seitig abgeschlossen; P1/P4 unverändert `LIVE BESTANDEN`
 
