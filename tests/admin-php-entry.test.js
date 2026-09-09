@@ -623,7 +623,7 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     }
   });
 
-  test('Fall N: PHP login fails closed when the throttle backend is unavailable', async () => {
+  test('Fall N: PHP login safely classifies an unavailable identity database after throttle fallback', async () => {
     const result = await request('/api/auth/login', {
       port: serverPort,
       method: 'POST',
@@ -632,7 +632,7 @@ echo json_encode(['locked' => $installer->hasInstallationEvidence(), 'persisted'
     assert.equal(result.statusCode, 503);
     assert.match(result.body, /Authentication service temporarily unavailable/i);
     const payload = JSON.parse(result.body);
-    assert.equal(payload.error.details.code, 'AUTH_THROTTLE_UNAVAILABLE');
+    assert.equal(payload.error.details.code, 'AUTH_USER_LOOKUP_UNAVAILABLE');
     assert.match(payload.error.details.correlationId, /^[a-f0-9]{16}$/);
     assert.doesNotMatch(result.body, /PDO|database|SQL|password_hash|stack/i);
   });
