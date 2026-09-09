@@ -1,279 +1,185 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – P0 LIVE AUTH/GPS + CORE-FREEZE-RESTLÜCKEN  
+**Status:** P0 – PRODUKTIONSLOGIN WEITERHIN DEFEKT NACH ZWEI FEHLGESCHLAGENEN FIXVERSUCHEN  
 **Datum:** 2026-09-09
 
 # Aktueller Auftrag
 
-## Produktionsregressionen zuerst beheben, danach zwei nachgewiesene Core-Freeze-Lücken schließen
+## Ausschließlich den realen User- und Admin-Loginfehler vollständig diagnostizieren und beheben
 
-Der vorige Auftrag wurde als abgeschlossen/deployed gemeldet. Der reale Betreiber-Retest auf **iPad/Chrome am 2026-09-09 ca. 20:08–20:09 lokale Zeit** widerlegt diesen Abschluss in vier Punkten. Zusätzlich hat die nachträgliche Repositoryprüfung durch ChatGPT/Lea zwei Anforderungen gefunden, die in `CURRENT-TASK.md` als erledigt markiert wurden, im produktiven Vertrag aber nicht vollständig vorhanden sind.
+Der Betreiber hat den zuletzt deployten Stand `151c4747f7363688ef89e0f911f055653dbe63dc` nach erfolgreichem CI/FTPS erneut **real auf demselben iPad mit Google Chrome** getestet.
 
-**Diese sechs Punkte sind jetzt der vollständige Auftrag.** Die vier Livebefunde haben Vorrang vor grünen Tests und vor früheren Abschlussberichten. Der Core ist bis zu ihrer Behebung und realem Retest **nicht freeze-fähig**.
+### Verbindlicher Livebefund ca. 20:50 Asia/Manila
 
-Arbeite autonom, systematisch und test-first bis zum vollständigen code-seitigen Abschluss. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community und kein vollständiges Messaging implementieren. Bestehende positive Verträge – insbesondere Session-Deduplizierung, I18N, Settings-Unterseiten, Passwort 8–25 ohne Leerzeichen, Profile/Privacy, Entitlements und Offline-First – dürfen nicht regressieren.
+- User-Login mit bestehendem Tester-Account: **weiterhin** `Authentication service temporarily unavailable.`
+- Vier reale User-Loginversuche: gleicher Fehler.
+- Admin-Login mit bestehendem Developer/Admin-Account: **weiterhin** `Authentication service temporarily unavailable.`
+- GPS wurde parallel geprüft: Kartenposition ist jetzt korrekt. Dieser Fix ist positiv bestätigt und darf nicht regressieren.
+- Settings `App Areas`, `Navigation`, `Privacy & Sharing` wirken im Livecheck korrekt. `Profile` kann wegen defektem Login noch nicht geprüft werden.
+
+Damit ist die im letzten Bericht behauptete Login-Root-Cause (`SchemaMigrator::migrate()`/`GET_LOCK` im Loginpfad) **nachweislich nicht die vollständige Ursache**. Nicht erneut dieselbe Hypothese als Abschlussgrund verwenden, sofern sie nicht mit neuer konkreter Produktionsevidenz belegt wird.
+
+**Dieser Lauf hat nur P0 Auth zum Ziel.** Keine weiteren Features, kein Core-Freeze, kein GPS-Umbau, keine License-/Media-Erweiterung. Erst Login reparieren.
 
 ---
 
-# 1. Pflicht-Preflight und Wahrheitsvertrag
+# 1. Arbeits- und Wahrheitsvertrag
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `ModuleCreation.md`, `UI-UX.md`, `I18N.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, relevante Deployment-/Installationsdokumentation sowie alle betroffenen Implementierungs- und Testdateien.
-3. Diesen neuen Auftrag vollständig nach `CURRENT-TASK.md` übernehmen. Frühere `[x]`-Markierungen dürfen nicht als Beweis gelten.
-4. Für jeden der sechs Punkte Root Cause nachweisen. Keine symptomatischen Schnellfixes.
-5. Reale Produktionsbefunde sind autoritativ. Ein Test, der dem Livebefund widerspricht, ist unvollständig und muss verbessert werden.
-6. Keine Secrets, Passwörter, Tokens oder personenbezogenen Produktionsdaten ausgeben. Kein Restore, keine destruktiven Produktionsaktionen.
-7. Nach Änderungen vollständige Regression, Packaging, Deployment und read-only Produktionssmoke gemäß `WORKFLOW.md`.
-8. Nur reale Betreiberprüfungen dürfen `LIVE BESTANDEN` heißen. Code/CI/Smoke allein heißt höchstens `CODE-SEITIG ERLEDIGT · DEVICE RETEST REQUIRED`.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `WORKFLOW.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md` und sämtliche Auth-/Bootstrap-/Router-/Client-/Rewrite-/Deploymentdateien.
+3. Neuen P0-Auftrag nach `CURRENT-TASK.md` übernehmen.
+4. Frühere grüne Unit-/Integrationstests und frühere Root-Cause-Berichte sind **keine Abnahme**, weil Produktion sie widerlegt.
+5. Vor einer Änderung muss die **konkrete Exception/Fehlerquelle hinter `Authentication service temporarily unavailable.`** lokalisiert werden. Nicht nur den sichtbaren Text ändern.
+6. Keine Passwörter, Tokens, Session-Cookies, DB-Credentials oder sonstige Secrets loggen/ausgeben/committen.
+7. Keine Produktionsdaten verändern, keine Testuser in Produktion erzeugen, kein Restore, kein manuelles Produktions-SQL.
+8. Sichere read-only Produktionsdiagnose ist erlaubt und ausdrücklich erforderlich, soweit sie ohne Secrets/PII möglich ist.
+9. Kein Abschluss `LIVE BESTANDEN`. Nach Deployment bleibt `DEVICE RETEST REQUIRED`, bis der Betreiber selbst User- und Adminlogin bestätigt.
 
 ---
 
-# 2. P0 – User-Login live komplett ausgefallen
+# 2. Fehlertext bis zur tatsächlichen Quelle rückwärts verfolgen
 
-## Verbindlicher Livebefund
+Suche jede Stelle, die exakt oder indirekt `Authentication service temporarily unavailable.` erzeugen kann.
 
-User-App Login mit bestehendem Tester-Account zeigt:
+Für **jeden** Pfad dokumentieren:
 
-`Authentication service temporarily unavailable.`
+- welche Exception/Response dort abgefangen wird;
+- welcher HTTP-Status entsteht;
+- ob der Text serverseitig oder clientseitig erzeugt wird;
+- ob User und Admin denselben Pfad verwenden;
+- welche darunterliegende Exception derzeit verborgen wird.
 
-Damit ist die normale User-Authentifizierung in Produktion nicht nutzbar.
-
-## Auftrag
-
-Root Cause vom Browser bis zum produktiven PHP-Endpunkt vollständig verfolgen:
-
-- tatsächlich ausgelieferte `index.html`/User-Shell;
-- Script-/Assetpfade und `.htaccess`-Rewrite;
-- `ApiClient`-Ladefolge, Export/Global, Instanziierung und Base Path;
-- Login-Handler der User-App;
-- `/api/v1/auth/login` bzw. kanonischer produktiver Loginpfad;
-- PHP-Router/Bootstrap/Migrationsbootstrap;
-- Fehlerbehandlung, die aktuell den generischen Text erzeugt;
-- Cache/Service-Worker/Deploymentrevision, damit kein alter Client mit neuem Server gemischt wird.
-
-Nicht nur prüfen, ob die API theoretisch antwortet. Reproduziere den **realen Browservertrag** so nah wie möglich: ausgelieferte Produktionsstruktur + User-Shell + Loginpfad.
-
-## Ziel
-
-- bestehender gültiger User kann sich wieder anmelden;
-- falsche Credentials liefern einen normalen Authfehler, nicht `service unavailable`;
-- erfolgreicher Login stellt User-Session/CSRF korrekt her;
-- persistente Installation-ID und Session-Deduplizierung bleiben erhalten;
-- Logout/Login erzeugt keine zusätzliche aktive Session derselben Installation.
+Der generische Catch darf die Diagnose nicht dauerhaft verschlucken. Implementiere, falls nötig, eine **sichere technische Fehlerklassifikation/-ID** für Authfehler, die Ursache/Kategorie diagnostizierbar macht, ohne Secrets oder Credentialdetails an den Browser auszugeben. Beispiel: stabile Fehlercodes für DB unavailable, schema unavailable, session persistence failed, server configuration unavailable etc. Keine Stacktraces/SQL/Secrets an Clients.
 
 ---
 
-# 3. P0 – Admin-Login live komplett ausgefallen
+# 3. Reale Produktionskette end-to-end prüfen
 
-## Verbindlicher Livebefund
+Nicht nur Repositorycode betrachten. Prüfe die tatsächlich deployte Kette:
 
-Admin-Authentifizierungsseite mit bestehendem Developer/Admin-Account zeigt ebenfalls:
+## User
 
-`Authentication service temporarily unavailable.`
+`Produktions-URL → ausgelieferte User-Shell → geladene JS-Dateien → ApiClient → POST Login → Rewrite → PHP Router → Auth-Service → DB/Userlookup → Password verify → Sessionpersistenz → Response/Cookies`
 
-## Auftrag
+## Admin
 
-Adminpfad separat end-to-end verfolgen. Nicht annehmen, dass der User-Fix automatisch Admin repariert.
+`Produktions-Admin-URL → admin.php/Auth-Shell → geladene JS-Dateien → ApiClient → Admin-Scope → POST Login → Rewrite → PHP Router → Auth-Service → DB/Userlookup → Password verify → Role/Permission resolution → Admin-Sessionpersistenz → Response/Cookies`
 
-Prüfe insbesondere:
+Prüfe ausdrücklich:
 
-- tatsächlich ausgelieferte `admin.php`/Auth-Shell;
-- geladenen `ApiClient` und seine öffentliche URL/Rewrite-Regel;
-- Admin-Session-Scope (`neutral_admin_session`, CSRF);
-- Loginrequest, Router, Bootstrap und Fehlerantwort;
-- Trennung User-App/Admin bleibt erhalten;
-- keine Rückkehr zu direktem Login-`fetch`, der den gemeinsamen Device-ID-Vertrag umgeht.
+- HTTP-Status und Response-Envelope des produktiven Login-Endpunkts **ohne gültige Credentials preiszugeben**;
+- ob der Endpoint überhaupt den erwarteten aktuellen Code erreicht;
+- Rewrite von `/api`, `/api/v1`, User- und Adminpfaden;
+- PHP-Fatal/TypeError/RuntimeException vor/innerhalb Login;
+- DB-Verbindung und Schema-Readiness read-only;
+- Migration `0005`/`0006` und tatsächliche Tabellen-/Spaltenkompatibilität;
+- ob bestehende Produktionsuser nach Schemaänderungen noch lesbar sind;
+- nullable E-Mail/Username-/Status-/Role-Migrationen;
+- Password-Hasher-Vertrag mit bestehenden Hashes; **keine Passwörter lesen oder ausgeben**;
+- UserService/AuthService Rückgabestruktur;
+- Rollen-/Permissionauflösung für Tester und Admin;
+- Sessiontabellen, Spalten, Constraints und INSERT/UPDATE-Vertrag;
+- Installation-ID/Device-Limit-Pfad: kann ein bestehender User wegen neuer License-/Device-Logik eine Exception werfen, die als 503 maskiert wird?;
+- Audit-/Presence-Schreibvorgänge im Login: kann ein nachgelagerter INSERT/UPDATE den gesamten Login abbrechen?;
+- CSRF-/Cookie-Erzeugung;
+- PHP-Version/Extensions und Produktionskonfiguration;
+- tatsächliche Deploymentrevision und Cache/Service Worker.
 
-## Ziel
+**Wichtig:** Weil User und Admin denselben sichtbaren Fehler haben, zuerst die gemeinsamen Serverpfade untersuchen, aber anschließend beide Shells separat verifizieren.
 
-- bestehender autorisierter Admin kann sich wieder anmelden;
+---
+
+# 4. Diagnose ohne Kenntnis der Betreiberpasswörter
+
+Der Agent darf nicht verlangen, dass der Betreiber Passwörter in GitHub/CODEX/Logs schreibt.
+
+Baue/verwende stattdessen sichere Nachweise:
+
+- read-only DB-/Schema-/Userstrukturtests ohne Passwortwerte;
+- Testdaten ausschließlich in isolierter Testdatenbank;
+- Auth-Service-Integration mit Testhashes lokal/CI;
+- produktive HTTP-Probes mit absichtlich ungültigen Dummy-Credentials dürfen nur prüfen, ob der Endpoint korrekt **401 Invalid credentials** statt **503 service unavailable** liefert;
+- produktive Health-/Readiness-/Schema-Smokes;
+- falls serverseitiges Error-Logging erforderlich ist: nur Fehlerklasse/Code und Request-Correlation-ID, keine Credentials, Cookies, SQL-Parameter oder PII.
+
+Ein absichtlich falscher Login muss in Produktion zuverlässig einen normalen 401-Vertrag erreichen. Wenn bereits Dummy-Credentials 503 erzeugen, ist der Fehler vor/innerhalb des Credentialpfads reproduziert und muss dort behoben werden.
+
+---
+
+# 5. Zielvertrag User-Login
+
+Nach Fix muss code-/serverseitig gelten:
+
+- Loginendpoint erreichbar;
+- absichtlich falsche Credentials → normaler 401/Invalid-Credentials-Vertrag, niemals generischer 503;
+- bestehender gültiger User kann nach Betreiber-Retest einloggen;
+- User-Session und CSRF werden korrekt erzeugt;
+- Installation-ID bleibt stabil;
+- bestehende Session-Deduplizierung bleibt erhalten;
+- Device-/License-Limit wirft nur den dafür vorgesehenen spezifischen 409-Vertrag, nicht Auth-503;
+- Logout/Login derselben Installation erzeugt keine parallele aktive Session.
+
+---
+
+# 6. Zielvertrag Admin-Login
+
+Nach Fix muss code-/serverseitig gelten:
+
+- Adminloginendpoint erreichbar;
+- absichtlich falsche Credentials → normaler 401-Vertrag;
+- bestehender autorisierter Admin kann nach Betreiber-Retest einloggen;
 - User- und Adminsession bleiben getrennt;
-- Access-denied/Admin-Reauth-Vertrag bleibt erhalten;
-- Device-ID und Deduplizierung bleiben stabil.
-
-**Abnahme:** echte Integrationstests müssen die ausgelieferte Admin-Auth-Seite und deren tatsächlichen Clientpfad abdecken, nicht nur isolierte Serviceklassen.
-
----
-
-# 4. P0 – GPS-Karte zeigt Position falsch
-
-## Verbindlicher Livebefund
-
-GPS-Daten zeigen ungefähr:
-
-- Latitude `7.105691769982597`
-- Longitude `125.63707611554916`
-
-Die neue interaktive OSM-Karte ist zwar zoombar, aber Kartenposition/Markerprojektion entspricht live nicht zuverlässig diesen Koordinaten.
-
-## Auftrag
-
-Die neue selbst implementierte Tile-/Web-Mercator-Logik mathematisch und DOM-seitig prüfen:
-
-- lat/lon → Web-Mercator world/tile coordinates;
-- `x/y/z`, `floor`, Pixeloffsets und Tilegrenzen;
-- Longitude/Latitude niemals vertauschen;
-- korrekte Mercator-Latitude-Clamps;
-- Kartenmittelpunkt und Marker müssen dieselbe Projektion/Transformationsbasis verwenden;
-- nach Zoom und Pan Marker/Map weiterhin konsistent;
-- Retina/devicePixelRatio darf keine Positionsverschiebung erzeugen;
-- Containergröße/Responsive Layout darf keine falsche Markerposition erzeugen.
-
-Ergänze deterministische Tests mit bekannten Referenzkoordinaten einschließlich der obigen Davao-Koordinate. Prüfe Tileindex und Pixelposition gegen unabhängig berechnete Web-Mercator-Erwartungswerte; kein Test, der lediglich bestätigt, dass HTML sich nach `+` verändert.
-
-## Ziel
-
-Beim Öffnen ist die aktuelle GPS-Position der korrekte Kartenmittelpunkt/Marker. Zoom und Pan funktionieren weiterhin. `Position aktualisieren` setzt Karte und Marker wieder korrekt auf die neue aktuelle Position. Keine Trackingfunktion.
+- Adminrolle/-permissions werden korrekt aufgelöst;
+- Access-denied/Reauth-Vertrag bleibt erhalten;
+- Device-ID/Deduplizierung bleibt erhalten;
+- kein direkter Sonder-`fetch`, der den gemeinsamen ApiClient-Vertrag umgeht.
 
 ---
 
-# 5. OpenStreetMap extern in neuem Tab/Fenster öffnen
+# 7. Tests müssen den bisherigen Blindspot schließen
 
-## Verbindlicher Livebefund
-
-`In OpenStreetMap öffnen` ersetzt derzeit die Neutral-App im selben Browserfenster/Tab.
-
-## Ziel
-
-- separater OSM-Button öffnet OSM **in neuem Tab/Fenster**, sodass Neutral geöffnet bleibt;
-- sichere externe Navigation mit `noopener`/`noreferrer` soweit passend;
-- kein vorab erzeugtes leeres `about:blank`;
-- eingebettete Karte selbst bleibt ohne externen Linkwrapper;
-- Google-Maps-Verhalten nicht unbeabsichtigt regressieren;
-- System-Share bleibt getrennt.
-
-Auf iPad/Chrome muss der Browser die externe OSM-Seite öffnen können, ohne die laufende Neutral-Seite zu ersetzen.
-
----
-
-# 6. Core-Freeze-Lücke – delegierter License/Organization Admin ist unvollständig
-
-## Repositorybefund
-
-Der vorige Auftrag verlangte für einen Lizenz-/Organisationsverwalter innerhalb **seiner eigenen Lizenz** mindestens:
-
-- User anlegen / Initialpasswort;
-- User sehen;
-- User blockieren/entfernen;
-- Seats/Geräte sehen;
-- einzelne Geräte freigeben/revoken;
-- Last Activity und Used/Allowed Devices sehen;
-- ausschließlich vom User freigegebene Profildaten sehen.
-
-Aktuell sind produktiv im Wesentlichen `GET /license/users` und `POST /license/users` sowie `organizationUsers()`/`assignUser()` nachweisbar. Damit sind Block/Remove und scoped Device-Revoke nicht vollständig umgesetzt, obwohl `CURRENT-TASK.md` dies als erledigt markiert.
-
-## Auftrag
-
-Den delegierten Vertrag vollständig und serverautoritativ schließen:
-
-- geeignete scoped API/Serviceoperationen für Blockieren/Entfernen eines eigenen Lizenzusers;
-- Device-/Installation-Liste innerhalb der eigenen Lizenz;
-- Revoke/Freigabe einer einzelnen Installation innerhalb der eigenen Lizenz;
-- Used/Allowed + Last Activity in der Organisationsansicht;
-- ausschließlich explizit freigegebene Profilfelder;
-- kein Zugriff auf fremde Lizenzuser/-geräte;
-- kein Zugriff auf globale Rollen/Corepermissions, Server, Backup, Audit oder Systemsettings;
-- alle schreibenden Aktionen CSRF-geschützt und auditierbar;
-- Seat-/Device-Limits bleiben autoritativ.
-
-**Wichtig:** „Entfernen“ muss sicher definiert werden. Ein Vereinsadmin darf nicht unkontrolliert einen globalen Account löschen, wenn dieser später/parallel außerhalb seiner Organisation relevant sein könnte. Bevorzuge scoped Zuordnung entfernen bzw. blockieren, sofern der globale Accountvertrag dies verlangt.
-
-## Echte Tests
+Die bisherigen Tests waren grün, obwohl Produktion zweimal hintereinander nicht loginfähig war. Ergänze deshalb Tests, die genau diesen Blindspot adressieren.
 
 Mindestens:
 
-1. Manager Lizenz A sieht/ändert nur A.
-2. Manager A kann A-User anlegen und scoped blockieren/entfernen.
-3. Manager A kann A-Gerät revoken.
-4. Manager A kann User/Gerät von Lizenz B weder lesen noch verändern.
-5. Device-Limit 1 → zweites Gerät blockiert → Manager revoket altes Gerät → neues Gerät möglich.
-6. `unlimited` bleibt korrekt.
-7. Nicht freigegebene Profilfelder erscheinen nie.
+1. PHP-Router mit realistischem MySQL-Schema der aktuellen Migrationen.
+2. User-Login mit existierendem Testuser + aktuellem Hash → 200.
+3. Admin-Login mit existierendem Admin + Rollen/Permissions → 200.
+4. falsche Credentials User/Admin → 401, nicht 503.
+5. bestehender Legacy-/vor-0005-Userdatensatz nach Migration weiterhin loginfähig.
+6. Presence-/Device-/License-/Audit-Nachschritte dürfen gültigen Login nicht wegen optionaler Telemetrie/Metadaten in generischen 503 verwandeln; kritische Sessionpersistenz darf dagegen sauber klassifiziert fehlschlagen.
+7. Device-Limit → spezifisch 409 `DEVICE_LIMIT_REACHED`.
+8. User- und Admin-Shell laden tatsächlich den deployten ApiClient und treffen den kanonischen produktiven Pfad.
+9. Produktionspackage enthält exakt die für Login benötigten Assets/Rewrite-/PHP-Dateien.
+10. Regression Session-Deduplizierung.
 
-Ein Unit-Test `allowsLicenseScope(7,7)` allein reicht nicht.
-
----
-
-# 7. Core-Freeze-Lücke – Medien-/Moderationsgrundlage ist nur teilweise funktional
-
-## Repositorybefund
-
-Vorhanden sind Schema/Tabellen (`user_media`, `media_moderation_history`), Statusmodell und Bildvalidierung. Nicht ausreichend nachgewiesen ist ein vollständiger produktiver generischer Workflow von berechtigtem Upload bis Moderationsentscheidung.
-
-## Auftrag
-
-Nur die neutrale Plattformgrundlage fertigstellen, keine Community-/Marketplace-UI:
-
-- authentifizierter Userupload nur mit passender Permission/Entitlement;
-- Viewer/anonym: kein Serverupload;
-- sichere serverseitige JPEG/PNG/WebP-Validierung und Größenlimits erhalten;
-- sichere Speicherung außerhalb unkontrolliert ausführbarer öffentlicher Pfade bzw. über kontrollierten Media-Delivery-Vertrag;
-- neuer Upload startet `pending` und wird niemals automatisch öffentlich;
-- autorisierter Moderator kann `approve`, `reject`, `delete`;
-- Rejection reason + optionale Moderatornotiz;
-- jede Statusänderung in `media_moderation_history`;
-- User-/Moderationszähler konsistent aktualisieren bzw. belastbar ableiten;
-- User kann seinen Status/Ablehnungsgrund sehen, aber keine internen sensitiven Moderatordaten, sofern nicht dafür vorgesehen;
-- CSRF, Permission, MIME/Decode, Dateigröße, Dateiname/Pfad und Ownership serverseitig prüfen;
-- keine KI-Inhaltsmoderation.
-
-Clientseitige Optimierung ist optional/ergänzend; serverseitige Validierung bleibt Autorität.
-
-## Echte Tests
-
-Mindestens:
-
-- Viewer Upload → 401/403;
-- User ohne Entitlement → 403;
-- erlaubter valider Upload → `pending`;
-- Fake MIME/ungültiges Bild/zu groß → abgelehnt;
-- Upload ist vor Approval nicht öffentlich;
-- Moderator approve/reject/delete mit Historie;
-- normaler User kann Moderationsstatus nicht selbst ändern;
-- Ownership-/Cross-user-Zugriff fail-closed.
+Keine reine Regex-/Sourceprüfung als Abnahme.
 
 ---
 
-# 8. Regression und Core-Freeze-Abnahme
+# 8. Deployment und Produktionssmoke
 
-Nach Behebung aller sechs Punkte vollständige Regression durchführen.
+Nach Root-Cause-Fix:
 
-Mindestens erhalten/prüfen:
-
-- User- und Adminlogin realer Browservertrag;
-- Session-Deduplizierung und getrennte Session-Scopes;
-- Passwortvertrag exakt 8–25, keine Leerzeichen;
-- Profile/Privacy default-off;
-- Settings-Unterseiten + Save ohne Redirect + Active-State;
-- GPS I18N;
-- GPS korrekte Position + Zoom/Pan;
-- OSM neuer Tab;
-- Entitlement `available/locked/hidden`;
-- Device-Limits und scoped License Admin;
-- Installationsmetriken ohne Fingerprint/PII;
-- Medienworkflow und Moderationsscope;
-- P1/P4 und Offline-First;
-- PHP-Lint, JS-Syntax, `git diff --check`, vollständige Tests, Produktionspaket und Secret-/Artefaktprüfung.
-
-Danach erneut ehrlich prüfen:
-
-> Kann CatchTrack auf diesem Core mit Fachmodulen aufgebaut werden, ohne normale Produktfeatures durch Core-Sonderänderungen zu implementieren?
-
-Core-Freeze nur dokumentieren, wenn die code-seitigen Verträge vollständig sind. Die vier heutigen Livefehler bleiben bis zum realen Betreiber-Retest `DEVICE RETEST REQUIRED`.
+1. vollständige Tests, PHP-Lint, JS-Syntax, `git diff --check`;
+2. Produktionspaket + Secret-/Artefaktprüfung;
+3. commit/push `main`;
+4. CI/CodeQL/FTPS terminal abwarten;
+5. Deploymentrevision verifizieren;
+6. read-only Schema-/Readiness-Smoke;
+7. **entscheidend:** produktiver Auth-Smoke mit absichtlich ungültigen Dummy-Credentials muss für User und Admin den erwarteten **401** liefern und darf nicht `Authentication service temporarily unavailable.`/503 liefern;
+8. keine echten Betreibercredentials automatisiert verwenden;
+9. `CHATGPT.md` muss konkrete Root Cause, betroffene Exception/Klasse, Fix und Smoke-Evidenz dokumentieren;
+10. `CURRENT-TASK.md` bleibt bezüglich realem Login auf `DEVICE RETEST REQUIRED`.
 
 ---
 
-# 9. Deployment und Übergabe
+# 9. Betreiber-Retest nach Deployment
 
-Gemäß `WORKFLOW.md`:
+Nur diese zwei Punkte zuerst anfordern:
 
-1. Commit/push `main`.
-2. CI/CodeQL/FTPS terminal abwarten.
-3. `HEAD == origin/main`, sauberer Tree.
-4. Deploymentrevision und read-only Produktionssmoke prüfen; `migrationsReady:true`.
-5. Falls neue Migration nötig: ausschließlich über bestehenden checksummed/idempotenten Migrationsvertrag, niemals manuelles Produktions-SQL.
-6. Relevante Dokumentation wahrheitsgemäß aktualisieren; falsche frühere `[x]`-/Freeze-Aussagen korrigieren.
-7. Vollständigen Bericht in `CHATGPT.md` schreiben.
-8. Kurze Betreiber-Retestliste exakt für die vier Livefehler plus die administrativ testbaren neuen License-/Media-Flows liefern.
-9. Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` melden.
+1. User `Tester` real einloggen.
+2. Admin `Developer` real einloggen.
+
+Erst wenn beide vom Betreiber bestätigt sind, weitere Profile-/License-/Media-Retests fortsetzen und über Core-Freeze sprechen.
