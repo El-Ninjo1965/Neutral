@@ -55,17 +55,8 @@ final class Phase4AuthRbac
             'audit.read',
         ],
         'viewer' => [
-            'admin.read',
-            'auth.read',
-            'user.read',
-            'role.read',
-            'settings.read',
-            'session.read',
-            'audit.read',
         ],
-        'user' => [
-            'auth.read',
-        ],
+        'user' => [],
     ];
 
     public static function isValidPermission(string $permission): bool
@@ -494,8 +485,9 @@ final class Phase4PermissionService
         foreach (Phase4AuthRbac::PERMISSIONS as $permission) {
             $catalog[(string) $permission] = [
                 'key' => (string) $permission,
-                'description' => '',
-                'scope' => 'core',
+                'description' => self::describe((string) $permission),
+                'scope' => 'Admin',
+                'source' => 'Core',
             ];
         }
 
@@ -520,12 +512,26 @@ final class Phase4PermissionService
             }
             $catalog[$key] = [
                 'key' => $key,
-                'description' => (string) ($row['description'] ?? ''),
-                'scope' => trim((string) ($row['scope'] ?? '')) !== '' ? (string) $row['scope'] : (Phase4AuthRbac::isValidPermission($key) ? 'core' : 'custom'),
+                'description' => trim((string) ($row['description'] ?? '')) !== '' ? (string) $row['description'] : self::describe($key),
+                'scope' => Phase4AuthRbac::isValidPermission($key) ? 'Admin' : 'User-App',
+                'source' => Phase4AuthRbac::isValidPermission($key) ? 'Core' : ('Module: ' . (explode('.', $key, 2)[0] ?: 'unknown')),
             ];
         }
 
         return array_values($catalog);
+    }
+
+    private static function describe(string $key): string
+    {
+        $labels = [
+            'admin.read' => 'View the administration shell and operational status.', 'admin.write' => 'Change administrative platform state.',
+            'auth.read' => 'View authentication operations.', 'auth.write' => 'Manage authentication operations.',
+            'user.read' => 'View users.', 'user.write' => 'Manage users.', 'role.read' => 'View roles and permission registry.',
+            'role.write' => 'Manage role assignments.', 'settings.read' => 'View system settings.', 'settings.write' => 'Change system settings.',
+            'session.read' => 'View device sessions.', 'session.write' => 'Revoke device sessions.', 'audit.read' => 'View the audit log.',
+            'backups.view' => 'View encrypted backup inventory.', 'backups.manage' => 'Create, transfer, restore and delete encrypted backups.',
+        ];
+        return $labels[$key] ?? ('Use module capability ' . $key . '.');
     }
 
     /**
@@ -1198,8 +1204,8 @@ final class Phase4SessionRegistry
         $lastSeenAt = (string) ($identity['lastSeenAt'] ?? gmdate('c'));
         $expiresAt = (string) ($identity['expiresAt'] ?? gmdate('c'));
         $statement = $pdo->prepare('
-            INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, status, ip, user_agent)
-            VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :status, :ip, :user_agent)
+            INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, status, ip, user_agent, device_id, device_label)
+            VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :status, NULL, :user_agent, :device_id, :device_label)
             ON DUPLICATE KEY UPDATE
                 user_id = VALUES(user_id),
                 csrf_token = VALUES(csrf_token),
@@ -1207,7 +1213,9 @@ final class Phase4SessionRegistry
                 expires_at = VALUES(expires_at),
                 status = VALUES(status),
                 ip = VALUES(ip),
-                user_agent = VALUES(user_agent)
+                user_agent = VALUES(user_agent),
+                device_id = VALUES(device_id),
+                device_label = VALUES(device_label)
         ');
         $statement->execute([
             ':session_id' => $sessionId,
@@ -1217,8 +1225,9 @@ final class Phase4SessionRegistry
             ':last_seen_at' => $this->toMysqlDateTime($lastSeenAt),
             ':expires_at' => $this->toMysqlDateTime($expiresAt),
             ':status' => (string) ($identity['status'] ?? 'active'),
-            ':ip' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
             ':user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            ':device_id' => (string) ($identity['deviceId'] ?? ''),
+            ':device_label' => substr((string) ($identity['deviceLabel'] ?? 'Browser installation'), 0, 120),
         ]);
     }
 
@@ -1228,8 +1237,16 @@ final class Phase4SessionRegistry
             return;
         }
         $pdo = $this->requireDatabase()->connect();
-        $statement = $pdo->prepare('DELETE FROM sessions WHERE session_id = :session_id');
+        $statement = $pdo->prepare("UPDATE sessions SET status = 'revoked', expires_at = CURRENT_TIMESTAMP WHERE session_id = :session_id");
         $statement->execute([':session_id' => $sessionId]);
+    }
+
+    public function isActive(string $sessionId): bool
+    {
+        if ($sessionId === '') return false;
+        $statement = $this->requireDatabase()->connect()->prepare("SELECT COUNT(*) FROM sessions WHERE session_id = :session_id AND status = 'active' AND expires_at > CURRENT_TIMESTAMP");
+        $statement->execute([':session_id' => $sessionId]);
+        return (int) $statement->fetchColumn() === 1;
     }
 
     /**
@@ -1238,17 +1255,19 @@ final class Phase4SessionRegistry
     public function listPublic(): array
     {
         $pdo = $this->requireDatabase()->connect();
-        $statement = $pdo->query('
+        $statement = $pdo->query("
         SELECT s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at,
+               s.device_id, s.device_label, s.user_agent,
                GROUP_CONCAT(r.role_key ORDER BY r.role_key SEPARATOR ",") AS role_keys
         FROM sessions s
         LEFT JOIN users u ON u.id = s.user_id
         LEFT JOIN user_roles ur ON ur.user_id = s.user_id
         LEFT JOIN roles r ON r.id = ur.role_id
-        GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at
+        WHERE s.status = 'active' AND s.expires_at > CURRENT_TIMESTAMP
+        GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at, s.device_id, s.device_label, s.user_agent
         ORDER BY s.last_seen_at DESC
         LIMIT 500
-        ');
+        ");
         if ($statement === false) {
             throw new \RuntimeException('Could not read sessions.');
         }
@@ -1268,9 +1287,47 @@ final class Phase4SessionRegistry
                 'lastSeenAt' => (string) ($session['last_seen_at'] ?? ''),
                 'expiresAt' => (string) ($session['expires_at'] ?? ''),
                 'updatedAt' => (string) ($session['last_seen_at'] ?? ''),
+                'deviceId' => (string) ($session['device_id'] ?? ''),
+                'deviceLabel' => (string) ($session['device_label'] ?? 'Browser installation'),
+                'platform' => $this->platformLabel((string) ($session['user_agent'] ?? '')),
+                'current' => hash_equals((string) ($session['session_id'] ?? ''), session_id()),
             ];
         }
         return $public;
+    }
+
+    public function activeDeviceCount(int $userId, string $exceptDeviceId = ''): int
+    {
+        $pdo = $this->requireDatabase()->connect();
+        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND status = 'active' AND expires_at > CURRENT_TIMESTAMP";
+        $params = [':user_id' => $userId];
+        if ($exceptDeviceId !== '') {
+            $sql .= ' AND device_id <> :device_id';
+            $params[':device_id'] = $exceptDeviceId;
+        }
+        $statement = $pdo->prepare($sql);
+        $statement->execute($params);
+        return (int) $statement->fetchColumn();
+    }
+
+    public function revokeAllForUser(int $userId): void
+    {
+        $statement = $this->requireDatabase()->connect()->prepare("UPDATE sessions SET status = 'revoked', expires_at = CURRENT_TIMESTAMP WHERE user_id = :user_id AND status = 'active'");
+        $statement->execute([':user_id' => $userId]);
+    }
+
+    public function cleanup(int $retentionDays = 30): void
+    {
+        $statement = $this->requireDatabase()->connect()->prepare("DELETE FROM sessions WHERE (status <> 'active' OR expires_at <= CURRENT_TIMESTAMP) AND last_seen_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)");
+        $statement->bindValue(':days', max(1, $retentionDays), \PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    private function platformLabel(string $agent): string
+    {
+        $platform = preg_match('/iPad|iPhone/i', $agent) ? 'iOS/iPadOS' : (preg_match('/Android/i', $agent) ? 'Android' : (preg_match('/Windows/i', $agent) ? 'Windows' : (preg_match('/Macintosh/i', $agent) ? 'macOS' : (preg_match('/Linux/i', $agent) ? 'Linux' : 'Other'))));
+        $browser = preg_match('/Edg\//', $agent) ? 'Edge' : (preg_match('/Firefox\//', $agent) ? 'Firefox' : (preg_match('/Chrome\//', $agent) ? 'Chrome' : (preg_match('/Safari\//', $agent) ? 'Safari' : 'Browser')));
+        return $platform . ' · ' . $browser;
     }
 
     private function toMysqlDateTime(string $value): string
@@ -1360,7 +1417,7 @@ final class Phase4AuthManager
     /**
      * @return array<string,mixed>|null
      */
-    public function authenticate(string $username, string $password, ?string $scope = null): ?array
+    public function authenticate(string $username, string $password, ?string $scope = null, string $deviceId = '', string $deviceLabel = ''): ?array
     {
         $scope = $this->normalizeSessionScope($scope);
         $this->startSession($scope);
@@ -1371,9 +1428,19 @@ final class Phase4AuthManager
         }
 
         session_regenerate_id(true);
-        $ttlMs = (int) ($this->config->env()['AUTH_SESSION_TTL_MS'] ?? (1000 * 60 * 60 * 12));
+        if ($deviceId === '') {
+            $deviceId = bin2hex(random_bytes(16));
+        } elseif (preg_match('/^[a-f0-9]{32}$/', $deviceId) !== 1) {
+            throw new \RuntimeException('A valid installation identifier is required.');
+        }
+        $userId = (int) ($user['id'] ?? 0);
+        $deviceLimit = max(1, (int) ($this->config->env()['AUTH_MAX_DEVICES_PER_USER'] ?? 5));
+        if ($this->sessions->activeDeviceCount($userId, $deviceId) >= $deviceLimit) {
+            throw new \RuntimeException('Active device limit reached. Revoke another device session in Admin before adding this device.');
+        }
+        $ttlMs = (int) ($this->config->env()['AUTH_DEVICE_SESSION_TTL_MS'] ?? (1000 * 60 * 60 * 24 * 30));
         if ($ttlMs <= 0) {
-            $ttlMs = 1000 * 60 * 60 * 12;
+            $ttlMs = 1000 * 60 * 60 * 24 * 30;
         }
         $expiresAt = time() + (int) floor($ttlMs / 1000);
         $roles = is_array($user['roles'] ?? null) ? $user['roles'] : ['user'];
@@ -1388,6 +1455,8 @@ final class Phase4AuthManager
             'lastSeenAt' => gmdate('c'),
             'expiresAt' => gmdate('c', $expiresAt),
             'status' => 'active',
+            'deviceId' => $deviceId,
+            'deviceLabel' => trim($deviceLabel) !== '' ? trim($deviceLabel) : 'Browser installation',
         ];
         $csrf = Security::ensureCsrfToken();
         $this->sessions->upsert(session_id(), $_SESSION['auth_identity']);
@@ -1412,6 +1481,11 @@ final class Phase4AuthManager
             return null;
         }
 
+        if (!$this->sessions->isActive(session_id())) {
+            $this->logout($scope);
+            return null;
+        }
+
         $expiresAt = strtotime((string) ($identity['expiresAt'] ?? ''));
         if ($expiresAt !== false && $expiresAt > 0 && $expiresAt < time()) {
             $this->logout($scope);
@@ -1426,6 +1500,16 @@ final class Phase4AuthManager
         }
         $roles = is_array($user['roles'] ?? null) ? array_values($user['roles']) : ['user'];
         $permissions = $this->users->effectivePermissions($user);
+
+        // Transparently move valid legacy 12-hour sessions onto the renewable
+        // device-session contract. Renewal never creates a client-side secret.
+        if ($expiresAt === false || $expiresAt < time() + (7 * 86400)) {
+            $identity['expiresAt'] = gmdate('c', time() + (30 * 86400));
+        }
+        if (preg_match('/^[a-f0-9]{32}$/', (string) ($identity['deviceId'] ?? '')) !== 1) {
+            $identity['deviceId'] = bin2hex(random_bytes(16));
+            $identity['deviceLabel'] = 'Migrated browser installation';
+        }
 
         $identity['lastSeenAt'] = gmdate('c');
         $identity['roles'] = $roles;

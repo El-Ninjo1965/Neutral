@@ -21,3 +21,5 @@
 
 - Earlier failed P1 device reports remain as historical evidence only.
 - They are not the current active status once the real operator live test is successful.
+
+- [ ] Host operator only: configure `scripts/run-automatic-backup.php` as documented in cPanel Cron and verify first scheduled run.

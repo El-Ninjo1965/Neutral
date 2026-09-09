@@ -137,3 +137,7 @@ Der Wechsel darf über Konfiguration/Adapter erfolgen. Ein Node-Dauerprozess dar
 ## 11. Offene externe Neuinstallationsnachweise
 
 Produktionspaket, Basispfadvertrag, wertfreie Vorlagen, lokaler Bootstrap und Offline-Preflight sind code- und testseitig vorhanden. Vor Core-1.0-Freigabe bleiben jedoch ein vollständiger Lauf aus einem neu angelegten Repository, ein neuer physischer DocumentRoot, ein echter URL-Unterpfad, PHP-/Apache-Prüfung im Ziel, eine leere Datenbank einschließlich Migration/Betreiberanlage sowie die anschließenden Login-, Session-, CSRF-, API-, Asset-, SPA- und Setup-Sperren-Smoke-Tests offen. Manuelle Codeänderungen nach dem Upload sind kein akzeptierter Installationsweg.
+
+## Automatic backup cron
+
+Automatic backups require a host scheduler; the Settings checkbox alone does not pretend to be a daemon. Configure cPanel Cron to invoke `php <project>/scripts/run-automatic-backup.php` daily. The CLI runner reads the persisted enabled/interval/retention settings, skips runs that are not due, encrypts with the host-only `NEUTRAL_BACKUP_KEY`, and records only a safe success/error state. Never put the key in the cron command or repository.

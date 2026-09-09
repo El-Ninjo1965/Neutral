@@ -105,3 +105,11 @@ Client-Modulkonfiguration wird unter `moduleSettings.<id>` isoliert. Schlüssel,
 Der Browser-Fehlerpfad redigiert sensible Kontextschlüssel sowie typische Token-/Passwortmuster in Meldung und Stack. Das öffentliche Fehler-Event transportiert keinen rohen `Error`; das In-Memory-Log ist begrenzt. Diese Schutzschicht ersetzt nicht die Pflicht, personenbezogene oder geheime Daten gar nicht erst als Diagnosekontext zu übergeben.
 
 Die initiale `auth/me`-Prüfung läuft nach sichtbarer Shell und bleibt die Autorität für vorhandene Sessions. Eine erfolgreiche Loginantwort ist selbst eine serverseitig authentifizierte Identitätsentscheidung und wird ohne redundanten direkten `me`-Roundtrip übernommen. Geschützte Admininhalte bleiben bis bestätigter Serveridentität verborgen; Timeout/Offline erteilt keine Rechte.
+
+## Device sessions and administrative boundary (2026-09-09)
+
+The User-App has no administrative capabilities. Core administrative permissions are never assigned to the `user` or `viewer` system roles; existing installations remove those legacy grants through schema migration. Module permissions remain declarative and are the only permissions intended for User-App functionality.
+
+A browser installation uses a cryptographically random 128-bit installation identifier. It is not a hardware fingerprint and contains no credential. Authentication secrets remain in HttpOnly, Secure-on-HTTPS, SameSite=Lax cookies; no bearer or remember secret is stored in localStorage. Device sessions default to 30 days, are refreshed from authoritative user/role state, are individually revocable, and are constrained by the central `AUTH_MAX_DEVICES_PER_USER` setting (default five). Logout revokes the current server session. Account disablement and restore invalidate authentication; security-sensitive user changes may call the central revoke-all operation. Revoked/expired sessions are omitted from the active-device view and are cleanup-eligible after 30 days.
+
+Threats addressed include stolen cookies (server revocation, expiry, CSRF and rotation on login), uncontrolled device proliferation (central limit), privilege drift (permissions recalculated and legacy role migration), and device tracking (random installation ID only; no hardware fingerprint and no prominent IP collection).

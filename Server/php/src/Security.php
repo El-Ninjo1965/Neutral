@@ -19,7 +19,7 @@ final class Security
             session_id($providedSessionId);
         }
         session_set_cookie_params([
-            'lifetime' => 0,
+            'lifetime' => 60 * 60 * 24 * 30,
             'path' => '/',
             'secure' => self::isHttpsRequest(),
             'httponly' => true,

@@ -161,6 +161,7 @@
   const homepageDocument = window.NeutralHomepageDocument;
   let homepageConfig = homepageCache && typeof homepageCache.read === 'function' ? homepageCache.read() : null;
   let homepageResolved = homepageConfig !== null;
+  let maintenanceState = { active: false, reason: '' };
   if (homepageResolved && window.CorePerformance) window.CorePerformance.mark('homepage-local-ready');
 
   const getHomepageConfig = () => {
@@ -208,6 +209,16 @@
       homepageResolved = true;
       renderApp();
     }
+  };
+
+  const loadMaintenanceState = async () => {
+    const client = getServerApiClient('user');
+    if (!client || typeof client.getMaintenance !== 'function') return maintenanceState;
+    const result = await client.getMaintenance();
+    const envelope = result?.data?.data || result?.data || {};
+    if (result.ok && envelope.maintenance) maintenanceState = envelope.maintenance;
+    renderApp();
+    return maintenanceState;
   };
 
   const loadUserUiDesign = async () => {
@@ -905,6 +916,17 @@
     renderActions();
     renderModuleNav();
 
+    if (maintenanceState.active) {
+      state.activeModuleId = null;
+      content.replaceChildren();
+      const panel = document.createElement('section');
+      panel.className = 'panel-box maintenance-page';
+      const heading = document.createElement('h2'); heading.textContent = 'Maintenance in progress';
+      const reason = document.createElement('p'); reason.textContent = maintenanceState.reason || 'Please try again later.';
+      panel.append(heading, reason); content.append(panel);
+      return;
+    }
+
     if (state.activeView === 'login') {
       showLoginForm();
       return;
@@ -941,7 +963,8 @@
           startCore(),
           loadHomepageConfig(),
           loadUserUiDesign(),
-          restoreServerSession()
+          restoreServerSession(),
+          loadMaintenanceState()
         ]);
         for (const result of initializationResults) {
           if (result.status === 'rejected' && window.CoreErrorHandler && typeof window.CoreErrorHandler.handle === 'function') {

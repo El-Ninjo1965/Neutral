@@ -139,3 +139,12 @@ current user. Trusted HTML is rendered as a complete `srcdoc` document in a
 script-capable sandboxed frame. Missing configuration, unavailable server state,
 an inactive module, or insufficient module access falls back to the neutral
 default home instead of leaving an empty view.
+
+## Admin operations (2026-09-09)
+
+- Classified read-only permission catalog with Admin/User-App and Core/Module source filters.
+- Persistent, revocable device sessions with privacy-safe platform labels and central device limit.
+- Authoritative runtime/server/database/module diagnostics and explicit optional provider state.
+- Persistent maintenance mode with User-App maintenance projection and Admin-safe control.
+- Encrypted backup create/list/upload/download/restore/delete plus retention and CLI automatic trigger.
+- Filterable, folded-detail audit log and audited age-based retention purge.

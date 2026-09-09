@@ -48,3 +48,5 @@ Neutral Core 1.0 muss produktiv mit PHP 8.1+, MySQL/MariaDB, HTTPS und den übli
 Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und das Arbeitsprotokoll in `WORKFLOW.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden. Jeder neue Workflow-Eintrag nennt außerdem, wer die Änderung ausgeführt und dokumentiert hat, damit spätere Codex-Sitzungen die Herkunft nachvollziehen können.
 
 Abgehakte historische Aufgaben gehören nicht dauerhaft in `TODO.md`; sie werden im Changelog bewahrt.
+
+Operations contracts for device sessions, permission domains, maintenance, infrastructure truth, audit retention and backup automation are authoritative in `Security.md`, `Architecture.md`, `API.md`, `Database.md` and `Install-README-Server.md`.

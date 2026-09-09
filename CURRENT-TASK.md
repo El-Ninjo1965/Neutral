@@ -1,27 +1,31 @@
-# NEUTRAL – CURRENT TASK
+# CURRENT TASK — Admin Operations, Permissions and Device Sessions
 
-## Gesamtauftrag
+**Quelle:** `CODEX.md` (aktiver Betreiberauftrag)
+**Status:** in Bearbeitung
+**Scope:** P1/P4 regressionsfrei; User-App ohne Adminfunktionen; keine Geheimnisse.
 
-Appearance UX V2 und lokale User-Navigationspersonalisierung vollständig umsetzen: verständliche native Farbeingaben mit Swatch/Hexanzeige, komponentenspezifische Light-/Dark-Tokens und kontrastreiche Dark-Formdefaults, vollständige isolierte Preview, progressive Editor-Gruppierung und eingeklapptes Advanced CSS; zusätzlich lokale/offline Navigationdarstellung (Icon+Text, nur Icons, nur Text) sowie generische sichere Label-Overrides mit Einzel-/Gesamtreset. P1/P4, Theme-/Homepage-/Security-/Warmstartverträge erhalten und I18N nur vorbereiten.
+## Verbindliche Arbeitsliste
 
-## Prüfliste
-
-1. Neutral-Umgebung/GitHub secretsicher prüfen, `origin/main` synchronisieren und neuere Verträge erhalten. **ERLEDIGT**
-2. Alle Pflichtdokumente und relevanten Appearance-, User-Settings-, Navigation-, Header-, Login-, Token-, CSS-, Storage-/Cache-, API-, Service-Worker-, Security- und Testdateien vollständig lesen. **ERLEDIGT**
-3. Tests zuerst für Color-UX, V1-Migration, neue Tokens, Dark Controls, Preview, Advanced-Collapse, drei Nav-Modi, Labels/Resets/Accessibility/Local-first ergänzen. **ERLEDIGT**
-4. V2-Designvertrag kompatibel um Primary-/Secondary-/Nav-Active-/Nav-Inactive-/Form-Control-Tokens je Light/Dark erweitern; Node/PHP/Public Cache validieren. **ERLEDIGT**
-5. Dark-Control-Defaults und zentrale Komponentenvererbung kontrastreich/fokus-sichtbar umsetzen. **ERLEDIGT**
-6. Farbeingaben mit sichtbarem gerahmtem Swatch, normalisiertem Hexwert und erhaltenem nativen Picker umsetzen. **ERLEDIGT**
-7. Appearance progressiv in Base Colors, Actions & Buttons, Navigation, Forms, Geometry & Typography und vollständige Preview gruppieren. **ERLEDIGT**
-8. Advanced Custom CSS zugänglich standardmäßig einklappen; Clear/Security unverändert erhalten. **ERLEDIGT**
-9. Lokalen generischen Navigation-Presentation-Vertrag (Modus, sichere max-lange Textlabels, stabile IDs, I18N-kompatibler Defaultfallback) implementieren. **ERLEDIGT**
-10. User Settings Interface/Navigation mit drei Darstellungsmodi, Home/Settings/Login/GPS-/generischen Modul-Overrides, Einzel- und Gesamtreset ergänzen. **ERLEDIGT**
-11. Lokale SVG-Icons, Accessible Names/Tooltips und layoutstabile Darstellung in allen Modi umsetzen; synchroner Warmstart ohne Sprung. **ERLEDIGT**
-12. P1/P4, Homepage, Themes, GPS, Login, Auth/CSRF, Service Worker, Packaging/Base Path, FTPS/Smoke und Custom CSS regressionsfrei halten; I18N nicht implementieren. **ERLEDIGT**
-13. Betroffene Dokumentation wahrheitsgemäß aktualisieren. **ERLEDIGT**
-14. Fokussierte und vollständige Tests, PHP-/JS-Lint, Diff-, Paket-, Secret-/Artefaktprüfung sowie Screenshot soweit technisch möglich. **ERLEDIGT**
-15. Commit/Push main, terminale CI, CHATGPT-Bericht mit neun Retest-Schritten, GitHub-Blob, `HEAD == origin/main`, sauberer Tree. **ERLEDIGT**
+1. [x] Umgebung `Neutral`, `GH_TOKEN`, Repository, `origin/main` und GitHub-Schreibweg secretsicher prüfen; vollständig mit `origin/main` synchronisieren.
+2. [x] `CODEX.md` und `WORKFLOW.md` vollständig lesen; Auftrag vollständig erfassen und Gleichheit `CODEX.md == CURRENT-TASK-Anforderungen` prüfen.
+3. [x] Alle ausdrücklich geforderten Projekt-, Installations-, Deployment-, Backup- und relevanten Implementierungs-/Testdateien vollständig auditieren.
+4. [x] Architekturgrenze durchsetzen: User-App enthält keine Adminfunktionen; Admin-/Systemrechte und User-App-/Modulrechte in Defaults, Seeds, APIs und Dokumentation sauber trennen.
+5. [x] Permission-Defaults bestehender Installationen migrieren; Viewer/User von Adminrechten bereinigen; deklarative Core-/Modulregistry und serverseitige Checks erhalten.
+6. [x] Permission Catalog als lesbare, responsive, read-only Registry mit Key, Beschreibung, Scope und Quelle sowie sinnvollen Filtern umsetzen.
+7. [x] Sichere persistente Geräte-Sessions implementieren: zufällige Installations-ID, serverseitige Bindung/Widerruf/Rotation, sichere Cookies, zentrales Gerätelimit, Migration alter 12h-Sessions, Logout und Security-Revoke-all; keine Hardwarefingerprints/Secrets in localStorage.
+8. [x] Admin Session Overview zur datensparsamen Geräteverwaltung mit verständlicher Plattform, Registrierung, letzter Aktivität, Status, Current-Markierung, Einzelwiderruf und Cleanup/Retention umbauen.
+9. [x] Connections, Server, Database und Diagnostics an gemeinsame autoritative sichere Runtime-/Healthdaten anbinden; Beispiel-/Fakewerte entfernen und nicht verfügbare Werte ehrlich kennzeichnen.
+10. [x] Persistenten Maintenance Mode mit sicherer User-Sperre, erreichbarer Admin-UI, escaptem Grund und Auditdaten fertigstellen; reale Release-/Buildinformationen statt statischer Updatebehauptung zeigen.
+11. [x] Backup/Restore vollständig auditieren und finalisieren: verschlüsselte create/list/download/upload/validate/restore/delete-Flows, automatische hostkompatible Trigger, Retention, Fehlerstatus und Sessioninvalidierung bei Restore.
+12. [x] Audit Log lesbar/filterbar und detailsicher darstellen; kontrollierten Retention-Purge mit Bestätigung und eigener Auditspur, ohne Einzeldelete, implementieren.
+13. [x] System Settings auf wirksame Optionen ausrichten: Production-Loglevel, echte Backup-Automatik/Intervalle/Retention, unveränderliche App-ID; tote Einstellungen entfernen.
+14. [x] Sicherheit, Datenschutz und Migrationen test-first absichern (CSRF, getrennte Sessions, Cookieflags, keine Secrets/PII/Fingerprints, Backupausschlüsse); P1/P4 unverändert erhalten.
+15. [x] Fokussierte Abnahmetests für Permissions, Device Sessions, Infrastructure, Maintenance, Backup und Audit ergänzen und ausführen.
+16. [x] Vollständige Regression inklusive P1/P4, Homepage-Warmstart, Themes, Appearance V2, Navigation, GPS, Login, User/Rollen/Module, Service Worker, Packaging/Base Path, FTPS/Smoke und Secret-/Artefaktprüfung ausführen.
+17. [x] Betroffene Verträge wahrheitsgemäß aktualisieren: `Security.md`, `Architecture.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, Backup-/Install-/Deploymentdokumentation, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`; externe Cron-Anforderung klar markieren.
+18. [x] Abschluss gemäß `WORKFLOW.md`: diff/static checks, Produktionspaket, Commit und Push `main`, `HEAD == origin/main`, sauberer Working Tree, alle erforderlichen CI-Läufe terminal abwarten.
+19. [x] Vollständigen Abschlussbericht in `CHATGPT.md` schreiben, separat nach `main` pushen und Datei/Blob auf GitHub `main` verifizieren.
 
 ## Capture-Prüfung
 
-`CODEX.md == CURRENT-TASK-Anforderungen: JA`
+Die Punkte 1–19 decken alle Abschnitte 1–14 des aktiven Auftrags ab, einschließlich Architektur, Permission-Audit/-UX/-Migration, Geräte-Sessions/-Verwaltung/-Limit, Infrastrukturwahrheit, Maintenance/Release, Backup/Restore/Automation, Audit-Retention, wirksamen Settings, Sicherheits-/Datenschutzregeln, Testmatrix, Dokumentation und vollständigem GitHub-/CI-/Übergabeabschluss. Damit gilt vor Implementierungsbeginn: **`CODEX.md == CURRENT-TASK-Anforderungen` — BESTANDEN.**

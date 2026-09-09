@@ -279,3 +279,7 @@ die Identität des jeweils anderen Scopes nicht überschreiben.
 ## 8. Aussagegrenzen
 
 Bestätigt ist der Weg `PC → GitHub → GitHub Actions → FTPS → Webserver → HTTPS`. Eine direkte manuelle Übertragung `PC → FTPS` muss separat mit einer lokalen, nicht versionierten Deploy-Konfiguration geprüft werden. Fehlender Zugriff einer einzelnen Codex-Task-Sandbox auf eine `.env` bedeutet nicht, dass die Datei oder der Serverzugang fehlen.
+
+## Admin runtime inventory
+
+The Admin connection view reports only authoritative configured connection types and health. It never displays passwords, tokens, raw environment values, or example URLs as active configuration. Optional provider integrations are explicitly reported as not configured. Database metadata is restricted to safe operational fields in the protected Admin domain.

@@ -86,8 +86,8 @@ class AdminSettingsView {
         <div class="form-group">
           <label for="logLevel">Log Level</label>
           <select id="logLevel" name="logLevel">
-            <option value="debug" ${this.getSetting('logLevel') === 'debug' ? 'selected' : ''}>Debug</option>
-            <option value="info" ${this.getSetting('logLevel') === 'info' ? 'selected' : ''}>Info</option>
+            <option value="debug" ${this.getSetting('logLevel', 'info') === 'debug' ? 'selected' : ''}>Debug</option>
+            <option value="info" ${this.getSetting('logLevel', 'info') === 'info' ? 'selected' : ''}>Info (production default)</option>
             <option value="warn" ${this.getSetting('logLevel') === 'warn' ? 'selected' : ''}>Warning</option>
             <option value="error" ${this.getSetting('logLevel') === 'error' ? 'selected' : ''}>Error</option>
           </select>
@@ -100,6 +100,7 @@ class AdminSettingsView {
             Enable Automatic Backups
           </label>
         </div>
+        <div class="form-group"><label for="backupRetention">Retain backups</label><select id="backupRetention" name="backupRetention"><option value="7" ${this.getSetting('backupRetention', 14) === 7 ? 'selected' : ''}>7</option><option value="14" ${this.getSetting('backupRetention', 14) === 14 ? 'selected' : ''}>14</option><option value="30" ${this.getSetting('backupRetention', 14) === 30 ? 'selected' : ''}>30</option></select><small>Automatic execution requires the documented protected cron trigger.</small></div>
 
         <div class="form-group">
           <label for="backupInterval">Backup Interval</label>
@@ -144,6 +145,7 @@ class AdminSettingsView {
         logLevel: formData.get('logLevel'),
         backupEnabled: formData.get('backupEnabled') === 'on',
         backupInterval: formData.get('backupInterval')
+        ,backupRetention: Number(formData.get('backupRetention') || 14)
       }
     };
 

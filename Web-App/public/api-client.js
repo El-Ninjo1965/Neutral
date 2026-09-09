@@ -41,6 +41,31 @@ class ApiClient {
       'Content-Type': 'application/json',
       ...defaultHeaders
     };
+    const deviceId = this.getOrCreateDeviceId();
+    if (deviceId) {
+      this.defaultHeaders['x-neutral-device-id'] = deviceId;
+      this.defaultHeaders['x-neutral-device-label'] = this.deviceLabel();
+    }
+  }
+
+  getOrCreateDeviceId() {
+    try {
+      const key = 'neutral.device.id.v1';
+      const existing = localStorage.getItem(key);
+      if (/^[a-f0-9]{32}$/.test(existing || '')) return existing;
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      const created = Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem(key, created);
+      return created;
+    } catch {
+      return '';
+    }
+  }
+
+  deviceLabel() {
+    const platform = navigator.userAgentData?.platform || navigator.platform || 'Device';
+    return String(platform).slice(0, 80);
   }
 
   setSessionScope(scope = 'user') {
@@ -304,6 +329,8 @@ class ApiClient {
   async getAppearance() {
     return this.get('/api/settings/appearance');
   }
+
+  async getMaintenance() { return this.get('/api/settings/maintenance'); }
 
   async updateSettings(settingsData) {
     return this.post('/api/admin/settings', settingsData);

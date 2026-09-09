@@ -416,3 +416,10 @@ Abgeschlossene materielle Änderungen werden hier chronologisch dokumentiert. Of
 ## Historischer Stand bis 2026-08-29
 
 Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFLOW.md) erhalten. Das Changelog bleibt die kompakte Chronik abgeschlossener Änderungen; offene Arbeit steht ausschließlich in [`TODO.md`](TODO.md).
+
+## 2026-09-09 — Admin operations and device sessions
+
+- Removed legacy Admin permissions from normal viewer/user defaults and added an existing-installation cleanup migration.
+- Replaced short login records with persistent, revocable, limited device sessions and privacy-safe Admin presentation.
+- Connected permissions, infrastructure, maintenance, backups and audit retention to authoritative protected server operations.
+- Added encrypted backup deletion/retention and a real cPanel-compatible automatic backup CLI trigger.

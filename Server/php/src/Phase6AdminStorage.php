@@ -301,7 +301,7 @@ final class Phase6AuditService
     }
 
     /**
-     * @param array{action?:string,resource?:string,limit?:int} $filters
+     * @param array{action?:string,resource?:string,result?:string,user?:string,from?:string,to?:string,limit?:int} $filters
      * @return list<array<string,mixed>>
      */
     public function list(array $filters = []): array
@@ -326,6 +326,10 @@ final class Phase6AuditService
                 $where[] = 'resource = :resource';
                 $params[':resource'] = trim((string) $filters['resource']);
             }
+            if (trim((string) ($filters['result'] ?? '')) !== '') { $where[] = 'result = :result'; $params[':result'] = trim((string) $filters['result']); }
+            if (ctype_digit(trim((string) ($filters['user'] ?? '')))) { $where[] = 'actor_user_id = :user'; $params[':user'] = (int) $filters['user']; }
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['from'] ?? ''))) { $where[] = 'created_at >= :from'; $params[':from'] = $filters['from'] . ' 00:00:00'; }
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($filters['to'] ?? ''))) { $where[] = 'created_at < DATE_ADD(:to, INTERVAL 1 DAY)'; $params[':to'] = $filters['to'] . ' 00:00:00'; }
             $sql = 'SELECT id, action, resource, resource_id, actor_user_id, details_json, result, created_at FROM audit_log';
             if ($where !== []) {
                 $sql .= ' WHERE ' . implode(' AND ', $where);

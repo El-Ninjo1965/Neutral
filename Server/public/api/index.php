@@ -335,7 +335,13 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
             header('Retry-After: ' . max(1, $rateState['retryAfter']));
             JsonResponse::error('Too many failed login attempts. Try again later.', 429);
         }
-        $result = $authManager->authenticate($username, $password, $sessionScope);
+        $result = $authManager->authenticate(
+            $username,
+            $password,
+            $sessionScope,
+            strtolower(trim((string) ($headers['x-neutral-device-id'] ?? ''))),
+            trim((string) ($headers['x-neutral-device-label'] ?? ''))
+        );
         if (!$result) {
             $rateState = $loginLimiter->registerFailure($username, $clientIp);
             if (!$rateState['allowed']) {
@@ -346,6 +352,9 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
             $loginLimiter->registerSuccess($username, $clientIp);
         }
     } catch (\Throwable $exception) {
+        if ($exception->getMessage() === 'Active device limit reached. Revoke another device session in Admin before adding this device.') {
+            JsonResponse::error($exception->getMessage(), 409, ['code' => 'DEVICE_LIMIT_REACHED']);
+        }
         JsonResponse::error('Authentication service temporarily unavailable.', 503);
     }
     if (!$result) {
@@ -581,6 +590,16 @@ if ($route === 'settings/appearance' && $method === 'GET') {
     JsonResponse::success(['appearance' => $settings['appearance'] ?? \Neutral\Core\UserUiDesign::defaults()]);
 }
 
+if ($route === 'settings/maintenance' && $method === 'GET') {
+    $statement = $database->connect()->query('SELECT maintenance_mode, maintenance_reason, checked_at FROM release_state WHERE id = 1');
+    $state = $statement ? $statement->fetch(PDO::FETCH_ASSOC) : false;
+    JsonResponse::success(['maintenance' => [
+        'active' => is_array($state) && (int) ($state['maintenance_mode'] ?? 0) === 1,
+        'reason' => is_array($state) ? (string) ($state['maintenance_reason'] ?? '') : '',
+        'updatedAt' => is_array($state) ? (string) ($state['checked_at'] ?? '') : '',
+    ]]);
+}
+
 if ($route === 'admin/settings' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success(['settings' => $settingsService->getAll()]);
@@ -602,9 +621,24 @@ if ($route === 'admin/audit' && $method === 'GET') {
     $filters = [
         'action' => (string) ($_GET['action'] ?? ''),
         'resource' => (string) ($_GET['resource'] ?? ''),
+        'result' => (string) ($_GET['result'] ?? ''),
+        'user' => (string) ($_GET['user'] ?? ''),
+        'from' => (string) ($_GET['from'] ?? ''),
+        'to' => (string) ($_GET['to'] ?? ''),
         'limit' => (int) ($_GET['limit'] ?? 100),
     ];
     JsonResponse::success(['entries' => $auditService->list($filters)]);
+}
+
+if ($route === 'admin/audit/purge' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'admin.write', $headers);
+    $days = (int) (parse_json_body()['retentionDays'] ?? 90);
+    if (!in_array($days, [30, 90, 180, 365], true)) JsonResponse::error('Unsupported audit retention.', 400);
+    $auditService->log('audit.retention.purge', 'audit', null, actor_user_id($identity), ['retentionDays' => $days]);
+    $statement = $database->connect()->prepare('DELETE FROM audit_log WHERE created_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)');
+    $statement->bindValue(':days', $days, PDO::PARAM_INT);
+    $statement->execute();
+    JsonResponse::success(['purged' => $statement->rowCount(), 'retentionDays' => $days]);
 }
 
 if ($route === 'admin/modules' && $method === 'GET') {
@@ -980,14 +1014,30 @@ if ($route === 'database/status' && $method === 'GET') {
 
 if ($route === 'admin/release/status' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'role.read', false, $headers);
+    $statement = $database->connect()->query('SELECT version, environment, status, maintenance_mode, maintenance_reason, checked_at FROM release_state WHERE id = 1');
+    $state = $statement ? $statement->fetch(PDO::FETCH_ASSOC) : false;
     JsonResponse::success([
         'release' => [
-            'status' => 'operational',
-            'version' => '1.0.0',
-            'updatedAt' => gmdate('c'),
-            'maintenanceMode' => false,
+            'status' => is_array($state) ? (string) ($state['status'] ?? 'available') : 'release-information-only',
+            'version' => is_array($state) ? (string) ($state['version'] ?? '1.0.0') : '1.0.0',
+            'updatedAt' => is_array($state) ? (string) ($state['checked_at'] ?? '') : '',
+            'maintenanceMode' => is_array($state) && (int) ($state['maintenance_mode'] ?? 0) === 1,
+            'reason' => is_array($state) ? (string) ($state['maintenance_reason'] ?? '') : '',
+            'updateActionsSupported' => false,
         ],
     ]);
+}
+
+if ($route === 'admin/release/maintenance' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'settings.write', $headers);
+    $payload = parse_json_body();
+    $active = !empty($payload['maintenanceMode']);
+    $reason = trim((string) ($payload['reason'] ?? ''));
+    if (strlen($reason) > 500) JsonResponse::error('Maintenance reason is too long.', 400);
+    $statement = $database->connect()->prepare("INSERT INTO release_state (id, version, environment, status, maintenance_mode, maintenance_reason, checks_json, checked_at) VALUES (1, '1.0.0', :environment, 'release-information-only', :active, :reason, '{}', CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE maintenance_mode=VALUES(maintenance_mode), maintenance_reason=VALUES(maintenance_reason), checked_at=CURRENT_TIMESTAMP");
+    $statement->execute([':environment' => $config->environment(), ':active' => $active ? 1 : 0, ':reason' => $reason]);
+    $auditService->log('maintenance.update', 'release', '1', actor_user_id($identity), ['active' => $active]);
+    JsonResponse::success(['maintenanceMode' => $active, 'reason' => $reason]);
 }
 
 if ($route === 'admin/providers' && $method === 'GET') {
@@ -1009,14 +1059,17 @@ if ($route === 'providers' && $method === 'GET') {
 if ($route === 'admin/connections' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success([
-        'connections' => [],
+        'connections' => [[
+            'id' => 'primary-database', 'name' => 'Primary database', 'type' => 'database_mysql',
+            'status' => $database->ping() ? 'ready' : 'unavailable', 'source' => 'Runtime configuration',
+        ]],
     ]);
 }
 
 if ($route === 'connections' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success([
-        'connections' => [],
+        'connections' => [], 'status' => 'Admin-only registry',
     ]);
 }
 
@@ -1029,7 +1082,17 @@ if ($route === 'admin/backups' && $method === 'GET') {
             $config,
             $runtime->projectRoot()
         );
-        JsonResponse::success(['backups' => $backupService->list(), 'status' => 'available']);
+        $automaticStatePath = $runtime->projectRoot() . '/Server/runtime/backups/.automatic-state.json';
+        $automaticState = is_file($automaticStatePath) ? json_decode((string) file_get_contents($automaticStatePath), true) : [];
+        JsonResponse::success([
+            'backups' => $backupService->list(),
+            'status' => 'available',
+            'automation' => [
+                'scheduler' => 'external-cron-required',
+                'lastSuccess' => is_array($automaticState) ? ($automaticState['lastSuccess'] ?? null) : null,
+                'lastError' => is_array($automaticState) ? ($automaticState['lastError'] ?? null) : null,
+            ],
+        ]);
     } catch (Throwable $exception) {
         JsonResponse::error('Backup service temporarily unavailable.', 503);
     }
@@ -1040,11 +1103,24 @@ if ($route === 'admin/backups' && $method === 'POST') {
     try {
         $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
         $backup = $backupService->create();
+        $settings = $settingsService->getAll();
+        $retention = max(1, min(100, (int) ($settings['settings']['backupRetention'] ?? 14)));
+        $backupService->enforceRetention($retention);
         $auditService->log('backup.create', 'backup', $backup['backupId'], actor_user_id($identity), ['size' => $backup['size']]);
         JsonResponse::success(['backup' => $backup], 201);
     } catch (Throwable $exception) {
         JsonResponse::error('Backup service temporarily unavailable.', 503);
     }
+}
+
+if (preg_match('#^admin/backups/([a-f0-9]{32})$#', $route, $backupMatches) === 1 && $method === 'DELETE') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
+    try {
+        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService->delete($backupMatches[1]);
+        $auditService->log('backup.delete', 'backup', $backupMatches[1], actor_user_id($identity));
+        JsonResponse::success(['deleted' => true]);
+    } catch (Throwable $exception) { JsonResponse::error('Backup delete was rejected.', 400); }
 }
 
 if ($route === 'admin/backups/upload' && $method === 'POST') {

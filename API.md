@@ -92,3 +92,7 @@ Der anonyme Zugriff auf `/api/modules` überträgt keine Viewer-Identität und k
 ## Client-Timeout – P3 IST
 
 `ApiClient.request()` begrenzt Requests standardmäßig auf 10 Sekunden; `timeoutMs` kann pro Request gesetzt oder mit `0` bewusst deaktiviert werden. Wenn `AbortController` vorhanden ist, wird der Fetch abgebrochen; ältere Browser erhalten einen Promise-Timeout-Fallback. Das Ergebnis ist `{ok:false,status:408,code:"API_TIMEOUT"}`. Es gibt keinen automatischen Retry für Login oder andere Schreiboperationen.
+
+## Operations endpoints (2026-09-09)
+
+Admin-only endpoints include device-session listing/revocation, the read-only classified permission registry, authoritative server/database/connection diagnostics, maintenance state changes, encrypted backup lifecycle (create/list/upload/download/restore/delete), and audit retention purge. Mutations require an Admin-scope cookie session, permission and CSRF. `GET /api/settings/maintenance` exposes only active state, display-safe reason and update time so the User-App can show a maintenance page; it exposes no actor or infrastructure metadata.

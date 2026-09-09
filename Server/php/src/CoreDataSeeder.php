@@ -117,6 +117,9 @@ final class CoreDataSeeder
             if ($roleId === null) {
                 continue;
             }
+            if (in_array($roleKey, ['viewer', 'user'], true)) {
+                $pdo->prepare('DELETE FROM role_permissions WHERE role_id = :role_id')->execute([':role_id' => $roleId]);
+            }
             foreach ($permissions as $permissionKey) {
                 $permissionId = $this->findPermissionId($pdo, $permissionKey);
                 if ($permissionId === null) {

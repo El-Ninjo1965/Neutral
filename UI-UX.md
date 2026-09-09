@@ -254,3 +254,7 @@ Admin Appearance implementiert nun den strukturierten zentralen Designvertrag mi
 ## Appearance UX V2 und lokale Navigation (2026-09-09)
 
 Native Color Inputs werden durch sichtbaren gerahmten Swatch und Hexanzeige erklärt. Komponententokens trennen Actions, Navigation und Forms je Theme; die Preview verwendet denselben Mapper. User wählen lokal/offline Icon+Text, nur Icons oder nur Text und können ausschließlich sichtbare zentrale Navigationslabels bis 32 Zeichen überschreiben. Accessible Names, technische IDs, Routen und spätere I18N-Defaults bleiben davon unabhängig.
+
+## Operations UI contract (2026-09-09)
+
+Permission registry is read-only and scannable by key, description, area and source. Session Overview represents devices, marks the current session and presents registration/last-activity rather than raw duplicate login rows. Infrastructure panels distinguish measured values from “Unavailable on this runtime”. Audit JSON is escaped, formatted and folded by default. Destructive backup, restore, revoke and retention actions require explicit confirmation. Maintenance reasons are inserted as text, never HTML.

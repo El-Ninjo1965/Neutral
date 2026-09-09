@@ -228,6 +228,13 @@ final class SchemaMigrator
             "ALTER TABLE module_migrations ADD COLUMN module_version VARCHAR(64) NULL AFTER checksum",
         ];
 
+        $operationsStatements = [
+            "ALTER TABLE sessions ADD COLUMN device_id CHAR(32) NOT NULL DEFAULT '' AFTER user_agent",
+            "ALTER TABLE sessions ADD COLUMN device_label VARCHAR(120) NOT NULL DEFAULT 'Browser installation' AFTER device_id",
+            "CREATE INDEX ix_sessions_user_device ON sessions (user_id, device_id, status)",
+            "DELETE rp FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.role_key IN ('viewer','user') AND p.permission_key IN ('admin.read','admin.write','auth.read','auth.write','user.read','user.write','role.read','role.write','settings.read','settings.write','session.read','session.write','audit.read','backups.view','backups.manage')",
+        ];
+
         return [
             [
                 'key' => '2026_08_25_0001_core_schema',
@@ -243,6 +250,11 @@ final class SchemaMigrator
                 'key' => '2026_09_03_0003_module_contract',
                 'checksum' => sha1(implode("\n", $moduleContractStatements)),
                 'statements' => $moduleContractStatements,
+            ],
+            [
+                'key' => '2026_09_09_0004_operations_device_sessions',
+                'checksum' => sha1(implode("\n", $operationsStatements)),
+                'statements' => $operationsStatements,
             ],
         ];
     }

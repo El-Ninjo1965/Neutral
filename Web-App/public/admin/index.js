@@ -24,21 +24,32 @@ class AdminPermissionsView {
   async init(container) {
     const result = await this.api.getPermissions();
     const permissions = result.ok ? AdminCommon.unwrapData(result, 'permissions', []) : [];
+    const details = result.ok ? AdminCommon.unwrapData(result, 'permissionDetails', []) : [];
     container.innerHTML = `
       <div class="admin-permissions-view">
         <div class="section-header">
           <h2>Permission Catalog</h2>
           <p class="form-help">This read-only registry lists permissions provided by the Core and installed modules. Assign them through roles; do not delete catalog entries.</p>
         </div>
+        <form class="inline-form" id="permission-filters"><input type="search" name="query" placeholder="Search permissions" /><select name="scope"><option value="">All areas</option><option>Admin</option><option>User-App</option></select><select name="source"><option value="">All sources</option><option value="Core">Core</option><option value="Module">Modules</option></select></form>
         ${permissions.length
-          ? `<div class="permission-list">${permissions.map((permission) => {
-            const detail = result.ok ? AdminCommon.unwrapData(result, 'permissionDetails', []).find((entry) => entry.key === permission) : null;
-            return `<div class="permission-entry"><strong>${AdminCommon.formatValue(detail?.key || permission)}</strong><span>${AdminCommon.formatValue(detail?.description || 'Registered permission')}</span><small>${AdminCommon.formatValue(detail?.scope || 'Core registry')}</small></div>`;
-          }).join('')}</div>`
+          ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Permission key</th><th>Description</th><th>Area</th><th>Source</th></tr></thead><tbody id="permission-rows">${permissions.map((permission) => {
+            const detail = details.find((entry) => entry.key === permission) || {};
+            return `<tr data-scope="${AdminCommon.formatValue(detail.scope || '')}" data-source="${AdminCommon.formatValue(detail.source || '')}" data-search="${AdminCommon.formatValue(`${permission} ${detail.description || ''}`.toLowerCase())}"><td><code>${AdminCommon.formatValue(permission)}</code></td><td>${AdminCommon.formatValue(detail.description || 'Registered permission')}</td><td>${AdminCommon.formatValue(detail.scope || 'User-App')}</td><td>${AdminCommon.formatValue(detail.source || 'Module')}</td></tr>`;
+          }).join('')}</tbody></table></div>`
           : '<p class="empty-state">Permission catalog is not available.</p>'
         }
       </div>
     `;
+    container.querySelector('#permission-filters')?.addEventListener('input', (event) => {
+      const form = event.currentTarget;
+      const query = String(form.elements.query.value || '').toLowerCase();
+      const scope = form.elements.scope.value;
+      const source = form.elements.source.value;
+      container.querySelectorAll('#permission-rows tr').forEach((row) => {
+        row.hidden = Boolean((query && !row.dataset.search.includes(query)) || (scope && row.dataset.scope !== scope) || (source && !row.dataset.source.startsWith(source)));
+      });
+    });
   }
 }
 
@@ -54,7 +65,7 @@ class AdminSessionsView {
     container.innerHTML = `
       <div class="admin-sessions-view">
         <div class="section-header">
-          <h2>Sessions</h2>
+          <h2>Device Sessions</h2><p class="form-help">One row represents a revocable browser installation. Expired and revoked history is retained server-side only for the configured cleanup period.</p>
         </div>
         ${sessions.length
           ? `
@@ -62,11 +73,12 @@ class AdminSessionsView {
               <thead>
                 <tr>
                   <th>User</th>
-                  <th>User ID</th>
                   <th>Roles</th>
+                  <th>Device</th>
+                  <th>Platform</th>
                   <th>Status</th>
-                  <th>Issued</th>
-                  <th>Expires</th>
+                  <th>Registered</th>
+                  <th>Last activity</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -74,12 +86,12 @@ class AdminSessionsView {
                 ${sessions.map((session) => `
                   <tr>
                     <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}</td>
-                    <td>${session.userId || '—'}</td>
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
-                    <td>${session.status || 'active'}</td>
+                    <td>${session.deviceLabel || 'Browser installation'}${session.current ? ' <strong class="status-badge">Current session</strong>' : ''}</td>
+                    <td>${session.platform || 'Browser'}</td><td>${session.status || 'active'}</td>
                     <td>${session.issuedAt || '—'}</td>
-                    <td>${session.expiresAt || '—'}</td>
-                    <td><button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">End session</button></td>
+                    <td>${session.lastSeenAt || '—'}</td>
+                    <td>${session.current ? '<span class="small-muted">Use Logout</span>' : `<button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">Revoke device</button>`}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -227,13 +239,13 @@ class AdminInfrastructureView {
 
   async loadData() {
     const requests = {
-      connections: this.api.get('/api/connections'),
-      providers: this.api.get('/api/providers'),
+      connections: this.api.get('/api/admin/connections'),
+      providers: this.api.get('/api/admin/providers'),
       backups: this.api.get('/api/admin/backups'),
       release: this.api.get('/api/admin/release/status'),
       setup: this.api.get('/api/setup/status'),
-      database: this.api.get('/api/database/status'),
-      server: this.api.get('/api/server/test')
+      database: this.api.get('/api/admin/database'),
+      server: this.api.get('/api/admin/server')
     };
 
     const results = await Promise.all(Object.entries(requests).map(([key, promise]) => promise.then((result) => [key, result])));
@@ -245,6 +257,7 @@ class AdminInfrastructureView {
         snapshot.providers = result.ok && Array.isArray(result.data?.providers) ? result.data.providers : [];
       } else if (key === 'backups') {
         snapshot.backups = result.ok && Array.isArray(result.data?.backups) ? result.data.backups : [];
+        snapshot.backupAutomation = result.ok ? (result.data?.automation || {}) : {};
       } else if (key === 'release') {
         snapshot.release = result.ok && result.data && result.data.release ? result.data.release : {};
       } else if (key === 'setup') {
@@ -252,7 +265,7 @@ class AdminInfrastructureView {
       } else if (key === 'database') {
         snapshot.database = result.ok && result.data && result.data.database ? result.data.database : {};
       } else if (key === 'server') {
-        snapshot.server = result.ok && result.data && result.data.result ? result.data.result : {};
+        snapshot.server = result.ok ? (result.data?.server || result.data?.result || {}) : {};
       }
     }
     this.snapshot = snapshot;
@@ -384,25 +397,7 @@ class AdminInfrastructureView {
             </dl>
           </div>
         </div>
-        <div class="card panel-box">
-          <div class="card-header"><h3>Manage connection</h3></div>
-          <form id="connection-form" class="admin-form compact-form">
-            <div class="form-grid">
-              <label>Connection ID<input name="connectionId" value="${this.escape(primaryConnection.connectionId || 'default-connection')}" /></label>
-              <label>App ID<input name="appId" value="neutral-app" /></label>
-              <label>Type<select name="connectionType"><option value="file">File</option><option value="database">Database</option><option value="api">API</option></select></label>
-              <label>Storage Type<select name="storageType"><option value="file">File</option><option value="mysql">MySQL</option><option value="sqlite">SQLite</option></select></label>
-              <label>Server URL<input name="serverUrl" value="${this.escape(primaryConnection.serverUrl || '')}" placeholder="https://api.example.com" /></label>
-              <label>API Base<input name="apiBase" value="${this.escape(primaryConnection.apiBase || window.NeutralPublicPath.api(''))}" /></label>
-              <label>Host<input name="host" value="${this.escape(primaryConnection.host || '')}" /></label>
-              <label>Port<input type="number" name="port" value="${this.escape(primaryConnection.port || '')}" /></label>
-              <label>Database<input name="databaseName" value="${this.escape(primaryConnection.databaseName || '')}" /></label>
-              <label>Username<input name="username" value="${this.escape(primaryConnection.username || '')}" /></label>
-              <label>Credential reference<input name="credentialsRef" value="${this.escape(primaryConnection.credentialsRef || '')}" placeholder="env ref or secret key" /></label>
-              <label>Auth type<select name="authType"><option value="none">None</option><option value="basic">Basic</option><option value="token">Token</option></select></label>
-              <label class="checkbox-label"><input type="checkbox" name="active" ${primaryConnection.active ? 'checked' : ''} /> Active</label>
-              <label class="checkbox-label"><input type="checkbox" name="default" ${primaryConnection.default ? 'checked' : ''} /> Default</label>
-            </div>
+        <div class="card panel-box"><div class="card-header"><h3>Configuration source</h3></div><p class="form-help">Connections are read-only here and come from authoritative host/runtime configuration. Optional external providers are configured only through reviewed provider contracts; secrets are never displayed.</p></div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Save connection</button>
               <button type="button" class="btn btn-secondary" data-action="reload-connections">Reload</button>
@@ -412,40 +407,6 @@ class AdminInfrastructureView {
       </div>
     `;
 
-    const form = this.container.querySelector('#connection-form');
-    if (form) {
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-        const payload = {
-          connectionId: formData.get('connectionId') || 'default-connection',
-          appId: formData.get('appId') || 'neutral-app',
-          connectionType: formData.get('connectionType') || 'file',
-          storageType: formData.get('storageType') || 'file',
-          serverUrl: formData.get('serverUrl') || '',
-          apiBase: formData.get('apiBase') || window.NeutralPublicPath.api(''),
-          host: formData.get('host') || '',
-          port: formData.get('port') || '',
-          databaseName: formData.get('databaseName') || '',
-          username: formData.get('username') || '',
-          credentialsRef: formData.get('credentialsRef') || '',
-          authType: formData.get('authType') || 'none',
-          active: formData.get('active') === 'on',
-          default: formData.get('default') === 'on'
-        };
-        const result = await this.api.post('/api/connections', payload);
-        if (result.ok) {
-          this.notify('Connection saved successfully', 'success');
-          await this.init(this.container);
-        } else {
-          this.notify(`Connection save failed: ${result.error || 'Unknown error'}`, 'error');
-        }
-      });
-      const reloadButton = this.container.querySelector('[data-action="reload-connections"]');
-      if (reloadButton) {
-        reloadButton.addEventListener('click', () => this.init(this.container));
-      }
-    }
   }
 
   renderServer() {
@@ -628,13 +589,15 @@ class AdminInfrastructureView {
 
   renderBackups() {
     const backups = this.snapshot.backups || [];
+    const automation = this.snapshot.backupAutomation || {};
     this.container.innerHTML = `
       <div class="admin-infrastructure-view">
         <div class="section-header"><h2>Backups & Restore</h2></div>
         <div class="card panel-box">
           <div class="card-header"><h3>Encrypted database backups</h3></div>
           <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
-          ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
+          <p class="form-help">Automatic scheduler: ${this.escape(automation.scheduler || 'external-cron-required')}. Last success: ${this.escape(automation.lastSuccess ? new Date(Number(automation.lastSuccess) * 1000).toISOString() : 'No scheduled backup recorded')}. ${automation.lastError ? `Last error: ${this.escape(automation.lastError)}` : ''}</p>
+          ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button><button class="btn btn-sm btn-danger" data-backup-delete="${this.escape(backup.backupId)}">Delete</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
           <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary">Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
         </div>
       </div>`;
@@ -662,6 +625,11 @@ class AdminInfrastructureView {
     });
     this.container.querySelectorAll('[data-backup-download]').forEach((button) => button.addEventListener('click', () => this.downloadBackup(button.dataset.backupDownload)));
     this.container.querySelectorAll('[data-backup-restore]').forEach((button) => button.addEventListener('click', () => this.restoreBackup(button.dataset.backupRestore)));
+    this.container.querySelectorAll('[data-backup-delete]').forEach((button) => button.addEventListener('click', async () => {
+      if (!AdminCommon.confirmAction('Delete this encrypted backup permanently?')) return;
+      const result = await this.api.delete(`/api/admin/backups/${button.dataset.backupDelete}`);
+      if (result.ok) { this.notify('Backup deleted', 'success'); await this.init(this.container); } else this.notify(`Backup delete failed: ${result.error || 'Unknown error'}`, 'error');
+    }));
   }
 
   async downloadBackup(backupId) {
@@ -742,14 +710,15 @@ class AdminDiagnosticsView {
   render() {
     const health = this.snapshot?.health || {};
     const framework = this.snapshot?.framework || {};
+    const runtime = health.runtime || {};
     const detailEntries = [
       ['Status', health.status || health.state || 'unknown'],
-      ['Runtime', health.runtime || framework.runtime || 'PHP'],
+      ['Runtime', runtime.phpVersion ? `PHP ${runtime.phpVersion} (${runtime.sapi || 'runtime'})` : 'Unavailable on this runtime'],
       ['Environment', health.environment || framework.environment || 'production'],
-      ['Memory', health.memory || framework.memory || 'N/A'],
-      ['Disk', health.disk || framework.disk || 'N/A'],
-      ['Modules', String(framework.modulesCount || framework.moduleCount || 0)],
-      ['Apps', String(framework.appsCount || framework.appCount || 0)]
+      ['Memory', runtime.memoryLimit || 'Unavailable on this runtime'],
+      ['Disk', runtime.diskFree == null ? 'Unavailable on this runtime' : `${Math.round(runtime.diskFree / 1048576)} MB free`],
+      ['Modules', String(health.modules ?? framework.modulesCount ?? 'Unavailable')],
+      ['Apps', String(health.apps ?? framework.appsCount ?? 'Unavailable')]
     ];
 
     this.container.innerHTML = `

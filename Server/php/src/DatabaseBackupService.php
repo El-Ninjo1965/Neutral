@@ -107,6 +107,9 @@ final class DatabaseBackupService
                 'backupId' => (string) $decoded['backupId'],
                 'createdAt' => (string) ($decoded['createdAt'] ?? ''),
                 'size' => (int) (filesize($path) ?: 0),
+                'format' => self::ENVELOPE,
+                'appVersion' => '1.0.0',
+                'status' => 'ready',
             ];
         }
         usort($items, static fn (array $left, array $right): int => strcmp($right['createdAt'], $left['createdAt']));
@@ -224,6 +227,25 @@ final class DatabaseBackupService
             throw new \RuntimeException('Backup identifier is invalid.');
         }
         return $this->backupDirectory . '/' . $backupId . '.neutral-backup';
+    }
+
+    public function delete(string $backupId): void
+    {
+        $path = $this->pathForDownload($backupId);
+        if (!is_file($path) || !unlink($path)) {
+            throw new \RuntimeException('Backup could not be deleted.');
+        }
+    }
+
+    public function enforceRetention(int $maximumBackups = 14): int
+    {
+        $items = $this->list();
+        $removed = 0;
+        foreach (array_slice($items, max(1, $maximumBackups)) as $item) {
+            $this->delete((string) $item['backupId']);
+            $removed++;
+        }
+        return $removed;
     }
 
     /** @return list<string> */

@@ -244,3 +244,7 @@ Mindestens prüfen:
 ### Startperformance für Module
 
 Discovery erfolgt ausschließlich einmal in `CoreStartup.startBackground()`. Ein Modul startet bei Discovery keine Geräteabfrage, Netzwerkoperation oder Aktivierung. Installation bleibt inaktiv; teure Ressourcen beginnen erst bei expliziter Aktivierung und werden bei Deaktivierung freigegeben. Module dürfen keinen zweiten Katalogscan aus UI-Code anstoßen.
+
+## Permission domain
+
+Modules declare their permissions in the module contract. These permissions are classified as User-App/Module in the registry unless a separately reviewed administrative module contract says otherwise. Modules must not reuse Core Admin permission keys to make User-App features function, and the Admin UI does not create arbitrary permission keys.

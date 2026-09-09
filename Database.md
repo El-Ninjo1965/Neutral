@@ -107,3 +107,7 @@ Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Date
 - `sync`: nur reservierte Persistenzgrundlage; P2 implementiert keine Queue- oder Konfliktlogik.
 
 IndexedDB wird in P3 ausschließlich in `CoreStartup.startBackground()` geöffnet. First Paint und UI-Interaktivität warten nicht darauf; Operationen, die strukturierte Daten benötigen, müssen die Storage-Ready-Phase abwarten. Ein Öffnungsfehler wird diagnostiziert und darf die statische Shell nicht ausblenden.
+
+## Operations migration (2026-09-09)
+
+Migration `2026_09_09_0004_operations_device_sessions` adds random device identity/label fields and an indexed user/device/session lookup, and removes legacy Admin permission grants from `viewer` and `user`. `release_state` is the authoritative persistent maintenance/release record. Device sessions and login throttling remain excluded from logical backups; restore clears both before re-login.
