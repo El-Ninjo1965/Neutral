@@ -5,341 +5,380 @@
 
 # Aktueller Auftrag
 
-## `Admin → Appearance` zum echten User-UI-Designeditor ausbauen
+## Größeres Folgepaket: Appearance UX V2 + Button/Navigation Design + lokale User-Personalisierung
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig:
+Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, `UI-UX.md`, `USER-UI-DESIGN.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md` sowie alle relevanten Appearance-, User-Settings-, Navigation-, Header-, Login-, Theme-/Token-, CSS-, Local-Storage-/Cache-, API-, Service-Worker-, Security- und Testdateien.
 
-- `WORKFLOW.md`
-- `DOCUMENTATION.md`
-- `CODEX.md`
-- `CURRENT-TASK.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
-- `CHANGELOG.md`
-- `UI-UX.md`
-- `USER-UI-DESIGN.md`
-- `I18N.md`
-- `VISION.md`
-- `CORE-1.0.md`
-- `Architecture.md`
-- `Functions.md`
-- `ModuleCreation.md`
-- alle relevanten Admin-Appearance-, Settings-/API-, User-App-, Theme-/Token-, Homepage-, CSS-, Cache-/Storage-, Service-Worker-, Security- und Testdateien
-
-Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe vor Implementierung:
+Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe:
 
 `CODEX.md == CURRENT-TASK-Anforderungen`
 
-# Ausgangslage / Betreiberentscheidung
+# Ausgangslage / echter Betreiber-Device-Retest
 
-P1 und P4 sind `LIVE BESTANDEN` und dürfen nicht zurückgebaut werden.
+Der User-UI-Designeditor V1 ist code-seitig fertig und auf dem realen iPad geprüft worden. Grundfunktion, nativer iPad-Farbwähler und Struktur sind vorhanden. Der Betreiber hat jedoch mehrere zusammenhängende UX-/Designprobleme festgestellt. Diese sollen bewusst in **einem größeren Arbeitspaket** gelöst werden, statt viele kleine Codex-Runden zu erzeugen.
 
-Der Betreiber hat `Admin → Appearance` nach der letzten Bereinigung live geprüft:
+P1 und P4 bleiben `LIVE BESTANDEN` und dürfen nicht regressieren.
 
-- der tote `Theme & Layout`-Block ist korrekt entfernt;
-- `Global Start Page` bleibt sichtbar und funktionsfähig;
-- die Adminansicht soll als Oberbereich weiterhin **`Appearance`** heißen;
-- der Bereich soll jetzt gemäß `USER-UI-DESIGN.md` tatsächlich zur Gestaltung der **User-App** erweitert werden.
+# A – Farbeingaben im Appearance-Editor verständlich machen
 
-WICHTIGE TRENNUNG:
+Aktueller realer Befund:
 
-- Admin-Header-Light/Dark steuert ausschließlich die Admin-UI und bleibt unverändert.
-- User-Header-Sonne/Mond steuert die persönliche Light/Dark-Auswahl des Endnutzers und bleibt unverändert/lokal/offline.
-- Der neue Admin-Designeditor definiert, **wie die User-App in Light und Dark aussieht**, nicht welcher Modus beim einzelnen Nutzer aktiv ist.
-- Keine Rückkehr zu einem konkurrierenden globalen `settings.theme`-State.
+- `<input type="color">` erscheint auf iPad/Safari innerhalb des Formulars im Wesentlichen als sehr dünner horizontaler Farbstreifen.
+- besonders bei Schwarz/Dark ist die aktuelle Farbe praktisch nicht sinnvoll erkennbar;
+- beim Antippen öffnet sich dagegen der native iPad-Farbwähler und dieser wird vom Betreiber ausdrücklich als gut bewertet;
+- der native Picker soll daher erhalten bleiben.
 
-# Zielstruktur von `Admin → Appearance`
+## Ziel
 
-Der Oberbereich bleibt `Appearance`.
+Jede Farbeingabe soll **vor dem Öffnen des Pickers** sofort verständlich zeigen:
 
-Darunter fachlich klar getrennte Bereiche:
+- einen deutlich sichtbaren Farbswatch, bevorzugt runder Farbpunkt/Farbkreis ungefähr in der Größenordnung eines normalen Header-Icons;
+- den aktuellen normalisierten Hexwert, z. B. `#0B0F14`;
+- klare Klick-/Touch-Affordance;
+- ausreichende Abgrenzung des Swatches auch bei Schwarz, Weiß und Farben nahe der umgebenden Admin-Surface.
 
-1. **Start Page** – bestehende Global-Start-Page-Funktion, vollständig erhalten.
-2. **User UI Design** – strukturierter Editor für zentrale User-App-Design-Tokens.
-3. **Advanced Custom CSS** – optionaler Experten-Override nach dem strukturierten Designsystem.
+Der Swatch darf deshalb einen neutralen/leicht grauen kontrastierenden Träger/Rahmen besitzen, ohne die eigentliche Farbe zu verfälschen.
 
-Keine unnötige zusätzliche Navigationsebene bauen, wenn eine klare progressive Darstellung innerhalb von `Appearance` auf Tablet/Desktop und Mobile besser ist. UX gemäß bestehendem Admin-CMS-Vertrag.
+Der native `input[type=color]`-Dialog bleibt die eigentliche Farbauswahl. Keine eigene komplexe Color-Picker-Bibliothek erfinden.
 
-# Arbeitspaket A – bestehende Appearance-Benennung konsistent machen
+Wenn Safari/iPad eine direkte Hex-Eingabe im nativen Picker anbietet, genügt dies für V2; im Adminformular selbst muss der Hexwert mindestens sichtbar sein. Eine zusätzliche direkte Hex-Eingabe im Formular nur dann ergänzen, wenn sie sauber synchronisiert, validiert und UX-seitig eindeutig ist.
 
-Der Admin-Seitentitel/Breadcrumb kann derzeit noch `Theme & Layout` heißen, obwohl dieser alte Block entfernt wurde.
+# B – User-UI-Design-Tokens komponentenspezifisch erweitern
 
-Korrigiere die sichtbare Bezeichnung konsistent auf **`Appearance`**.
+Die bisherigen groben Tokens reichen für reale App-Gestaltung nicht aus. Insbesondere Settings, Home/GPS und Login zeigen, dass Hintergrund/Text/Icon/Border getrennt steuerbar sein müssen.
 
-Keine alte `Theme & Layout`-Terminologie als aktiven Seitentitel stehen lassen.
+Erweitere den strukturierten Designvertrag sinnvoll und semantisch, jeweils **Light und Dark getrennt**, mindestens um:
 
-# Arbeitspaket B – User UI Design als strukturierter Token-Editor
+## Primary Action
 
-Implementiere eine erste produktiv nutzbare Version des in `USER-UI-DESIGN.md` dokumentierten Vertrags.
-
-## Grundprinzip
-
-Der Admin editiert keine einzelnen Modul-CSS-Dateien. Er editiert einen zentralen, validierten User-UI-Designzustand. Die User-App projiziert diesen Zustand auf veröffentlichte CSS Custom Properties/Design-Tokens. Framework-Komponenten und Module, die den zentralen Vertrag verwenden, erben die Änderung automatisch.
-
-Bestehende Default-CSS-Werte bleiben die sichere Basis. Fehlt eine Konfiguration oder ist sie ungültig, fällt die User-App kontrolliert auf diese Defaults zurück.
-
-## Erste konfigurierbare Bereiche
-
-Die erste Version soll sinnvoll und überschaubar bleiben. Mindestens:
-
-### Farben – getrennt für Light und Dark
-
-- App/Page Background
-- Surface/Card Background
-- Primary/Accent
-- Primary Text
-- Muted Text
+- Background
+- Text
+- Icon
 - Border
 
-Nutze bestehende semantische Tokens, statt parallele Farbsysteme zu erfinden. Falls die aktuellen Tokenbezeichnungen anders heißen, mappe den Adminvertrag sauber auf die vorhandenen zentralen Variablen.
+## Secondary Action / Header Action
 
-### Form / Geometrie – gemeinsame Werte, soweit fachlich sinnvoll
+- Background
+- Text
+- Icon
+- Border
 
-- Button-/Control-Radius
-- Card/Surface-Radius
-- zentrale Content-Max-Width bzw. geeigneter bestehender Layoutparameter, **nur wenn** er bereits sauber zentral abbildbar ist
+## Navigation – aktiv
 
-### Typografie
+- Background
+- Text
+- Icon
+- Border
 
-Keine unsichere freie Font-URL- oder Remote-Font-Funktion einführen.
+## Navigation – inaktiv
 
-Für V1 nur solche Typografieparameter anbieten, die ohne externe Abhängigkeit robust zentral steuerbar sind, z. B. Basisschriftgröße bzw. vorhandene sichere Font-Stack-Auswahl, falls bereits im Framework vorgesehen. Wenn die bestehende Architektur dafür noch keinen sauberen Token besitzt, nicht künstlich eine halbfertige Fontverwaltung erfinden; Root Cause/Entscheidung dokumentieren.
+- Background
+- Text
+- Icon
+- Border
 
-## Light/Dark-Vertrag
+## Form Controls
 
-- Designwerte für Light und Dark werden getrennt gespeichert, wo unterschiedliche Farben sinnvoll sind.
-- User-Schalter wählt weiterhin nur `light` oder `dark`.
-- Beim Umschalten werden die entsprechenden administrativ definierten Tokenwerte verwendet.
-- User-Auswahl bleibt lokal persistent/offline.
-- Admin-Designwerte sind Produkt-/App-Konfiguration und werden unabhängig davon zentral bereitgestellt/cachbar gemacht.
+- Input Background, sofern noch nicht sauber aus Surface ableitbar
+- Input Text
+- Input Border
+- Input Focus Border / Focus Ring
 
-## Validierung
+Nutze semantische zentrale Tokens. Keine einzelnen Regeln nur für `Settings`, `GPS` oder `Login` hart codieren. Die zentrale Designsprache muss von aktuellen und zukünftigen Modulen geerbt werden können.
 
-- Farben nur in klar unterstützten sicheren Formaten speichern, bevorzugt normalisierte Hexwerte, sofern bestehender Vertrag nichts Besseres vorgibt.
-- Größen/Radien mit definierten Grenzen und Einheiten validieren.
-- unbekannte Token/Properties nicht blind akzeptieren.
-- API muss fail-closed gegen ungültige strukturierte Werte sein.
-- keine beliebigen CSS-Property-Namen über den strukturierten Editor zulassen.
+## Betreiberbeispiele
 
-# Arbeitspaket C – Live Preview
+Der Betreiber möchte z. B. im Dark Theme bewusst:
 
-Implementiere im Adminbereich eine brauchbare **User-UI-Vorschau**.
+- gelbe oder andersfarbige Icons/Text auf dunklen Buttons wählen können;
+- den aktiven Home-Button heller/dunkler blau definieren können;
+- in Light möglicherweise schwarze Texte/Icons wählen;
+- inaktive Navigation klar als touchbare Buttons erkennen können.
 
-Sie soll mindestens typische zentrale Komponenten zeigen:
+Das sind Beispiele, keine fest einzubauenden Farben. Der Editor soll diese Freiheit ermöglichen.
 
-- App-Surface/Background;
-- Header-/Navigationseindruck;
-- Primary und Secondary Button;
-- Card/Surface;
-- Text und Muted Text;
-- Input/Form-Control.
+# C – Dark-Mode-Defaults und Form-Control-Kontrast verbessern
 
-Anforderungen:
+Realer Befund:
 
-- Änderungen im Formular sollen in der Preview möglichst unmittelbar sichtbar werden, **bevor** gespeichert wird;
-- Preview darf nicht versehentlich die Admin-UI selbst umstylen;
-- Light/Dark-Preview muss gezielt umschaltbar bzw. getrennt prüfbar sein;
-- Preview nutzt denselben Token-Mappingvertrag wie die User-App, keine unabhängige Fantasieimplementierung;
-- Accessibility/Kontrast nicht automatisch als „bestanden“ behaupten; offensichtliche problematische Kontraste dürfen sinnvoll gewarnt werden, sofern dies robust umsetzbar ist.
+- Eingabefelder im Dark Theme sind teilweise nur schwer von der umgebenden Fläche zu unterscheiden;
+- Border ist zu dunkel/kontrastarm;
+- dadurch ist nicht sofort klar, wo das Eingabefeld beginnt und endet.
 
-# Arbeitspaket D – Persistenz, Projektion und Local-first
+Überarbeite die **Frameworkdefaults** für Dark so, dass Controls auch ohne Admin-Anpassung klar erkennbar sind.
 
-Implementiere einen versionierten zentralen Designkonfigurationsvertrag.
+- Border ausreichend sichtbar;
+- Fokuszustand noch klarer;
+- keine ausschließlich farbliche Information;
+- kein übertriebener Glow;
+- bestehende Accessibility-/Touch-Verträge respektieren.
 
-Anforderungen:
+Der Admin kann diese Werte anschließend über die neuen Form-Control-Tokens anpassen.
 
-- Admin-Save über bestehende Auth-/CSRF-geschützte Settings-/Appearance-Infrastruktur oder einen sauber abgegrenzten bestehenden Servicevertrag;
-- keine Secrets;
-- öffentliche User-App erhält ausschließlich die für Darstellung notwendigen freigegebenen Designwerte, keine Admin-/Security-Daten;
-- User-App kann den letzten gültigen Designzustand lokal verwenden, damit Warmstart/Offline nicht auf den Server warten;
-- Serverabgleich aktualisiert den lokalen Designzustand kontrolliert im Hintergrund;
-- ungültige/inkompatible Version fällt auf sichere Frameworkdefaults zurück;
-- Designänderung darf den bereits live bestandenen homepage Local-first-Warmstart nicht wieder mit sichtbarem Loading/Flash blockieren;
-- First Paint in bekanntem Dark Theme bleibt ohne White-Flash.
+# D – Preview deutlich aussagekräftiger machen
 
-Prüfe, ob die bestehende öffentliche Settings-/Homepageprojektion sinnvoll erweitert werden kann oder ob eine eigene kleine Appearance-Projektion architektonisch sauberer ist. Keine Securitygrenzen nur aus Bequemlichkeit aufweichen.
+Die Preview muss alle neu steuerbaren Komponenten zeigen und denselben Mappingvertrag wie die reale User-App verwenden.
 
-# Arbeitspaket E – Reset auf Defaults
+Mindestens darstellen:
 
-Im `User UI Design` einen klaren **Reset to Defaults** vorsehen.
+- App/Page Background;
+- Surface/Card;
+- Header Action;
+- Primary Action;
+- Secondary Action;
+- aktive Navigation;
+- inaktive Navigation;
+- Icon + Text;
+- Input normal;
+- Input Fokus-Demonstration bzw. klarer Focus-Sample;
+- Primary/Muted Text;
+- Border.
 
-- Reset betrifft strukturierte User-UI-Designwerte, nicht Start Page, Userdaten, Admin-Theme oder persönliche User-Theme-Auswahl.
-- destructive Wirkung klar benennen/angemessen bestätigen, aber keine unnötige Dialogkaskade.
-- nach Reset gelten wieder die Framework-/Produktdefaults.
-- Preview und gespeicherter Zustand müssen konsistent sein.
+Light/Dark gezielt umschaltbar. Preview darf niemals die Admin-Shell selbst umstylen.
 
-# Arbeitspaket F – Advanced Custom CSS
+# E – Appearance-Editor besser gruppieren / Progressive Disclosure
 
-Implementiere **Advanced Custom CSS** als ausdrücklich gekennzeichnete Expertenfunktion **nach** dem strukturierten Designsystem.
+Der Editor wird umfangreicher. Vermeide eine endlose unstrukturierte Liste.
+
+Gruppiere sinnvoll, z. B.:
+
+- Base Colors
+- Actions & Buttons
+- Navigation
+- Forms
+- Geometry & Typography
+- Preview
+
+Die konkrete UX darf besser gewählt werden, wenn sie auf iPad/Mobile/Desktop klarer ist.
+
+Keine unnötige neue Router-/Seitenhierarchie, sofern Akkordeons/Sections innerhalb `Appearance` besser sind.
+
+# F – Advanced Custom CSS als Expertenfunktion einklappen
+
+Realer Betreiberbefund: Die Funktion ist technisch sinnvoll, aber für einen normalen Betreiber ohne CSS-Kenntnisse zunächst unverständlich.
+
+Behalte Advanced Custom CSS, aber:
+
+- standardmäßig eingeklappt;
+- eindeutig als **Advanced / Expert** kennzeichnen;
+- kurze verständliche Erklärung: nur verwenden, wenn die strukturierten Designoptionen nicht ausreichen;
+- bestehende technische Sicherheitsdetails nicht als dominanten normalen UI-Text darstellen; bei Bedarf in Help/Details verschieben;
+- `Clear Custom CSS` bleibt vorhanden;
+- bestehender Sicherheitsvertrag, Größenlimit und CSP bleiben unverändert streng.
+
+# G – Lokale User-Einstellung für Navigationsdarstellung
+
+Neue persönliche User-Präferenz unter normalen **User Settings**, nicht Admin Appearance.
+
+Der Endnutzer soll lokal auf seinem Endgerät wählen können:
+
+1. **Icon + Text** – Default
+2. **Icons only**
+3. **Text only**
 
 ## Vertrag
 
-- Custom CSS ist optional.
-- leer = kein Override.
-- es wird nach den strukturierten User-UI-Tokens angewendet und kann diese bewusst überschreiben.
-- es betrifft ausschließlich die User-App, niemals die Admin-UI.
-- Start Page HTML bleibt davon fachlich getrennt.
+- lokal persistent;
+- offline;
+- keine Server-/DB-Pflicht;
+- pro Endgerät;
+- Default `Icon + Text`;
+- gilt konsistent für zentrale User-App-Navigation/Header-Actions, soweit ein Element Icon und Text besitzt;
+- Accessibility-Namen bleiben unabhängig von sichtbarer Darstellung immer vorhanden;
+- bei `Icons only` müssen `aria-label`/accessible names und sinnvolle Tooltips/Title erhalten bleiben;
+- bei `Text only` darf das Fehlen des Icons das Layout nicht beschädigen;
+- Responsive Layout bleibt stabil.
 
-## Sicherheit / Robustheit
+Home, Settings und Login erhalten etablierte lokale Icons:
 
-Custom CSS ist mächtig. Implementiere keinen falschen „CSS-Sanitizer“, der Sicherheit verspricht, die er nicht garantieren kann.
+- Home: bestehendes Haus-Icon;
+- Settings: Zahnrad;
+- Login/Sign-in: etabliertes Sign-in-Symbol, bevorzugt Tür/Entry mit Pfeil statt Schlüssel, sofern das bestehende lokale Iconsystem dies sauber unterstützt;
+- keine Emojis;
+- keine externen Icon-Netzwerkabhängigkeiten.
 
-Prüfe stattdessen den realen Threat-/Deployment-Vertrag und setze mindestens robuste Grenzen:
+GPS erhält ein etabliertes lokales Location/GPS-Symbol, sofern im bestehenden Iconsystem sinnvoll verfügbar/sauber ergänzbar.
 
-- nur authentifizierter/autorisierten Admin darf speichern;
-- keine HTML-/JavaScript-Injektion über dieses Feld; es wird ausschließlich als CSS behandelt;
-- keine Veränderung von CSP/Sandbox/Auth-Grenzen;
-- klare Größenbegrenzung;
-- versionierte Persistenz;
-- Reset/Clear möglich;
-- bei technisch ungültigem oder nicht ladbarem Override muss die App auf strukturiertes Design/Defaults zurückfallen können;
-- Custom CSS darf den Adminbereich nicht beeinflussen;
-- keine Remote-Stylesheet-/Font-Infrastruktur zusätzlich erfinden.
+# H – Lokale benutzerdefinierte Anzeigenamen für Navigation
 
-Falls die aktuelle CSP oder der sichere Runtimevertrag ein direktes Inline-`<style>` aus gespeicherter Adminquelle problematisch macht, **nicht** die CSP schwächen. Wähle einen CSP-kompatiblen serverseitig/öffentlich ausgelieferten CSS-Asset-/Endpoint-Vertrag oder eine andere sichere Architektur. Dokumentiere die Entscheidung.
+Der Endnutzer soll zusätzlich die **sichtbaren Texte zentraler Navigations-/Action-Elemente lokal umbenennen können**.
 
-# Arbeitspaket G – bestehende Start Page vollständig erhalten
+Motivation:
 
-Die bereits live bestandene P4-Funktion darf nicht regressieren:
+- persönliche Terminologie (`GPS` → `Location`, `Standort` usw.);
+- begrenzte Hilfe für Nutzer, deren Sprache noch nicht offiziell unterstützt wird;
+- maximale Personalisierung ohne globale App-/Modulkonfiguration zu verändern.
 
-- Module-Modus;
-- Text/HTML-Modus;
-- unverändertes trusted Admin HTML;
-- Preview;
-- Save/Reload;
-- Local-first Cache;
-- Dark/Light-HTML-Adapter;
-- kein Loading-/White-Flash beim Warmstart.
+## Vertrag
 
-`Start Page` und `User UI Design` dürfen gemeinsam unter Appearance gespeichert werden, wenn der API-Vertrag das sauber und ohne Datenverlust erlaubt. Ein Save eines Bereichs darf den anderen nicht unbeabsichtigt zurücksetzen.
+- Defaulttexte bleiben die offiziellen App-/I18N-Bezeichnungen;
+- User kann lokal einen eigenen Anzeigenamen setzen;
+- leer/Reset = wieder offizieller Default;
+- lokale Speicherung pro Endgerät;
+- keine Server-/DB-Pflicht;
+- keine Änderung technischer Modul-IDs, Routen, Berechtigungen oder I18N-Schlüssel;
+- nur Presentation Layer;
+- definierte Maximallänge, die Layoutschäden verhindert; wähle eine sinnvolle Grenze und dokumentiere sie;
+- Eingabe trimmen/normalisieren;
+- kein HTML, nur Text;
+- Reset pro Bezeichnung und sinnvoller `Reset all navigation labels` möglich;
+- bei `Icons only` bleibt die benutzerdefinierte Bezeichnung als Accessibility-/Tooltip-Text sinnvoll nutzbar;
+- bei `Text only` ist sie sichtbarer Text.
 
-# Nicht Teil dieses Auftrags
+## Scope der Umbenennung
 
-- vollständige I18N-Implementierung;
-- `Settings → Language`;
-- automatische Übersetzungsprovider;
-- Branding-/Logo-Upload;
-- Remote Fonts;
-- komplette visuelle Page-Builder-Funktion;
-- pro-Modul-Designeditor;
-- Store-App-spezifische Designkonfiguration.
+Nicht nur hart codierte aktuelle Buttons berücksichtigen. Entwirf einen kleinen generischen lokalen Presentation-Vertrag, sodass **zukünftige zentrale Modulnavigation** ebenfalls einen User-Override anhand stabiler Navigation-/Modul-ID erhalten kann, ohne jedes Modul einzeln in den Core zu programmieren.
 
-Diese Punkte nicht nebenbei beginnen.
+Das Modul selbst und seine fachlichen Inhalte werden dadurch nicht umbenannt; nur sein zentraler Navigations-Anzeigename.
 
-# Tests – test-first
+# I – User Settings UX
 
-Regressionstests vor bzw. zusammen mit Implementierung ergänzen.
+In User Settings einen klaren Bereich, z. B. `Navigation` oder `Interface`, ergänzen:
 
-Mindestens:
+- Display style: Icon + Text / Icons only / Text only;
+- darunter lokale Label-Anpassungen;
+- Defaultbezeichnungen sichtbar, damit klar ist, was zurückgesetzt wird;
+- Reset einfach und verständlich;
+- keine Developerbegriffe wie IDs/Keys im normalen UI anzeigen.
 
-## Appearance / Navigation
+Appearance/Theme bleibt dort weiterhin entfernt; der Header-Sonne/Mond-Schalter bleibt der Themezugriff.
 
-- Admin-Seitentitel lautet `Appearance`, nicht `Theme & Layout`;
-- Start Page bleibt vorhanden;
-- User UI Design vorhanden;
-- Advanced Custom CSS klar als Expertenfunktion getrennt.
+# J – I18N-Kompatibilität vorbereiten, aber I18N noch nicht implementieren
 
-## Strukturierter Designvertrag
+`I18N.md` bleibt Zukunftsvertrag.
 
-- gültige Light-/Dark-Tokenwerte werden gespeichert und öffentlich korrekt projiziert;
-- ungültige Farben/Größen/Token werden abgewiesen oder kontrolliert normalisiert;
-- unbekannte strukturierte Properties werden nicht blind übernommen;
-- fehlende Konfiguration ergibt Frameworkdefaults;
-- Light und Dark bleiben getrennt;
-- User-Theme-State wird nicht durch Admin-Save überschrieben;
-- Admin-Theme-State bleibt unabhängig.
+Wichtig für diese Personalisierung:
+
+- offizieller Defaulttext wird später aus dem aktiven I18N-Schlüssel kommen;
+- lokaler User-Override hat für die sichtbare Navigation Vorrang;
+- Reset fällt auf den **aktuell lokalisierten** offiziellen Text zurück, nicht auf fest verdrahtetes Englisch;
+- keine Sprachpakete/Provider in diesem Auftrag implementieren.
+
+# K – Local-first / Performance
+
+Alle neuen User-Präferenzen müssen beim Start synchron/lokal früh genug verfügbar sein, dass Navigation nicht sichtbar von `Icon + Text` auf `Icons only` o. ä. springt.
+
+- kein Netzwerk erforderlich;
+- kein neues Loading;
+- kein White-Flash;
+- keine Verschlechterung des bereits live bestandenen Warmstarts;
+- fehlerhafte lokale Präferenz fällt kontrolliert auf `Icon + Text` und offizielle Labels zurück.
+
+# L – Tests / Regression
+
+Test-first. Mindestens:
+
+## Appearance Color UX
+
+- Swatch und Hexwert sichtbar;
+- Schwarz/Weiß auch gegen ähnliche Surface erkennbar;
+- native Color-Input-Funktion erhalten;
+- Hexanzeige synchronisiert sich mit Auswahl.
+
+## Tokenvertrag
+
+- neue Primary/Secondary/Nav-active/Nav-inactive/Form-Tokens Light/Dark gespeichert, validiert, öffentlich projiziert und lokal gecacht;
+- unbekannte Tokens abgewiesen;
+- Defaults funktionieren;
+- bestehende V1-Konfiguration migriert/kompatibel behandelt, ohne Installationen zu brechen.
+
+## Dark Controls
+
+- Default-Border klarer;
+- Focus sichtbar;
+- Admin-Konfiguration wirkt real auf User-App.
 
 ## Preview
 
-- Formularänderung aktualisiert Preview ohne Save;
-- Preview Light/Dark nutzt denselben Mappingvertrag;
-- Preview verändert Admin-Shell nicht.
+- alle neuen Komponenten sichtbar;
+- Light/Dark Mapping identisch zur User-App;
+- Admin-Shell unbeeinflusst.
 
-## User-App
+## Advanced CSS
 
-- gespeicherte Designwerte wirken tatsächlich auf zentrale User-App-Komponenten;
-- Header, Navigation, Buttons, Cards, Forms und zentrale Texte verwenden die betroffenen Tokens;
-- GPS und bestehende Module regressieren nicht;
-- Reload/Warmstart verwendet lokal letzten gültigen Designzustand;
-- Offline verwendet letzten gültigen Designzustand;
-- First Paint Dark bleibt ohne weißen Flash;
-- Hintergrundrefresh aktualisiert neue Designkonfiguration kontrolliert.
+- standardmäßig collapsed;
+- expand/collapse zugänglich;
+- Save/Clear/Security unverändert funktionsfähig.
 
-## Reset
+## Navigation Display Preference
 
-- Reset entfernt/neutralisiert nur User-UI-Designwerte;
-- Start Page bleibt unverändert;
-- Custom CSS nur dann zurücksetzen, wenn die UI dies ausdrücklich als gemeinsamen Reset kennzeichnet; bevorzugt strukturierter Reset und Custom-CSS-Clear getrennt halten;
-- User-/Admin-Theme-Auswahl bleibt unverändert.
+- Default Icon + Text;
+- Icons only;
+- Text only;
+- persistiert nach Reload;
+- offline;
+- ungültiger lokaler Wert → Default;
+- Accessibility bleibt in allen Modi korrekt.
 
-## Custom CSS
+## Label Overrides
 
-- nur Admin-Savepfad;
-- Größenlimit;
-- leeres CSS = kein Override;
-- Override wird nur in User-App angewendet;
-- Admin-UI bleibt unbeeinflusst;
-- CSP wird nicht geschwächt;
-- fehlerhafter/fehlender Override verhindert nicht das Laden des strukturierten Designs/Defaults;
-- Clear/Reset funktioniert.
+- Home/Settings/Login/GPS und generischer Modulnav-Key lokal überschreibbar;
+- Maximallänge;
+- nur Text;
+- einzelner Reset;
+- Reset all;
+- Route/Modul-ID unverändert;
+- Override bleibt lokal;
+- Reset fällt auf offiziellen Default zurück;
+- I18N-kompatibler Fallbackvertrag.
 
-## Sicherheits-/Regression
+## Regression
 
 - P1 Sessiontrennung;
-- Auth/CSRF;
-- P4 Homepage vollständig;
-- Home/GPS;
-- GPS;
-- Login;
+- P4 Start Page;
+- Homepage HTML/Module;
+- Warmstart ohne Loading/Flash;
 - User Theme Toggle;
 - Admin Theme Toggle;
+- GPS;
+- Login;
+- Auth/CSRF;
 - Service Worker;
 - Packaging/Base Path;
-- FTPS-/Smoke-Stabilisierung;
-- keine Secrets/unerwünschten Artefakte.
+- FTPS/Smoke;
+- Custom CSS;
+- keine Secrets/Artefakte.
 
 # Dokumentation
 
-Nach erfolgreicher Implementierung:
+Aktualisiere nach tatsächlicher Implementierung `USER-UI-DESIGN.md`, `UI-UX.md`, `Functions.md`, `Architecture.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und weitere betroffene Dokumente wahrheitsgemäß.
 
-- `USER-UI-DESIGN.md` vom reinen Zielbild auf den tatsächlich implementierten V1-Vertrag aktualisieren, ohne zukünftige Erweiterungen fälschlich als fertig zu markieren;
-- `UI-UX.md`, `Functions.md`, `Architecture.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und weitere relevante Dokumente nur soweit tatsächlich betroffen wahrheitsgemäß aktualisieren;
-- I18N bleibt Zukunftsvertrag und darf nicht als implementiert markiert werden.
+I18N nicht als implementiert markieren.
 
 # Abschluss gemäß WORKFLOW.md
+
+Vollständig:
 
 - fokussierte Tests;
 - vollständige Test-Suite;
 - PHP-Lint;
-- JavaScript-Syntaxcheck;
+- JS-Syntax;
 - `git diff --check`;
 - Produktionspaket;
 - Secret-/Artefaktprüfung;
-- Commit und Push nach `main`;
+- Commit + Push `main`;
 - `HEAD == origin/main`;
 - Working Tree sauber;
-- FTPS und CodeQL bis terminal abwarten;
-- vollständigen Abschlussbericht nach `CHATGPT.md` schreiben;
-- `CHATGPT.md` auf GitHub `main` verifizieren;
+- FTPS + CodeQL terminal abwarten;
+- vollständigen Abschlussbericht in `CHATGPT.md` schreiben und auf GitHub `main` verifizieren;
 - erst danach Abschlussmeldung.
 
 Keine selbst ausführbaren offenen Punkte zurücklassen.
 
 # Betreiber-Device-Retest danach
 
-`CHATGPT.md` soll einen kurzen, konkreten Retest liefern, mindestens:
+`CHATGPT.md` soll einen kompakten Retest liefern:
 
-1. `Admin → Appearance` öffnen: Titel `Appearance`, Bereiche Start Page / User UI Design / Advanced Custom CSS sichtbar.
-2. Eine deutlich erkennbare Light-Farbe ändern, Preview prüfen, speichern, User-App Light prüfen.
-3. Eine Dark-Farbe ändern, Preview prüfen, speichern, User-App Dark prüfen.
-4. Radius/geeigneten Geometriewert ändern und reale User-App-Wirkung prüfen.
-5. Reload/Warmstart und offline soweit praktikabel prüfen: Design bleibt erhalten, kein Loading-/White-Flash.
-6. Reset to Defaults prüfen.
-7. kleines harmloses Custom-CSS-Override setzen, Wirkung nur in User-App prüfen, anschließend Clear testen.
-8. Start Page speichern und kurz regressiv prüfen.
-9. Admin-Theme und User-Theme getrennt regressiv prüfen.
+1. Appearance Light/Dark Farbswatches + Hexwerte prüfen.
+2. Primary/Secondary/Nav/Input-Farben ändern, Preview und reale User-App prüfen.
+3. Dark Input-Border/Focus prüfen.
+4. Advanced CSS auf-/zuklappen, kleinen Override testen und clearen.
+5. User Settings → Navigation: alle drei Display-Modi prüfen.
+6. Home/Settings/Login/GPS lokal umbenennen und Reload prüfen.
+7. einzelne Labels und alle Labels resetten.
+8. Warmstart/Offline kurz prüfen: keine Layoutsprünge/Loading/Flash.
+9. Start Page, GPS, Login, User/Admin Theme regressiv prüfen.
 
-Automatisierte Tests dürfen diese reale visuelle Device-Abnahme nicht ersetzen.
+Automatisierte Tests ersetzen die reale visuelle iPad-Abnahme nicht.
