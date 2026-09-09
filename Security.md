@@ -138,3 +138,5 @@ The complete Audit reset is deliberately unavailable in production (404), requir
 - Device identity remains the random installation ID. UA/platform values are display-only. License/user device limits may be numeric or `unlimited`; revocation is required before replacing a device at a reached limit.
 - Presence metrics mean “installation seen by this server”, not downloads. They store no IP history, GPS, hardware fingerprint or inferred offline use.
 - Server-uploaded profile images are limited to validated JPEG/PNG/WebP up to 5 MB and enter `pending`; `approved`, `rejected` and `deleted` transitions retain moderation reason/note history. Anonymous viewers cannot upload and nothing is automatically public.
+
+Schema migration is not controlled by request input: API bootstrap may apply only the checksummed migration definitions shipped in the deployed revision, under the existing database advisory lock. It never accepts arbitrary SQL. Readiness remains false when application fails, and the standalone CLI remains available for host diagnostics.

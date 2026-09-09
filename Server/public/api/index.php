@@ -31,6 +31,15 @@ $runtime = neutral_bootstrap();
 $config = $runtime->config();
 $database = $runtime->database();
 
+// Deployed Core schema follows the deployed application revision. Migrations
+// are additive/idempotent and must complete before any route uses new tables.
+$schemaMigrator = new SchemaMigrator($database);
+try {
+    if ($schemaMigrator->status()['pending'] !== []) $schemaMigrator->migrate();
+} catch (Throwable $exception) {
+    // Setup/readiness routes must remain able to report an unavailable database.
+}
+
 $store = new Phase4JsonStore($runtime->projectRoot() . '/Server/runtime/config');
 $roleService = new Phase4RoleService($store, $database);
 $permissionService = new Phase4PermissionService($database);

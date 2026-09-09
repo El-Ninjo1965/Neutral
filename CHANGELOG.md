@@ -455,3 +455,4 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Added responsive Settings subnavigation, in-place saves, exact active states and a neutral Profile/password/privacy surface.
 - Enforced one password policy (8–25, no whitespace, no composition requirement), optional unique e-mail and username/e-mail login across PHP/Node/bootstrap paths; simplified Admin user creation and status handling.
 - Added normalized generic package/license/organization/profile/presence/media-moderation schema and server services for scoped license administration, limits, installation metrics and safe image validation. No commercial package names or product logic were added.
+- Production migration delivery now closes the code/schema race: API bootstrap applies only pending repository-defined idempotent migrations under the migration lock, because FTPS has no host-shell execution phase; setup/readiness remains fail-safe when the database is unavailable.
