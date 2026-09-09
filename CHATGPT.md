@@ -69,4 +69,4 @@ P1 und P4 bleiben auf dem bereits vom Betreiber bestätigten Stand. Keine der ne
 ## Externe Restpunkte
 
 - **DEVICE RETEST REQUIRED:** obige zehn Prüfungen auf dem realen iPad/Chrome; die neuen Pfade sind bis dahin nicht live bestanden.
-- **HOST ACTION REQUIRED:** Migration `0005` idempotent anwenden und `migrationsReady:true` sowie bestehende Backup-Key/ACL/Cron-Punkte sicher bestätigen. Kein Produktions-Restore.
+- **HOST ACTION REQUIRED:** ausschließlich die bestehenden Backup-Key-/ACL-/Cron-Punkte sicher konfigurieren und bestätigen. Migration `0005` und `migrationsReady:true` sind bereits live verifiziert; kein Produktions-Restore.
