@@ -22,6 +22,8 @@ use Neutral\Core\ModuleHttpException;
 use Neutral\Core\Security;
 use Neutral\Core\LoginRateLimiter;
 use Neutral\Core\PdoLoginAttemptStore;
+use Neutral\Core\FallbackLoginAttemptStore;
+use Neutral\Core\FileLoginAttemptStore;
 use Neutral\Core\DatabaseBackupService;
 use Neutral\Core\BackupRuntimeException;
 use Neutral\Core\SchemaMigrator;
@@ -371,7 +373,10 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
         // and turns otherwise valid authentication into a generic 503 on hosts
         // where GET_LOCK is unavailable or temporarily contended.
         $loginLimiter = new LoginRateLimiter(
-            new PdoLoginAttemptStore($runtime->database()),
+            new FallbackLoginAttemptStore(
+                new PdoLoginAttemptStore($runtime->database()),
+                new FileLoginAttemptStore($runtime->projectRoot() . '/Server/runtime/login-attempts.json')
+            ),
             static fn (): int => time(),
             $config->loginRateLimit()
         );

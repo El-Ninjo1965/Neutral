@@ -89,6 +89,43 @@ final class PdoLoginAttemptStore implements LoginAttemptStore
 
 }
 
+final class FallbackLoginAttemptStore implements LoginAttemptStore
+{
+    private bool $usingFallback = false;
+    public function __construct(private readonly LoginAttemptStore $primary, private readonly LoginAttemptStore $fallback) {}
+    private function call(string $method, array $args): mixed
+    {
+        if (!$this->usingFallback) {
+            try { return $this->primary->{$method}(...$args); }
+            catch (\Throwable $exception) { $this->usingFallback = true; }
+        }
+        return $this->fallback->{$method}(...$args);
+    }
+    public function state(string $key): ?array { return $this->call(__FUNCTION__, func_get_args()); }
+    public function recordFailure(string $key, int $limit, int $window, int $lock, int $now): array { return $this->call(__FUNCTION__, func_get_args()); }
+    public function delete(array $keys): void { $this->call(__FUNCTION__, func_get_args()); }
+    public function purgeExpired(int $before): void { $this->call(__FUNCTION__, func_get_args()); }
+}
+
+final class FileLoginAttemptStore implements LoginAttemptStore
+{
+    public function __construct(private readonly string $path) {}
+    public function state(string $key): ?array { $rows=$this->read(); return isset($rows[$key])&&is_array($rows[$key])?$rows[$key]:null; }
+    public function recordFailure(string $key, int $limit, int $window, int $lock, int $now): array
+    {
+        return $this->mutate(function(array &$rows) use($key,$limit,$window,$lock,$now):array { $row=$rows[$key]??['attemptCount'=>0,'windowStartedAt'=>$now,'lockedUntil'=>0]; if((int)$row['windowStartedAt'] <= $now-$window)$row=['attemptCount'=>0,'windowStartedAt'=>$now,'lockedUntil'=>0];$row['attemptCount']=(int)$row['attemptCount']+1;if($row['attemptCount'] >= $limit)$row['lockedUntil']=$now+$lock;return $rows[$key]=$row; });
+    }
+    public function delete(array $keys): void { $this->mutate(function(array &$rows)use($keys):null{foreach($keys as $key)unset($rows[$key]);return null;}); }
+    public function purgeExpired(int $before): void { $this->mutate(function(array &$rows)use($before):null{foreach($rows as $key=>$row)if((int)($row['windowStartedAt']??0)<$before&&(int)($row['lockedUntil']??0)<$before)unset($rows[$key]);return null;}); }
+    private function read(): array { if(!is_file($this->path))return []; $decoded=json_decode((string)file_get_contents($this->path),true);return is_array($decoded)?$decoded:[]; }
+    private function mutate(callable $callback): mixed
+    {
+        $directory=dirname($this->path);if(!is_dir($directory)&&!mkdir($directory,0700,true)&&!is_dir($directory))throw new \RuntimeException('Auth fallback storage unavailable.');
+        $handle=fopen($this->path,'c+');if($handle===false)throw new \RuntimeException('Auth fallback storage unavailable.');
+        try { if(!flock($handle,LOCK_EX))throw new \RuntimeException('Auth fallback lock unavailable.');$raw=stream_get_contents($handle);$rows=json_decode(is_string($raw)?$raw:'',true);if(!is_array($rows))$rows=[];$result=$callback($rows);rewind($handle);ftruncate($handle,0);fwrite($handle,json_encode($rows,JSON_THROW_ON_ERROR));fflush($handle);@chmod($this->path,0600);flock($handle,LOCK_UN);return $result; } finally { fclose($handle); }
+    }
+}
+
 final class LoginRateLimiter
 {
     /** @var \Closure():int */

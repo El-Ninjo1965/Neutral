@@ -475,3 +475,7 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 ### Production-classified follow-up
 
 The first classified smoke reached `AUTH_USER_LOOKUP_UNAVAILABLE`, proving throttle DDL was no longer the active failure. The credential query then exposed the decisive native-PDO incompatibility: it reused named parameter `:username` twice while `PDO::ATTR_EMULATE_PREPARES=false`, which MySQL rejects as `HY093`. Username and optional-email comparisons now use distinct bound parameters.
+
+### Production throttle persistence fallback
+
+After the native-placeholder correction, production classification advanced back to `AUTH_THROTTLE_UNAVAILABLE`, proving that the credential lookup now completed and the remaining failure was throttle persistence DML. A private, locked, mode-0600 file store now preserves rate limiting if the dedicated DB table is unavailable; it is a fallback, not a bypass or telemetry sink.

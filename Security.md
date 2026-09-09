@@ -148,3 +148,5 @@ Login never runs DDL or acquires a schema advisory lock inside the credential tr
 ## P0 authentication failure classification (2026-09-09)
 
 Request handlers never execute auth schema DDL. `login_attempts` is provisioned only by the checksummed schema migration; runtime uses SELECT/INSERT/DELETE DML. Safe 503 details distinguish `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED`, and `AUTH_SESSION_PERSISTENCE_FAILED`, accompanied only by a random correlation ID. They never expose exception messages, SQL, account identifiers, credentials or cookies. Invalid credentials remain 401 and device exhaustion remains 409 `DEVICE_LIMIT_REACHED`.
+
+If `login_attempts` DML is unavailable, authentication rate limiting fails over to `Server/runtime/login-attempts.json`. The store contains only SHA-256 scope keys and bounded counters/timestamps, uses an exclusive filesystem lock and mode `0600`, and never stores usernames, IP plaintext, credentials, cookies or session data.

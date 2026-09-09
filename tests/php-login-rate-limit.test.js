@@ -99,3 +99,12 @@ $root=getenv('NEUTRAL_TEST_ROOT');$config=new Neutral\\Core\\AppConfig(['APP_ENV
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.deepEqual(JSON.parse(result.stdout), { result: null });
 });
+
+test('login limiter preserves fail-safe throttling through private file fallback when PDO DML is unavailable', () => {
+  const result = runPhp(`
+require getenv('NEUTRAL_TEST_ROOT') . '/Server/php/src/LoginRateLimiter.php';
+class BrokenAttempts implements \\Neutral\\Core\\LoginAttemptStore {public function state(string $key):?array{throw new RuntimeException('db unavailable');}public function recordFailure(string $key,int $limit,int $window,int $lock,int $now):array{throw new RuntimeException('db unavailable');}public function delete(array $keys):void{throw new RuntimeException('db unavailable');}public function purgeExpired(int $before):void{throw new RuntimeException('db unavailable');}}
+$path=sys_get_temp_dir().'/neutral-auth-fallback-'.bin2hex(random_bytes(4)).'.json';$store=new Neutral\\Core\\FallbackLoginAttemptStore(new BrokenAttempts(),new Neutral\\Core\\FileLoginAttemptStore($path));$limiter=new Neutral\\Core\\LoginRateLimiter($store,static fn():int=>1000,['identifierLimit'=>1,'ipLimit'=>10]);$limiter->registerFailure('missing','127.0.0.1');$second=$limiter->registerFailure('missing','127.0.0.1');$blocked=$limiter->check('missing','127.0.0.1');$mode=substr(sprintf('%o',fileperms($path)),-3);unlink($path);echo json_encode(compact('second','blocked','mode'));`);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const data=JSON.parse(result.stdout); assert.equal(data.second.allowed,false); assert.equal(data.blocked.allowed,false); assert.equal(data.mode,'600');
+});

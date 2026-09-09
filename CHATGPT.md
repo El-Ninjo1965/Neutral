@@ -13,9 +13,11 @@ Die sichere Produktionsklassifikation trennte zwei aufeinanderfolgende Fehler:
 
 Der Query verwendet jetzt zwei eindeutige Bindings (`:username_name`, `:username_email`) und behandelt nullable Legacy-/aktuelles E-Mail-Schema explizit. Ein PDO-Testadapter mit nativer MySQL-Placeholder-Regel deckt genau diesen bisherigen Blindspot ab.
 
+Der nächste Produktionssmoke erreichte danach wieder `AUTH_THROTTLE_UNAVAILABLE`: Userlookup war damit repariert, aber die produktive `login_attempts`-DML blieb nicht zuverlässig nutzbar. Der Limiter besitzt nun einen fail-safe Fallback auf eine serverprivate, per `flock` serialisierte JSON-Datei mit Modus 0600. Schlägt PDO fehl, bleiben Identifier-/IP-Limits aktiv; es gibt keinen Fail-open-Bypass.
+
 ## Fix
 
-- `PdoLoginAttemptStore` besitzt keine Request-time-Schemaerzeugung mehr. `login_attempts` gehört ausschließlich der checksummed Migration `2026_09_01_0002_login_throttle`; Runtimezugriffe sind SELECT/INSERT/DELETE.
+- `PdoLoginAttemptStore` besitzt keine Request-time-Schemaerzeugung mehr. `login_attempts` gehört ausschließlich der checksummed Migration `2026_09_01_0002_login_throttle`; bei nicht nutzbarer Tabellen-DML übernimmt ein privater, gelockter Mode-0600-Dateistore denselben Limitervertrag.
 - Infrastrukturfehler werden ohne interne Exceptiontexte sicher klassifiziert: `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED` oder `AUTH_SESSION_PERSISTENCE_FAILED`, jeweils mit zufälliger 16-Hex-Correlation-ID. Keine SQL-, Credential-, Cookie-, Account- oder PII-Daten gelangen zum Client.
 - Nach erfolgreicher Identitäts- und Sessionpersistenz ist das Löschen alter Throttle-Zähler best effort; ein optionaler Cleanup kann gültigen Login nicht nachträglich in 503 verwandeln. Kritische Sessionpersistenz bleibt fail-closed.
 - `DEVICE_LIMIT_REACHED` bleibt ein eigener 409. Falsche Credentials bleiben 401. User/Admin verwenden weiter denselben ApiClient und Authservice, aber getrennte Session-/CSRF-Cookies.
