@@ -10,17 +10,24 @@
 
 Der vorige gebündelte Auftrag wurde deployed. Der reale Betreiber-Retest auf **demselben iPad mit Google Chrome** zeigt weiterhin konkrete Abweichungen. Diese Livebefunde sind verbindliche Wahrheit und haben Vorrang vor grünen Tests.
 
-Arbeite autonom, test-first und bündele die zusammengehörigen Punkte. P1/P4 dürfen nicht regressieren. Kein GPS Pro, keine CatchTrack-spezifische Logik, keine allgemeine i18n-Phase.
+Arbeite autonom, systematisch und test-first bis zum vollständigen Abschluss dieses gesamten Auftrags oder bis ein Punkt nachweislich externen Betreiber-/Hostzugriff benötigt. Nicht nach einzelnen Teilpunkten stoppen oder Rückfragen stellen, wenn die Antwort aus Repository, Tests, Dokumentation oder sicherer Diagnose selbst ermittelbar ist.
+
+P1/P4 dürfen nicht regressieren. Kein GPS Pro, keine CatchTrack-spezifische Logik, keine allgemeine i18n-Phase.
 
 ---
 
-# 1. Pflicht-Preflight
+# 1. Pflicht-Preflight und Arbeitsweise
 
 1. Vollständig mit `origin/main` synchronisieren.
 2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `CORE-1.0.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, `Modules.md`, relevante Install-/Deployment-/Backup-Dokumentation und alle betroffenen Implementierungs-/Testdateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen und vor Implementierung dokumentieren: `CODEX.md == CURRENT-TASK-Anforderungen`.
-4. Für jeden Fehler zuerst reproduzierenden Test oder belastbare Root-Cause-Evidenz herstellen.
-5. Keine Secrets/sensitiven Produktionsdaten ausgeben. Kein Restore auf Produktion.
+4. Für jeden Fehler zuerst reproduzierenden Test oder belastbare Root-Cause-Evidenz herstellen. Root Causes beheben, keine symptomatischen Schnellfixes.
+5. Die aktuellen iPad/Chrome-Livebefunde sind die verbindliche Wahrheit und haben Vorrang vor früheren grünen Tests.
+6. Echte Integration-/DOM-/Contract-Tests ergänzen. Reine Source-/Regex-Checks gelten nicht als ausreichende Abnahme.
+7. Keine Secrets/sensitiven Produktionsdaten ausgeben. Kein Restore auf Produktion. Keine destruktiven Produktionsaktionen.
+8. Keine echte zweite Installation pauschal löschen oder verbieten. Keine Hardwarefingerprints.
+9. Core nur dort ändern, wo eine nachgewiesene generische Frameworklücke besteht; keine produktspezifische Logik in Core.
+10. Alle zusammengehörigen Punkte dieses Auftrags bearbeiten und anschließend vollständige Regression, Packaging, Deployment und Übergabe durchführen.
 
 ---
 
@@ -53,7 +60,7 @@ Die serverseitige UA-Heuristik ist live noch falsch. Prüfe den **realen Chrome-
 
 - Wenn Chrome sicher erkennbar: `Chrome`.
 - Wenn iPadOS sicher/belastbar erkennbar: `iPadOS`.
-- Wenn OS wegen Desktop-UA nicht belastbar unterscheidbar ist: keine falsche Gewissheit; z. B. `Apple tablet/browser` bzw. neutraler sinnvoller Fallback statt `macOS`, sofern Clientkontext ein Tablet belegt.
+- Wenn OS wegen Desktop-UA nicht belastbar unterscheidbar ist: keine falsche Gewissheit; neutraler sinnvoller Fallback statt `macOS`, sofern Clientkontext ein Tablet belegt.
 - `MacIntel` darf nicht als Gerätebezeichnung erscheinen, wenn es nur ein Navigator-Kompatibilitätswert ist.
 
 Echte JS/PHP-Integrationstests für Storage-Persistenz über Login/Logout/403/Reload, gleiche Installation mit zwei Usern, mehrfachen Login und iPad-Chrome-Desktop-UA ergänzen.
@@ -272,21 +279,16 @@ Danach vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktions
 
 ---
 
-# 13. Deploy und Übergabe
+# 13. Deploy, CI, Produktionsprüfung und Übergabe – verbindlich
 
-Gemäß `WORKFLOW.md`:
+Nach Implementierung den Auftrag **nicht** nach lokalen grünen Tests beenden.
 
-1. Commit/push `main`.
-2. Erforderliche CodeQL-/FTPS-/CI-Runs terminal abwarten.
-3. `HEAD == origin/main`, sauberer Working Tree.
-4. Deploymentrevision/read-only Smoke verifizieren.
-5. Keine destruktiven Produktionsaktionen.
-6. `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, relevante Verträge wahrheitsgemäß aktualisieren.
-7. Abschlussbericht in `CHATGPT.md` mit klarer Trennung:
-   - code-seitig verifiziert,
-   - deployed,
-   - DEVICE RETEST REQUIRED,
-   - HOST ACTION REQUIRED.
-8. Kurze konkrete iPad/Chrome-Retestliste liefern.
-
-**Nichts als LIVE BESTANDEN markieren, was nicht real durch Betreiber bestätigt wurde.**
+1. Vollständige Regression und Produktionspaket ausführen.
+2. Gemäß `WORKFLOW.md` committen und nach `main` pushen.
+3. Alle erforderlichen CI-, CodeQL- und FTPS-Läufe **terminal abwarten**; nicht nur starten.
+4. `HEAD == origin/main` und sauberen Working Tree verifizieren.
+5. Deploymentrevision und read-only Produktionssmoke verifizieren.
+6. Sichere Produktionschecks durchführen, soweit ohne Betreiberinteraktion und ohne Secrets/destruktive Aktionen möglich.
+7. `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und relevante Verträge wahrheitsgemäß aktualisieren.
+8. Nicht selbst prüfbare Punkte ausdrücklich als `DEVICE RETEST REQUIRED` bzw. `HOST ACTION REQUIRED` kennzeichnen.
+9. Nichts als `LIVE BESTANDEN` melden, was nicht real durch den Betreiber bestätigt
