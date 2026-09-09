@@ -5,380 +5,418 @@
 
 # Aktueller Auftrag
 
-## Größeres Folgepaket: Appearance UX V2 + Button/Navigation Design + lokale User-Personalisierung
+## Admin Operations Reality Check + Access/Permission Cleanup + Device Sessions
+
+Dies ist bewusst ein größeres, zusammenhängendes Arbeitspaket aus dem realen Betreiber-iPad-Retest. Nicht nur Screens kosmetisch korrigieren: bestehende Verträge und reale Runtime prüfen, Root Causes beheben und Adminseiten an autoritative Datenquellen anbinden.
 
 Synchronisiere zuerst vollständig mit `origin/main` und bewahre alle neueren Änderungen.
 
-Lies vor Implementierung vollständig `WORKFLOW.md`, `DOCUMENTATION.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, `UI-UX.md`, `USER-UI-DESIGN.md`, `I18N.md`, `VISION.md`, `CORE-1.0.md`, `Architecture.md`, `Functions.md`, `ModuleCreation.md` sowie alle relevanten Appearance-, User-Settings-, Navigation-, Header-, Login-, Theme-/Token-, CSS-, Local-Storage-/Cache-, API-, Service-Worker-, Security- und Testdateien.
+Lies vollständig mindestens:
 
-Übernimm danach den vollständigen Auftrag nach `CURRENT-TASK.md` und prüfe:
+- `WORKFLOW.md`
+- `DOCUMENTATION.md`
+- `CODEX.md`
+- `CURRENT-TASK.md`
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `CHANGELOG.md`
+- `CORE-1.0.md`
+- `Architecture.md`
+- `Security.md`
+- `API.md`
+- `Database.md`
+- `Functions.md`
+- `ModuleCreation.md`
+- `CONNECTIONS.md`
+- `UI-UX.md`
+- Install-/Deployment-/Backup-Dokumentation
+- alle relevanten Auth-, Session-, Role-/Permission-, Module-, Admin-, Settings-, Backup-, Maintenance-, Health-/Diagnostics-, Runtime-, Database-, Audit-, PHP-/Node-, Migration- und Testdateien.
+
+Übernimm den Auftrag vollständig nach `CURRENT-TASK.md` und prüfe vor Implementierung:
 
 `CODEX.md == CURRENT-TASK-Anforderungen`
 
-# Ausgangslage / echter Betreiber-Device-Retest
-
-Der User-UI-Designeditor V1 ist code-seitig fertig und auf dem realen iPad geprüft worden. Grundfunktion, nativer iPad-Farbwähler und Struktur sind vorhanden. Der Betreiber hat jedoch mehrere zusammenhängende UX-/Designprobleme festgestellt. Diese sollen bewusst in **einem größeren Arbeitspaket** gelöst werden, statt viele kleine Codex-Runden zu erzeugen.
-
 P1 und P4 bleiben `LIVE BESTANDEN` und dürfen nicht regressieren.
 
-# A – Farbeingaben im Appearance-Editor verständlich machen
+---
 
-Aktueller realer Befund:
+# 1. Architekturentscheidung: User-App hat keine Admin-Funktionen
 
-- `<input type="color">` erscheint auf iPad/Safari innerhalb des Formulars im Wesentlichen als sehr dünner horizontaler Farbstreifen.
-- besonders bei Schwarz/Dark ist die aktuelle Farbe praktisch nicht sinnvoll erkennbar;
-- beim Antippen öffnet sich dagegen der native iPad-Farbwähler und dieser wird vom Betreiber ausdrücklich als gut bewertet;
-- der native Picker soll daher erhalten bleiben.
+Die User-App und die Admin-UI sind getrennte Produktebenen.
 
-## Ziel
+Verbindlicher Vertrag:
 
-Jede Farbeingabe soll **vor dem Öffnen des Pickers** sofort verständlich zeigen:
+- **User-App enthält keinerlei Admin-Funktionen.**
+- Adminverwaltung, Userverwaltung, Rollen, Permissions, Sessions, Audit, Infrastruktur, Backups, Maintenance und Diagnostics existieren ausschließlich in der Admin-UI/API-Sicherheitsdomäne.
+- Normale User-/Viewer-Rollen dürfen nicht deshalb Admin-Leserechte erhalten, nur damit die User-App funktioniert.
+- User-App-Permissions sind ausschließlich fachliche App-/Modulrechte.
+- Admin-Permissions sind ausschließlich administrative/Betriebsrechte.
 
-- einen deutlich sichtbaren Farbswatch, bevorzugt runder Farbpunkt/Farbkreis ungefähr in der Größenordnung eines normalen Header-Icons;
-- den aktuellen normalisierten Hexwert, z. B. `#0B0F14`;
-- klare Klick-/Touch-Affordance;
-- ausreichende Abgrenzung des Swatches auch bei Schwarz, Weiß und Farben nahe der umgebenden Admin-Surface.
+Prüfe Code, Seed-Daten, Defaultrollen, APIs und Dokumentation gegen diesen Vertrag.
 
-Der Swatch darf deshalb einen neutralen/leicht grauen kontrastierenden Träger/Rahmen besitzen, ohne die eigentliche Farbe zu verfälschen.
+---
 
-Der native `input[type=color]`-Dialog bleibt die eigentliche Farbauswahl. Keine eigene komplexe Color-Picker-Bibliothek erfinden.
+# 2. Permission-Audit und Defaultrollen bereinigen
 
-Wenn Safari/iPad eine direkte Hex-Eingabe im nativen Picker anbietet, genügt dies für V2; im Adminformular selbst muss der Hexwert mindestens sichtbar sein. Eine zusätzliche direkte Hex-Eingabe im Formular nur dann ergänzen, wenn sie sauber synchronisiert, validiert und UX-seitig eindeutig ist.
+Realer Befund: Systemrolle `viewer` besitzt aktuell u. a. `admin.read`, `audit.read`, `auth.read`, `role.read`, `session.read`, `settings.read`, `user.read` zusätzlich zu GPS-Rechten. Das passt nicht mehr zur getrennten Architektur.
 
-# B – User-UI-Design-Tokens komponentenspezifisch erweitern
+## Auftrag
 
-Die bisherigen groben Tokens reichen für reale App-Gestaltung nicht aus. Insbesondere Settings, Home/GPS und Login zeigen, dass Hintergrund/Text/Icon/Border getrennt steuerbar sein müssen.
+- Audit aller Core- und Modulpermissions.
+- Klassifiziere semantisch mindestens in `admin/system` und `user-app/module`.
+- Entferne Adminrechte aus normalen User-/Viewer-Defaultrollen, sofern keine fachlich zwingende serverseitige Notwendigkeit besteht.
+- Keine Security nur über versteckte Navigation: Serverendpunkte müssen weiterhin Permissionchecks erzwingen.
+- Prüfe `auth.read`/ähnliche Altkeys kritisch: nur behalten, wenn ein realer, dokumentierter Zweck existiert.
+- Bestehende Installationen sauber migrieren; keine bloße Änderung nur neuer Seeds.
+- Systemrollen weiterhin geschützt.
+- Modulrechte bleiben deklarativ durch Core/Modulvertrag registriert.
 
-Erweitere den strukturierten Designvertrag sinnvoll und semantisch, jeweils **Light und Dark getrennt**, mindestens um:
+Keine manuelle freie Permission-Erstellung im normalen Admin-UI einführen. Permissions entstehen aus Core und installierten Modulen; Admin weist sie Rollen zu.
 
-## Primary Action
+---
 
-- Background
-- Text
-- Icon
-- Border
+# 3. Permission Catalog UX neu ordnen
 
-## Secondary Action / Header Action
+Realer Befund: Permission-Key, Beschreibung und Scope laufen optisch zusammen und sind kaum lesbar.
 
-- Background
-- Text
-- Icon
-- Border
+Baue eine klare read-only Registry, bevorzugt Tabelle/Responsive Cards mit mindestens:
 
-## Navigation – aktiv
+- Permission Key
+- verständliche Beschreibung
+- Bereich/Scope (`Admin`, `User-App`, ggf. `System`)
+- Quelle (`Core` oder konkretes Modul)
 
-- Background
-- Text
-- Icon
-- Border
+Ergänze sinnvolle Suche/Filter, mindestens nach Admin/User-App und Core/Module, sofern auf Tablet/Mobile sauber.
 
-## Navigation – inaktiv
+Keine Delete-/Edit-Funktion für Registry-Keys im normalen Adminbereich.
 
-- Background
-- Text
-- Icon
-- Border
+---
 
-## Form Controls
+# 4. Device Sessions statt kurzlebiger 12h-Login-Sessions
 
-- Input Background, sofern noch nicht sauber aus Surface ableitbar
-- Input Text
-- Input Border
-- Input Focus Border / Focus Ring
+Zielvertrag des Produkts:
 
-Nutze semantische zentrale Tokens. Keine einzelnen Regeln nur für `Settings`, `GPS` oder `Login` hart codieren. Die zentrale Designsprache muss von aktuellen und zukünftigen Modulen geerbt werden können.
+- Ein Nutzer meldet sich auf einem Endgerät grundsätzlich einmal an und bleibt angemeldet, bis Logout, Widerruf oder ein relevantes Security-Ereignis die Geräte-Session beendet.
+- Eine App-/Browserinstallation entspricht einer Geräte-Session.
+- Keine invasive Hardware-ID/Fingerprinting-Lösung.
+- Neutral erzeugt eine kryptographisch zufällige Installations-/Device-ID und bindet die serverseitige Session daran.
+- Geräte-Sessions sind serverseitig widerrufbar.
+- Ein Zweitgerät erzeugt eine zweite Geräte-Session.
+- Tarif/Paket kann künftig/maximal eine bestimmte Anzahl aktiver Geräte erlauben. Implementiere mindestens einen sauberen zentralen Limitvertrag/Hook bzw. vorhandenen quantitativen Vertrag; keine verstreuten Hardcodes.
+- Bei erreichtem Limit nicht still zusätzliche Geräte zulassen. Liefere einen klaren, sicheren Fehler-/Managementpfad.
+- Logout beendet die aktuelle Geräte-Session.
+- Admin kann einzelne Geräte-Sessions widerrufen.
+- Security-Ereignisse müssen alle Sessions eines Users widerrufen können.
 
-## Betreiberbeispiele
+WICHTIG: Persistenter Login bedeutet nicht „unwiderrufbares Cookie für immer“. Entwirf einen sicheren persistenten Geräte-Session-/Remember-Vertrag mit Rotation/Erneuerung soweit nötig, serverseitigem Widerruf und sicheren Cookieflags. Keine langlebigen Secrets in localStorage.
 
-Der Betreiber möchte z. B. im Dark Theme bewusst:
+Bestehende 12h-Sessions sicher migrieren/ablösen. Dokumentiere Threat Model und Entscheidung in `Security.md`.
 
-- gelbe oder andersfarbige Icons/Text auf dunklen Buttons wählen können;
-- den aktiven Home-Button heller/dunkler blau definieren können;
-- in Light möglicherweise schwarze Texte/Icons wählen;
-- inaktive Navigation klar als touchbare Buttons erkennen können.
+---
 
-Das sind Beispiele, keine fest einzubauenden Farben. Der Editor soll diese Freiheit ermöglichen.
+# 5. Session Overview auf Geräteverwaltung umbauen
 
-# C – Dark-Mode-Defaults und Form-Control-Kontrast verbessern
+Realer Befund: viele nahezu identische Sessions, rohe Issued/Expires-Zeiten, keine Geräteinformation.
+
+Adminansicht soll mindestens zeigen:
+
+- User
+- Rolle nur soweit hilfreich
+- Gerät/Installation verständlich identifizierbar
+- Plattform/Browser soweit datenschutzfreundlich aus vorhandenen Requestdaten ableitbar
+- erstellt/registriert
+- letzte Aktivität
+- Status
+- `Current session` eindeutig markieren
+- einzelne fremde/andere Geräte-Session widerrufen
+
+Keine IP unnötig prominent anzeigen/speichern; nur falls Securityvertrag dies wirklich benötigt, datensparsam behandeln.
+
+Abgelaufene/widerrufene Alt-Sessions nicht als endlose aktive Liste darstellen. Retention/Cleanup definieren.
+
+---
+
+# 6. Infrastructure & Monitoring Reality Check
+
+Die folgenden realen Adminseiten zeigen aktuell teilweise Gerüste/Platzhalter trotz funktionierender Installation:
+
+## Connections & Providers
+
+Befund:
+
+- `No providers configured`
+- Current connection `unknown`
+- gleichzeitig Formularplatzhalter wie `default-connection`, `neutral-app`, `https://api.example.com`.
+
+Auditieren:
+
+- Welchen realen Zweck hat Connections/Providers in der aktuellen Architektur?
+- Reale Provider/Connections aus autoritativer Konfiguration anzeigen.
+- Beispielwerte nicht als produktive Konfiguration darstellen.
+- Falls ein Teil nur zukünftiger Vertrag ist: klar als nicht konfiguriert/optional darstellen statt falschen Runtimezustand zu suggerieren.
+- Secrets niemals anzeigen.
+
+## Server
+
+Befund:
+
+- reale Domain vorhanden, aber Status `unknown`, Reachable `—`, Framework metadata `{}`.
+
+An reale Health-/Runtimequelle anbinden. `Test server` muss einen echten sicheren Test ausführen und verständliches Ergebnis liefern.
+
+## Database
+
+Befund:
+
+- MySQL wird real produktiv genutzt, Admin zeigt dennoch Status `unknown`, Host/Name/User `—`, Setup `{}`.
+
+An autoritativen DB-/Setupstatus anbinden. Nur sichere Metadaten anzeigen; niemals Passwort/Secrets. Keine interne Fehler-/Pfadleaks.
+
+## Diagnostics
+
+Befund:
+
+- Status `unknown`
+- Memory/Disk `N/A`
+- Modules `0` trotz installiertem GPS
+- Apps `0`
+- Framework Summary `{}`.
+
+Diagnostics muss reale, sichere Daten zeigen. Werte, die auf Shared Hosting nicht zuverlässig verfügbar sind, lieber als `Unavailable on this runtime` erklären statt falsche Nullen/N/A. Modulanzahl aus realer Registry. Keine vertraulichen Environmentdetails.
+
+## Gemeinsamer Vertrag
+
+Server, Database, Connections und Diagnostics dürfen keine vier konkurrierenden Wahrheiten besitzen. Nutze gemeinsame autoritative Services/DTOs, wo fachlich sinnvoll.
+
+---
+
+# 7. Maintenance & Updates fertigstellen
 
 Realer Befund:
 
-- Eingabefelder im Dark Theme sind teilweise nur schwer von der umgebenden Fläche zu unterscheiden;
-- Border ist zu dunkel/kontrastarm;
-- dadurch ist nicht sofort klar, wo das Eingabefeld beginnt und endet.
+- Status `Operational`
+- Version `—`
+- Updated `—`
+- Maintenance-Schalter + Reason vorhanden
+- unklar, ob realer Wartungsmodus/Updatevertrag dahinterliegt.
 
-Überarbeite die **Frameworkdefaults** für Dark so, dass Controls auch ohne Admin-Anpassung klar erkennbar sind.
+## Maintenance Mode
 
-- Border ausreichend sichtbar;
-- Fokuszustand noch klarer;
-- keine ausschließlich farbliche Information;
-- kein übertriebener Glow;
-- bestehende Accessibility-/Touch-Verträge respektieren.
+Prüfe und implementiere/finalisiere:
 
-Der Admin kann diese Werte anschließend über die neuen Form-Control-Tokens anpassen.
+- persistenter serverseitiger Maintenance-State;
+- normale User-App wird bei aktivem Maintenance Mode kontrolliert blockiert bzw. erhält eine klare Wartungsseite/Antwort;
+- Admin-UI bleibt für autorisierte Admins erreichbar;
+- optionaler Wartungsgrund wird sicher/escaped angezeigt;
+- Zeitpunkt und ggf. auslösender Admin intern nachvollziehbar;
+- klarer Active/Inactive-Status;
+- keine Lockout-Falle, die Admin selbst aussperrt.
 
-# D – Preview deutlich aussagekräftiger machen
+## Release/Updates
 
-Die Preview muss alle neu steuerbaren Komponenten zeigen und denselben Mappingvertrag wie die reale User-App verwenden.
+- reale Framework-/Release-/Buildversion und letzter Deploy-/Updatezeitpunkt anzeigen, sofern aus versionierter Build-/Releasequelle belastbar ableitbar;
+- `Operational` nicht statisch vortäuschen;
+- wenn kein selbstständiger Update-Mechanismus existiert, keinen funktionierenden Updater suggerieren;
+- UI ehrlich zwischen Release Information und tatsächlich unterstützten Updateaktionen unterscheiden.
 
-Mindestens darstellen:
+---
 
-- App/Page Background;
-- Surface/Card;
-- Header Action;
-- Primary Action;
-- Secondary Action;
-- aktive Navigation;
-- inaktive Navigation;
-- Icon + Text;
-- Input normal;
-- Input Fokus-Demonstration bzw. klarer Focus-Sample;
-- Primary/Muted Text;
-- Border.
+# 8. Backup & Restore vollständig auditieren/finalisieren
 
-Light/Dark gezielt umschaltbar. Preview darf niemals die Admin-Shell selbst umstylen.
+Security-Vertrag erhalten: verwaltete Neutral-Tabellen, Sessions/Login-Throttling ausgeschlossen, AES-256-GCM, hostlokaler Schlüssel, Integritäts-/Format-/Tabellenprüfung vor Restore.
 
-# E – Appearance-Editor besser gruppieren / Progressive Disclosure
+Realer Befund:
 
-Der Editor wird umfangreicher. Vermeide eine endlose unstrukturierte Liste.
+- Settings zeigt seit Beginn `Enable Automatic Backups` aktiviert und Interval `Daily`.
+- Backup-Seite zeigt trotzdem `No backups available yet`.
 
-Gruppiere sinnvoll, z. B.:
+Das ist zu klären und zu beheben: Scheduler/Trigger läuft nicht oder Liste ist nicht mit realen Backups verbunden.
 
-- Base Colors
-- Actions & Buttons
-- Navigation
-- Forms
-- Geometry & Typography
-- Preview
+## Funktionaler Zielumfang
 
-Die konkrete UX darf besser gewählt werden, wenn sie auf iPad/Mobile/Desktop klarer ist.
+- `Create backup` erstellt real verschlüsseltes Backup.
+- Liste zeigt reale Backups mit Datum/Zeit, Größe, Format-/Schema-/Appversion soweit sinnvoll und Status.
+- Download vorhandener Backups.
+- Restore nach Integritäts-/Kompatibilitätsprüfung und deutlicher Bestätigung.
+- Upload eines verschlüsselten Neutral-Backups + sichere Validierung + Restore.
+- Delete für nicht benötigte Backups mit Bestätigung.
+- automatische Backups funktionieren tatsächlich.
+- `Daily` darf in der Entwicklungsphase Default/aktiver Wert bleiben.
+- konfigurierbare Retention, damit Backups nicht unbegrenzt wachsen; wähle einen sicheren vernünftigen Default und dokumentiere ihn.
+- Fehler des letzten automatischen Backups im Admin sichtbar, ohne Secrets.
+- Restore invalidiert erforderliche Sessions und erzwingt sauberen Re-Login gemäß Sicherheitsvertrag.
 
-Keine unnötige neue Router-/Seitenhierarchie, sofern Akkordeons/Sections innerhalb `Appearance` besser sind.
+Wenn Shared Hosting keinen permanenten Scheduler besitzt, entwirf einen realistischen host-kompatiblen Triggervertrag (z. B. cPanel Cron/geschützter serverseitiger Trigger) und dokumentiere die Betriebsanforderung. Keine Fake-Automatik nur über UI-Checkbox.
 
-# F – Advanced Custom CSS als Expertenfunktion einklappen
+---
 
-Realer Betreiberbefund: Die Funktion ist technisch sinnvoll, aber für einen normalen Betreiber ohne CSS-Kenntnisse zunächst unverständlich.
+# 9. Audit Log: lesbar + Retention/Purge
 
-Behalte Advanced Custom CSS, aber:
+Audit Log bleibt grundsätzlich append-only/unveränderlich; keine normalen Einzel-Edit/Delete-Aktionen.
 
-- standardmäßig eingeklappt;
-- eindeutig als **Advanced / Expert** kennzeichnen;
-- kurze verständliche Erklärung: nur verwenden, wenn die strukturierten Designoptionen nicht ausreichen;
-- bestehende technische Sicherheitsdetails nicht als dominanten normalen UI-Text darstellen; bei Bedarf in Help/Details verschieben;
-- `Clear Custom CSS` bleibt vorhanden;
-- bestehender Sicherheitsvertrag, Größenlimit und CSP bleiben unverändert streng.
+Verbessere UX:
 
-# G – Lokale User-Einstellung für Navigationsdarstellung
+- lesbare Spalten/Responsive Darstellung;
+- Details/JSON standardmäßig kompakt/einklappbar und formatiert;
+- Suche/Filter nach Zeitraum, Eventtyp, Bereich, Status/User soweit sinnvoll;
+- keine Secret-/PII-Leaks in Details.
 
-Neue persönliche User-Präferenz unter normalen **User Settings**, nicht Admin Appearance.
+## Retention
 
-Der Endnutzer soll lokal auf seinem Endgerät wählen können:
+Adminfunktion für kontrollierte Bereinigung:
 
-1. **Icon + Text** – Default
-2. **Icons only**
-3. **Text only**
+- z. B. älter als 30/90/180/365 Tage bzw. konfigurierbarer Retentionvertrag;
+- deutliche Bestätigung;
+- Bereinigungsaktion selbst auditieren, bevor alte Einträge entfernt werden;
+- optionaler vollständiger Clear ausschließlich für expliziten Development/Test-Kontext, nicht als normale Produktionsaktion;
+- keine Möglichkeit, gezielt belastende einzelne Auditzeilen unbemerkt zu entfernen.
 
-## Vertrag
+---
 
-- lokal persistent;
-- offline;
-- keine Server-/DB-Pflicht;
-- pro Endgerät;
-- Default `Icon + Text`;
-- gilt konsistent für zentrale User-App-Navigation/Header-Actions, soweit ein Element Icon und Text besitzt;
-- Accessibility-Namen bleiben unabhängig von sichtbarer Darstellung immer vorhanden;
-- bei `Icons only` müssen `aria-label`/accessible names und sinnvolle Tooltips/Title erhalten bleiben;
-- bei `Text only` darf das Fehlen des Icons das Layout nicht beschädigen;
-- Responsive Layout bleibt stabil.
+# 10. System Settings konsistent machen
 
-Home, Settings und Login erhalten etablierte lokale Icons:
+Prüfe die vorhandenen Settings:
 
-- Home: bestehendes Haus-Icon;
-- Settings: Zahnrad;
-- Login/Sign-in: etabliertes Sign-in-Symbol, bevorzugt Tür/Entry mit Pfeil statt Schlüssel, sofern das bestehende lokale Iconsystem dies sauber unterstützt;
-- keine Emojis;
-- keine externen Icon-Netzwerkabhängigkeiten.
+- Application Name
+- unveränderliche Application ID
+- Log Level Debug/Info/Warning/Error
+- Automatic Backups
+- Backup Interval
 
-GPS erhält ein etabliertes lokales Location/GPS-Symbol, sofern im bestehenden Iconsystem sinnvoll verfügbar/sauber ergänzbar.
+Anforderungen:
 
-# H – Lokale benutzerdefinierte Anzeigenamen für Navigation
+- Produktionsdefault Log Level sinnvoll (`Info` oder `Warning`; begründe anhand bestehender Loggingarchitektur), nicht unbeabsichtigt dauerhaft Debug.
+- Automatic-Backup-UI muss dem realen Backupvertrag entsprechen.
+- Interval nur Optionen anbieten, die tatsächlich ausführbar sind.
+- Retention ergänzen, wenn dies hier UX-seitig am sinnvollsten ist.
+- keine Einstellungen anbieten, die keinerlei Runtimewirkung besitzen.
 
-Der Endnutzer soll zusätzlich die **sichtbaren Texte zentraler Navigations-/Action-Elemente lokal umbenennen können**.
+---
 
-Motivation:
+# 11. Sicherheit / Datenschutz / Migration
 
-- persönliche Terminologie (`GPS` → `Location`, `Standort` usw.);
-- begrenzte Hilfe für Nutzer, deren Sprache noch nicht offiziell unterstützt wird;
-- maximale Personalisierung ohne globale App-/Modulkonfiguration zu verändern.
+- Auth, CSRF, Sessiontrennung und P1 nicht schwächen.
+- keine Secrets in Adminstatus, Logs, Diagnostics oder Backups.
+- keine Hardwarefingerprints.
+- sichere Cookieflags unter HTTPS.
+- langlebige Geräteauth serverseitig widerrufbar und rotierbar.
+- Migrationen für bestehende Sessions, Rollenpermissions und neue Betriebsdaten test-first.
+- Backup/Restore muss neue relevante persistente Konfiguration berücksichtigen, aber Sessiongeheimnisse weiterhin ausschließen.
+- Admin-UI bleibt die einzige Verwaltungsoberfläche.
 
-## Vertrag
+---
 
-- Defaulttexte bleiben die offiziellen App-/I18N-Bezeichnungen;
-- User kann lokal einen eigenen Anzeigenamen setzen;
-- leer/Reset = wieder offizieller Default;
-- lokale Speicherung pro Endgerät;
-- keine Server-/DB-Pflicht;
-- keine Änderung technischer Modul-IDs, Routen, Berechtigungen oder I18N-Schlüssel;
-- nur Presentation Layer;
-- definierte Maximallänge, die Layoutschäden verhindert; wähle eine sinnvolle Grenze und dokumentiere sie;
-- Eingabe trimmen/normalisieren;
-- kein HTML, nur Text;
-- Reset pro Bezeichnung und sinnvoller `Reset all navigation labels` möglich;
-- bei `Icons only` bleibt die benutzerdefinierte Bezeichnung als Accessibility-/Tooltip-Text sinnvoll nutzbar;
-- bei `Text only` ist sie sichtbarer Text.
+# 12. Test-first / Abnahme
 
-## Scope der Umbenennung
+Ergänze fokussierte Tests und vollständige Regression mindestens für:
 
-Nicht nur hart codierte aktuelle Buttons berücksichtigen. Entwirf einen kleinen generischen lokalen Presentation-Vertrag, sodass **zukünftige zentrale Modulnavigation** ebenfalls einen User-Override anhand stabiler Navigation-/Modul-ID erhalten kann, ohne jedes Modul einzeln in den Core zu programmieren.
+## Permissions
 
-Das Modul selbst und seine fachlichen Inhalte werden dadurch nicht umbenannt; nur sein zentraler Navigations-Anzeigename.
+- Viewer/User besitzt keine Adminrechte per Default.
+- Adminendpunkte bleiben serverseitig geschützt.
+- Modulpermissions registrieren sich deklarativ.
+- Catalog klassifiziert Quelle/Scope korrekt.
 
-# I – User Settings UX
+## Device Sessions
 
-In User Settings einen klaren Bereich, z. B. `Navigation` oder `Interface`, ergänzen:
+- persistenter Login über normalen bisherigen 12h-Zeitraum hinaus;
+- Logout widerruft aktuelle Geräte-Session;
+- Admin widerruft einzelne Geräte-Session;
+- Geräte-ID zufällig/installation-local, kein Hardwarefingerprint;
+- Limitvertrag blockiert zusätzliches Gerät kontrolliert;
+- Current session markiert;
+- keine Authsecrets in localStorage.
 
-- Display style: Icon + Text / Icons only / Text only;
-- darunter lokale Label-Anpassungen;
-- Defaultbezeichnungen sichtbar, damit klar ist, was zurückgesetzt wird;
-- Reset einfach und verständlich;
-- keine Developerbegriffe wie IDs/Keys im normalen UI anzeigen.
+## Infrastructure
 
-Appearance/Theme bleibt dort weiterhin entfernt; der Header-Sonne/Mond-Schalter bleibt der Themezugriff.
+- Server/DB/Diagnostics liefern reale sichere Daten aus autoritativer Quelle;
+- GPS-Modul wird korrekt gezählt;
+- keine `{}`/`unknown`/falsche `0` bei tatsächlich ermittelbarem Zustand;
+- unavailable Werte ehrlich behandelt;
+- Beispiel-URLs nicht als aktive Produktionsverbindung.
 
-# J – I18N-Kompatibilität vorbereiten, aber I18N noch nicht implementieren
+## Maintenance
 
-`I18N.md` bleibt Zukunftsvertrag.
+- User-App bei aktivem Maintenance blockiert;
+- Admin bleibt erreichbar;
+- Reason escaped;
+- State persistent;
+- Deaktivierung stellt Normalbetrieb wieder her.
 
-Wichtig für diese Personalisierung:
+## Backup
 
-- offizieller Defaulttext wird später aus dem aktiven I18N-Schlüssel kommen;
-- lokaler User-Override hat für die sichtbare Navigation Vorrang;
-- Reset fällt auf den **aktuell lokalisierten** offiziellen Text zurück, nicht auf fest verdrahtetes Englisch;
-- keine Sprachpakete/Provider in diesem Auftrag implementieren.
+- create/list/download/delete;
+- encrypted upload/restore;
+- falsches/tampered Backup abgewiesen;
+- Automatic Backup Trigger;
+- Retention;
+- Sessions ausgeschlossen;
+- Restore-Sessionverhalten korrekt.
 
-# K – Local-first / Performance
+## Audit
 
-Alle neuen User-Präferenzen müssen beim Start synchron/lokal früh genug verfügbar sein, dass Navigation nicht sichtbar von `Icon + Text` auf `Icons only` o. ä. springt.
-
-- kein Netzwerk erforderlich;
-- kein neues Loading;
-- kein White-Flash;
-- keine Verschlechterung des bereits live bestandenen Warmstarts;
-- fehlerhafte lokale Präferenz fällt kontrolliert auf `Icon + Text` und offizielle Labels zurück.
-
-# L – Tests / Regression
-
-Test-first. Mindestens:
-
-## Appearance Color UX
-
-- Swatch und Hexwert sichtbar;
-- Schwarz/Weiß auch gegen ähnliche Surface erkennbar;
-- native Color-Input-Funktion erhalten;
-- Hexanzeige synchronisiert sich mit Auswahl.
-
-## Tokenvertrag
-
-- neue Primary/Secondary/Nav-active/Nav-inactive/Form-Tokens Light/Dark gespeichert, validiert, öffentlich projiziert und lokal gecacht;
-- unbekannte Tokens abgewiesen;
-- Defaults funktionieren;
-- bestehende V1-Konfiguration migriert/kompatibel behandelt, ohne Installationen zu brechen.
-
-## Dark Controls
-
-- Default-Border klarer;
-- Focus sichtbar;
-- Admin-Konfiguration wirkt real auf User-App.
-
-## Preview
-
-- alle neuen Komponenten sichtbar;
-- Light/Dark Mapping identisch zur User-App;
-- Admin-Shell unbeeinflusst.
-
-## Advanced CSS
-
-- standardmäßig collapsed;
-- expand/collapse zugänglich;
-- Save/Clear/Security unverändert funktionsfähig.
-
-## Navigation Display Preference
-
-- Default Icon + Text;
-- Icons only;
-- Text only;
-- persistiert nach Reload;
-- offline;
-- ungültiger lokaler Wert → Default;
-- Accessibility bleibt in allen Modi korrekt.
-
-## Label Overrides
-
-- Home/Settings/Login/GPS und generischer Modulnav-Key lokal überschreibbar;
-- Maximallänge;
-- nur Text;
-- einzelner Reset;
-- Reset all;
-- Route/Modul-ID unverändert;
-- Override bleibt lokal;
-- Reset fällt auf offiziellen Default zurück;
-- I18N-kompatibler Fallbackvertrag.
+- Details lesbar/escaped;
+- Filter;
+- Retention purge;
+- Purge selbst auditiert;
+- kein willkürliches Einzeldelete.
 
 ## Regression
 
-- P1 Sessiontrennung;
-- P4 Start Page;
-- Homepage HTML/Module;
-- Warmstart ohne Loading/Flash;
-- User Theme Toggle;
-- Admin Theme Toggle;
+- P1 und P4;
+- Homepage Local-first/Warmstart ohne Loading/White-Flash;
+- User/Admin Theme;
+- Appearance V2;
+- Navigation-Personalisierung;
 - GPS;
 - Login;
-- Auth/CSRF;
+- Userverwaltung;
+- Rollen;
+- Module Lifecycle;
 - Service Worker;
 - Packaging/Base Path;
 - FTPS/Smoke;
-- Custom CSS;
-- keine Secrets/Artefakte.
+- Secret-/Artefaktprüfung.
 
-# Dokumentation
+---
 
-Aktualisiere nach tatsächlicher Implementierung `USER-UI-DESIGN.md`, `UI-UX.md`, `Functions.md`, `Architecture.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md` und weitere betroffene Dokumente wahrheitsgemäß.
+# 13. Dokumentation
 
-I18N nicht als implementiert markieren.
+Nach tatsächlicher Implementierung alle betroffenen Verträge wahrheitsgemäß aktualisieren, insbesondere:
 
-# Abschluss gemäß WORKFLOW.md
+- `Security.md`
+- `Architecture.md`
+- `API.md`
+- `Database.md`
+- `Functions.md`
+- `CONNECTIONS.md`
+- `UI-UX.md`
+- `ModuleCreation.md`
+- Backup-/Install-/Deploymentdokumentation
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `CHANGELOG.md`
+
+Dokumentiere klar, was vollständig implementiert ist und welche hostseitige Betriebsanforderung (z. B. Cron) eventuell noch vom Betreiber konfiguriert werden muss. Keine UI-Funktion als aktiv behaupten, wenn sie nur vorbereitet ist.
+
+---
+
+# 14. Abschluss gemäß WORKFLOW.md
 
 Vollständig:
 
 - fokussierte Tests;
 - vollständige Test-Suite;
 - PHP-Lint;
-- JS-Syntax;
+- JavaScript-Syntaxcheck;
 - `git diff --check`;
 - Produktionspaket;
 - Secret-/Artefaktprüfung;
-- Commit + Push `main`;
+- Commit + Push nach `main`;
 - `HEAD == origin/main`;
 - Working Tree sauber;
 - FTPS + CodeQL terminal abwarten;
-- vollständigen Abschlussbericht in `CHATGPT.md` schreiben und auf GitHub `main` verifizieren;
-- erst danach Abschlussmeldung.
-
-Keine selbst ausführbaren offenen Punkte zurücklassen.
-
-# Betreiber-Device-Retest danach
-
-`CHATGPT.md` soll einen kompakten Retest liefern:
-
-1. Appearance Light/Dark Farbswatches + Hexwerte prüfen.
-2. Primary/Secondary/Nav/Input-Farben ändern, Preview und reale User-App prüfen.
-3. Dark Input-Border/Focus prüfen.
-4. Advanced CSS auf-/zuklappen, kleinen Override testen und clearen.
-5. User Settings → Navigation: alle drei Display-Modi prüfen.
-6. Home/Settings/Login/GPS lokal umbenennen und Reload prüfen.
-7. einzelne Labels und alle Labels resetten.
-8. Warmstart/Offline kurz prüfen: keine Layoutsprünge/Loading/Flash.
-9. Start Page, GPS, Login, User/Admin Theme regressiv prüfen.
-
-Automatisierte Tests ersetzen die reale visuelle iPad-Abnahme nicht.
+- vollständigen Abschlussbericht in `CHATGPT.md` schreiben und nach `main` pushen;
+- `CHATGPT.md` auf GitHub verifizieren
