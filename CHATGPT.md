@@ -56,6 +56,7 @@ Der Auftrag wurde ohne GPS Pro, CatchTrack-spezifische Logik, allgemeine i18n-Ph
 - FTPS Run `34326331062` endete terminal mit `success`; Deploy- und Report-Job waren erfolgreich.
 - Der darin enthaltene read-only Produktionssmoke meldete Root/Rewrite/Status/Modulcatalog erfolgreich, Admin/Core korrekt geschützt, HTTPS erzwungen, zwei Modulverträge, Viewer-GPS und `migrationsReady:true`. `deploymentRevision:true` bestätigt exakt den Implementierungscommit.
 - Die Berichtsversion wurde als Dokumentationscommit `45e601865cde9be263e405daf515f65c3afc1496` übertragen. Dessen CodeQL Run `34326873273` und FTPS Run `34326873533` endeten ebenfalls terminal mit `success`; damit wurde auch der vollständige Übergabestand über denselben Produktionsweg geprüft.
+- Die nachfolgende Nachweisaktualisierung `8cf3b1780d62bbf4f2bb5ee4e91b4f8cbca97731` bestand CodeQL `34327267267` und FTPS `34327267615` ebenfalls terminal. Der finale Smoke bestätigte erneut `deploymentRevision:true` und `migrationsReady:true`; anschließend waren lokales `HEAD` und `origin/main` identisch, der Working Tree sauber und diese Datei per GitHub-API auf `main` bytegleich vorhanden.
 - Ein lokaler UI-Screenshot war nicht ausführbar, weil die Codex-Sandbox kein Chromium-/Chrome-Binary enthält. Das ist eine Werkzeuggrenze und ersetzt nicht den ausdrücklich offenen realen iPad/Chrome-Retest.
 
 ## Kurze Betreiber-Retestliste (iPad/Chrome)

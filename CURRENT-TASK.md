@@ -1,7 +1,7 @@
 # CURRENT TASK — Device-Retest-Follow-up und responsive User-UI
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** IN ARBEIT
+**Status:** ABGESCHLOSSEN · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
 **Grenzen:** P1/P4 regressionsfrei; kein GPS Pro, CatchTrack oder allgemeine i18n-/Appearance-Phase; keine Secrets; keine destruktiven Produktionsaktionen.
 
 ## Verbindliche Arbeitsliste
@@ -21,4 +21,4 @@
 13. [x] Echte JS/PHP-Integration-, DOM- und Contract-Tests für alle Mindestfälle ergänzen; test-first Rot/Grün belegen, reine Regex-Abnahme vermeiden.
 14. [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Secret-/Artefaktprüfung und vollständiges Produktionspaket ausführen.
 15. [x] `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, relevante Verträge und vollständigen Abschlussbericht in `CHATGPT.md` aktualisieren; externe Punkte ausschließlich als `DEVICE RETEST REQUIRED`/`HOST ACTION REQUIRED` kennzeichnen.
-16. [x] Implementierung nach `main` übertragen; CodeQL `34326330930` und FTPS `34326331062` terminal erfolgreich, read-only Smoke bestätigt Deploymentrevision. Finalen Bericht separat übertragen, dessen CI abwarten und danach `HEAD == origin/main`, GitHub-`CHATGPT.md` und sauberen Working Tree abschließend verifizieren.
+16. [x] Implementierung und Abschlussbericht nach `main` übertragen; alle ausgelösten CodeQL-/FTPS-Läufe terminal erfolgreich, read-only Smoke bestätigt die jeweilige Deploymentrevision; `HEAD == origin/main`, GitHub-`CHATGPT.md` aktuell und Working Tree sauber verifiziert.
