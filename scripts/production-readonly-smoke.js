@@ -74,7 +74,8 @@ async function probeInvalidLogin(fetchImpl, baseUrl, route, scope) {
   assertFinalUrl(response.url, requestedUrl, baseUrl);
   const body = await response.text();
   const payload = parseJson(body, `${scope} auth smoke`);
-  requireCondition(response.status === 401, `${scope} auth smoke returned ${response.status} instead of 401.`);
+  const safeCode = String(payload?.error?.details?.code || 'none');
+  requireCondition(response.status === 401, `${scope} auth smoke returned ${response.status} instead of 401 (safeCode=${safeCode}).`);
   requireCondition(payload?.ok === false && /invalid username or password/i.test(payload?.error?.message || ''), `${scope} auth smoke did not return the invalid-credentials contract.`);
   return response.status;
 }
