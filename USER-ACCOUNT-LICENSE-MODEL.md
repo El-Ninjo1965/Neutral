@@ -41,11 +41,19 @@ E-Mail ist **nicht verpflichtend**.
 
 ### Passwort
 
+Verbindliche Passwortpolitik:
+
+- Mindestlänge: **8 Zeichen**;
+- Maximallänge: **25 Zeichen**;
+- **keine Leerzeichen**;
+- keine Pflicht für Großbuchstaben, Kleinbuchstaben, Zahlen oder Sonderzeichen;
+- Sonderzeichen dürfen freiwillig verwendet werden;
 - ausschließlich serverseitig sicher gehasht speichern;
 - keine Speicherung oder Anzeige im Klartext;
-- einfache UX ohne sinnlose Zwangsmischung aus Sonderzeichen/Groß-/Kleinschreibung;
-- Mindestlänge muss sicherheitspolitisch konfigurierbar sein und darf nicht auf ein unsicheres, dauerhaft festes 6-Zeichen-Schema reduziert werden;
-- Initialpasswort kann vom Lizenz-/Organisationsverwalter vergeben werden; User kann es danach selbst ändern.
+- Initialpasswort kann vom Lizenz-/Organisationsverwalter vergeben werden; User kann es danach selbst ändern;
+- Rate-Limiting/Throttle gegen automatisierte Loginversuche bleibt verpflichtend.
+
+Diese Regeln gelten einheitlich für Benutzeranlage, Passwortänderung und alle späteren Reset-/Initialpasswortpfade.
 
 ---
 
