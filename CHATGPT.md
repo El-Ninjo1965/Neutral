@@ -1,50 +1,77 @@
-# NEUTRAL – CODEX ABSCHLUSSBERICHT
+# NEUTRAL — CODEX → CHATGPT/LEA
 
-**Auftrag:** Appearance UX V2 + lokale Navigation-Personalisierung
 **Datum:** 2026-09-09
-**Status:** CODE-SEITIG ABGESCHLOSSEN / DEVICE-RETEST ERFORDERLICH
+**Auftrag:** Admin Operations Reality Check, Permission-Bereinigung und Device Sessions
+**Ergebnis:** vollständig code-seitig abgeschlossen; P1/P4 unverändert `LIVE BESTANDEN`
 
-## Ergebnis
+## 1. Auftrag und Scope
 
-- P1 und P4 bleiben `LIVE BESTANDEN`; Homepage-, Auth-, Theme- und Warmstartverträge wurden erhalten.
-- Appearance nutzt weiterhin den nativen Color Picker, zeigt aber je Farbe einen 38px großen runden, neutral gerahmten Swatch und den synchron aktualisierten normalisierten Hexwert.
-- User UI Design ist progressiv in Base Colors, Actions & Buttons, Navigation, Forms sowie Geometry & Typography gegliedert. Advanced Custom CSS ist standardmäßig eingeklappt und als Expert-Funktion erklärt.
-- Designschema V2 migriert V1 und ergänzt je Light/Dark getrennte Background/Text/Icon/Border-Werte für Primary, Secondary/Header, aktive/inaktive Navigation sowie Input Background/Text/Border/Focus.
-- Dark-Defaults besitzen deutlich hellere Input-/Action-Borders und einen klaren, nicht übertriebenen Focus-Ring.
-- Die isolierte Preview zeigt Header Action, Primary/Secondary, aktive/inaktive Navigation, Icon+Text, Card, Normal-/Focus-Input, Primary/Muted Text und Border mit demselben Mapper wie die User-App.
-- User Settings bietet lokal/offline `Icon + Text` (Default), `Icons only` und `Text only` sowie reine Text-Label-Overrides bis 32 Zeichen für Home, Settings, Login und alle aktuellen/künftigen zentralen Modulnavigationen.
-- Home, Settings, Login, GPS und generische Module verwenden lokale SVGs ohne Netzwerkabhängigkeit. Accessible Names und Tooltips bleiben in allen Darstellungsmodi erhalten.
-- Einzelreset und `Reset all navigation labels` fallen auf den zur Renderzeit gelieferten offiziellen Text zurück. Technische Modul-IDs, Routen, Rechte und I18N-Schlüssel bleiben unverändert; I18N wurde nicht implementiert.
+Der aktive Auftrag aus `CODEX.md` wurde nach vollständiger Synchronisation mit `origin/main` in `CURRENT-TASK.md` übernommen und gegen alle Anforderungen geprüft. Es wurde keine P4-Erweiterung begonnen. Die User-App bleibt frei von Adminverwaltung; sie erhält ausschließlich die öffentliche Maintenance-Projektion zusätzlich zu den bereits vorhandenen öffentlichen Homepage-/Appearance-Projektionen.
 
-## Validierung und Migration
+## 2. Implementierung
 
-- V1-Designrecords werden als Eingabe akzeptiert, auf Schema V2 projiziert und um sichere V2-Defaults ergänzt.
-- Unbekannte Tokens, ungültige Farben und inkompatible Cacheversionen bleiben fail-closed.
-- Neue lokale Preferences werden synchron aus dem bestehenden versionierten User-Preferences-Record gelesen. Ungültige Modi fallen auf Icon+Text, ungültige Labels auf offizielle Texte zurück.
-- Custom CSS behält Größen-/Securityvertrag, getrennten Clear und User-App-Isolation.
+### Permissions und Rollen
 
-## Verifikation
+- `viewer` und `user` erhalten standardmäßig keine Core-Adminrechte mehr.
+- Migration `2026_09_09_0004_operations_device_sessions` entfernt die historischen Admin-Grants auch in bestehenden Installationen.
+- Core-/Admin- und User-App-/Modulpermissions werden im read-only Katalog mit verständlicher Beschreibung, Bereich und Quelle klassifiziert.
+- Die Admin-Registry bietet Suche sowie Bereichs- und Quellenfilter; Edit/Delete freier Permission-Keys wurde nicht eingeführt.
+- Alle Adminendpunkte behalten serverseitige Permission-, Admin-Scope- und CSRF-Prüfungen.
 
-- Fokussierte Appearance-/Design-/Navigation-/API-/PHP-/Auth-Suite: **107/107 bestanden**.
-- Vollständige Suite: **442/442 bestanden**, 0 Fehler, 0 übersprungen.
-- PHP-Lint: **37 Dateien bestanden**.
-- JavaScript-Syntax, `git diff --check`, Secretprüfung bestanden.
-- Produktionspaket: **108 Dateien**, Base Path `""`.
-- Implementierungscommit `7ccae45` nach `main` übertragen.
-- CodeQL Run `34300402856`: terminal `success`.
-- FTPS Deploy Run `34300402921`: terminal `success`, inklusive Paket-/Upload-/Read-only-Smoke-Pfad.
-- Kein Browser war in der Sandbox verfügbar; daher wurde kein Screenshot und keine erfundene visuelle Abnahme erstellt.
+### Persistente Geräte-Sessions
 
-## Betreiber-Device-Retest
+- Browserinstallationen erzeugen lokal eine kryptographisch zufällige 128-Bit-Installations-ID; sie ist kein Authsecret und kein Hardwarefingerprint.
+- Authentifizierung bleibt in HttpOnly-, SameSite-Lax- und unter HTTPS Secure-Cookies. Keine langlebigen Authsecrets liegen in localStorage.
+- Device Sessions besitzen einen erneuerbaren 30-Tage-Vertrag statt des alten 12-Stunden-Vertrags; gültige Altsessions werden transparent migriert.
+- Das zentrale Gerätelimit `AUTH_MAX_DEVICES_PER_USER` hat Default 5 und liefert bei Überschreitung `DEVICE_LIMIT_REACHED` statt stiller Zulassung.
+- Serverwiderruf ist autoritativ: widerrufene DB-Sessions können sich nicht aus einem verbleibenden PHP-Cookie wiederherstellen.
+- Session Overview zeigt Benutzer/Rolle, Gerätebezeichnung, datensparsam abgeleitete Plattform/Browser, Registrierung, letzte Aktivität, Status und `Current session`; fremde Geräte können einzeln widerrufen werden. Abgelaufene/widerrufene Zeilen erscheinen nicht als aktive Geräte.
 
-1. Appearance Light/Dark Farbswatches und Hexwerte prüfen.
-2. Primary/Secondary/Nav/Input-Farben ändern; Preview und reale User-App prüfen.
-3. Dark Input-Border und Focus prüfen.
-4. Advanced CSS auf-/zuklappen, kleinen Override testen und clearen.
-5. User Settings → Navigation: alle drei Display-Modi prüfen.
-6. Home/Settings/Login/GPS lokal umbenennen und Reload prüfen.
-7. einzelne Labels und alle Labels resetten.
-8. Warmstart/Offline prüfen: keine Layoutsprünge, kein Loading/White-Flash.
-9. Start Page, GPS, Login sowie User-/Admin-Theme regressiv prüfen.
+### Infrastruktur und Maintenance
 
-Automatisierte Tests ersetzen diese reale visuelle iPad-Abnahme nicht.
+- Admin Server/Database/Connections/Diagnostics nutzen autoritative PHP-Runtime-, Datenbank- und Modulregistry-Daten statt der bisherigen Beispielwerte bzw. konkurrierender Platzhalter.
+- Produktive Beispiel-Connectionformulare und `api.example.com` wurden entfernt; optionale Provider werden ehrlich als nicht konfiguriert ausgewiesen, Secrets nie dargestellt.
+- Diagnostics zeigt tatsächlich ermittelbare PHP-, Disk-, DB-, Modul- und Appdaten; nicht ermittelbare Werte werden ausdrücklich als nicht verfügbar bezeichnet.
+- `release_state` ist die persistente Maintenance-Wahrheit. Autorisierte Admins können den Zustand ändern, die Admin-UI bleibt erreichbar, und die User-App zeigt bei aktivem Zustand eine kontrollierte Wartungsseite. Der Grund wird ausschließlich per `textContent` dargestellt.
+- Release UI kennzeichnet ausdrücklich, dass kein selbstständiger Updater unterstützt wird.
+
+### Backup/Restore und Audit
+
+- Der vorhandene AES-256-GCM-Vertrag wurde erhalten: verwaltete Tabellen, vollständige Integritäts-/Schema-/Tabellenprüfung, Sessions und Login-Throttling ausgeschlossen.
+- Create/List/Upload/Download/Restore wurden um Delete, Status-/Format-/Versionsmetadaten und Retention ergänzt.
+- Restore leert Session-/Throttle-Daten und erzwingt Re-Login.
+- `scripts/run-automatic-backup.php` ist ein echter CLI-only, cPanel-kompatibler Trigger: er berücksichtigt enabled/Intervall/Retention, verhindert verfrühte Wiederholung und speichert nur einen sicheren Erfolgs-/Fehlerstatus.
+- Die einzige externe Betriebsaktion ist die dokumentierte cPanel-Cron-Konfiguration. Die UI behauptet ohne diesen Host-Scheduler keine laufende Automatik.
+- Audit unterstützt Action/Resource/Result/User/Zeitraumfilter, escaped und eingeklappte JSON-Details sowie kontrollierten 30/90/180/365-Tage-Purge. Die Purge-Aktion wird vor dem Löschen selbst auditiert; Einzeldelete existiert nicht.
+
+### Settings und Dokumentation
+
+- Production-Default des Loglevels ist sichtbar `Info`.
+- Automatic Backup, tatsächlich unterstützte Intervalle und Retention sind konsistent dokumentiert.
+- Sicherheits-, Architektur-, API-, Datenbank-, Funktions-, Connection-, UI-/UX-, Modul-, Installations-, Status-, Roadmap- und Changelog-Verträge wurden aktualisiert.
+
+## 3. Verifikation
+
+- Fokussierte Admin-Operations-/P1-/P4-Regressionspakete: bestanden (`57/57`; zusätzlich das breitere fokussierte Paket `116/116`).
+- Vollständige Suite: `447/447`, 0 Fehler, 0 übersprungen.
+- PHP-Lint: 38 Dateien, bestanden.
+- JavaScript-Syntaxcheck: bestanden.
+- `git diff --check`: bestanden.
+- Produktionspaket: bestanden, 108 Payload-Dateien.
+- Secret-/Artefaktprüfung: bestanden; keine Secretwerte oder Laufzeitartefakte hinzugefügt.
+- Browser-Screenshot war in dieser Sandbox nicht ausführbar, weil kein Chromium/Chrome-Binary installiert ist; die UI-Verträge sind durch fokussierte DOM-/Quellregressionen abgedeckt.
+
+## 4. GitHub und CI
+
+Implementierungscommit: `281f7f5d79dcf6a581e1c4b86dca17b2fe50683e`
+
+Terminale Runs für diesen Commit:
+
+- CodeQL / `Push on main`: Run `34308175255` — **SUCCESS**.
+- `FTPS Deploy`: Run `34308175405` — **SUCCESS**, einschließlich Tests, Paket, FTPS-Upload und read-only Produktionsprüfung.
+
+Dieser Bericht wird als separater Abschlusscommit nach `main` übertragen. Anschließend werden auch dessen erforderliche Runs terminal abgewartet, `HEAD == origin/main`, sauberer Working Tree und der GitHub-Blob von `CHATGPT.md` verifiziert.
+
+## 5. Offene Punkte
+
+**Keine selbst ausführbaren Code-/Dokumentationspunkte offen.** Ausschließlich der Hostbetreiber muss den in `Install-README-Server.md` dokumentierten täglichen cPanel-Cron-Aufruf einmalig konfigurieren und den ersten geplanten verschlüsselten Backup-Eintrag prüfen. Das ist bewusst keine vorgetäuschte In-App-Automatik und benötigt Hostzugriff.
