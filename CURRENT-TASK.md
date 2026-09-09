@@ -20,7 +20,7 @@ Appearance UX V2 und lokale User-Navigationspersonalisierung vollständig umsetz
 12. P1/P4, Homepage, Themes, GPS, Login, Auth/CSRF, Service Worker, Packaging/Base Path, FTPS/Smoke und Custom CSS regressionsfrei halten; I18N nicht implementieren. **ERLEDIGT**
 13. Betroffene Dokumentation wahrheitsgemäß aktualisieren. **ERLEDIGT**
 14. Fokussierte und vollständige Tests, PHP-/JS-Lint, Diff-, Paket-, Secret-/Artefaktprüfung sowie Screenshot soweit technisch möglich. **ERLEDIGT**
-15. Commit/Push main, terminale CI, CHATGPT-Bericht mit neun Retest-Schritten, GitHub-Blob, `HEAD == origin/main`, sauberer Tree. **IN ARBEIT**
+15. Commit/Push main, terminale CI, CHATGPT-Bericht mit neun Retest-Schritten, GitHub-Blob, `HEAD == origin/main`, sauberer Tree. **ERLEDIGT**
 
 ## Capture-Prüfung
 
