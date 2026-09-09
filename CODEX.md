@@ -1,295 +1,292 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER AUFTRAG – LIVE RETEST FOLLOW-UP + CORE-FREEZE + GPS BASIS  
+**Status:** AKTIVER AUFTRAG – DEVICE RETEST FOLLOW-UP + USER-UI RESPONSIVE PASS  
 **Datum:** 2026-09-09
 
 # Aktueller Auftrag
 
-## Admin-Livebefunde final bereinigen, Core 1.0 einfrierbar machen und GPS-Basismodul abrunden
+## Verbleibende Livefehler aus iPad/Chrome beheben und User-UI/GPS responsiv finalisieren
 
-Der Phase-2-Deploy ist erfolgt. Der anschließende reale iPad/Chrome-Betreibercheck hat mehrere verbleibende Fehler und UX-Lücken gezeigt. Diese Befunde sind verbindliche Live-Wahrheit und haben Vorrang vor zuvor grünen Tests.
+Der vorige gebündelte Auftrag wurde deployed. Der reale Betreiber-Retest auf **demselben iPad mit Google Chrome** zeigt weiterhin konkrete Abweichungen. Diese Livebefunde sind verbindliche Wahrheit und haben Vorrang vor grünen Tests.
 
-Dieser Auftrag bündelt bewusst zusammengehörige Restarbeiten. Arbeite autonom und test-first. Keine GPS-Pro-Entwicklung und keine allgemeine i18n-Erweiterung.
-
-P1/P4 dürfen nicht regressieren.
+Arbeite autonom, test-first und bündele die zusammengehörigen Punkte. P1/P4 dürfen nicht regressieren. Kein GPS Pro, keine CatchTrack-spezifische Logik, keine allgemeine i18n-Phase.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Vollständig mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `CORE-1.0.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, `Modules.md`, relevante Install-/Deployment-/Backup-Dokumentation sowie alle betroffenen Implementierungs-/Testdateien.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `CORE-1.0.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `CONNECTIONS.md`, `UI-UX.md`, `ModuleCreation.md`, `Modules.md`, relevante Install-/Deployment-/Backup-Dokumentation und alle betroffenen Implementierungs-/Testdateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen und vor Implementierung dokumentieren: `CODEX.md == CURRENT-TASK-Anforderungen`.
-4. Für jeden Livefehler zuerst reproduzierenden Test bzw. belastbare Root-Cause-Evidenz herstellen; keine symptomatischen Schnellfixes.
-5. Keine Secrets oder sensitiven Produktionsdaten ausgeben. Keine destruktiven Restore-Tests auf Produktion.
+4. Für jeden Fehler zuerst reproduzierenden Test oder belastbare Root-Cause-Evidenz herstellen.
+5. Keine Secrets/sensitiven Produktionsdaten ausgeben. Kein Restore auf Produktion.
 
 ---
 
-# 2. Verbindliche Admin-Grundregel
+# 2. Device Sessions – P0, weiterhin live falsch
 
-Adminseiten und Felder existieren nur, wenn sie einen realen administrativen Nutzen besitzen.
+Realer Retest auf **einem einzigen iPad/Chrome**:
 
-- Keine dekorativen `{}`, `[object Object]`, `—`, `unknown`, `Not found` oder dauerhaft nutzlosen `Unavailable`-Felder.
-- Wenn eine Information sicher und autoritativ ermittelbar ist: korrekt und menschenlesbar anzeigen.
-- Wenn sie nicht sinnvoll ermittelbar ist und keinen Handlungswert besitzt: Feld/Panel entfernen.
-- Wenn ein echter administrativ relevanter Fehler vorliegt: verständlich und handlungsfähig anzeigen.
-- Keine Fake-/Placeholderdaten.
+- Dashboard zeigt `10 Active sessions`.
+- Session Overview zeigt zahlreiche parallele `active`-Zeilen für denselben Developer auf demselben Gerät.
+- Tester wurde auf demselben iPad/Chrome ebenfalls mehrfach/inkonsistent dargestellt.
+- Plattform erscheint weiterhin als `macOS · Chrome`, obwohl es ein iPad ist.
+- Device erscheint teils `Browser installation`, teils `MacIntel`, obwohl dasselbe physische Gerät/Browser verwendet wurde.
+- `Current session` funktioniert.
 
-Diese Regel gilt insbesondere für Dashboard, Connections, Server, Database und Diagnostics.
-
----
-
-# 3. Device Sessions – verbleibender P0-Livefehler
-
-Realer iPad/Chrome-Befund:
-
-- Ein einziger physischer iPad/Chrome-Betrieb erzeugt mehrere gleichzeitig `active` dargestellte Bootstrap-Administrator-Sessions.
-- Dashboard meldet 8 aktive Sessions, Session Overview zeigt mehrfach denselben Developer und nur einen Teil der Gesamtzahl.
-- Plattform wird fälschlich als `macOS · Safari` dargestellt, obwohl Betreiber ein iPad mit Google Chrome verwendet.
-- Device-Bezeichnung ist teils generisch `Browser installation`, teils `MacIntel`.
-- `Current session` funktioniert grundsätzlich.
+Der vorige Fix, der nur gleiche `installation_id` ersetzt, reicht live offensichtlich nicht. Root Cause vollständig rückwärts verfolgen: Woher kommt/ändert/verliert sich die Installation-ID? Prüfe Admin-Loginseite, localStorage/Storage-Scope, Base Path, Origin, private/public Adminshell, Logout/Access-denied, Browserstorage und Bootstrap-/Legacy-Sessions. Nicht einfach alle Sessions eines Users pauschal auf eine reduzieren, denn mehrere echte Installationen müssen weiterhin möglich sein.
 
 ## Zielvertrag
 
-Eine Geräte-Session entspricht einer Browser-/App-Installation, nicht einem Loginversuch.
+- Eine Browser-/App-Installation erzeugt pro User genau eine aktive Device-Session.
+- Wiederholte Logins derselben Installation rotieren/ersetzen diese Session zuverlässig.
+- Unterschiedliche User auf derselben Installation dürfen jeweils genau eine eigene aktive Session besitzen.
+- Zweite echte Installation/Device-ID erzeugt zweite Session.
+- Dashboard und Session Overview zählen dieselbe autoritative aktive Menge.
+- Historische/ersetzte/legacy Zeilen werden nicht als aktiv dargestellt.
+- Bestehende Alt-/Bootstrap-Sessions aus früheren Builds sicher klassifizieren und, soweit vertraglich möglich, einmalig bereinigen/migrieren, ohne fremde echte Geräte willkürlich zu widerrufen.
 
-- Wiederholter Login derselben Installation darf nicht immer neue parallele aktive Device-Sessions erzeugen.
-- Bestehende aktive Installation wiederverwenden/rotieren/ersetzen gemäß sicherem Authvertrag.
-- Logout/Widerruf bleiben autoritativ.
-- Mehrere echte Geräte/Installationen bleiben erlaubt bis zum zentralen Device-Limit.
-- Dashboard und Session Overview müssen dieselbe autoritative aktive Anzahl verwenden.
-- Historische/ersetzte Sessions dürfen nicht als aktiv zählen.
-- Session Overview soll Geräte/Installationen sinnvoll unterscheiden.
+## Plattformdarstellung
 
-## Browser-/Plattformerkennung
+Die serverseitige UA-Heuristik ist live noch falsch. Prüfe den **realen Chrome-iPad-UA**, nicht nur synthetische Annahmen. iPadOS kann Desktop-UA (`Macintosh`) liefern. Nutze nur datensparsame, nicht sicherheitsrelevante Client-Hints/Browserdaten, die bereits legitim im Browser verfügbar sind. Keine Hardwarefingerprints.
 
-Safari auf iOS/iPadOS maskiert Browserengines; Chrome auf iOS/iPadOS nutzt ebenfalls WebKit. Trotzdem soll die UI aus dem verfügbaren User-Agent/Client-Kontext bestmöglich und ehrlich `iPadOS/iOS` sowie `Chrome` erkennen, wenn Chrome-identifizierende Tokens vorhanden sind. Keine Hardwarefingerprints. Wenn eine genaue Unterscheidung technisch nicht belastbar möglich ist, lieber `iPadOS · Browser` als nachweislich falsches `macOS · Safari`.
+- Wenn Chrome sicher erkennbar: `Chrome`.
+- Wenn iPadOS sicher/belastbar erkennbar: `iPadOS`.
+- Wenn OS wegen Desktop-UA nicht belastbar unterscheidbar ist: keine falsche Gewissheit; z. B. `Apple tablet/browser` bzw. neutraler sinnvoller Fallback statt `macOS`, sofern Clientkontext ein Tablet belegt.
+- `MacIntel` darf nicht als Gerätebezeichnung erscheinen, wenn es nur ein Navigator-Kompatibilitätswert ist.
 
-Tests für gleiche Installation/re-login, zweites echtes Installations-ID-Szenario, Current, Revoke, Logout, aktive Zählung und iPad Chrome UA ergänzen.
-
----
-
-# 4. Admin-Login-Sackgasse – P0
-
-Reproduzierter Livebefund:
-
-- Nicht-administrativer Tester versucht Adminzugang.
-- Korrekt erscheint `Access denied – Administrative access requires an authorized role.`
-- Es existiert nur `Return to platform`.
-- Dieser Link führt zur User-App statt zum Admin-Login.
-- Reload lässt den Betreiber in der Access-denied-Sackgasse; er kann sich nicht unmittelbar wieder als Admin anmelden.
-- User-App-Login/Logout ist korrekt getrennt und behebt den Adminzustand nicht.
-
-## Zielvertrag
-
-- Admin-Domäne bleibt von der User-App getrennt.
-- Nach falschem Passwort, falschem Benutzer oder nicht autorisierter Rolle muss immer ein klarer Weg zurück zur **Admin-Anmeldung** bestehen.
-- Kein verpflichtender Redirect zur User-App.
-- Access-denied-Seite bietet `Back to admin login` / sinngemäß und löscht/invalidiert nur den ungeeigneten Admin-Authzustand soweit erforderlich.
-- Ein nicht autorisierter User darf dadurch selbstverständlich keine Adminrechte erhalten.
-- Refresh/Back/erneuter Adminlogin müssen deterministisch funktionieren.
-
-Echte Integrationstests für falsches Passwort, gültiger User ohne Adminrolle, danach erfolgreicher Adminlogin sowie P1-Sessiontrennung ergänzen.
+Echte JS/PHP-Integrationstests für Storage-Persistenz über Login/Logout/403/Reload, gleiche Installation mit zwei Usern, mehrfachen Login und iPad-Chrome-Desktop-UA ergänzen.
 
 ---
 
-# 5. Admin-Navigation / Hänger
+# 3. Admin-Login – positiver Retest erhalten
 
-Betreiber beobachtet sporadisch: Wechsel über linke Adminnavigation reagiert sehr lange oder erst nach vollständigem Browserreload.
+Live bestätigt:
 
-Root Cause systematisch untersuchen: Routerzustand, laufende Fetches, Fehlerpromises, View-Cleanup, Overlay/disabled state, Sessionrefresh und Eventhandler. Nicht durch pauschale Timeouts kaschieren.
+- `Access denied` zeigt jetzt `Back to admin login`.
+- Link führt korrekt zum Adminlogin.
+- Danach erfolgreicher Adminlogin möglich.
+- User-App bleibt getrennt.
 
-Abnahme: wiederholtes schnelles Wechseln zwischen Dashboard, Sessions, Server, Database, Diagnostics, Audit und Settings bleibt responsiv; Fehler eines Views blockiert Navigation zu anderem View nicht.
-
----
-
-# 6. Dashboard korrigieren
-
-Realer Befund:
-
-- `Database [object Object]` ist klarer Renderingfehler.
-- `Active sessions 8` übernimmt den fehlerhaften Sessionzustand.
-- Session Overview zeigt nur fünf Zeilen und mehrfach `Developer active`, ohne Gerätewert.
-- `Last check` ist roher ISO-Zeitstempel.
-- Dashboard verschweigt den administrativ wichtigen Zustand `Backup encryption key / host configuration required`.
-
-## Ziel
-
-- DB-Zustand menschenlesbar, keine Objektstringifizierung.
-- Aktive Sessions aus derselben autoritativen Device-Sessionprojektion; kompakte sinnvolle Übersicht statt redundanter identischer Userzeilen.
-- Zeit lokal/menschenlesbar darstellen, technischer ISO-Wert höchstens ergänzend.
-- Relevante Warnungen/Action-needed-Zustände wie nicht betriebsbereites Backup sichtbar machen, ohne Dashboard zu überladen.
-- Module 1/2 und Status nur aus realen Daten.
+Diesen Fix regressionsfrei erhalten. Kein Link von User-App zum Adminbereich erforderlich; diese Bereiche sind bewusst getrennt.
 
 ---
 
-# 7. Server / Database / Diagnostics / Connections bereinigen
+# 4. Dashboard / Session Overview
 
-Livebefunde nach Phase 2:
+Solange Sessiondaten falsch sind, ist auch das Dashboard falsch.
 
-### Server
-- Status `healthy`, Target und API Base vorhanden.
-- `Reachable` nur `—`.
-- `Framework metadata` zeigt `{}`.
+Nach Sessionfix:
 
-### Database
-- Status ready, MySQL, localhost und DB-Name vorhanden.
-- Username `—` kann aus Securitygründen legitim sein, soll dann aber nicht als leeres Informationsfeld wirken.
-- `Setup state` zeigt `{}`.
+- Active Sessions = exakt autoritative aktive Device-Sessions.
+- kompakte Übersicht darf begrenzt sein, muss dann aber sichtbar als Vorschau gekennzeichnet sein (`showing X of Y`) oder Link zur vollständigen Session Overview bieten; kein scheinbarer Widerspruch zwischen Zahl und sichtbaren Zeilen.
+- gleiche Installation nicht redundant mehrfach darstellen.
+- Gerät/Plattform verständlich statt generischer/inkonsistenter Werte.
 
-### Diagnostics
-- System check liefert reale Werte: status, PHP 8.5.9/litespeed, production, memory, disk, modules 2, apps 1.
-- Direkt unter Überschrift steht fehlerhaft `Not found`.
-- `Framework summary` zeigt `{}`.
-
-### Connections
-- Primary database und status ready sichtbar.
-- `Type` ist `—`.
-- `Default` ist `no`, obwohl die Verbindung `Primary database` heißt; Semantik prüfen.
-- Optional providers not configured ist akzeptabel und ehrlich.
-- `Save connection` ist fragwürdig, wenn die Seite laut eigener Beschreibung read-only aus autoritativer Host/runtime configuration kommt. Entweder reale sichere Funktion belegen oder entfernen.
-
-## Auftrag
-
-Gemäß Admin-Grundregel jedes Feld prüfen. Reale Informationen liefern oder nutzlose Felder/Buttons entfernen. Keine leeren JSON-Panels. `Not found` beseitigen. Widerspruch Primary/Default klären. Keine Secrets anzeigen.
+Bestehende positive Fixes (`Database ok`, lokale Zeit, Backup-Warnung) erhalten.
 
 ---
 
-# 8. Backup Host-Prerequisite und Betreiberführung
+# 5. Permission Catalog – Semantik finalisieren
 
 Live:
 
-- Crypto Ready
-- Database/schema Ready
-- Protected storage Ready
-- Encryption key: `Host configuration required`
-- Create backup scheitert korrekt mit sicherer Meldung `runtime prerequisite is unavailable`.
-
-Damit ist der Codepfad handlungsfähiger, aber Backup bleibt real nicht nutzbar.
+- Registry, Area und Source funktionieren grundsätzlich.
+- GPS zeigt deklarativ `User-App / Module: GPS` für `gps.view/use/manage/admin`.
+- Corekeys wie `user.read` liegen unter Area `Admin`; das ist fachlich korrekt, **wenn** der Key bedeutet „Benutzerverwaltung lesen“ und nicht „User darf lesen“.
+- Problem: Corebeschreibungen sind weiterhin teilweise nicht sprechend genug bzw. wirken wie technische Platzhalter.
 
 ## Auftrag
 
-- Bestehende sichere Readiness beibehalten.
-- Dokumentation/Betreiberführung so konkret machen, dass der Hostbetreiber den Encryption-Key sicher konfigurieren kann, ohne Schlüsselwert in UI/Logs/Git zu schreiben.
-- Prüfen, ob vorhandene cPanel-/Installationsdokumentation den exakten sicheren Konfigurationsweg enthält; falls nicht ergänzen.
-- Cron erst als betriebsbereit bezeichnen, wenn der reale deployte Runner und Hostkonfiguration zusammenpassen.
-- Keine automatische Secretgenerierung in eine öffentlich/versionskontrollierte Datei.
-- Kein Restore auf Produktion.
-
-Falls Hostzugriff weiterhin nötig ist: `HOST ACTION REQUIRED` mit exakten sicheren Schritten dokumentieren.
+- Für **jeden** Corepermission-Key eine konkrete verständliche Beschreibung liefern, z. B. `user.read = View users in administration`, `user.write = Create or update users` entsprechend dem realen Vertrag.
+- Area bezeichnet die Sicherheits-/Produktebene (`Admin`, `User-App`, `System`), nicht das Substantiv im Key; dokumentiere das klar in `Security.md`/`ModuleCreation.md`/UI-Hilfe soweit passend.
+- GPS `gps.admin` darf als User-App-Permission existieren, wenn es modulinterne administrative/lifecycle Aktionen beschreibt; prüfe aber serverseitig, dass echte **Core-Adminverwaltung/Rollenzuweisung** nicht versehentlich über eine User-App-Permission freigegeben wird. Beschreibung ggf. präzisieren.
+- Registry bleibt read-only; keine manuelle Permission-Erstellung.
 
 ---
 
-# 9. Audit Log – Semantik und UX
+# 6. Backup – fehlender Key, UI handlungsfähig
 
-Live positiv: Filterlabels und View Details funktionieren.
+Live erneut bestätigt:
 
-Verbleibende Probleme:
-
-1. Filter-/Action-Layout überlappt auf iPad: `Apply` ragt in/über das `To date`-Eingabefeld. Das ist ein echter Layoutbug.
-2. Dark Mode: Input-Borders sind zu schwach; Eingabefelder müssen klar erkennbar sein.
-3. Light Mode: Apply/Reset/Purge Größen und Grid wirken uneinheitlich; keine Überlagerung, konsistente Höhen und sinnvolle inhalts-/gridgerechte Breiten.
-4. `View details` JSON-Box soll Theme-Tokens folgen; Light darf hell und Dark dunkel sein, sofern Lesbarkeit/Codecharakter erhalten bleiben.
-5. Mehrere Details dürfen geöffnet sein, aber Layout darf dadurch nicht brechen. Optional Accordion nur wenn UX klar besser, nicht zwingend.
-6. Actor zeigt nur numerische ID. Ergänze einen verständlichen Benutzernamen/Handle soweit ohne PII-Leak und mit stabiler ID ergänzend.
-7. Purge-UX ist unklar: From/To-Filter, `Apply`, Retention-Auswahl und `Purge older entries` wirken wie ein gemeinsamer Vorgang. Trenne Filterung klar von destruktiver Retention-Aktion. Vor Purge deutlich anzeigen: `Delete audit entries older than X days`; Bestätigung erforderlich. Kein `All`-Purge in Produktion.
-8. Audit erzeugt offenbar mehrfach identische `settings.update`-Einträge mit Details, die nur denselben `appId/appName`-Zustand zeigen. Prüfe Root Cause. Kein Audit-/Write-Ereignis für echte No-op-Saves, sofern nichts geändert wurde. Bei Änderungen Details möglichst als `before`/`after` oder `changedFields` darstellen, ohne Secrets. Audit bleibt append-only außer kontrollierter Retention.
-
-Tests für iPad-Breakpoint, Theme, Purge-Semantik, no-op update und echte Change-Details.
-
----
-
-# 10. Permission Catalog – Registry bleibt read-only
-
-Keine manuelle Permission-Erstellung einführen. Core und installierte Module liefern ihre Permission-Keys deklarativ über Registry/Manifest; Admin weist sie Rollen zu.
-
-Verbesserungen:
-
-- Platzhalterartige Beschreibungen wie `Permission admin.read` durch verständliche, konkrete Beschreibungen ersetzen.
-- Core- und Modulpermissions gleicher Qualitätsstandard.
-- Suche/Area/Source erhalten.
-- Optional sortierbare Spalten und sticky table header, wenn tablet-/mobile-sicher und ohne unnötige Komplexität.
-- Keine Delete/Edit-Funktion für Keys.
-
-`ModuleCreation.md` muss klar dokumentieren, wie ein Modul eigene Permissions deklarativ registriert.
-
----
-
-# 11. Core 1.0 – fachlicher Freeze-Vertrag
-
-Ziel des Projekts: Nach Fertigstellung des Neutral Core sollen normale neue Produktfunktionen ausschließlich über Module entstehen.
-
-Verbindliches Abnahmekriterium:
-
-> Ein neues fachliches Modul muss vollständig implementierbar, registrierbar, installierbar, migrierbar, berechtigbar, aktivierbar/deaktivierbar und in die vorgesehenen UI-/API-Flächen integrierbar sein, ohne bestehende Core-Dateien für das konkrete Produktfeature ändern zu müssen.
+- Crypto ready.
+- Database/schema ready.
+- Protected storage ready.
+- Encryption key: `Host configuration required`.
+- `Create backup` endet erwartbar mit `runtime prerequisite is unavailable`.
 
 ## Auftrag
 
-- `CORE-1.0.md`, `Architecture.md`, `ModuleCreation.md`, `Functions.md`, `API.md`, `Database.md`, Modulregistry, Hooks/Extension Points und vorhandene GPS-/Reference-Module gegen dieses Kriterium auditieren.
-- Jetzt vor dem Freeze fehlende **generische** Extension Points identifizieren und nur wenn wirklich erforderlich ergänzen.
-- Keine CatchTrack-spezifische oder zukünftige GPS-Pro-Logik in Core einbauen.
-- Core darf später weiterhin aus echter technischer Notwendigkeit geändert werden (Security, Runtime-/Browser-/DB-Kompatibilität, Framework-Bug); nicht für normale Produktfeatures.
-- Dokumentiere einen klaren `Core Freeze`-Vertrag und eine Entscheidungsregel: Core-Änderungswunsch zuerst darauf prüfen, ob generische Frameworkfähigkeit fehlt oder Modulvertrag verletzt wird.
-- Ergänze einen automatisierten Referenz-/Contract-Test, der beweist, dass ein neues Beispielmodul über deklarative Verträge eingebunden werden kann, ohne Core-Featurecode zu patchen.
-
-Nicht vorsorglich Dutzende unbenutzte Hooks hinzufügen. YAGNI: nur generische Lücken, die aus aktuellem Modulvertrag oder Referenztest nachweisbar sind.
+- Solange Readiness `encryptionKey=false`, `Create backup` deaktivieren oder unmittelbar als nicht ausführbar kennzeichnen; kein sinnloser POST, dessen Ergebnis bereits feststeht.
+- Direkt bei Button/Readiness verständlich erklären: Host encryption key must be configured before manual or automatic encrypted backups can run.
+- Nach Konfiguration muss Button automatisch nutzbar werden.
+- Dokumentierte sichere Host-Schritte erhalten/prüfen.
+- Kein Key in UI, Git, Logs oder Kommandozeile.
+- Hostaktion bleibt `HOST ACTION REQUIRED`.
 
 ---
 
-# 12. GPS-Basismodul abrunden – kein GPS Pro
+# 7. Audit Log – Clear-all für Setup/Development + präzisere Ergebnisse
 
-GPS ist das neutrale Basismodul/Referenzmodul und soll standardmäßig im Paket bleiben, aber über Admin → Apps & Modules aktivier-/deaktivierbar sein. Deaktivieren bedeutet nicht deinstallieren.
+Live positiv:
 
-## Basisumfang
+- Filter und Retention sind jetzt klar getrennt.
+- `Delete entries older than 30 days` funktioniert; bei keinen passenden Einträgen wird nichts gelöscht.
+- Actor zeigt Handle + ID.
 
-- aktuelle Position
-- Genauigkeit soweit verfügbar
-- `Position aktualisieren`
-- `Position teilen`
-- **kein Tracking hinzufügen**
-- darunter einfache OpenStreetMap-Kartenanzeige mit Marker der aktuellen Position
-- Klick/Tap auf Karte öffnet dieselbe Position in OpenStreetMap
+## Verbesserungen
 
-## Teilen / Navigation
+### Purge-Ergebnis
 
-- Google Maps als **Default/erste Option**, nicht erzwungen.
-- Weitere Optionen: OpenStreetMap und System-Share/andere Apps.
-- Neutral übergibt nur die vom Nutzer bewusst gewählten Koordinaten/Location-Link; keine automatische Hintergrundweitergabe.
-- `Allow Location Context Sharing` betrifft automatische/modulübergreifende Kontextweitergabe, nicht die bewusste manuelle Aktion `Position teilen`. UI-Hilfetext muss diese Trennung eindeutig erklären.
-- Interne Karte bleibt providerneutral/OpenStreetMap; Google Maps wird nicht zur Core-Abhängigkeit.
+Statt generischem Erfolg soll die Rückmeldung die reale Anzahl nennen, z. B. `0 audit entries deleted` oder `12 audit entries deleted`.
 
-## Wiederverwendung
+### Clear all
 
-Karten-/Location-Vertrag so gestalten, dass spätere Apps/Module ihn wiederverwenden können, ohne CatchTrack-Logik einzubauen.
+Der Betreiber benötigt für neues Setup/Development die Möglichkeit, den Auditbestand vollständig zu leeren.
 
-`GPS Pro` ist ausschließlich Zukunftsplanung: separates erweitertes Modul, das später je App zusätzliche Funktionen haben kann. Nicht implementieren, nicht detailliert spezifizieren. Wenn GPS Pro später verwendet wird, können GPS und GPS Pro parallel installiert sein; Admin kann GPS deaktivieren und GPS Pro aktivieren.
+Implementiere kontrolliert:
 
----
+- nur höchste autorisierte Adminrolle/Permission;
+- deutliche separate destruktive Aktion, nicht mit Retention verwechseln;
+- explizite Bestätigung mit klarer Aussage `Delete all audit entries`;
+- Produktionssicherheit prüfen. Wenn vollständiges Clear im Production-Vertrag sicherheitspolitisch nicht vertretbar ist, dann nur explizit im Development/Test-Kontext erlauben und im Production-UI nicht anbieten. Diese Entscheidung technisch und in `Security.md` begründen; nicht einfach ungeprüft freischalten.
+- Die Clear-Aktion selbst muss, soweit logisch möglich, vor Löschung auditierbar/anderweitig nachvollziehbar sein; wenn vollständiges Clear auch diesen Eintrag entfernt, dokumentiere die Grenze ehrlich.
 
-# 13. Appearance / UI-Grundqualität
-
-Keine große neue Appearance-Phase starten. Die in diesem Auftrag berührten Adminviews müssen aber in Light/Dark und iPad-Breakpoints konsistent sein:
-
-- Inputs klar erkennbare Borders/Focusstates;
-- keine Überlagerungen;
-- Buttons konsistente Höhe und sinnvolle Breite;
-- Theme-Tokens statt hartkodierter fremder Flächen;
-- Touchziele ausreichend groß;
-- keine Layoutregression in User-App/P4.
+No-op Settings-Audit und changedFields aus vorigem Fix regressionsfrei testen.
 
 ---
 
-# 14. Test- und Abnahmevertrag
+# 8. GPS – Bediensemantik korrigieren
 
-Verbindlich echte Integration/DOM/Contract-Tests ergänzen, nicht nur Regex-Sourcechecks.
+Live-GPS funktioniert grundsätzlich: Koordinaten, Accuracy, Timestamp, OSM-Karte und Marker werden angezeigt.
+
+Die Buttonsemantik ist aber falsch.
+
+## Ziel-Buttons
+
+Klar trennen:
+
+1. `Update position`
+2. `Open in Google Maps`
+3. `Open in OpenStreetMap`
+4. `Share position`
+
+`Other apps` entfällt. **Share position** öffnet den nativen System-Share-Dialog und ermöglicht WhatsApp, Facebook, Messenger, Mail usw. entsprechend den auf dem Gerät verfügbaren Share Targets.
+
+Google Maps und OpenStreetMap sind reine **Öffnen/Anzeigen**-Aktionen, keine Share-Aktionen.
+
+## Google Maps – about:blank Bug
+
+Live auf iPad/Chrome mit installierter Google-Maps-App:
+
+- Klick öffnet Google Maps, hinterlässt aber zusätzlich einen leeren `about:blank`-Tab im Browser.
+
+Root Cause ermitteln und beseitigen. Kein vorab geöffnetes leeres Fenster/Tab. Verwende einen geeigneten mobilen/deep/universal Link-Vertrag mit sauberem Webfallback, soweit browser-/plattformübergreifend möglich. Keine Google-Core-Abhängigkeit.
+
+OpenStreetMap-Weböffnung funktioniert bereits; erhalten.
+
+---
+
+# 9. Eingebettete OSM-Karte – interaktiv, nicht selbst verlinkt
+
+Live:
+
+- Karte zeigt Marker korrekt.
+- Zoom `+/-` ist sichtbar, aber Klick/Tap auf Karte/Controls öffnet stattdessen OpenStreetMap extern; dadurch kann innerhalb der eingebetteten Karte nicht sinnvoll gezoomt werden.
+
+## Ziel
+
+- Die eingebettete Karte ist **kein externer Link**.
+- `+/-` zoomt ausschließlich die eingebettete Karte.
+- Touch pinch/drag/pan, soweit die verwendete Kartenbibliothek dies unterstützt, funktioniert innerhalb der Karte.
+- Externe OSM-Öffnung ausschließlich über `Open in OpenStreetMap`.
+- Attribution bleibt korrekt und klickbar, soweit Lizenz/Library dies verlangt.
+- Marker bleibt auf aktueller Position.
+- Keine Trackingfunktion hinzufügen.
+
+---
+
+# 10. Responsives User-UI / Content-Card-System
+
+Realer iPad-Befund:
+
+- Hauptseite nutzt die Bildschirmbreite grundsätzlich gut.
+- GPS-Contentkarten und OSM-Karte kleben jedoch schmal links; rechts bleibt viel ungenutzter Raum.
+- Settings zeigt dasselbe Muster: schmale Karten links, große leere Fläche rechts.
+
+Das ist kein GPS-Sonderproblem, sondern ein **generischer User-UI-Layoutvertrag**.
+
+## Ziel
+
+Definiere/verwende ein zentrales responsives Content-Card/Grid-System für User-App-Views und Module:
+
+- Mobile/schmale Viewports: eine Spalte, Karten nahezu volle verfügbare Contentbreite.
+- Tablet/iPad: verfügbare Breite sinnvoll nutzen; Karten können je nach Inhalt nebeneinander oder breiter angeordnet werden.
+- Desktop: kontrollierte Maximalbreite/mehrspaltige Anordnung, keine extrem langen Textzeilen und keine riesigen sinnlosen Leerflächen.
+- Keine festen gerätespezifischen Pixelhacks; CSS Grid/Flex + `minmax`, `auto-fit/auto-fill`, sinnvolle `max-width`/container queries/media queries gemäß bestehender Architektur.
+- Karten eines Views bündig, konsistente Abstände und Höhen soweit sinnvoll.
+- GPS: Koordinaten/Status und Karte auf Tablet sinnvoll ausbalancieren; Karte deutlich größer als aktuell. Auf schmalem Screen sauber untereinander.
+- Settings: General/Privacy/Appearance bzw. vorhandene Karten nutzen denselben generischen Vertrag und verteilen sich auf Tablet sinnvoll statt links zu kleben.
+- Andere vorhandene User-Views gegen Regression prüfen.
+
+Wichtig: Dies ist eine **generische Framework-UI-Fähigkeit**, die vor Core-Freeze legitim ist. Module sollen künftig den zentralen Layoutvertrag verwenden können, statt eigene gerätespezifische Layoutlogik zu bauen. `UI-UX.md` und `ModuleCreation.md` entsprechend dokumentieren.
+
+---
+
+# 11. Core-Freeze-Vertrag erhalten
+
+Der vorige Audit fand keine sonstige generische Modul-Lücke. Der neue responsive Content-Card-Vertrag darf als nachgewiesene generische UI-Lücke vor Freeze ergänzt werden.
+
+Danach gilt weiterhin:
+
+> Neue fachliche Module müssen ohne produktspezifische Coreänderungen implementierbar sein.
+
+Keine spekulativen Hooks. Kein GPS Pro. Kein CatchTrack-Code.
+
+---
+
+# 12. Test-/Abnahmevertrag
+
+Echte Integration-/DOM-/Contract-Tests ergänzen, nicht nur Source-RegEx.
 
 Mindestens:
 
-- gleiche Device-ID + mehrfacher Login → eine aktive Installation;
-- zweite Device-ID → zweite aktive Installation;
-- iPad Chrome wird nicht fälschlich als macOS Safari ausgegeben, sofern UA unterscheidbar;
-- Dashboard-Sessioncount entspricht Sessionregistry;
-- Admin access denied → zurück zum Adminlogin → erfolgreicher Adminlogin;
-- Adminnavigation bleibt nach View-/Fetchfehler bedienbar;
-- keine `[object Object]`, `{}`-Leerpanels
+- Installation-ID bleibt über Adminlogin, Logout, 403, Reload und erneuten Login stabil, soweit Browserstorage nicht bewusst gelöscht wird.
+- gleiche Installation + gleicher User mehrfach → genau eine aktive Session.
+- gleiche Installation + Developer und Tester → je User genau eine aktive Session.
+- zweite Installation-ID → zweite aktive Session.
+- Legacy/ersetzte Sessions zählen nicht aktiv.
+- Dashboardcount == Sessionregistry.
+- iPad/Chrome-Darstellung verwendet reale Clientdaten ehrlich; kein `MacIntel` als Device-Name.
+- Permissionbeschreibungen und Area-Vertrag.
+- Backupbutton disabled/actionable entsprechend Readiness.
+- Audit purge meldet Count; Clear-all-Sicherheitsvertrag.
+- GPS Buttons exakt nach Öffnen-vs-Teilen-Vertrag.
+- Google Maps erzeugt keinen absichtlich geöffneten Blank-Tab im implementierten Pfad.
+- OSM-Karte ist kein Wrapper-Link; Zoom-/Mapcontrols erhalten Events.
+- Responsive User-Grid bei Mobile/Tablet/Desktop; GPS und Settings nutzen zentrale Klasse/Komponente.
+- Light/Dark, Touchziele, P1/P4, Homepage-Warmstart, Navigation und Appearance regressionsfrei.
+
+Danach vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket, Secret-/Artefaktprüfung.
+
+---
+
+# 13. Deploy und Übergabe
+
+Gemäß `WORKFLOW.md`:
+
+1. Commit/push `main`.
+2. Erforderliche CodeQL-/FTPS-/CI-Runs terminal abwarten.
+3. `HEAD == origin/main`, sauberer Working Tree.
+4. Deploymentrevision/read-only Smoke verifizieren.
+5. Keine destruktiven Produktionsaktionen.
+6. `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, relevante Verträge wahrheitsgemäß aktualisieren.
+7. Abschlussbericht in `CHATGPT.md` mit klarer Trennung:
+   - code-seitig verifiziert,
+   - deployed,
+   - DEVICE RETEST REQUIRED,
+   - HOST ACTION REQUIRED.
+8. Kurze konkrete iPad/Chrome-Retestliste liefern.
+
+**Nichts als LIVE BESTANDEN markieren, was nicht real durch Betreiber bestätigt wurde.**
