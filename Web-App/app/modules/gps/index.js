@@ -51,6 +51,18 @@
         persistLocationHistory: true,
         autoRequestOnOpen: false
     });
+    const GPS_TEXT = {
+        de: { position:'Aktuelle Position', latitude:'Breitengrad', longitude:'Längengrad', accuracy:'Genauigkeit', time:'Zeitpunkt', unavailable:'nicht verfügbar', auto:'Position beim Öffnen automatisch ermitteln', update:'Position aktualisieren', google:'In Google Maps öffnen', osm:'In OpenStreetMap öffnen', share:'Position teilen', privacy:'Manuelles Teilen sendet nur die aktuelle Position. Die Standortfreigabe steuert nur automatische Weitergabe zwischen Modulen.', ask:'Aktuelle Position ermitteln?', yes:'Ja', no:'Nein', denied:'Standortzugriff nicht erlaubt. Bitte in den Browser- oder Geräteeinstellungen aktivieren.', noPermission:'Für diese Nutzung ist keine Berechtigung vorhanden.', enable:'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.', loading:'Position wird abgefragt…', updated:'Position aktualisiert.', shared:'Position geteilt.', shareFailed:'Position konnte nicht geteilt werden.', openFailed:'Position konnte nicht geöffnet werden.', autoOn:'Automatische Positionsabfrage aktiviert.', autoOff:'Automatische Positionsabfrage deaktiviert.', positionFailed:'Position konnte nicht abgerufen werden.', unavailableAction:'Keine gültige Position vorhanden.', notAvailable:'Standort nicht verfügbar. Bitte Standortzugriff aktivieren.', autoUpdated:'Position automatisch aktualisiert.', autoFailed:'Automatische Positionsabfrage war nicht verfügbar.', timeout:'Zeitüberschreitung bei der Positionsabfrage.' },
+        en: { position:'Current position', latitude:'Latitude', longitude:'Longitude', accuracy:'Accuracy', time:'Time', unavailable:'not available', auto:'Update position automatically when opened', update:'Update position', google:'Open in Google Maps', osm:'Open in OpenStreetMap', share:'Share position', privacy:'Manual sharing sends only the current position. Location sharing controls automatic context exchange between modules only.', ask:'Get current position?', yes:'Yes', no:'No', denied:'Location access is not allowed. Enable it in browser or device settings.', noPermission:'You do not have permission to use location.', enable:'Enable the module before requesting a position.', loading:'Getting position…', updated:'Position updated.', shared:'Position shared.', shareFailed:'Position could not be shared.', openFailed:'Position could not be opened.', autoOn:'Automatic position update enabled.', autoOff:'Automatic position update disabled.', positionFailed:'Position could not be retrieved.', unavailableAction:'No valid position is available.', notAvailable:'Location is unavailable. Enable location access.', autoUpdated:'Position updated automatically.', autoFailed:'Automatic position update was unavailable.', timeout:'The position request timed out.' }
+    };
+    const gpsText = (key) => {
+        const locale = typeof window !== 'undefined' && window.I18nModule?.getLocale ? window.I18nModule.getLocale() : String(typeof navigator !== 'undefined' ? navigator.language : 'de').slice(0, 2);
+        if (typeof window !== 'undefined' && window.I18nModule?.t) return window.I18nModule.t(`gps.${key}`);
+        return (GPS_TEXT[locale] || GPS_TEXT.de)[key] || key;
+    };
+    if (typeof window !== 'undefined' && window.I18nModule?.registerTranslations) {
+        window.I18nModule.registerTranslations(Object.fromEntries(Object.entries(GPS_TEXT).map(([locale, values]) => [locale, Object.fromEntries(Object.entries(values).map(([key, value]) => [`gps.${key}`, value]))])));
+    }
     const permissionDefinitions = Object.freeze([
         {
             key: 'gps.view',
@@ -69,7 +81,7 @@
         },
         {
             key: 'gps.admin',
-            description: 'Allows a user to administer the GPS module lifecycle and role assignments.',
+            description: 'Allows module-internal GPS administration; Core lifecycle and role assignment still require Core Admin permissions.',
             defaultRoles: ['admin', 'developer']
         }
     ]);
@@ -711,6 +723,29 @@
             };
         },
 
+        mountInteractiveMap(host, position) {
+            if (!host || !position) return;
+            let zoom = 15;
+            let latitude = Number(position.latitude ?? position.lat);
+            let longitude = Number(position.longitude ?? position.lng);
+            const renderTiles = () => {
+                const scale = 2 ** zoom;
+                const x = Math.floor((longitude + 180) / 360 * scale);
+                const latRad = latitude * Math.PI / 180;
+                const y = Math.floor((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2 * scale);
+                host.querySelector('.gps-map-tiles').innerHTML = [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => `<img alt="" draggable="false" src="https://tile.openstreetmap.org/${zoom}/${x + dx}/${y + dy}.png" style="grid-column:${dx + 2};grid-row:${dy + 2}">`)).join('');
+                host.querySelector('[data-map-zoom]').textContent = String(zoom);
+            };
+            host.innerHTML = `<div class="gps-map-toolbar"><button type="button" data-map-out aria-label="Zoom out">−</button><span data-map-zoom>${zoom}</span><button type="button" data-map-in aria-label="Zoom in">+</button></div><div class="gps-map-tiles" aria-label="Interactive OpenStreetMap"></div><span class="gps-map-marker" aria-hidden="true">●</span><a class="gps-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>`;
+            host.querySelector('[data-map-in]').addEventListener('click', () => { zoom = Math.min(19, zoom + 1); renderTiles(); });
+            host.querySelector('[data-map-out]').addEventListener('click', () => { zoom = Math.max(2, zoom - 1); renderTiles(); });
+            let start = null;
+            host.addEventListener('pointerdown', (event) => { start = { x: event.clientX, y: event.clientY, latitude, longitude }; host.setPointerCapture?.(event.pointerId); });
+            host.addEventListener('pointermove', (event) => { if (!start) return; const factor = 360 / (256 * (2 ** zoom)); longitude = start.longitude - (event.clientX - start.x) * factor; latitude = Math.max(-85, Math.min(85, start.latitude + (event.clientY - start.y) * factor)); });
+            host.addEventListener('pointerup', () => { if (start) renderTiles(); start = null; });
+            renderTiles();
+        },
+
         openCurrentPosition(provider) {
             const position = this.lastPosition || lastPosition || this.getLastPosition();
             const links = this.locationLinks(position);
@@ -844,45 +879,47 @@
                 return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
             };
             const links = position ? GpsModule.locationLinks(position) : null;
-            const positionHtml = position ? `<div><dt>Breitengrad</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>Längengrad</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>Genauigkeit</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>Zeitpunkt</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : '<div><dt>Position</dt><dd>nicht verfügbar</dd></div>';
+            const positionHtml = position ? `<div><dt>${gpsText('latitude')}</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>${gpsText('longitude')}</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>${gpsText('accuracy')}</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>${gpsText('time')}</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : `<div><dt>${gpsText('position')}</dt><dd>${gpsText('unavailable')}</dd></div>`;
             const shareDisabled = !position || !allowedToUse || !active;
-            const browserDeniedMessage = 'Standortzugriff nicht erlaubt. Bitte Standortzugriff für diese Seite in den Browser- bzw. Geräteeinstellungen aktivieren.';
+            const browserDeniedMessage = gpsText('denied');
             const infoMessage = message || (state.permissionState === 'denied'
                 ? browserDeniedMessage
                 : !allowedToUse
-                    ? 'Für diese Nutzung ist keine Berechtigung vorhanden.'
+                    ? gpsText('noPermission')
                     : active
                         ? ''
-                        : 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.');
+                        : gpsText('enable'));
             const modalMarkup = showConsentModal
-                ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">Aktuelle Position ermitteln?</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">Ja</button><button type="button" data-gps-confirm="no">Nein</button></div></div></div>`
+                ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">${gpsText('ask')}</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">${gpsText('yes')}</button><button type="button" data-gps-confirm="no">${gpsText('no')}</button></div></div></div>`
                 : '';
-            const mapMarkup = links ? `<div class="gps-map-frame"><iframe class="gps-map" title="OpenStreetMap – aktuelle Position" src="${links.embedMap}" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe></div>` : '';
-            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="user-content-grid gps-content-grid"><div class="gps-location-card"><h2>Aktuelle Position</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> Position beim Öffnen automatisch ermitteln</label></div>${mapMarkup}</div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>Update position</button><button type="button" data-gps-open="google" ${shareDisabled ? 'disabled' : ''}>Open in Google Maps</button><button type="button" data-gps-open="openstreetmap" ${shareDisabled ? 'disabled' : ''}>Open in OpenStreetMap</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>Share position</button></div><p class="form-help">Manual sharing sends only the current coordinates you choose. “Allow Location Context Sharing” controls automatic cross-module context sharing only.</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            const mapMarkup = links ? '<div class="gps-map-frame gps-interactive-map" data-gps-map></div>' : '';
+            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="user-content-grid gps-content-grid"><div class="gps-location-card"><h2>${gpsText('position')}</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> ${gpsText('auto')}</label></div>${mapMarkup}</div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>${gpsText('update')}</button><button type="button" data-gps-open="google" ${shareDisabled ? 'disabled' : ''}>${gpsText('google')}</button><button type="button" data-gps-open="openstreetmap" ${shareDisabled ? 'disabled' : ''}>${gpsText('osm')}</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>${gpsText('share')}</button></div><p class="form-help">${gpsText('privacy')}</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            const mapHost = position ? container.querySelector('[data-gps-map]') : null;
+            if (mapHost && typeof mapHost.querySelector === 'function') GpsModule.mountInteractiveMap(mapHost, position);
 
             const autoSetting = container.querySelector('[data-gps-setting="autoRequestOnOpen"]');
             if (autoSetting) {
                 autoSetting.addEventListener('change', (event) => {
                     const enabled = !!event.target.checked;
                     persistAutoRequestSetting(enabled);
-                    render(enabled ? 'Automatische Positionsabfrage aktiviert.' : 'Automatische Positionsabfrage deaktiviert.', false);
+                    render(gpsText(enabled ? 'autoOn' : 'autoOff'), false);
                 });
             }
 
             const currentButton = container.querySelector('[data-gps-action="current"]');
             if (currentButton) {
                 currentButton.addEventListener('click', async () => {
-                    render('Position wird abgefragt...');
+                    render(gpsText('loading'));
                     try {
                         const result = GpsModule.requestCurrentPositionWithConsent();
                         if (result && result.ok === false && result.code === 'USER_CONFIRMATION_REQUIRED') {
-                            render(result.message || 'Aktuelle Position ermitteln?', true);
+                            render(result.message || gpsText('ask'), true);
                             return;
                         }
                         await GpsModule.getCurrentPosition();
-                        render('Position aktualisiert.');
+                        render(gpsText('updated'));
                     } catch (error) {
-                        render(error && error.code === 'INSUFFICIENT_PERMISSIONS' ? 'Für diese Nutzung ist keine Berechtigung vorhanden.' : error && error.code === 'PERMISSION_DENIED' ? browserDeniedMessage : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position konnte nicht bestimmt werden.' : error && error.code === 'TIMEOUT' ? 'Die Positionsabfrage timed out.' : error && error.code === 'MODULE_NOT_ENABLED' ? 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.' : 'Position konnte nicht abgerufen werden.', true);
+                        render(error && error.code === 'INSUFFICIENT_PERMISSIONS' ? gpsText('noPermission') : error && error.code === 'PERMISSION_DENIED' ? browserDeniedMessage : error && error.code === 'POSITION_UNAVAILABLE' ? 'Position konnte nicht bestimmt werden.' : error && error.code === 'TIMEOUT' ? gpsText('timeout') : error && error.code === 'MODULE_NOT_ENABLED' ? 'Aktivieren Sie das Modul, bevor eine Position abgefragt wird.' : 'Position konnte nicht abgerufen werden.', true);
                     }
                 });
             }
@@ -894,7 +931,7 @@
                 shareButton.addEventListener('click', async () => {
                     const provider = shareButton.dataset.gpsShare;
                     const result = await GpsModule.shareCurrentPosition({ requirePosition: true, provider: provider === 'system' ? undefined : provider });
-                    render(result.ok ? 'Position geteilt.' : result.code === 'NO_POSITION_AVAILABLE' ? 'Keine gültige Position zum Teilen vorhanden.' : 'Position konnte nicht geteilt werden.', !result.ok);
+                    render(result.ok ? gpsText('shared') : gpsText('shareFailed'), !result.ok);
                 });
             });
             const openButtons = typeof container.querySelectorAll === 'function'
@@ -902,7 +939,7 @@
                 : [];
             openButtons.forEach((openButton) => openButton.addEventListener('click', async () => {
                 const result = await GpsModule.openCurrentPosition(openButton.dataset.gpsOpen);
-                if (!result.ok) render('Position could not be opened.', true);
+                if (!result.ok) render(gpsText('openFailed'), true);
             }));
 
             const confirmationYes = container.querySelector('[data-gps-confirm="yes"]');
@@ -910,10 +947,10 @@
                 confirmationYes.addEventListener('click', async () => {
                     const result = await GpsModule.confirmLocationRequest(true);
                     if (result && result.latitude) {
-                        render('Position aktualisiert.');
+                        render(gpsText('updated'));
                         return;
                     }
-                    render('Aktuelle Position ermitteln?', true);
+                    render(gpsText('ask'), true);
                 });
             }
 
@@ -921,7 +958,7 @@
             if (confirmationNo) {
                 confirmationNo.addEventListener('click', () => {
                     GpsModule.confirmLocationRequest(false);
-                    render('Standort nicht verfügbar. Bitte Standortzugriff aktivieren.', true);
+                    render(gpsText('notAvailable'), true);
                 });
             }
 
@@ -960,13 +997,13 @@
             autoRefreshAttempted = true;
             const requestPosition = state === 'granted' ? GpsModule.getCurrentPosition() : GpsModule.confirmLocationRequest(true);
             return requestPosition
-                .then(() => render('Position automatisch aktualisiert.'))
+                .then(() => render(gpsText('autoUpdated')))
                 .catch((error) => {
                     const message = error && error.code === 'PERMISSION_DENIED'
-                        ? 'Standort nicht verfügbar. Bitte Standortzugriff aktivieren.'
+                        ? gpsText('notAvailable')
                         : error && error.code === 'TIMEOUT'
-                            ? 'Die Positionsabfrage timed out.'
-                            : 'Automatische Positionsabfrage war nicht verfügbar.';
+                            ? gpsText('timeout')
+                            : gpsText('autoFailed');
                     render(message, true);
                 });
         }).catch(() => {});

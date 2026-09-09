@@ -25,6 +25,7 @@ use Neutral\Core\PdoLoginAttemptStore;
 use Neutral\Core\DatabaseBackupService;
 use Neutral\Core\BackupRuntimeException;
 use Neutral\Core\SchemaMigrator;
+use Neutral\Core\AccountLicenseService;
 
 $runtime = neutral_bootstrap();
 $config = $runtime->config();
@@ -39,6 +40,7 @@ $auditService = new Phase6AuditService($database, $store);
 $moduleRuntime = new Phase7ModuleRuntime($database, $runtime->projectRoot());
 $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/Server/runtime'), $database);
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
+$accountLicenseService = new AccountLicenseService($database);
 $moduleServerRegistry = new ModuleServerRegistry(
     $runtime->projectRoot(),
     new ModuleContract(),
@@ -172,7 +174,17 @@ function admin_user_payload(array $user): array
         'permissions' => $user['permissions'],
         'createdAt' => $user['createdAt'],
         'updatedAt' => $user['updatedAt'],
+        'lastActivityAt' => $user['lastActivityAt'] ?? '',
+        'usedDevices' => $user['usedDevices'] ?? 0,
+        'allowedDevices' => $user['allowedDevices'] ?? 5,
     ];
+}
+
+function identity_user_id(?array $identity): int
+{
+    $id = (string) ($identity['userId'] ?? '');
+    if ($id === '' || !ctype_digit($id) || (int) $id < 1) JsonResponse::error('Authenticated user required.', 401);
+    return (int) $id;
 }
 
 function actor_user_id(?array $identity): ?int
@@ -292,6 +304,15 @@ if (str_starts_with((string) ($route ?? ''), 'admin/')) {
     }
 }
 $identity = $authManager->resolveIdentity($headers, $sessionScope);
+try {
+    $presenceUserId = (string) ($identity['userId'] ?? '');
+    $accountLicenseService->recordInstallation(
+        strtolower(trim((string) ($headers['x-neutral-device-id'] ?? ''))),
+        ctype_digit($presenceUserId) && (int) $presenceUserId > 0 ? (int) $presenceUserId : null
+    );
+} catch (Throwable $exception) {
+    // Presence metrics must never block the requested operation.
+}
 
 if ($route === 'status') {
     $database = $config->database();
@@ -433,6 +454,47 @@ if (($route === 'auth/me' || $route === 'admin/auth/me') && $method === 'GET') {
         'roles' => $identity['roles'] ?? [],
         'permissions' => $identity['permissions'] ?? [],
     ]);
+}
+
+if ($route === 'account/profile' && $method === 'GET') {
+    if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
+    JsonResponse::success(['profile' => $accountLicenseService->profile(identity_user_id($identity))]);
+}
+
+if ($route === 'account/profile' && $method === 'PUT') {
+    if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
+    try { Security::assertValidCsrfToken((string)($headers['x-csrf-token'] ?? '')); } catch (Throwable $exception) { JsonResponse::error('Invalid CSRF token.', 403); }
+    JsonResponse::success(['profile' => $accountLicenseService->updateProfile(identity_user_id($identity), parse_json_body())]);
+}
+
+if ($route === 'account/password' && $method === 'POST') {
+    if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
+    try {
+        Security::assertValidCsrfToken((string)($headers['x-csrf-token'] ?? ''));
+        $payload = parse_json_body();
+        $accountLicenseService->changePassword(identity_user_id($identity), (string)($payload['currentPassword'] ?? ''), (string)($payload['newPassword'] ?? ''));
+    } catch (RuntimeException $exception) {
+        JsonResponse::error($exception->getMessage(), 422);
+    }
+    JsonResponse::success(['changed' => true]);
+}
+
+if ($route === 'admin/installations/metrics' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'admin.read', false, $headers);
+    JsonResponse::success(['metrics' => $accountLicenseService->installationMetrics()]);
+}
+
+if ($route === 'license/users' && $method === 'GET') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', false, $headers);
+    JsonResponse::success(['users'=>$accountLicenseService->organizationUsers(identity_user_id($identity))]);
+}
+
+if ($route === 'license/users' && $method === 'POST') {
+    require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
+    $payload=parse_json_body();
+    $created=$userService->create($payload);
+    $accountLicenseService->assignUser(identity_user_id($identity),(int)$created['id'],isset($payload['allowedDevices'])?(int)$payload['allowedDevices']:null);
+    JsonResponse::success(['user'=>$created],201);
 }
 
 if ($route === 'modules' && $method === 'GET') {

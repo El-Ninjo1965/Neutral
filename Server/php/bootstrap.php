@@ -18,6 +18,7 @@ require_once __DIR__ . '/src/LoginRateLimiter.php';
 require_once __DIR__ . '/src/UserUiDesign.php';
 require_once __DIR__ . '/src/DatabaseBackupService.php';
 require_once __DIR__ . '/src/Phase4AuthRbac.php';
+require_once __DIR__ . '/src/AccountLicenseService.php';
 require_once __DIR__ . '/src/SchemaMigrator.php';
 require_once __DIR__ . '/src/CoreDataSeeder.php';
 require_once __DIR__ . '/src/Phase6AdminStorage.php';

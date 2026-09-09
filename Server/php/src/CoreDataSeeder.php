@@ -143,9 +143,10 @@ final class CoreDataSeeder
         $env = $this->config->env();
         $username = trim((string) ($env['CORE_BOOTSTRAP_USERNAME'] ?? ''));
         $password = (string) ($env['CORE_BOOTSTRAP_PASSWORD'] ?? '');
-        if ($username === '' || strlen($password) < 8) {
-            throw new \RuntimeException('CORE_BOOTSTRAP_USERNAME and CORE_BOOTSTRAP_PASSWORD (>=8 chars) are required for installation.');
+        if ($username === '') {
+            throw new \RuntimeException('CORE_BOOTSTRAP_USERNAME is required for installation.');
         }
+        Phase4PasswordHasher::assertValid($password);
 
         $adminRoleId = $this->findRoleId($pdo, 'admin');
         if ($adminRoleId === null) {

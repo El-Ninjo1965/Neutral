@@ -126,6 +126,15 @@
         getDeviceLocale() {
             const locale = (navigator.language || 'de').split('-')[0].toLowerCase();
             return SUPPORTED.includes(locale) ? locale : 'de';
+        },
+
+        registerTranslations(translations) {
+            if (!translations || typeof translations !== 'object') return false;
+            for (const locale of SUPPORTED) {
+                if (!translations[locale] || typeof translations[locale] !== 'object') continue;
+                Object.assign(TRANSLATIONS[locale], translations[locale]);
+            }
+            return true;
         }
     };
 

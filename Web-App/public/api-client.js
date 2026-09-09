@@ -309,6 +309,14 @@ class ApiClient {
     return this.put(`/api/admin/users/${userId}`, userData);
   }
 
+  async getProfile() { return this.get('/api/account/profile'); }
+
+  async updateProfile(profile) { return this.put('/api/account/profile', profile); }
+
+  async changePassword(currentPassword, newPassword) {
+    return this.post('/api/account/password', { currentPassword, newPassword });
+  }
+
   async deleteUser(userId) {
     return this.delete(`/api/admin/users/${userId}`);
   }

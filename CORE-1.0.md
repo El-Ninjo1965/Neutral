@@ -95,3 +95,7 @@ Jeder spätere Wunsch nach einer Core-Änderung durchläuft vor Implementierung 
 Der aktuelle Audit der fachlich verschiedenen Referenzen `gps` und `reference-notes` belegt Discovery, Cliententry, serverseitige Services/Routen, Permissions, Limits, Settings, Migration und Lifecycle bereits ohne fachlichen Routerzweig. Es wurde daher vor dem Freeze keine weitere generische Schnittstelle auf Vorrat ergänzt.
 
 Der reale Tablet-Retest belegte als einzige zusätzliche generische UI-Lücke ein responsives Content-Card/Grid-System. Der zentrale `.user-content-grid`-Vertrag wurde deshalb vor dem Freeze ergänzt und steht allen Modulen zur Verfügung; GPS verwendet nur einen neutralen Proportionsmodifier. Dies ist kein neuer fachlicher Hook.
+
+## Account/license freeze audit – 2026-09-09
+
+The evidenced pre-freeze gaps now have generic contracts: account/profile/privacy, exact password policy, configurable entitlements/licenses, scoped organization administration, installation device limits, module available/locked/hidden projection, server-seen installation metrics, responsive Settings/Profile, and moderated user-media storage. Marketplace, Messaging, Community, GPS Pro and CatchTrack logic remain outside Core. Normal future product features must be implemented as modules without changing these Core files.

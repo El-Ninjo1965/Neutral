@@ -259,3 +259,7 @@ Module user interfaces use the shared `.user-content-grid` contract for groups o
 ## Freeze-Entscheidung für neue Produktmodule
 
 Ein Produktfeature darf bestehende Coredateien nicht für seine konkrete Fachlogik patchen. Vor einem Core-Änderungswunsch ist der Referenzablauf aus Manifest, Browserentry, `module.php`, generischem `/api/v1/modules/<id>/…`-Dispatch, Modulmigrationen, Permissionregistry, Adminsettings und Lifecycle vollständig auszuschöpfen. Nur eine mit einem neutralen Contract-Test belegte allgemeine Frameworklücke rechtfertigt einen kleinen Core-Extension-Point; andernfalls bleibt die Änderung im Modul.
+
+## Entitlement projection contract
+
+A module may receive a server-authoritative entitlement projection of `available`, `locked`, or `hidden`. `locked` may be rendered with a generic required-entitlement notice; `hidden` is not rendered. Neither client state grants permissions. Package names remain configuration, never Core constants. Product modules must continue to use server permission checks and may not inspect organization names or commercial tiers in Core code.

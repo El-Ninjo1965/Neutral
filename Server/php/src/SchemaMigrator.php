@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_03_0003';
+    public const SCHEMA_VERSION = '2026_09_09_0005';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -25,6 +25,13 @@ final class SchemaMigrator
         'audit_log',
         'backups',
         'release_state',
+        'user_profiles',
+        'packages',
+        'licenses',
+        'license_users',
+        'installation_presence',
+        'user_media',
+        'media_moderation_history',
     ];
 
     private Database $database;
@@ -235,6 +242,18 @@ final class SchemaMigrator
             "DELETE rp FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.role_key IN ('viewer','user') AND p.permission_key IN ('admin.read','admin.write','auth.read','auth.write','user.read','user.write','role.read','role.write','settings.read','settings.write','session.read','session.write','audit.read','backups.view','backups.manage')",
         ];
 
+        $accountLicenseStatements = [
+            "ALTER TABLE users MODIFY email VARCHAR(190) NULL",
+            "CREATE TABLE IF NOT EXISTS user_profiles (user_id BIGINT UNSIGNED NOT NULL, public_nickname VARCHAR(120) NULL, phone VARCHAR(80) NULL, address TEXT NULL, birthday DATE NULL, privacy_json TEXT NOT NULL, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (user_id), CONSTRAINT fk_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS packages (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, package_key VARCHAR(120) NOT NULL, name VARCHAR(190) NOT NULL, entitlements_json LONGTEXT NOT NULL, limits_json LONGTEXT NOT NULL, status VARCHAR(32) NOT NULL DEFAULT 'active', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE KEY ux_packages_key(package_key)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS licenses (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, license_key VARCHAR(120) NOT NULL, organization_name VARCHAR(190) NOT NULL, package_id BIGINT UNSIGNED NOT NULL, seat_limit INT UNSIGNED NULL, device_limit INT UNSIGNED NULL, status VARCHAR(32) NOT NULL DEFAULT 'active', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE KEY ux_licenses_key(license_key), CONSTRAINT fk_licenses_package FOREIGN KEY(package_id) REFERENCES packages(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS license_users (license_id BIGINT UNSIGNED NOT NULL, user_id BIGINT UNSIGNED NOT NULL, license_role VARCHAR(32) NOT NULL DEFAULT 'member', device_limit INT UNSIGNED NULL, assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(license_id,user_id), KEY ix_license_users_user(user_id), CONSTRAINT fk_license_users_license FOREIGN KEY(license_id) REFERENCES licenses(id) ON DELETE CASCADE, CONSTRAINT fk_license_users_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS installation_presence (installation_id CHAR(32) NOT NULL, user_id BIGINT UNSIGNED NULL, audience VARCHAR(32) NOT NULL DEFAULT 'anonymous', first_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(installation_id), KEY ix_presence_last_seen(last_seen_at), KEY ix_presence_audience(audience), CONSTRAINT fk_presence_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS user_media (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, user_id BIGINT UNSIGNED NOT NULL, media_type VARCHAR(32) NOT NULL, storage_path VARCHAR(255) NOT NULL, mime_type VARCHAR(80) NOT NULL, byte_size INT UNSIGNED NOT NULL, moderation_status VARCHAR(32) NOT NULL DEFAULT 'pending', rejection_reason VARCHAR(255) NULL, moderator_note TEXT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY(id), KEY ix_user_media_user(user_id), KEY ix_user_media_status(moderation_status), CONSTRAINT fk_user_media_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS media_moderation_history (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, media_id BIGINT UNSIGNED NOT NULL, actor_user_id BIGINT UNSIGNED NULL, from_status VARCHAR(32) NULL, to_status VARCHAR(32) NOT NULL, reason VARCHAR(255) NULL, note TEXT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), KEY ix_media_history_media(media_id), CONSTRAINT fk_media_history_media FOREIGN KEY(media_id) REFERENCES user_media(id) ON DELETE CASCADE, CONSTRAINT fk_media_history_actor FOREIGN KEY(actor_user_id) REFERENCES users(id) ON DELETE SET NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "INSERT INTO permissions (permission_key,description,scope) VALUES ('license.manage','Manage users and devices within an assigned license','license'),('profile.media.upload','Upload profile media when entitled','user-media'),('media.moderate','Review submitted user media','admin') ON DUPLICATE KEY UPDATE description=VALUES(description),scope=VALUES(scope)",
+        ];
+
         return [
             [
                 'key' => '2026_08_25_0001_core_schema',
@@ -255,6 +274,11 @@ final class SchemaMigrator
                 'key' => '2026_09_09_0004_operations_device_sessions',
                 'checksum' => sha1(implode("\n", $operationsStatements)),
                 'statements' => $operationsStatements,
+            ],
+            [
+                'key' => '2026_09_09_0005_account_license_foundation',
+                'checksum' => sha1(implode("\n", $accountLicenseStatements)),
+                'statements' => $accountLicenseStatements,
             ],
         ];
     }

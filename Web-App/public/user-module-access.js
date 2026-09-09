@@ -16,6 +16,7 @@
     if (!module || !module.id || !isActive(module)) {
       return false;
     }
+    if (module.entitlementState === 'hidden') return false;
 
     if (!currentUser) {
       const clientAccess = module.clientAccess;
@@ -32,6 +33,11 @@
     return effective.includes('admin.write') || required.some((permission) => effective.includes(permission));
   };
 
+  const accessState = (module, currentUser) => {
+    if (!isVisible(module, currentUser)) return 'hidden';
+    return module.entitlementState === 'locked' ? 'locked' : 'available';
+  };
+
   const visibleModules = (modules, options = {}) => {
     const list = Array.isArray(modules) ? modules : [];
     const currentUser = options.currentUser || null;
@@ -46,7 +52,7 @@
   const findVisibleModule = (modules, moduleId, options = {}) => visibleModules(modules, options)
     .find((module) => String(module.id) === String(moduleId)) || null;
 
-  const api = Object.freeze({ isActive, isVisible, visibleModules, findVisibleModule });
+  const api = Object.freeze({ isActive, isVisible, accessState, visibleModules, findVisibleModule });
 
   if (typeof window !== 'undefined') {
     window.NeutralUserModuleAccess = api;
@@ -55,4 +61,3 @@
     module.exports = api;
   }
 })();
-

@@ -447,3 +447,11 @@ Die detaillierten Arbeitsnachweise bleiben zusätzlich in [`WORKFLOW.md`](WORKFL
 - Separated Audit filters from confirmed retention, added actor handles and suppressed settings no-op writes/audit events.
 - Documented the Core-1.0 feature freeze after the existing two-module contract audit found no need for speculative hooks.
 - Rounded out the GPS reference UI with an OSM map and explicit Google/OSM/system sharing choices; no GPS Pro or product-specific logic was added.
+
+## 2026-09-09 – Core-freeze account/license and live UI completion
+
+- Preserved live-confirmed device-session deduplication while converting UTC session timestamps to ISO and browser-local display.
+- Localized GPS through Core I18N and replaced the non-interactive OSM export iframe with a lightweight OSM tile viewport supporting real zoom/pointer pan, marker and attribution.
+- Added responsive Settings subnavigation, in-place saves, exact active states and a neutral Profile/password/privacy surface.
+- Enforced one password policy (8–25, no whitespace, no composition requirement), optional unique e-mail and username/e-mail login across PHP/Node/bootstrap paths; simplified Admin user creation and status handling.
+- Added normalized generic package/license/organization/profile/presence/media-moderation schema and server services for scoped license administration, limits, installation metrics and safe image validation. No commercial package names or product logic were added.

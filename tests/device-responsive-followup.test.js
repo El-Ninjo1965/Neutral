@@ -66,9 +66,9 @@ test('PHP Core permission registry supplies concrete Admin-area descriptions for
   const result = spawnSync('php', ['-r', php], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const permissions = JSON.parse(result.stdout);
-  assert.equal(permissions.length, 15);
+  assert.equal(permissions.length, 16);
   for (const permission of permissions) {
-    assert.equal(permission.scope, 'Admin');
+    assert.equal(permission.scope, permission.key === 'license.manage' ? 'System' : 'Admin');
     assert.ok(permission.description.length > 20, permission.key);
     assert.doesNotMatch(permission.description, /^Permission |^Use module capability/);
   }

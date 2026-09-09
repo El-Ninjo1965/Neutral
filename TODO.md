@@ -32,3 +32,9 @@
 - [ ] **DEVICE RETEST REQUIRED:** Auf demselben iPad/Chrome alte eindeutig historische Sessions einmalig widerrufen, zweimal neu anmelden und bestätigen, dass danach genau eine aktive Installation mit `iPadOS · Chrome` bleibt; echte Zweitgeräte dürfen nicht gelöscht werden.
 - [ ] **DEVICE RETEST REQUIRED:** GPS-Öffnen ohne `about:blank`, nativen Share, interaktive OSM-Karte sowie das responsive GPS-/Settings-Grid in Hoch-/Querformat prüfen.
 - [ ] **HOST ACTION REQUIRED:** Host-Key/ACL/Cron konfigurieren und danach ausschließlich die boolesche Backup-Readiness und einen nicht-destruktiven Backup-Lauf bestätigen; kein Produktions-Restore.
+
+## Core-freeze external acceptance
+
+- [ ] **DEVICE RETEST REQUIRED:** iPad/Chrome – lokale Sessionzeit/iPadOS-Anzeige, einsprachiges GPS, echte Karten-Zoom-/Pan-Interaktion, Settings-Unterseiten, genau ein Active-State, In-place Save und Profile/Password prüfen.
+- [ ] **HOST ACTION REQUIRED:** Migration `2026_09_09_0005_account_license_foundation` idempotent anwenden und `migrationsReady:true` bestätigen; keine Produktionsdaten ausgeben und kein Restore.
+- [ ] Product configuration later: packages/licenses and organization managers are neutral foundations; no commercial tiers, Marketplace, Community, Messaging or CatchTrack features are configured by this task.

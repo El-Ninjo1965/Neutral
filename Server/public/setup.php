@@ -232,9 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($normalizedUser === '' || strlen($normalizedUser) < 3) {
                             throw new RuntimeException(ucfirst($roleKey) . ' username must have at least 3 characters.');
                         }
-                        if ($password === '' || strlen($password) < 8) {
-                            throw new RuntimeException(ucfirst($roleKey) . ' password must have at least 8 characters.');
-                        }
+                        Neutral\Core\Phase4PasswordHasher::assertValid($password);
                         if (!hash_equals($password, $passwordConfirm)) {
                             throw new RuntimeException(ucfirst($roleKey) . ' password confirmation does not match.');
                         }
@@ -507,8 +505,8 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
                   </div>
                   <div class="form-field"><label for="adminUsername">Username</label><input id="adminUsername" type="text" name="admin_username" placeholder="admin" /></div>
                   <div class="form-field"><label for="adminEmail">Email (optional)</label><input id="adminEmail" type="email" name="admin_email" placeholder="admin@example.com" /></div>
-                  <div class="form-field"><label for="adminPassword">Password</label><input id="adminPassword" type="password" name="admin_password" /></div>
-                  <div class="form-field"><label for="adminPasswordConfirm">Confirm password</label><input id="adminPasswordConfirm" type="password" name="admin_password_confirm" /></div>
+                  <div class="form-field"><label for="adminPassword">Password</label><input id="adminPassword" type="password" name="admin_password" minlength="8" maxlength="25" pattern="\S{8,25}" /><small>8–25 characters, no spaces; no other composition rules.</small></div>
+                  <div class="form-field"><label for="adminPasswordConfirm">Confirm password</label><input id="adminPasswordConfirm" type="password" name="admin_password_confirm" minlength="8" maxlength="25" pattern="\S{8,25}" /></div>
                 </div>
                 <div class="panel">
                   <h3>Developer (optional)</h3>
@@ -523,8 +521,8 @@ $adminDefaultAction = $adminUsers === [] ? 'create' : 'reset';
                   </div>
                   <div class="form-field"><label for="developerUsername">Username</label><input id="developerUsername" type="text" name="developer_username" placeholder="developer" /></div>
                   <div class="form-field"><label for="developerEmail">Email (optional)</label><input id="developerEmail" type="email" name="developer_email" placeholder="developer@example.com" /></div>
-                  <div class="form-field"><label for="developerPassword">Password</label><input id="developerPassword" type="password" name="developer_password" /></div>
-                  <div class="form-field"><label for="developerPasswordConfirm">Confirm password</label><input id="developerPasswordConfirm" type="password" name="developer_password_confirm" /></div>
+                  <div class="form-field"><label for="developerPassword">Password</label><input id="developerPassword" type="password" name="developer_password" minlength="8" maxlength="25" pattern="\S{8,25}" /><small>8–25 characters, no spaces; no other composition rules.</small></div>
+                  <div class="form-field"><label for="developerPasswordConfirm">Confirm password</label><input id="developerPasswordConfirm" type="password" name="developer_password_confirm" minlength="8" maxlength="25" pattern="\S{8,25}" /></div>
                 </div>
               </div>
               <div class="action-row">

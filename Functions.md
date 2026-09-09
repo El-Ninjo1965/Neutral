@@ -155,3 +155,10 @@ default home instead of leaving an empty view.
 - `ApiClient.deviceLabel()` honestly labels detectable iOS/iPadOS browser tokens, including `CriOS` as Chrome, without hardware fingerprinting.
 - `AdminRouter.showView()` swaps to a route-owned host immediately and contains late/failing view work.
 - `GpsModule.locationLinks(position)` creates neutral Google Maps, OpenStreetMap and OSM embed URLs from an explicitly selected current position.
+
+## Account and license foundation (2026-09-09)
+
+- `Phase4PasswordHasher::assertValid` centralizes the exact 8–25/no-whitespace policy for creation, bootstrap and password changes.
+- `AccountLicenseService` validates private profiles/default-off sharing, verifies current-password changes, resolves exact license-manager scope, assigns seats, projects entitlement module states, records privacy-minimal server presence, aggregates installation metrics and validates profile images.
+- `Phase4SessionRegistry::licensedDeviceLimit` resolves per-user/per-license limits with configured fallback; configured privileged roles can be unlimited without using UA data as identity.
+- User Settings has four responsive internal sections and preserves the selected section after save. GPS registers translations through Core I18N and uses a local OSM tile viewport with real zoom/pan.

@@ -129,3 +129,12 @@ A non-admin identity in the isolated Admin cookie is cleared when the protected 
 Permission `Area` names the protected product/security surface, not the grammatical subject of a key. Thus `user.read` means viewing user management in the **Admin** area; module keys remain **User-App** unless a separately reviewed Core-Admin contract protects the operation. GPS module permissions never replace `admin.read`, `admin.write` or `role.write` for Core lifecycle and role management.
 
 The complete Audit reset is deliberately unavailable in production (404), requires an Admin session plus `admin.write`, and appears only in Development/Test. The request is logged immediately before deletion, but a successful complete reset necessarily deletes that request record as well; this limitation is displayed and documented. Production retains append-only audit history except confirmed bounded retention.
+
+## Account, password, license and media contract (2026-09-09)
+
+- Every initial, changed and bootstrap password is validated server-side as 8–25 characters with no whitespace. No letter, number, case or special-character composition is required. Passwords are one-way hashed and never returned or logged.
+- Username is globally unique. E-mail is optional and unique when present; login accepts username and, when configured, e-mail. Profile fields are server validated and organization sharing is field-specific and default-off.
+- `license.manage` does not confer System Admin access. Every delegated operation resolves the actor's own license on the server; global roles, permissions, settings, server, backup and audit operations remain unavailable.
+- Device identity remains the random installation ID. UA/platform values are display-only. License/user device limits may be numeric or `unlimited`; revocation is required before replacing a device at a reached limit.
+- Presence metrics mean “installation seen by this server”, not downloads. They store no IP history, GPS, hardware fingerprint or inferred offline use.
+- Server-uploaded profile images are limited to validated JPEG/PNG/WebP up to 5 MB and enter `pending`; `approved`, `rejected` and `deleted` transitions retain moderation reason/note history. Anonymous viewers cannot upload and nothing is automatically public.

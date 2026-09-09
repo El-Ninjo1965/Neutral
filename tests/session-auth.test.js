@@ -115,7 +115,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     username: 'sessuser',
     displayName: 'Session User',
     email: 'sessuser@example.com',
-    password: 'correct-horse-battery-staple',
+    password: 'correct-password-123',
     role: 'admin',
     ...overrides
   });
@@ -123,7 +123,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
   before(async () => {
     cleanupConfigFiles();
     process.env.CORE_BOOTSTRAP_USERNAME = 'bootstrap-login-user';
-    process.env.CORE_BOOTSTRAP_PASSWORD = 'correct-horse-battery-staple';
+    process.env.CORE_BOOTSTRAP_PASSWORD = 'correct-password-123';
     app = ServerBootstrap.createServer();
     await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve));
     port = app.address().port;
@@ -142,7 +142,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('1. Login succeeds with valid credentials and sets session + CSRF cookies', async () => {
     await createTestUser({ username: 'login-ok', email: 'login-ok@example.com' });
-    const result = await rawRequest('POST', '/api/auth/login', { payload: { username: 'login-ok', password: 'correct-horse-battery-staple' } });
+    const result = await rawRequest('POST', '/api/auth/login', { payload: { username: 'login-ok', password: 'correct-password-123' } });
 
     assert.equal(result.statusCode, 200);
     assert.equal(result.body.ok, true);
@@ -154,9 +154,9 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     await createTestUser({ username: 'dual-user', email: 'dual-user@example.com', role: 'user' });
     await createTestUser({ username: 'dual-admin', email: 'dual-admin@example.com', role: 'admin' });
 
-    const userLogin = await rawRequest('POST', '/api/auth/login', { payload: { username: 'dual-user', password: 'correct-horse-battery-staple' } });
+    const userLogin = await rawRequest('POST', '/api/auth/login', { payload: { username: 'dual-user', password: 'correct-password-123' } });
     const adminLogin = await rawRequest('POST', '/api/auth/login', {
-      payload: { username: 'dual-admin', password: 'correct-horse-battery-staple' },
+      payload: { username: 'dual-admin', password: 'correct-password-123' },
       headers: { 'x-framework-role': 'admin' }
     });
 
@@ -186,10 +186,10 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     await createTestUser({ username: 'dual-logout-admin', email: 'dual-logout-admin@example.com', role: 'admin' });
 
     const userLogin = await rawRequest('POST', '/api/auth/login', {
-      payload: { username: 'dual-logout-user', password: 'correct-horse-battery-staple' }
+      payload: { username: 'dual-logout-user', password: 'correct-password-123' }
     });
     const adminLogin = await rawRequest('POST', '/api/auth/login', {
-      payload: { username: 'dual-logout-admin', password: 'correct-horse-battery-staple' },
+      payload: { username: 'dual-logout-admin', password: 'correct-password-123' },
       headers: { 'x-framework-role': 'admin' }
     });
 
@@ -215,7 +215,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     assert.equal(adminStillAuthenticated.body.user.username, 'dual-logout-admin');
 
     const userReLogin = await rawRequest('POST', '/api/auth/login', {
-      payload: { username: 'dual-logout-user', password: 'correct-horse-battery-staple' }
+      payload: { username: 'dual-logout-user', password: 'correct-password-123' }
     });
     assert.equal(userReLogin.statusCode, 200);
 
@@ -247,10 +247,10 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     await createTestUser({ username: 'explicit-admin', email: 'explicit-admin@example.com', role: 'admin' });
 
     const userLogin = await rawRequest('POST', '/api/auth/login', {
-      payload: { username: 'explicit-user', password: 'correct-horse-battery-staple' }
+      payload: { username: 'explicit-user', password: 'correct-password-123' }
     });
     const adminLogin = await rawRequest('POST', '/api/admin/auth/login', {
-      payload: { username: 'explicit-admin', password: 'correct-horse-battery-staple' }
+      payload: { username: 'explicit-admin', password: 'correct-password-123' }
     });
 
     assert.equal(userLogin.statusCode, 200);
@@ -287,7 +287,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('2. Bootstrap admin is created from env values when no seeded admin exists', async () => {
     const username = process.env.CORE_BOOTSTRAP_USERNAME || 'bootstrap-login-user';
-    const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-horse-battery-staple';
+    const password = process.env.CORE_BOOTSTRAP_PASSWORD || 'correct-password-123';
     const result = await rawRequest('POST', '/api/auth/login', { payload: { username, password } });
 
     assert.equal(result.statusCode, 200);
@@ -308,7 +308,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('4. Session is created and reflected in /api/auth/me', async () => {
     await createTestUser({ username: 'sess-create', email: 'sess-create@example.com' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'sess-create', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'sess-create', password: 'correct-password-123' } });
 
     const me = await rawRequest('GET', '/api/auth/me', { cookies: { neutral_session: login.cookies.neutral_session } });
     assert.equal(me.statusCode, 200);
@@ -324,7 +324,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('5. Logout invalidates the session', async () => {
     await createTestUser({ username: 'logout-user', email: 'logout-user@example.com' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'logout-user', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'logout-user', password: 'correct-password-123' } });
 
     const logout = await rawRequest('POST', '/api/auth/logout', {
       cookies: { neutral_session: login.cookies.neutral_session },
@@ -367,7 +367,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('8. Role check: admin session can access admin routes', async () => {
     await createTestUser({ username: 'role-admin', email: 'role-admin@example.com', role: 'admin' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-admin', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-admin', password: 'correct-password-123' } });
 
     const result = await rawRequest('GET', '/api/admin/users', { cookies: { neutral_session: login.cookies.neutral_session } });
     assert.equal(result.statusCode, 200);
@@ -375,7 +375,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('9. Role check: viewer session is forbidden on admin write routes', async () => {
     await createTestUser({ username: 'role-viewer', email: 'role-viewer@example.com', role: 'viewer' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-viewer', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-viewer', password: 'correct-password-123' } });
 
     const result = await rawRequest('POST', '/api/admin/settings', {
       payload: { appName: 'x', settings: {} },
@@ -387,7 +387,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('10. Role check: developer session can access admin routes', async () => {
     await createTestUser({ username: 'role-developer', email: 'role-developer@example.com', role: 'developer' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-developer', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-developer', password: 'correct-password-123' } });
 
     const result = await rawRequest('GET', '/api/admin/settings', { cookies: { neutral_session: login.cookies.neutral_session } });
     assert.equal(result.statusCode, 200);
@@ -395,7 +395,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('11. Role check: admin session can write admin settings with CSRF token', async () => {
     await createTestUser({ username: 'role-admin-write', email: 'role-admin-write@example.com', role: 'admin' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-admin-write', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'role-admin-write', password: 'correct-password-123' } });
 
     const result = await rawRequest('POST', '/api/admin/settings', {
       payload: { appName: 'CSRF OK', settings: {} },
@@ -407,7 +407,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('12. CSRF protection: state-changing request without CSRF token is rejected', async () => {
     await createTestUser({ username: 'csrf-user', email: 'csrf-user@example.com', role: 'admin' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'csrf-user', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'csrf-user', password: 'correct-password-123' } });
 
     const result = await rawRequest('POST', '/api/admin/settings', {
       payload: { appName: 'No CSRF', settings: {} },
@@ -425,7 +425,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('14. Session survives a server restart when using the file-backed store', async () => {
     await createTestUser({ username: 'restart-user', email: 'restart-user@example.com', role: 'admin' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'restart-user', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'restart-user', password: 'correct-password-123' } });
 
     // Simulate a "server restart" by creating a brand new server instance
     // (fresh in-process wiring) while keeping the same on-disk session store.
@@ -474,7 +474,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
 
   test('16. No sensitive session data (password hash, csrf secret) leaks via /api/auth/me', async () => {
     await createTestUser({ username: 'leak-check', email: 'leak-check@example.com' });
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'leak-check', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'leak-check', password: 'correct-password-123' } });
 
     const me = await rawRequest('GET', '/api/auth/me', { cookies: { neutral_session: login.cookies.neutral_session } });
     assert.equal(me.body.user.passwordHash, undefined);
@@ -505,7 +505,7 @@ describe('Phase 5B - Session Auth Integration Tests', { concurrency: false }, ()
     await createTestUser({ username: 'multi-instance', email: 'multi-instance@example.com', role: 'admin' });
 
     // Instance A: normal running server (already has the default file store).
-    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'multi-instance', password: 'correct-horse-battery-staple' } });
+    const login = await rawRequest('POST', '/api/auth/login', { payload: { username: 'multi-instance', password: 'correct-password-123' } });
 
     // Instance B: independently created server bound to a different port,
     // sharing the same on-disk Server/config/sessions.json file.

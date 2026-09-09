@@ -119,3 +119,7 @@ Migration `2026_09_09_0004_operations_device_sessions` adds random device identi
 ## 2026-09-09 Session and audit semantics
 
 For a `(user_id, device_id)` installation, only the newest successful login remains active; preceding active rows become `replaced` and no longer contribute to active counts. Audit queries join the actor handle for authorized display while retaining `actor_user_id` as the stable reference. Unchanged settings payloads do not update settings rows and do not append audit events.
+
+## Migration `2026_09_09_0005_account_license_foundation`
+
+Adds nullable/optional user e-mail plus `user_profiles`, `packages`, `licenses`, `license_users`, `installation_presence`, `user_media`, and `media_moderation_history`. Package entitlements and limits are versionable JSON configuration; SQL relations enforce organization/user scope. A NULL license/device limit represents `unlimited`. Presence stores random installation ID, audience and server-contact timestamps only. Media rows and immutable moderation history support `pending/approved/rejected/deleted` without public publishing.

@@ -1201,7 +1201,7 @@ test('gps never triggers the first browser permission prompt automatically', { s
   gps.renderUserInterface(container);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(geolocationState.currentPositionCalls, 0);
-  assert.match(container.innerHTML, /Update position/);
+  assert.match(container.innerHTML, /Position aktualisieren|Update position/);
 });
 
 test('gps asks for explicit user confirmation before requesting location in prompt state', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
@@ -1554,7 +1554,7 @@ test('gps shows honest denial message without fake enable action', { skip: gpsRe
   const source = fs.readFileSync(path.join(projectRoot, 'Web-App/app/modules/gps/index.js'), 'utf8');
 
   assert.match(source, /Standortzugriff nicht erlaubt\./);
-  assert.match(source, /Browser- bzw\. Geräteeinstellungen/);
+  assert.match(source, /Browser- oder Geräteeinstellungen/);
   // No fake "enable" action that pretends the app can change browser/OS permission.
   assert.doesNotMatch(source, /data-gps-action="enable-permission"/);
 });

@@ -321,7 +321,7 @@ test('regular user login is not blocked by the local developer bootstrap state',
 
   const result = await context.window.LocalAuth.login({
     username: 'Tester',
-    password: 'correct-horse-battery-staple'
+    password: 'correct-password-123'
   });
 
   assert.equal(result.ok, true);

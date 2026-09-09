@@ -35,3 +35,8 @@
 - **DEVICE RETEST REQUIRED:** Einmalige Sichtung/Widerruf historischer zufälliger Session-IDs, danach Relogin-Deduplizierung und ehrliche iPadOS-/Chrome-Anzeige auf dem Betreibergerät prüfen.
 - **DEVICE RETEST REQUIRED:** Google-/OSM-Öffnen, System-Share, eingebettete Karteninteraktion und responsive GPS-/Settings-Karten auf iPad prüfen.
 - **HOST ACTION REQUIRED:** Verschlüsselungs-Key, geschützte Ablage und Cron hostseitig aktivieren; der UI-Button wird erst bei vollständig grüner Readiness aktiv.
+
+## Current external checks
+
+- **DEVICE RETEST REQUIRED:** gebündelte iPad/Chrome-Liste aus `CHATGPT.md` vollständig durchführen; neue Flächen bis dahin nicht `LIVE BESTANDEN` nennen.
+- **HOST ACTION REQUIRED:** Migration/Readiness des Account-License-Fundaments und bestehende Backup-Key/ACL/Cron-Punkte sicher hostseitig bestätigen; kein Produktions-Restore.

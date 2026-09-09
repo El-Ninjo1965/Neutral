@@ -87,7 +87,7 @@ const create = async (userData, actor = 'system') => {
       throw new Error(`User with username '${userData.username}' already exists`);
     }
 
-    const existingByEmail = getAll().find((u) => u.email === userData.email);
+    const existingByEmail = userData.email ? getAll().find((u) => u.email === userData.email) : null;
     if (existingByEmail) {
       throw new Error(`User with email '${userData.email}' already exists`);
     }
@@ -96,8 +96,8 @@ const create = async (userData, actor = 'system') => {
     const user = {
       id: userId,
       username: userData.username,
-      email: userData.email,
-      displayName: userData.displayName || userData.username,
+      email: userData.email || '',
+      displayName: userData.displayName || '',
       role: userData.role || 'user',
       status: userData.status || 'active',
       permissions: Array.isArray(userData.permissions) ? userData.permissions : [],
@@ -215,14 +215,14 @@ const validateUserData = (userData, options = {}) => {
     }
   }
 
-  if (isNew || userData.email !== undefined) {
-    if (!userData.email || typeof userData.email !== 'string' || !isValidEmail(userData.email)) {
+  if (userData.email !== undefined && userData.email !== '') {
+    if (typeof userData.email !== 'string' || !isValidEmail(userData.email)) {
       errors.push('email must be a valid email address');
     }
   }
 
   if (isNew || userData.role !== undefined) {
-    const validRoles = ['admin', 'developer', 'user', 'viewer'];
+    const validRoles = ['admin', 'developer', 'user', 'viewer', 'license_admin'];
     if (!userData.role || !validRoles.includes(userData.role)) {
       errors.push(`role must be one of: ${validRoles.join(', ')}`);
     }
@@ -232,17 +232,18 @@ const validateUserData = (userData, options = {}) => {
     errors.push('displayName must be a string');
   }
 
-  if (userData.status !== undefined && !['active', 'inactive', 'pending', 'archived'].includes(userData.status)) {
-    errors.push('status must be one of: active, inactive, pending, archived');
+  if (userData.status !== undefined && !['active', 'blocked'].includes(userData.status)) {
+    errors.push('status must be one of: active, blocked');
   }
 
   if (userData.permissions !== undefined && !Array.isArray(userData.permissions)) {
     errors.push('permissions must be an array');
   }
 
-  if (userData.password !== undefined && userData.password && typeof userData.password !== 'string') {
-    errors.push('password must be a string');
+  if (userData.password !== undefined && userData.password && (typeof userData.password !== 'string' || userData.password.length < 8 || userData.password.length > 25 || /\s/.test(userData.password))) {
+    errors.push('password must contain 8 to 25 characters and no whitespace');
   }
+  if (isNew && (!userData.password || typeof userData.password !== 'string')) errors.push('initial password is required');
 
   return {
     valid: errors.length === 0,
@@ -254,7 +255,7 @@ const ensureBootstrapAdminUser = async () => {
   const username = String(process.env.CORE_BOOTSTRAP_USERNAME || '').trim();
   const password = String(process.env.CORE_BOOTSTRAP_PASSWORD || '');
 
-  if (!username || password.length < 8) {
+  if (!username || password.length < 8 || password.length > 25 || /\s/.test(password)) {
     return null;
   }
 

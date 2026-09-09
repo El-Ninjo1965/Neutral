@@ -49,7 +49,7 @@ class AdminUsersView {
           <input type="text" id="filterQuery" placeholder="Search username, email, display name" value="${escapeHtmlUsers(this.filters.q || '')}" />
           <select id="filterStatus">
             <option value="">All statuses</option>
-            ${['active', 'inactive', 'pending', 'archived'].map((status) => `
+            ${['active', 'blocked'].map((status) => `
               <option value="${status}" ${this.filters.status === status ? 'selected' : ''}>${status}</option>
             `).join('')}
           </select>
@@ -115,6 +115,8 @@ class AdminUsersView {
             <th>Roles</th>
             <th>Status</th>
             <th>Created</th>
+            <th>Last Activity</th>
+            <th>Devices</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -127,6 +129,8 @@ class AdminUsersView {
               <td>${Array.isArray(user.roles) && user.roles.length ? user.roles.map((r) => `<span class="chip">${escapeHtmlUsers(r)}</span>`).join(' ') : '—'}</td>
               <td><span class="badge badge-${escapeHtmlUsers(user.status || 'active')}">${escapeHtmlUsers(user.status || 'active')}</span></td>
               <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
+              <td>${user.lastActivityAt ? new Date(user.lastActivityAt.replace(' ', 'T') + 'Z').toLocaleString() : 'Inactive'}</td>
+              <td><button type="button" class="btn btn-sm btn-secondary" onclick="adminRouter.showView('sessions')">${Number(user.usedDevices || 0)} / ${user.allowedDevices == null ? 'Unlimited' : Number(user.allowedDevices)}</button></td>
               <td class="action-buttons">
                 <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button>
                 <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button>
@@ -177,8 +181,8 @@ class AdminUsersView {
         </div>
       ` : ''}
       <div class="form-group">
-        <label for="email">Email *</label>
-        <input type="email" id="email" name="email" required value="${escapeHtmlUsers(user?.email || '')}">
+        <label for="email">Email (optional)</label>
+        <input type="email" id="email" name="email" value="${escapeHtmlUsers(user?.email || '')}">
       </div>
       <div class="form-group">
         <label for="displayName">Display Name</label>
@@ -187,18 +191,19 @@ class AdminUsersView {
       <div class="form-group">
         <label for="status">Status</label>
         <select id="status" name="status" required>
-          ${['active', 'inactive', 'pending', 'archived'].map((status) => `
+          ${['active', 'blocked'].map((status) => `
             <option value="${status}" ${user?.status === status ? 'selected' : ''}>${status}</option>
           `).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label>Roles</label>
+        <label>Role *</label>
         <div class="permissions-checklist">${roleOptions || '<small>No roles available.</small>'}</div>
       </div>
       <div class="form-group">
         <label for="password">${this.editingUserId ? 'New Password (optional)' : 'Password *'}</label>
-        <input type="password" id="password" name="password" ${this.editingUserId ? '' : 'required'} minlength="8">
+        <input type="password" id="password" name="password" ${this.editingUserId ? '' : 'required'} minlength="8" maxlength="25" pattern="\\S{8,25}" aria-describedby="password-help">
+        <small id="password-help">8–25 characters, no spaces. No other composition rules.</small>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">${submitText}</button>
@@ -210,6 +215,7 @@ class AdminUsersView {
       event.preventDefault();
       const formData = new FormData(form);
       const roles = formData.getAll('roles').map((entry) => String(entry));
+      if (roles.length === 0) { AdminCommon.showAlert('Select one role.', 'error'); return; }
       const payload = {
         email: formData.get('email') || '',
         displayName: formData.get('displayName') || '',

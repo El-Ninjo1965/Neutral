@@ -1,24 +1,31 @@
-# CURRENT TASK — Device-Retest-Follow-up und responsive User-UI
+# CURRENT TASK — Core-Freeze: User/Account/Lizenz und Live-Fixes
 
 **Quelle:** `CODEX.md`, 2026-09-09
-**Status:** ABGESCHLOSSEN · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
-**Grenzen:** P1/P4 regressionsfrei; kein GPS Pro, CatchTrack oder allgemeine i18n-/Appearance-Phase; keine Secrets; keine destruktiven Produktionsaktionen.
+**Status:** IN ARBEIT
+**Grenzen:** Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace-/Community-/Messaging-Feature; P1/P4 und bestätigte Session-Deduplizierung erhalten; keine Secrets oder destruktiven Produktionsaktionen.
 
 ## Verbindliche Arbeitsliste
 
-1. [x] Umgebung/Repository prüfen, mit `origin/main` synchronisieren und alle in `CODEX.md` genannten Pflichtdokumente sowie betroffenen Implementierungs-/Testdateien vollständig lesen.
-2. [x] Capture prüfen: Abschnitte 1–13 aus `CODEX.md` sind vollständig abgebildet; **`CODEX.md == CURRENT-TASK-Anforderungen` — bestanden.**
-3. [x] Device-Session-Root-Cause test-first vollständig beheben: persistente Installation-ID über Adminlogin/Logout/403/Reload, gleiche Installation pro User genau einmal, zwei User getrennt, zweite Installation getrennt, Legacy/ersetzte Zeilen nicht aktiv; ehrliche iPad-Chrome-Darstellung ohne `MacIntel`.
-4. [x] Positiv bestätigten getrennten Admin-Reauth-/P1-Vertrag regressionsfrei erhalten.
-5. [x] Dashboard und Session Overview an dieselbe autoritative aktive Menge binden, begrenzte Vorschau sichtbar kennzeichnen/verlinken und Geräte/Plattform konsistent zeigen; bestehende DB-/Zeit-/Backup-Fixes erhalten.
-6. [x] Für jeden Corepermission-Key konkrete Beschreibung und klare Area-Semantik liefern; GPS-Permissions fachlich/serverseitig prüfen; Catalog strikt read-only halten und Verträge dokumentieren.
-7. [x] Backup-Create anhand boolescher Readiness deaktivieren/erklären und nach gültiger Readiness automatisch aktivieren; sichere Hostdokumentation erhalten, `HOST ACTION REQUIRED`, kein Secret/Restore.
-8. [x] Audit-Purge reale Löschanzahl melden; kontrollierten Clear-all-Vertrag nur für Development/Test mit höchster Adminberechtigung, separater Bestätigung/UI und ehrlich dokumentierter Nachvollziehbarkeitsgrenze implementieren; No-op-/changedFields-Vertrag erhalten.
-9. [x] GPS-Bediensemantik test-first auf `Update position`, `Open in Google Maps`, `Open in OpenStreetMap`, `Share position` korrigieren; nativen Share verwenden und Google-about:blank ohne vorab geöffnetes Fenster beheben.
-10. [x] Eingebettete OSM-Karte vom externen Wrapper-Link lösen und Zoom/Touch/Pan im iframe zulassen; externe Öffnung ausschließlich über den OSM-Button; Attribution/Marker erhalten.
-11. [x] Generisches responsives User-Content-Card/Grid-System als belegte Framework-UI-Lücke ergänzen; GPS und User-Settings für Mobile/Tablet/Desktop daran anbinden und Light/Dark/Touch/P4 absichern.
-12. [x] Core-Freeze-Vertrag ohne weitere spekulative Hooks erhalten; responsive UI-Fähigkeit dokumentieren.
-13. [x] Echte JS/PHP-Integration-, DOM- und Contract-Tests für alle Mindestfälle ergänzen; test-first Rot/Grün belegen, reine Regex-Abnahme vermeiden.
-14. [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Secret-/Artefaktprüfung und vollständiges Produktionspaket ausführen.
-15. [x] `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CHANGELOG.md`, relevante Verträge und vollständigen Abschlussbericht in `CHATGPT.md` aktualisieren; externe Punkte ausschließlich als `DEVICE RETEST REQUIRED`/`HOST ACTION REQUIRED` kennzeichnen.
-16. [x] Implementierung und Abschlussbericht nach `main` übertragen; alle ausgelösten CodeQL-/FTPS-Läufe terminal erfolgreich, read-only Smoke bestätigt die jeweilige Deploymentrevision; `HEAD == origin/main`, GitHub-`CHATGPT.md` aktuell und Working Tree sauber verifiziert.
+1. [x] Mit `origin/main` synchronisieren und alle vorhandenen Pflicht-, Architektur-, Status-, Install-/Deployment- sowie betroffenen Implementierungs-/Testdateien vollständig lesen; fehlende `Modules.md`, `Install-README-User.md` und `README.md` als nicht vorhandene Referenzen festgestellt.
+2. [x] Capture prüfen: Abschnitte 1–19 einschließlich Test-, Deploy- und Wahrheitsvertrag sind vollständig abgebildet; **`CODEX.md == CURRENT-TASK-Anforderungen` — bestanden.**
+3. [x] Bestätigte Session-Deduplizierung erhalten; UTC/ISO serverseitig bewahren, Session-/Userzeiten lokal rendern und iPad/Chrome ohne `MacIntel` bzw. falsche macOS-Gewissheit darstellen.
+4. [x] GPS vollständig über den vorhandenen I18N-Vertrag einsprachig machen und Öffnen/Teilen-Texte übersetzbar halten.
+5. [x] OSM-Karte test-first tatsächlich zoombar/verschiebbar machen, Marker und Attribution erhalten, externe Navigation nur über Button, keine Trackingfunktion.
+6. [x] Responsive Settings-Unter-Navigation mit App Areas, Navigation, Privacy & Sharing und Profile ergänzen; exakt einen lokalen Active-State, sinnvollen Default und keine globale Nav-Erweiterung.
+7. [x] Settings-Save auf der aktiven Unterseite halten, Erfolg kurz melden und Reset-Texte benutzerfreundlich/lokalisiert formulieren.
+8. [x] Globale Navigation so korrigieren, dass genau die tatsächlich dargestellte globale View aktiv ist und Login nie parallel zu Start/GPS/Settings aktiv bleibt.
+9. [x] Neutrales Profile-/Privacy-Fundament gemäß `USER-ACCOUNT-LICENSE-MODEL.md` implementieren: Username, Passwortwechsel, optionale E-Mail/Login, optionale Profilfelder und default-off feldweise Organisationsfreigaben, serverseitig autoritativ.
+10. [x] Einheitliche Passwortpolitik für Anlage/Initial-/Änderungs-/Resetpfade durchsetzen: 8–25 Zeichen, keine Leerzeichen, keine Kompositionspflicht, niemals Klartext speichern/loggen/erneut anzeigen; UI und `Security.md` angleichen.
+11. [x] User Management vereinfachen/erweitern: Username+Initial Password+Role verpflichtend, E-Mail/Display Name optional, primär Active/Blocked, lokale Created/Last Activity, Used/Allowed Devices und Session-Drill-down.
+12. [x] Generisches Package-/Entitlement-/License-/Organization-Datenmodell samt Capability-/Modulfreigaben, quantitativen/unlimited Limits und serverautoritativem available/locked/hidden-Vertrag implementieren; keine Verkaufsnamen.
+13. [x] Delegierten License/Organization Admin strikt auf eigene Lizenz, User, Seats/Geräte und freigegebene Profildaten begrenzen; keine globalen Rollen/Corepermissions/Server/Backups/Audit/fremden Lizenzen.
+14. [x] Device-Limits an Lizenz/Entitlement binden: Used/Allowed, 1-Gerät-Ablehnung, Revoke-Freigabe, unlimited und strikt scoped Organization-Admin testen; UA/Plattform nie Identität.
+15. [x] Datensparsame serverkontaktbasierte Installationsstatistik (total/heute/7/30 Tage, anonym/authentifiziert) ohne IP-Historie, Fingerprint, GPS oder erfundene Offlinezahlen ergänzen.
+16. [x] Nur notwendige generische User-Mediengrundlage ergänzen: Entitlement/Permission, sicher validierter Bildupload/Größenlimits, pending/approved/rejected/deleted, Reason/Notiz/Historie/Zähler, kein Auto-Publishing; anonyme Uploads verboten, lokale Bilder lokal.
+17. [x] Messaging/Marketplace nur als Zukunftsvertrag prüfen/dokumentieren; keine UI, Community oder spekulativen Hooks implementieren.
+18. [x] Core-Freeze erneut gegen Auth/User, Profile/Privacy, Roles/Permissions, Entitlements/Licenses, Device Limits, scoped Administration, Modulzustände, responsive Settings, Installationsmetriken und Medienmoderation auditieren.
+19. [x] Echte JS-/DOM-/PHP-/DB-Integrationstests für sämtliche CODEX-Mindestfälle test-first ergänzen; reine Source-RegEx nicht als Abnahme verwenden.
+20. [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung ausführen.
+21. [x] `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `UI-UX.md`, `ModuleCreation.md`, Status-/Todo-/Changelog-Dokumente und vollständigen `CHATGPT.md`-Bericht wahrheitsgemäß aktualisieren.
+22. [ ] Commit/Push nach `main`; CodeQL/FTPS/sonstige CI terminal abwarten; `HEAD == origin/main`, sauberer Tree, GitHub-`CHATGPT.md`, Deploymentrevision, idempotente Migrationen, `migrationsReady:true` und sicheren read-only Produktionssmoke verifizieren.
+23. [x] Kurze iPad/Chrome-Retestliste liefern; nicht real geprüfte Flächen als `DEVICE RETEST REQUIRED`, Hostabhängiges als `HOST ACTION REQUIRED` kennzeichnen und nichts unbelegt `LIVE BESTANDEN` nennen.

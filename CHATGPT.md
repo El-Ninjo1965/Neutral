@@ -1,78 +1,68 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-09
-**Auftrag:** Verbleibende iPad/Chrome-Livefehler und responsives User-UI/GPS
-**Status:** CODE-SEITIG ERLEDIGT · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
+**Auftrag:** Core-Freeze-Blocker User/Account/Lizenz plus GPS-/Settings-Livefixes
+**Status:** CODE-SEITIG ERLEDIGT · DEPLOYMENT AUSSTEHEND · DEVICE RETEST REQUIRED · HOST ACTION REQUIRED
 
 ## Kurzfazit
 
-Der aktuelle Betreiberbefund wurde als Wahrheit behandelt. Die zentrale Root Cause der weiter wachsenden Device-Session-Liste war nicht die bereits reparierte DB-Ersetzungslogik, sondern der eigenständige Login in `admin.php`: Er verwendete direkten `fetch` und umging damit die persistente Installations-ID des gemeinsamen `ApiClient`. Jeder Adminlogin kam deshalb ohne Device-ID am Server an und erhielt eine neue Zufalls-ID. Der Login nutzt nun denselben persistenten Clientvertrag wie die übrige Anwendung. Echte Zweitinstallationen und verschiedene User bleiben getrennt.
+Der live bestätigte Session-Deduplizierungsvertrag bleibt erhalten. Die nachgewiesenen generischen Lücken vor dem Core-Freeze wurden ohne CatchTrack-Fachlogik, GPS Pro, Marketplace-, Community- oder Messaging-Feature geschlossen: eindeutige UTC-/lokale Zeitdarstellung, ehrliche iPad-Anzeige, einsprachiges GPS mit tatsächlich interaktiver OSM-Karte, klar gegliederte Settings, Profile/Privacy/Passwort, vereinfachte Benutzerverwaltung sowie ein neutrales Package-/License-/Organization-/Device-/Presence-/Mediafundament.
 
-Der Auftrag wurde ohne GPS Pro, CatchTrack-spezifische Logik, allgemeine i18n-Phase oder Appearance-Erweiterung umgesetzt. P1 und P4 bleiben auf ihrem bereits live bestätigten Stand. Die hier geänderten Device-, GPS-, Responsive- und Hostflächen werden ohne realen Betreiber-/Hosttest ausdrücklich **nicht** als `LIVE BESTANDEN` bezeichnet.
+P1 und P4 bleiben auf dem bereits vom Betreiber bestätigten Stand. Keine der neuen Flächen wird ohne realen Geräte-/Hostcheck als `LIVE BESTANDEN` bezeichnet.
 
-## Ergebnisse und Evidenz
+## Umsetzung
 
-### Device Sessions / Adminlogin
+### Sessions, GPS und Settings
 
-- `admin.php` lädt den versionierten `ApiClient`, setzt den isolierten Adminscope und meldet sich über dessen Loginpfad an. Damit bleibt `neutral.device.installation.v1` über Adminlogin, Logout, Access-denied-Navigation, Reload und Relogin erhalten, solange Browserstorage nicht bewusst gelöscht wird.
-- Dieselbe Installation ersetzt beim Relogin nur die ältere aktive Session desselben Users. Developer und Tester auf derselben Installation erhalten jeweils genau eine eigene Zeile; eine echte zweite Device-ID bleibt eine zweite Installation.
-- Aktive Legacyzeilen ohne Device-ID werden nicht mehr aufgelistet/gezählt und beim nächsten identifizierten Login dieses Users als `replaced` beendet. Bereits historisch erzeugte zufällige, aber nicht leere IDs können nicht sicher von echten Zweitinstallationen unterschieden werden. Sie werden deshalb nicht blind gelöscht und müssen einmalig in Session Overview geprüft/widerrufen werden.
-- Der Client erkennt iPadOS auch bei Desktopmodus (`MacIntel` plus Touchfähigkeit), erkennt `CriOS`/Chrome und sendet eine datensparsame Anzeigehilfe. Der Server akzeptiert nur eine enge Plattform-/Browser-Allowlist; sie ist reine Anzeigeinformation und kein Authentifizierungsfaktor. `MacIntel` wird nicht als Gerätename persistiert.
-- Die positive Admin-Reauth-Kette und die getrennte User-App-Session bleiben unverändert.
+- Sessionzeit bleibt serverseitig UTC und wird als ISO-`Z` übertragen; Admin rendert sie mit `Intl.DateTimeFormat` in der Browserzeitzone. Die persistente Installation-ID bleibt Geräteidentität, Plattform bleibt reine Anzeige.
+- GPS registriert Deutsch/Englisch über den vorhandenen Core-I18N-Vertrag. Alle sichtbaren Position-, Status-, Fehler-, Öffnen-, Teilen- und Privacy-Texte folgen derselben Locale.
+- Das statische OSM-Export-iframe wurde durch einen kleinen OSM-Tile-Viewport ersetzt. `+/-` lädt reale Zoomstufen; Pointer-/Touch-Drag verschiebt den Kartenausschnitt. Marker, OSM-Attribution und separater externer OSM-Button bleiben erhalten; kein Tracking wurde ergänzt.
+- Settings besitzt die vier responsiven Unterseiten App Areas, Navigation, Privacy & Sharing und Profile mit eigenem Active-State. Save bleibt auf derselben Unterseite und meldet das Ergebnis inline; der automatische Start-Redirect entfällt. Globale Login-/Settings-/Start-/Modulzustände sind getrennt.
 
-### Dashboard / Permission Catalog / Backup
+### Account und User Management
 
-- Dashboard und Session Overview verwenden weiterhin dieselbe aktive Registryprojektion. Die kompakte Liste ist nun sichtbar mit `Showing X of Y` gekennzeichnet und verlinkt bei Kürzung auf die vollständige Session Overview.
-- Für jeden Corepermission-Key existiert eine verständliche Beschreibung. `Area` bezeichnet die Sicherheitsebene `Admin`, `User-App` oder `System`, nicht das Substantiv des Keys. `gps.admin` bleibt modulinterne User-App-Verwaltung; Core-Lifecycle und Rollenzuweisung erfordern weiterhin Core-Adminberechtigungen. Die Registry bleibt read-only.
-- `Create backup` ist nur aktiv, wenn Key, Crypto, Database, Managed Tables und Protected Storage sämtlich `true` melden. Andernfalls erklärt die UI unmittelbar, dass der Host-Key vor manuellen oder automatischen verschlüsselten Backups konfiguriert werden muss. Es erfolgt kein vorhersehbar sinnloser POST.
-- Host-Key, ACL und Cron bleiben **HOST ACTION REQUIRED**. Kein Key wurde gelesen, ausgegeben oder committed; kein Produktions-Restore wurde ausgeführt.
+- Username bleibt global eindeutig und im eigenen Profil zunächst bewusst read-only. E-Mail ist optional und eindeutig, wenn gesetzt; Login akzeptiert Username oder vorhandene E-Mail.
+- Profilfelder Display Name, Public Nickname, Telefon, Adresse und Geburtstag sind optional. Organisationsfreigaben sind feldweise und standardmäßig `off`; Profileingaben werden serverseitig validiert.
+- Passwortanlage, Bootstrap und Passwortwechsel verwenden exakt denselben Vertrag: 8–25 Zeichen, keine Leerzeichen, keine Kompositionspflicht. Sonderzeichen sind freiwillig. Das aktuelle Passwort wird beim Wechsel geprüft; gespeichert wird ausschließlich ein sicherer Hash.
+- Admin User Management verlangt Username, Initial Password und Role; E-Mail/Display Name bleiben optional. Die normale Statusauswahl ist Active/Blocked. Übersicht zeigt lokale Created-/Last-Activity-Zeit sowie Used/Allowed Devices und führt zur Sessionverwaltung.
 
-### Audit
+### Package, License, Device, Presence und Medien
 
-- Retention zeigt die echte API-Anzahl, einschließlich `0 audit entries deleted`.
-- Vollständiges Leeren ist eine getrennte, explizit bestätigte Aktion und wird ausschließlich in exakt `development` oder `test` angeboten/erlaubt. Production, Staging und unbekannte Umgebungen failen geschlossen; die API verlangt zusätzlich eine autorisierte Adminsession mit `admin.write`.
-- Der Clear-Request wird vor der Löschung gezählt/geschrieben. Da ein vollständiges Clear definitionsgemäß auch diesen Eintrag entfernt, ist diese Grenze in UI und Security-Vertrag ausdrücklich dokumentiert. Der No-op-/`changedFields`-Vertrag bleibt regressionsgedeckt.
+- Migration `2026_09_09_0005_account_license_foundation` ergänzt normalisierte Profile, konfigurierbare Packages/Entitlements, Licenses/Organizations, License-User-Scope, servergesehene Installation Presence sowie User Media und Moderationshistorie. `NULL`-Limits repräsentieren `unlimited`; feste Verkaufsnamen existieren nicht im Core.
+- `license.manage` ist eine eigene Systemfähigkeit ohne globale Adminrechte. Der Server löst die eigene Managerlizenz und erzwingt Seat-/User-Scope; fremde Lizenzen, Core-Rollen, Server, Backups und Audit werden dadurch nicht freigegeben.
+- Device-Limits werden zuerst aus User-/Lizenzzuordnung, sonst aus dem sicheren Systemfallback bezogen. Ein erreichtes Limit blockiert ein neues Gerät bis zum Revoke; Admin/Developer können explizit konfiguriert `unlimited` sein. UA/Plattform wird nie Identität.
+- Modulprojektionen unterscheiden `available`, `locked` und `hidden`. Locked zeigt einen neutralen Entitlement-Hinweis und startet das Modul nicht; Clientzustände erweitern niemals Serverrechte.
+- Installationsmetriken zählen ausschließlich zufällige IDs, die den Server tatsächlich kontaktiert haben: total, heute, 7/30 Tage, anonym/viewer und authentifiziert. Keine IP-Historie, GPS-Daten, Hardwarefingerprints oder erfundene Offlinenutzung.
+- Die neutrale Mediengrundlage validiert JPEG/PNG/WebP serverseitig bis 5 MB und modelliert `pending/approved/rejected/deleted` samt Reason, Moderatornotiz und Historie. Es gibt kein automatisches Public Publishing und keinen anonymen Uploadvertrag.
+- Messaging und Marketplace bleiben ausschließlich dokumentierte spätere, eigenständige Fähigkeiten; keine UI oder spekulativen Hooks wurden gebaut.
 
-### GPS / responsive User-UI
+## Verifikation
 
-- Die vier Aktionen lauten exakt `Update position`, `Open in Google Maps`, `Open in OpenStreetMap`, `Share position`. Google/OSM navigieren in derselben Browsing-Context über Universal-HTTPS-Links; es wird kein `window.open` und damit kein absichtlich erzeugter `about:blank`-Tab verwendet. Share nutzt den nativen System-Sharepfad mit vorhandenem Fallback.
-- Das eingebettete OSM-iframe ist kein Linkwrapper mehr. Pointer-/Touchereignisse erreichen Karte, Zoom, Pan und Attribution; externes OSM wird ausschließlich über den separaten Button geöffnet. Marker und Tracking-freier Vertrag bleiben erhalten.
-- Das neue zentrale `.user-content-grid` verwendet `auto-fit`/`minmax`; GPS und User Settings nutzen denselben Vertrag. Mobile rendert einspaltig, Tablet nutzt die verfügbare Breite für Status plus größere Karte, Desktop bleibt durch die zentrale Content-Maximalbreite kontrolliert.
-- Dies ist die einzige neu belegte generische UI-Lücke vor dem Core-1.0-Freeze. Es wurden keine spekulativen Corehooks ergänzt.
-
-## Test-first und lokale Verifikation
-
-- Der neue echte JS-/DOM-/PHP-Integrationsvertrag startete rot: `0/3` bestanden, weil Adminlogin die persistente ID umging, GPS noch `window.open` verwendete und das zentrale Responsive-Grid fehlte. Nach der Root-Cause-Reparatur bestanden die Follow-up-Tests `9/9`.
-- Fokussierte Admin-/DOM-/Core-Regression: `119/119` bestanden.
-- Vollständige Regression: `463/463` bestanden, `0` Fehler, `0` übersprungen.
-- PHP-Lint: `39` Dateien bestanden. JavaScript-Syntax und `git diff --check` bestanden.
-- Produktionspaket: erfolgreich, `110` Dateien.
-- Secret-/Artefaktprüfung: bestanden; keine künstliche Testdatei und keine Secret-Werte eingeführt.
+- Test-first wurden neue PHP-/JS-/DOM-/Contractfälle für Passwortgrenzen/Hashing, default-off Privacy, Entitlementzustände, exakten License-Scope, Bildvalidierung, Migration, lokale Sessionzeit und reale Karten-Zoom-Neuberechnung ergänzt.
+- Fokussierter Account-/GPS-/Settings-/Admin-Satz: 99/99 bestanden.
+- Vollständige Regression: 470/470 bestanden, 0 Fehler, 0 übersprungen.
+- PHP-Lint, JavaScript-Syntax und `git diff --check`: bestanden.
+- Produktionspaket: erfolgreich, 111 Dateien einschließlich neuem Account-/License-Service und Migration.
+- Secret-/Artefaktprüfung: keine Secret-Werte oder künstlichen Artefakte eingeführt.
 
 ## Deployment und CI
 
-- Implementierungscommit `9e7a4d2757cef84358f0634fe4e2cd1655184ca0` wurde nach GitHub `main` übertragen.
-- CodeQL Run `34326330930` endete terminal mit `success`.
-- FTPS Run `34326331062` endete terminal mit `success`; Deploy- und Report-Job waren erfolgreich.
-- Der darin enthaltene read-only Produktionssmoke meldete Root/Rewrite/Status/Modulcatalog erfolgreich, Admin/Core korrekt geschützt, HTTPS erzwungen, zwei Modulverträge, Viewer-GPS und `migrationsReady:true`. `deploymentRevision:true` bestätigt exakt den Implementierungscommit.
-- Die Berichtsversion wurde als Dokumentationscommit `45e601865cde9be263e405daf515f65c3afc1496` übertragen. Dessen CodeQL Run `34326873273` und FTPS Run `34326873533` endeten ebenfalls terminal mit `success`; damit wurde auch der vollständige Übergabestand über denselben Produktionsweg geprüft.
-- Die nachfolgende Nachweisaktualisierung `8cf3b1780d62bbf4f2bb5ee4e91b4f8cbca97731` bestand CodeQL `34327267267` und FTPS `34327267615` ebenfalls terminal. Der finale Smoke bestätigte erneut `deploymentRevision:true` und `migrationsReady:true`; anschließend waren lokales `HEAD` und `origin/main` identisch, der Working Tree sauber und diese Datei per GitHub-API auf `main` bytegleich vorhanden.
-- Ein lokaler UI-Screenshot war nicht ausführbar, weil die Codex-Sandbox kein Chromium-/Chrome-Binary enthält. Das ist eine Werkzeuggrenze und ersetzt nicht den ausdrücklich offenen realen iPad/Chrome-Retest.
+Commit, Push, terminale CodeQL-/FTPS-Läufe, Migration-/Deploymentrevision und read-only Produktionssmoke werden nach diesem Bericht ergänzt. Migration/Hostzustand bleibt bis dahin **HOST ACTION REQUIRED**.
 
-## Kurze Betreiber-Retestliste (iPad/Chrome)
+## Kurze iPad/Chrome-Retestliste
 
-1. In Session Overview alte eindeutig historische Browser-/MacIntel-Zeilen einmalig widerrufen; keine bekannte echte Zweitinstallation löschen.
-2. Auf demselben iPad/Chrome zweimal als Developer anmelden: danach genau eine aktive Developer-Installation, `Current session` korrekt, Anzeige `iPadOS · Chrome`.
-3. Auf derselben Installation als Tester anmelden: genau eine zusätzliche Testerzeile; erneuter Testerlogin erzeugt keine weitere aktive Zeile. Danach eine echte zweite Installation anmelden und als eigene Zeile erhalten.
-4. Dashboard prüfen: `Active sessions` entspricht Session Overview; bei mehr als acht Einträgen zeigt die Vorschau `Showing 8 of Y` und den Link zur vollständigen Liste.
-5. Bei fehlendem Host-Key prüfen: `Create backup` ist deaktiviert und erklärt die notwendige Hostkonfiguration. Nach sicherer Hostkonfiguration/Reload wird der Button automatisch aktiv.
-6. Audit-Retention mit einem No-op ausführen und `0 audit entries deleted` prüfen. In Production darf `Delete all audit entries` nicht erscheinen.
-7. GPS: Position aktualisieren; Google Maps und OSM jeweils ohne zurückbleibenden leeren Tab öffnen; `Share position` muss den nativen Share-Dialog anbieten.
-8. OSM-iframe direkt zoomen, ziehen und Attribution bedienen. Nur der separate OSM-Button darf extern navigieren.
-9. GPS und Settings im iPad-Hoch-/Querformat sowie schmalen Viewport prüfen: bündige volle Kartenbreite, sinnvolle Tablet-Spalten, größere Karte, keine Überlagerung; Light/Dark/Touchziele prüfen.
-10. Kurze P1-/P4-Regression: parallele User-/Adminidentität sowie sofortiger Dark-Warmstart und Homepage erhalten.
+1. Session Overview: `iPadOS · Chrome`, lokale Zeit statt UTC-Uhrzeit, Current korrekt; zweimal Logout/Login erzeugt weiterhin keine zweite aktive Installation.
+2. GPS einmal auf Deutsch und einmal Englisch öffnen: keine Mischsprache; Position/Fehler/Buttons/Privacy jeweils vollständig in einer Sprache.
+3. OSM `+/-`, Drag und Touch/Pinch prüfen; Marker/Attribution bleiben sichtbar, externer Wechsel erfolgt nur über `In OpenStreetMap öffnen`.
+4. Settings auf Phone-/iPad-Hoch-/Querformat: vier Unterbuttons, genau einer aktiv, nur gewählter Inhalt primär sichtbar.
+5. Navigation: Login, Start, GPS und Settings nacheinander öffnen; global darf exakt ein dargestellter Punkt aktiv sein, Settings-Subnavigation bleibt separat.
+6. Navigation/Privacy ändern und speichern: Inline-Erfolg, kein Redirect zu Start, aktive Unterseite bleibt erhalten; `Standardnamen wiederherstellen` prüfen.
+7. Profile: optionale Felder speichern/entfernen; Freigaben starten aus; Username read-only. Passwort mit 8 und 25 Zeichen funktioniert, 7/26/Leerzeichen werden abgelehnt.
+8. Admin User Management: User ohne E-Mail anlegen, Username-/E-Mail-Duplikat ablehnen, Active/Blocked, lokale Last Activity und Used/Allowed Devices prüfen.
+9. Mit Testpackage Modulzustände available/locked/hidden und Device-Limit 1 → zweites Gerät blockiert → Revoke → neues Gerät erlaubt prüfen; echte Zweitinstallation nicht pauschal löschen.
+10. License Admin: nur eigene Organisationsuser/freigegebene Profildaten sichtbar und änderbar; globale Rollen, Server, Backup, Audit und fremde Lizenz bleiben verboten. Danach kurze P1-/P4-/Offline-Regression.
 
 ## Externe Restpunkte
 
-- **DEVICE RETEST REQUIRED:** Die zehn Punkte oben erfordern das reale Betreibergerät. Besonders historische zufällige Device-IDs werden aus Sicherheitsgründen nicht automatisch als Duplikate klassifiziert.
-- **HOST ACTION REQUIRED:** Backup-Key, ACL und realen cPanel-Cron hostseitig sicher konfigurieren und anschließend boolesche Readiness/einen nicht-destruktiven Backup-Lauf bestätigen. Kein Produktions-Restore.
+- **DEVICE RETEST REQUIRED:** obige zehn Prüfungen auf dem realen iPad/Chrome; die neuen Pfade sind bis dahin nicht live bestanden.
+- **HOST ACTION REQUIRED:** Migration `0005` idempotent anwenden und `migrationsReady:true` sowie bestehende Backup-Key/ACL/Cron-Punkte sicher bestätigen. Kein Produktions-Restore.

@@ -21,6 +21,7 @@ final class Phase4AuthRbac
         'audit.read',
         'backups.view',
         'backups.manage',
+        'license.manage',
     ];
 
     /** @var array<string, list<string>> */
@@ -57,6 +58,7 @@ final class Phase4AuthRbac
         'viewer' => [
         ],
         'user' => [],
+        'license_admin' => ['license.manage'],
     ];
 
     public static function isValidPermission(string $permission): bool
@@ -126,15 +128,20 @@ final class Phase4JsonStore
 
 final class Phase4PasswordHasher
 {
+    public static function assertValid(string $password): void
+    {
+        $length = strlen($password);
+        if ($length < 8 || $length > 25 || preg_match('/\s/', $password) === 1) {
+            throw new \RuntimeException('Password must contain 8 to 25 characters and no whitespace.');
+        }
+    }
+
     public static function hash(string $password): string
     {
-        $trimmed = trim($password);
-        if ($trimmed === '') {
-            throw new \RuntimeException('Password must not be empty.');
-        }
+        self::assertValid($password);
 
         $algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_BCRYPT;
-        $hash = password_hash($trimmed, $algo);
+        $hash = password_hash($password, $algo);
         if (!is_string($hash) || $hash === '') {
             throw new \RuntimeException('Could not hash password.');
         }
@@ -486,7 +493,7 @@ final class Phase4PermissionService
             $catalog[(string) $permission] = [
                 'key' => (string) $permission,
                 'description' => self::describe((string) $permission),
-                'scope' => 'Admin',
+                'scope' => $permission === 'license.manage' ? 'System' : 'Admin',
                 'source' => 'Core',
             ];
         }
@@ -513,7 +520,7 @@ final class Phase4PermissionService
             $catalog[$key] = [
                 'key' => $key,
                 'description' => trim((string) ($row['description'] ?? '')) !== '' ? (string) $row['description'] : self::describe($key),
-                'scope' => Phase4AuthRbac::isValidPermission($key) ? 'Admin' : 'User-App',
+                'scope' => $key === 'license.manage' ? 'System' : (Phase4AuthRbac::isValidPermission($key) ? 'Admin' : 'User-App'),
                 'source' => Phase4AuthRbac::isValidPermission($key) ? 'Core' : ('Module: ' . (explode('.', $key, 2)[0] ?: 'unknown')),
             ];
         }
@@ -530,6 +537,7 @@ final class Phase4PermissionService
             'role.write' => 'Assign permissions and manage roles.', 'settings.read' => 'View system settings in administration.', 'settings.write' => 'Change system settings in administration.',
             'session.read' => 'View active device sessions in administration.', 'session.write' => 'Revoke device sessions in administration.', 'audit.read' => 'View security and operations audit entries.',
             'backups.view' => 'View encrypted backup inventory.', 'backups.manage' => 'Create, transfer, restore and delete encrypted backups.',
+            'license.manage' => 'Manage users, seats and registered devices only within the assigned organization license.',
         ];
         return $labels[$key] ?? ('Use module capability ' . $key . '.');
     }
@@ -643,6 +651,10 @@ final class Phase4UserService
                 u.password_hash,
                 u.created_at,
                 u.updated_at,
+                (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id=u.id) AS last_activity_at,
+                (SELECT COUNT(DISTINCT s.device_id) FROM sessions s WHERE s.user_id=u.id AND s.device_id<>'' AND s.status='active' AND s.expires_at>CURRENT_TIMESTAMP) AS used_devices,
+                (SELECT COALESCE(lu.device_limit,l.device_limit) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND l.status='active' LIMIT 1) AS allowed_devices,
+                (SELECT COUNT(*) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND l.status='active') AS has_license,
                 GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR ',') AS role_keys
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
@@ -680,16 +692,14 @@ final class Phase4UserService
         if ($username === '' || strlen($username) < 3) {
             throw new \RuntimeException('Username must have at least 3 characters.');
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \RuntimeException('Email is invalid.');
         }
-        if ($password === '' || strlen($password) < 8) {
-            throw new \RuntimeException('Password must have at least 8 characters.');
-        }
-        $duplicate = $pdo->prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
+        Phase4PasswordHasher::assertValid($password);
+        $duplicate = $pdo->prepare("SELECT id FROM users WHERE LOWER(username) = LOWER(:username) OR (:email <> '' AND LOWER(email) = LOWER(:email)) LIMIT 1");
         $duplicate->execute([
             ':username' => $username,
-            ':email' => $email,
+            ':email' => $email === '' ? null : $email,
         ]);
         if ($duplicate->fetchColumn() !== false) {
             throw new \RuntimeException('Username or email already exists.');
@@ -701,10 +711,10 @@ final class Phase4UserService
         ');
         $statement->execute([
             ':username' => $username,
-            ':email' => $email,
+            ':email' => $email === '' ? null : $email,
             ':password_hash' => Phase4PasswordHasher::hash($password),
             ':status' => $this->normalizeStatus((string) ($payload['status'] ?? 'active')),
-            ':display_name' => trim((string) ($payload['displayName'] ?? $username)),
+            ':display_name' => trim((string) ($payload['displayName'] ?? '')),
         ]);
         $userId = (int) $pdo->lastInsertId();
         if ($userId < 101) {
@@ -730,7 +740,7 @@ final class Phase4UserService
         }
         if (array_key_exists('email', $payload)) {
             $email = strtolower(trim((string) $payload['email']));
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new \RuntimeException('Email is invalid.');
             }
             $duplicate = $pdo->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(:email) AND id <> :id LIMIT 1');
@@ -755,9 +765,7 @@ final class Phase4UserService
         }
         if (array_key_exists('password', $payload) && trim((string) $payload['password']) !== '') {
             $password = (string) $payload['password'];
-            if (strlen($password) < 8) {
-                throw new \RuntimeException('Password must have at least 8 characters.');
-            }
+            Phase4PasswordHasher::assertValid($password);
             $user['passwordHash'] = Phase4PasswordHasher::hash($password);
         }
         $statement = $pdo->prepare('
@@ -771,7 +779,7 @@ final class Phase4UserService
         ');
         $statement->execute([
             ':id' => (int) $id,
-            ':email' => (string) ($user['email'] ?? ''),
+            ':email' => trim((string) ($user['email'] ?? '')) === '' ? null : (string) $user['email'],
             ':display_name' => (string) ($user['displayName'] ?? ''),
             ':status' => (string) ($user['status'] ?? 'active'),
             ':password_hash' => (string) ($user['passwordHash'] ?? ''),
@@ -821,7 +829,7 @@ final class Phase4UserService
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             LEFT JOIN roles r ON r.id = ur.role_id
-            WHERE LOWER(u.username) = LOWER(:username)
+            WHERE LOWER(u.username) = LOWER(:username) OR (u.email <> \'\' AND LOWER(u.email) = LOWER(:username))
             GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
             LIMIT 1
         ');
@@ -906,7 +914,12 @@ final class Phase4UserService
         $env = $this->config->env();
         $username = trim((string) ($env['CORE_BOOTSTRAP_USERNAME'] ?? ''));
         $password = (string) ($env['CORE_BOOTSTRAP_PASSWORD'] ?? '');
-        if ($username === '' || strlen($password) < 8) {
+        if ($username === '') {
+            return false;
+        }
+        try {
+            Phase4PasswordHasher::assertValid($password);
+        } catch (\RuntimeException $exception) {
             return false;
         }
 
@@ -951,6 +964,9 @@ final class Phase4UserService
             'permissions' => $this->effectivePermissions($user),
             'createdAt' => (string) ($user['createdAt'] ?? ''),
             'updatedAt' => (string) ($user['updatedAt'] ?? ''),
+            'lastActivityAt' => (string) ($user['lastActivityAt'] ?? ''),
+            'usedDevices' => (int) ($user['usedDevices'] ?? 0),
+            'allowedDevices' => array_key_exists('allowedDevices', $user) ? $user['allowedDevices'] : 5,
         ];
     }
 
@@ -1011,7 +1027,7 @@ final class Phase4UserService
     private function normalizeStatus(string $status): string
     {
         $value = strtolower(trim($status));
-        $allowed = ['active', 'inactive', 'pending', 'archived'];
+        $allowed = ['active', 'blocked'];
         if (!in_array($value, $allowed, true)) {
             throw new \RuntimeException('Invalid user status: ' . $status);
         }
@@ -1040,6 +1056,9 @@ final class Phase4UserService
             'passwordHash' => (string) ($row['password_hash'] ?? ''),
             'createdAt' => (string) ($row['created_at'] ?? ''),
             'updatedAt' => (string) ($row['updated_at'] ?? ''),
+            'lastActivityAt' => (string) ($row['last_activity_at'] ?? ''),
+            'usedDevices' => (int) ($row['used_devices'] ?? 0),
+            'allowedDevices' => (int)($row['has_license'] ?? 0) > 0 ? ($row['allowed_devices'] === null ? null : (int)$row['allowed_devices']) : 5,
         ];
     }
 
@@ -1306,10 +1325,10 @@ final class Phase4SessionRegistry
                 'displayName' => (string) ($session['display_name'] ?? ''),
                 'roles' => ($session['role_keys'] ?? '') !== '' ? explode(',', (string) $session['role_keys']) : [],
                 'status' => (string) ($session['status'] ?? 'active'),
-                'issuedAt' => (string) ($session['issued_at'] ?? ''),
-                'lastSeenAt' => (string) ($session['last_seen_at'] ?? ''),
-                'expiresAt' => (string) ($session['expires_at'] ?? ''),
-                'updatedAt' => (string) ($session['last_seen_at'] ?? ''),
+                'issuedAt' => $this->mysqlUtcIso((string) ($session['issued_at'] ?? '')),
+                'lastSeenAt' => $this->mysqlUtcIso((string) ($session['last_seen_at'] ?? '')),
+                'expiresAt' => $this->mysqlUtcIso((string) ($session['expires_at'] ?? '')),
+                'updatedAt' => $this->mysqlUtcIso((string) ($session['last_seen_at'] ?? '')),
                 'deviceId' => (string) ($session['device_id'] ?? ''),
                 'deviceLabel' => (string) ($session['device_label'] ?? 'Browser installation'),
                 'platform' => $this->platformLabel((string) ($session['user_agent'] ?? ''), (string) ($session['device_label'] ?? '')),
@@ -1331,6 +1350,18 @@ final class Phase4SessionRegistry
         $statement = $pdo->prepare($sql);
         $statement->execute($params);
         return (int) $statement->fetchColumn();
+    }
+
+    public function licensedDeviceLimit(int $userId, int $fallback): ?int
+    {
+        try {
+            $statement = $this->requireDatabase()->connect()->prepare('SELECT COALESCE(lu.device_limit,l.device_limit) device_limit FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=:user AND l.status=\'active\' LIMIT 1');
+            $statement->execute([':user'=>$userId]);
+            $value = $statement->fetchColumn();
+            return $value === false ? max(1, $fallback) : ($value === null ? null : max(1, (int)$value));
+        } catch (\Throwable $exception) {
+            return max(1, $fallback);
+        }
     }
 
     public function replaceActiveInstallation(int $userId, string $deviceId, string $currentSessionId): void
@@ -1385,6 +1416,13 @@ final class Phase4SessionRegistry
             return gmdate('Y-m-d H:i:s');
         }
         return gmdate('Y-m-d H:i:s', $timestamp);
+    }
+
+    private function mysqlUtcIso(string $value): string
+    {
+        if ($value === '') return '';
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $value, new \DateTimeZone('UTC'));
+        return $date ? $date->format('Y-m-d\TH:i:s\Z') : $value;
     }
 
     private function requireDatabase(): Database
@@ -1482,8 +1520,11 @@ final class Phase4AuthManager
             throw new \RuntimeException('A valid installation identifier is required.');
         }
         $userId = (int) ($user['id'] ?? 0);
-        $deviceLimit = max(1, (int) ($this->config->env()['AUTH_MAX_DEVICES_PER_USER'] ?? 5));
-        if ($this->sessions->activeDeviceCount($userId, $deviceId) >= $deviceLimit) {
+        $roles = is_array($user['roles'] ?? null) ? $user['roles'] : ['user'];
+        $fallbackLimit = max(1, (int) ($this->config->env()['AUTH_MAX_DEVICES_PER_USER'] ?? 5));
+        $privilegedUnlimited = strtolower((string)($this->config->env()['AUTH_PRIVILEGED_DEVICES'] ?? 'limited')) === 'unlimited' && array_intersect($roles, ['admin','developer']) !== [];
+        $deviceLimit = $privilegedUnlimited ? null : $this->sessions->licensedDeviceLimit($userId, $fallbackLimit);
+        if ($deviceLimit !== null && $this->sessions->activeDeviceCount($userId, $deviceId) >= $deviceLimit) {
             throw new \RuntimeException('Active device limit reached. Revoke another device session in Admin before adding this device.');
         }
         $ttlMs = (int) ($this->config->env()['AUTH_DEVICE_SESSION_TTL_MS'] ?? (1000 * 60 * 60 * 24 * 30));
@@ -1491,7 +1532,6 @@ final class Phase4AuthManager
             $ttlMs = 1000 * 60 * 60 * 24 * 30;
         }
         $expiresAt = time() + (int) floor($ttlMs / 1000);
-        $roles = is_array($user['roles'] ?? null) ? $user['roles'] : ['user'];
         $permissions = $this->users->effectivePermissions($user);
 
         $_SESSION['auth_identity'] = [

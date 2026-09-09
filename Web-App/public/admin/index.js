@@ -1,5 +1,12 @@
 'use strict';
 
+const formatLocalAdminDate = (value) => {
+  if (!value) return '—';
+  const source = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(value)) ? String(value).replace(' ', 'T') + 'Z' : value;
+  const date = new Date(source);
+  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+};
+
 class AdminPlaceholderView {
   constructor(title, description) {
     this.title = title;
@@ -89,8 +96,8 @@ class AdminSessionsView {
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
                     <td>${session.deviceLabel || 'Browser installation'}${session.current ? ' <strong class="status-badge">Current session</strong>' : ''}</td>
                     <td>${session.platform || 'Browser'}</td><td>${session.status || 'active'}</td>
-                    <td>${session.issuedAt || '—'}</td>
-                    <td>${session.lastSeenAt || '—'}</td>
+                    <td><time datetime="${session.issuedAt || ''}">${formatLocalAdminDate(session.issuedAt)}</time></td>
+                    <td><time datetime="${session.lastSeenAt || ''}">${formatLocalAdminDate(session.lastSeenAt)}</time></td>
                     <td>${session.current ? '<span class="small-muted">Use Logout</span>' : `<button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">Revoke device</button>`}</td>
                   </tr>
                 `).join('')}
@@ -124,14 +131,15 @@ class AdminDashboardView {
 
   async init(container) {
     this.container = container;
-    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult, backupReadinessResult] = await Promise.all([
+    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult, backupReadinessResult, installationMetricsResult] = await Promise.all([
       this.api.get('/api/status'),
       this.api.get('/api/admin/system/health'),
       this.api.getUsers(),
       this.api.getSessions(),
       this.api.getAdminModules(),
       this.api.getSettings(),
-      this.api.get('/api/admin/backups/readiness')
+      this.api.get('/api/admin/backups/readiness'),
+      this.api.get('/api/admin/installations/metrics')
     ]);
 
     const runtime = statusResult.ok ? AdminCommon.unwrapData(statusResult, null, {}) : {};
@@ -144,6 +152,7 @@ class AdminDashboardView {
     const modules = modulesResult.ok ? AdminCommon.unwrapData(modulesResult, 'modules', []) : [];
     const settings = settingsResult.ok ? AdminCommon.unwrapData(settingsResult, 'settings', {}) : {};
     const backupReadiness = backupReadinessResult.ok ? AdminCommon.unwrapData(backupReadinessResult, 'readiness', {}) : {};
+    const installationMetrics = installationMetricsResult.ok ? AdminCommon.unwrapData(installationMetricsResult, 'metrics', {}) : {};
 
     this.snapshot = {
       runtime,
@@ -152,7 +161,8 @@ class AdminDashboardView {
       sessions,
       modules,
       settings,
-      backupReadiness
+      backupReadiness,
+      installationMetrics
     };
 
     this.render();
@@ -166,6 +176,7 @@ class AdminDashboardView {
     const modules = this.snapshot?.modules || [];
     const settings = this.snapshot?.settings || {};
     const backupReadiness = this.snapshot?.backupReadiness || {};
+    const installationMetrics = this.snapshot?.installationMetrics || {};
     const appName = settings.appName || settings.settings?.appName || 'Neutral Platform';
     const appId = settings.appId || settings.settings?.appId || 'neutral-app';
     const systemStatus = health && typeof health === 'object' && (health.status || health.state) ? String(health.status || health.state) : (runtime.status || 'healthy');
@@ -176,6 +187,8 @@ class AdminDashboardView {
       { label: 'Users', value: String(users.length), tone: 'neutral' },
       { label: 'Active sessions', value: String(activeSessions), tone: 'neutral' },
       { label: 'Modules', value: `${moduleActiveCount}/${modules.length || 0}`, tone: moduleActiveCount ? 'ok' : 'warn' }
+      ,{ label: 'Known installations', value: String(installationMetrics.knownInstallationsTotal || 0), tone: 'neutral' }
+      ,{ label: 'Active 30 days', value: String(installationMetrics.active30Days || 0), tone: 'neutral' }
     ];
 
     const details = [
@@ -847,4 +860,5 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports.AdminInfrastructureView = AdminInfrastructureView;
   module.exports.AdminDiagnosticsView = AdminDiagnosticsView;
   module.exports.AdminDashboardView = AdminDashboardView;
+  module.exports.AdminSessionsView = AdminSessionsView;
 }

@@ -106,3 +106,13 @@ PHP responses retain the canonical `{ok,data}` envelope and all Admin views cons
 - Admin session lists contain only active, unexpired installation sessions; successful re-login with the same installation ID replaces the preceding session.
 - Audit entries may expose the actor username/handle together with stable numeric ID to authorized auditors. Settings no-op submissions create neither a persistence write nor a `settings.update` event; real changes report `changedFields` plus safe app-name before/after metadata.
 - GPS remains a module. Explicit location sharing offers Google Maps, OpenStreetMap and system share without adding a Core provider dependency or automatic background disclosure.
+
+## Account/license endpoints (2026-09-09)
+
+- `GET /api/account/profile` – current session's private profile plus default-off sharing flags.
+- `PUT /api/account/profile` – CSRF-protected update of optional e-mail/profile fields and sharing flags; username remains read-only.
+- `POST /api/account/password` – CSRF-protected current-password verification and 8–25/no-whitespace password change.
+- `GET|POST /api/license/users` – delegated `license.manage` operations, server-scoped to the actor's assigned organization license.
+- `GET /api/admin/installations/metrics` – Admin-only server-seen installation totals and 1/7/30-day audience counts.
+
+Package/module states are `available`, `locked` or `hidden`. They are display projections only; server permissions and license scope remain authoritative.

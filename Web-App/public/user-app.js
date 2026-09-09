@@ -8,6 +8,9 @@
   const mark = document.getElementById('userAppMark');
   const state = {
     activeView: 'home',
+    settingsSection: 'areas',
+    accountProfile: null,
+    profileLoading: false,
     activeModuleId: null,
     discoveryState: 'pending'
   };
@@ -486,13 +489,13 @@
     if (!actions) return;
     const currentUser = getCurrentUser();
     const settingsLabel = presentationLabel('settings', 'Settings');
-    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link" type="button" aria-label="${escapeHtml(settingsLabel)}" title="${escapeHtml(settingsLabel)}">${presentationContent(SETTINGS_ICON, settingsLabel)}</button>`;
+    const settingsButton = `<button id="userSettingsButton" class="ui-button ui-button--secondary user-app-link ${state.activeView === 'settings' ? 'active' : ''}" type="button" aria-label="${escapeHtml(settingsLabel)}" title="${escapeHtml(settingsLabel)}" ${state.activeView === 'settings' ? 'aria-current="page"' : ''}>${presentationContent(SETTINGS_ICON, settingsLabel)}</button>`;
     const nextTheme = readUserTheme() === 'dark' ? 'light' : 'dark';
     const themeButton = `<button id="userThemeToggle" class="ui-button ui-button--icon user-app-link user-theme-toggle" type="button" aria-label="Switch to ${nextTheme} theme" title="Switch to ${nextTheme} theme">${nextTheme === 'dark' ? '☾' : '☀'}</button>`;
 
     if (!currentUser) {
       const loginLabel = presentationLabel('login', 'Login');
-      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ui-button--primary user-app-action" type="button" aria-label="${escapeHtml(loginLabel)}" title="${escapeHtml(loginLabel)}">${presentationContent(LOGIN_ICON, loginLabel)}</button>`;
+      actions.innerHTML = `${themeButton}${settingsButton}<button id="userLoginButton" class="ui-button ${state.activeView === 'login' ? 'ui-button--primary active' : 'ui-button--secondary'} user-app-action" type="button" aria-label="${escapeHtml(loginLabel)}" title="${escapeHtml(loginLabel)}" ${state.activeView === 'login' ? 'aria-current="page"' : ''}>${presentationContent(LOGIN_ICON, loginLabel)}</button>`;
       const loginButton = document.getElementById('userLoginButton');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
@@ -663,6 +666,16 @@
     const moduleVisibility = hasExplicitVisibility
       ? new Set(preferences.visibleModuleIds)
       : new Set(modules.map((module) => module.id));
+    const section = ['areas', 'navigation', 'privacy', 'profile'].includes(state.settingsSection) ? state.settingsSection : 'areas';
+    const profile = state.accountProfile || currentUser || {};
+    if (section === 'profile' && currentUser && !state.accountProfile && !state.profileLoading) {
+      state.profileLoading = true;
+      const profileClient = getServerApiClient();
+      Promise.resolve(profileClient ? profileClient.getProfile() : { ok: false }).then((result) => {
+        const loaded = result?.data?.data?.profile || result?.data?.profile;
+        if (result?.ok && loaded) state.accountProfile = loaded;
+      }).finally(() => { state.profileLoading = false; if (state.activeView === 'settings' && state.settingsSection === 'profile') renderApp(); });
+    }
 
     content.innerHTML = `
       <section class="user-app-panel">
@@ -671,7 +684,8 @@
             <h1>Settings</h1>
           </div>
         </div>
-        <div class="user-content-grid user-settings-grid"><div class="user-settings-card">
+        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],['privacy','Privacy & Sharing'],['profile','Profile']].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
+        <div class="user-content-grid user-settings-grid"><div class="user-settings-card" ${section === 'areas' ? '' : 'hidden'}>
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
@@ -686,7 +700,7 @@
             `).join('') : '<p class="user-app-empty">No active modules are available yet.</p>'}
           </div>
         </div>
-        <div class="user-settings-card">
+        <div class="user-settings-card" ${section === 'navigation' ? '' : 'hidden'}>
           <h2>Navigation</h2>
           <p>Choose how navigation actions appear on this device and optionally personalize their visible labels.</p>
           <div class="form-field"><label for="navigationDisplay">Display style</label><select id="navigationDisplay" class="user-settings-select">
@@ -700,9 +714,9 @@
               ...modules.map((module) => [`module:${module.id}`, getModuleDisplayName(module)])
             ].map(([key, official]) => `<div class="user-navigation-label-row"><label>${escapeHtml(official)}<small>Default: ${escapeHtml(official)}</small><input type="text" maxlength="${NAV_LABEL_MAX}" data-navigation-label="${escapeHtml(key)}" value="${escapeHtml(preferences.navigation.labels[key] || '')}" placeholder="${escapeHtml(official)}"></label><button type="button" class="ui-button ui-button--secondary" data-navigation-label-reset="${escapeHtml(key)}">Reset</button></div>`).join('')}
           </div>
-          <button type="button" class="ui-button ui-button--secondary" id="resetAllNavigationLabels">Reset all navigation labels</button>
+          <button type="button" class="ui-button ui-button--secondary" id="resetAllNavigationLabels">Restore default names</button>
         </div>
-        <div class="user-settings-card">
+        <div class="user-settings-card" ${section === 'privacy' ? '' : 'hidden'}>
           <h2>Privacy and sharing</h2>
           <div class="user-settings-list">
             <label class="user-settings-toggle" for="setting-location-context">
@@ -723,6 +737,18 @@
             </label>
           </div>
         </div>
+        <div class="user-settings-card" ${section === 'profile' ? '' : 'hidden'}>
+          <h2>Profile</h2>
+          ${currentUser ? `<div class="form-field"><label>Username<input value="${escapeHtml(currentUser.username || '')}" readonly></label><small>Username is globally unique and currently read-only.</small></div>
+          <div class="form-field"><label>Email (optional)<input id="profileEmail" type="email" value="${escapeHtml(profile.email || '')}"></label></div>
+          <div class="form-field"><label>Display name (optional)<input id="profileDisplayName" maxlength="190" value="${escapeHtml(profile.displayName || '')}"></label></div>
+          <div class="form-field"><label>Public nickname (optional)<input id="profileNickname" maxlength="120" value="${escapeHtml(profile.publicNickname || '')}"></label></div>
+          <div class="form-field"><label>Phone (optional)<input id="profilePhone" maxlength="80" value="${escapeHtml(profile.phone || '')}"></label></div>
+          <div class="form-field"><label>Address (optional)<textarea id="profileAddress" maxlength="1000">${escapeHtml(profile.address || '')}</textarea></label></div>
+          <div class="form-field"><label>Birthday (optional)<input id="profileBirthday" type="date" value="${escapeHtml(profile.birthday || '')}"></label></div>
+          <fieldset><legend>Share with my organization</legend>${['email','displayName','publicNickname','phone','address','birthday'].map((field) => `<label class="user-settings-toggle"><input type="checkbox" data-profile-privacy="${field}" ${profile.privacy?.[field] ? 'checked' : ''}><span>Share ${field}</span></label>`).join('')}</fieldset>
+          <fieldset><legend>Change password</legend><div class="form-field"><label>Current password<input id="profileCurrentPassword" type="password" autocomplete="current-password"></label></div><div class="form-field"><label>New password<input id="profileNewPassword" type="password" minlength="8" maxlength="25" pattern="\\S{8,25}" autocomplete="new-password"></label><small>8–25 characters, no spaces. No other composition rules.</small></div><button id="profilePasswordButton" type="button" class="ui-button ui-button--secondary">Change password</button></fieldset>` : '<p>Sign in to manage your profile.</p>'}
+        </div>
         </div><div class="user-settings-actions">
           <button id="userSettingsSaveButton" type="button" class="primary">Save settings</button>
         </div>
@@ -731,6 +757,7 @@
     `;
 
     const saveButton = document.getElementById('userSettingsSaveButton');
+    document.querySelectorAll('[data-settings-section]').forEach((button) => button.addEventListener('click', () => { state.settingsSection = button.dataset.settingsSection; renderApp(); }));
     document.querySelectorAll('[data-navigation-label-reset]').forEach((button) => button.addEventListener('click', () => {
       const input = document.querySelector(`[data-navigation-label="${button.dataset.navigationLabelReset}"]`);
       if (input) input.value = '';
@@ -739,7 +766,7 @@
       document.querySelectorAll('[data-navigation-label]').forEach((input) => { input.value = ''; });
     });
     if (saveButton) {
-      saveButton.addEventListener('click', () => {
+      saveButton.addEventListener('click', async () => {
         const moduleSelection = Array.from(document.querySelectorAll('[data-user-setting-module]:checked')).map((input) => input.dataset.userSettingModule).filter(Boolean);
         const privacySelection = {};
         document.querySelectorAll('[data-user-setting-privacy]').forEach((input) => {
@@ -757,6 +784,13 @@
           theme: readUserTheme(),
           navigation: { display: document.getElementById('navigationDisplay')?.value || 'icon-text', labels }
         });
+        if (state.settingsSection === 'profile' && currentUser) {
+          const client = getServerApiClient();
+          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: document.getElementById('profileBirthday')?.value || '', privacy: {} };
+          document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; });
+          const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
+          if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }
+        }
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
           const currentUser = getCurrentUser();
           if (currentUser && window.UserModule && typeof window.UserModule.updateProfile === 'function') {
@@ -773,17 +807,17 @@
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
           }
-          if (nextPreferences.persisted) {
-            window.alert('Settings saved successfully.');
-            state.activeView = 'home';
-            state.activeModuleId = null;
-            renderApp();
-            return;
-          }
+          if (nextPreferences.persisted) return;
         }
 
       });
     }
+
+    document.getElementById('profilePasswordButton')?.addEventListener('click', async () => {
+      const status = document.getElementById('userSettingsStatus');
+      const result = await getServerApiClient()?.changePassword(document.getElementById('profileCurrentPassword')?.value || '', document.getElementById('profileNewPassword')?.value || '');
+      if (status) { status.textContent = result?.ok ? 'Password changed.' : (result?.error || 'Password could not be changed.'); status.className = `user-settings-status ${result?.ok ? 'success' : 'error'}`; }
+    });
 
   };
 
@@ -797,6 +831,12 @@
       state.activeView = 'home';
       state.activeModuleId = null;
       renderLandingPage();
+      return;
+    }
+    if (window.NeutralUserModuleAccess.accessState(module, getCurrentUser()) === 'locked') {
+      state.activeView = `module:${moduleId}`;
+      state.activeModuleId = moduleId;
+      content.innerHTML = `<section class="user-app-panel"><div class="user-settings-card"><h1>${escapeHtml(getModuleDisplayName(module))}</h1><p>This module requires an entitlement that is not assigned to this account.</p></div></section>`;
       return;
     }
 
