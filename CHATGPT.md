@@ -25,6 +25,7 @@ Der vollständige verbindliche Inhalt und alle Ausschlüsse stehen in `BACKUP-CO
 - Download-/Uploadartefakt byteidentisch verglichen; keine Browserentschlüsselung.
 - Eine Lücke geschlossen: Upload prüft nun bereits vor dem finalen Speichern Schema-Version, vollständige Tabellenmenge und Zeilenstruktur. Zuvor konnte ein korrekt verschlüsseltes, aber unvollständiges Artefakt gespeichert werden, obwohl Restore es später ablehnte.
 - Es wurde **kein** Produktions-Restore, keine Produktionsmutation und kein manueller Produktions-SQL-Eingriff ausgeführt.
+- Implementierungscommit `a903bde9777069833a0a4d879d5dbeaedb9da0b3` ist nach `origin/main` übertragen. CodeQL Run `34442654765` sowie FTPS Deploy Run `34442655508` sind erfolgreich; der ausschließlich lesende Produktionssmoke bestätigte passende Deploymentrevision, `migrationsReady:true`, HTTPS und die geschützten Auth-/Admin-/Core-Grenzen.
 
 ## Core-1.0-Gate
 
