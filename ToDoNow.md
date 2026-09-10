@@ -51,3 +51,5 @@
 Corrected Package first-submit, License create/deactivate, free/unlimited Device limits, manager selection, Birthday dropdowns and two-dialog Audit Clear require operator device acceptance. Backup and fresh-host portability require host action. Do not mark Core 1.0 passed before both groups are complete.
 
 Current follow-up is code-side complete: License Delete reference protection, Session User/Installation identity and configurable Backup Storage Path await the concise real Device/Host acceptance in `CHATGPT.md`. Do not hardcode the operator's host path and do not run a production restore.
+
+Backup content audit result: **BACKUP CONTRACT PARTIAL**. The 21 non-ephemeral Core tables are isolated-round-trip and rollback verified, while module-owned data and media binaries are outside v1. Next code gate is the generic module/file portability contract followed by an isolated Empty-Host restore; production restore remains prohibited.

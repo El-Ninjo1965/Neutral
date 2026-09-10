@@ -255,6 +255,8 @@ User-App/module permissions and Admin/System permissions are separate domains. T
 
 **Session-/Backup-Follow-up (2026-09-10):** Session identity remains the random persistent installation ID. User-agent-derived device class, OS and browser are bounded support projections only, never authentication, authorization, fingerprint or limit inputs. Backup storage is an installation setting consumed by both HTTP backup operations and the CLI scheduler; cryptographic key material remains exclusively in host environment configuration. A configured custom directory must pre-exist and pass protected/writable probing—application code neither creates it nor changes ownership/mode.
 
+**Backup content boundary (2026-09-10):** The logical encrypted artifact contains the 21 non-ephemeral tables owned by `SchemaMigrator`; `sessions` and `login_attempts` are intentionally absent and cleared on restore. It is a database snapshot, not a deployment/image archive: release code, host environment, runtime logs/caches, module-owned tables and media binaries are outside the current format. Consequently a full rebuild composes a verified release, host-local environment/secrets and the managed-data restore, plus separate handling for currently unsupported module/file data. See `BACKUP-CONTRACT.md`.
+
 ## Phase 2 operational DTO flow
 
 Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` → `AdminCommon.unwrapData` → view DTO. Release identity comes from the package manifest; maintenance remains database state. Runtime/database/connection/diagnostic views use the same protected configuration and health sources instead of placeholder fallbacks.

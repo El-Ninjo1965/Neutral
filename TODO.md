@@ -52,6 +52,12 @@
 
 - **DEVICE RETEST REQUIRED:** Package first-submit, `free_license` creation/deactivation, free/unlimited Package/License/User device limits, manager selection, Birthday Day/Month/Year, Audit Delete All's two dialogs, plus short Auth/Session/GPS regression.
 - **HOST ACTION REQUIRED:** backup key/ACL/cron and isolated empty-host install/update/restore/move acceptance; never restore on production.
+
+## Backup completeness follow-up
+
+- [ ] Define and implement a generic portable-data contract for installed module-owned tables (currently e.g. `reference_notes_items`) without discovering or exporting arbitrary database tables.
+- [ ] Add authenticated encrypted file payload support for media binaries referenced by `user_media`, including size/retention/atomic restore rules; never include secrets or arbitrary host paths.
+- [ ] After both gaps close, execute and document an isolated Empty-Host restore with Core, module records and media files. Never perform this acceptance test on production.
 - Re-evaluate Core 1.0 only after every external row in `CORE-1.0-READINESS.md` has evidence.
 
 ## External acceptance after license/session/backup-path follow-up

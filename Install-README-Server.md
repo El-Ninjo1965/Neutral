@@ -151,6 +151,12 @@ Automatic backups require a host scheduler; the Settings checkbox alone does not
 5. Im Adminbereich die Readiness prüfen: Encryption key, Crypto, Database/schema und Protected storage müssen `Ready` sein. Der Keywert selbst darf dort nie erscheinen.
 6. Erst danach ein manuelles Backup erstellen und herunterladen. Auf Produktion keinen Restore-Test durchführen.
 7. Bestätigen, dass die deployte Datei `scripts/run-automatic-backup.php` existiert. Dann im cPanel-Cron täglich ausschließlich `php <project>/scripts/run-automatic-backup.php` aufrufen; weder Key noch andere Secrets in die Cronzeile schreiben. Intervall, Retention und derselbe gespeicherte Storage Path werden aus den persistierten Systemeinstellungen gelesen.
+
+### Backup-Inhalt und sicherer Restore-Test
+
+Das aktuelle `.neutral-backup` ist ein AES-256-GCM-verschlüsseltes logisches Backup der 21 in `BACKUP-CONTRACT.md` genannten Coretabellen. Es enthält weder `.env`/Secrets noch Code, Sessions, Login-Drosselzustand, Medienbinärdateien oder moduldeklarierte Nutzdatentabellen. Eine kleine Dateigröße ist bei wenigen Datensätzen plausibel, ersetzt aber keine Inventur-/Restoreprüfung.
+
+Restore ausschließlich auf einer eindeutig separaten Staging-/Testinstallation durchführen: eigene URL, leere separate Datenbank und eigenes Storage konfigurieren, denselben Backup-Key nur hostlokal bereitstellen, Release installieren und Migrationen ausführen, Artefakt hochladen, Restore ausführen und danach Tabelleninventar, Rollen/Settings/Licenses sowie einen neuen Login prüfen. Medien-/Moduldaten müssen derzeit separat behandelt werden. **Niemals einen Restore auf Produktion zur Funktionsprüfung ausführen.**
 8. Einen Cronlauf und dessen sicheren Status kontrollieren. Erst wenn Runner, Key, Pfad, Schreibrechte und Scheduler real bestätigt sind, darf Automatisierung als betriebsbereit bezeichnet werden.
 
 ## Core migrations before production verification

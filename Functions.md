@@ -182,3 +182,5 @@ default home instead of leaving an empty view.
 - `AccountLicenseService::deleteLicense()` permits only unreferenced License deletion and returns bounded ID/key metadata for same-transaction auditing.
 - `Phase4SessionRegistry::supportMetadata()` projects conservative Device class, Operating system and Browser labels while `deviceId` remains authoritative.
 - `DatabaseBackupService::normalizeConfiguredDirectory()` and `testDirectory()` validate/probe a custom protected path; the constructor's optional directory is consumed by both HTTP backup operations and the automatic CLI runner.
+- `DatabaseBackupService::portableTables()` defines the exact 21-table Core v1 backup boundary, excluding `sessions` and `login_attempts`; module-owned tables and media binaries are not silently implied.
+- `DatabaseBackupService::validatedTables()` is the shared pre-mutation/pre-storage validator for logical format, current schema, exact table set and row shape, used by both restore and upload.

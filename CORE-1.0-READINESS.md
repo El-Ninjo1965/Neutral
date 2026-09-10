@@ -11,7 +11,7 @@
 | Host-only secrets | VORHANDEN + TEST/BELEG | Public package/secret scans and protected runtime paths are automated. |
 | Central app/API addresses | VORHANDEN + TEST/BELEG | Base-path resolver and subpath tests. |
 | Reproducible package/update | VORHANDEN + TEST/BELEG | Manifest, hashes, deploy stamp, FTPS revision smoke. |
-| Backup/restore/move | HOST ACTION REQUIRED | Encrypted service, package and CLI runner exist; key/ACL/cron and isolated restore/move acceptance remain external. No production restore. |
+| Backup/restore/move | PARTIAL / HOST ACTION REQUIRED | All 21 non-ephemeral Core tables round-trip atomically in isolation; sessions/throttle are intentionally cleared. Module-owned data tables and media binaries are not backed up, so the full data contract and Empty-Host acceptance remain open. No production restore. |
 
 ## Client / Offline
 
@@ -21,7 +21,7 @@ Public Core contracts, events/services, timeout API, module-separated local stor
 
 Auth, parallel scoped sessions, CSRF, RBAC, users/roles/permissions, module/settings/audit, database/migration status, throttle fallback, cookies and HTTPS are **VORHANDEN + TEST/BELEG**; User/Admin login and GPS basis are additionally **LIVE BESTANDEN** per operator retest. Package/License/Device management and production Audit Delete All are **DEVICE RETEST REQUIRED**. Backup operation remains **HOST ACTION REQUIRED**.
 
-License Delete now has code/test evidence for unreferenced success, assignment blocking, transaction/audit and unchanged Package data. Session UI has code/test evidence for User ID plus stable Installation ID and conservative platform fixtures. Configurable Backup Storage Path has local path/persistence/manual-runner evidence, but the real host path, create/download and Cron remain **HOST/DEVICE RETEST REQUIRED**.
+License Delete now has code/test evidence for unreferenced success, assignment blocking, transaction/audit and unchanged Package data. Session UI has code/test evidence for User ID plus stable Installation ID and conservative platform fixtures. The operator confirmed the real protected Backup Storage Path, key/crypto/schema readiness and manual create. Isolated tests prove exact round-trip and rollback for all 21 portable Core tables, but module-owned data and media binaries remain outside the artifact; therefore **BACKUP CONTRACT PARTIAL** and no Core Freeze.
 
 ## Modules
 

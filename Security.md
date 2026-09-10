@@ -76,6 +76,8 @@
 
 **VORHANDEN:** Portabilitätsbackups enthalten ausschließlich verwaltete Neutral-Tabellen, schließen Sessions und Login-Drosselungszustand aus und werden mit AES-256-GCM sowie einem hostlokalen Schlüssel von mindestens 32 Zeichen authentifiziert verschlüsselt. Restore prüft Envelope, GCM-Tag, Format, Hash und Tabellennamen vor der Transaktion. Backup-APIs benötigen serverseitige Rechte; Mutationen zusätzlich CSRF.
 
+Upload validates the authenticated payload's exact Core schema version, complete portable-table set and row structure before the temporary artifact is renamed into inventory. Wrong-key, tampered, partial, oversized and incompatible uploads fail without a retained file or database mutation. The current format does not contain media binaries or module-owned data tables; metadata must not be mistaken for restored files. Production restore is never a smoke test.
+
 ## 11. Lokale Speicherung
 
 **TEILWEISE:** IndexedDB und localStorage speichern Clientzustand. Sie sind nicht automatisch verschlüsselt. Sessiongeheimnisse, Passwörter und serverseitige Autorität dürfen dort nicht dauerhaft abgelegt werden. Für personenbezogene Offline-Daten fehlen noch allgemeine Verschlüsselungs-, Lösch- und Exportverträge.

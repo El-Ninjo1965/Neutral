@@ -1,17 +1,18 @@
-# CURRENT TASK — License Delete, Session Device UX und Backup Storage Path
+# CURRENT TASK — Backup-Inhalt, Vollständigkeit und Restore-Sicherheit
 
-**Quelle:** `CODEX.md` und `ADMIN-UX-DECISIONS.md`, 2026-09-10
-**Status:** IMPLEMENTIERT UND DEPLOYED · DEVICE/HOST RETEST REQUIRED
+**Quelle:** `CODEX.md`, Betreiber-Livebefund 2026-09-10
+**Status:** IN ARBEIT · KEIN PRODUKTIONS-RESTORE
 
-1. [x] `origin/main` synchronisieren; verbindliche Dokumentation und relevante License-/Session-/Backup-Implementierung vollständig lesen; Auftrag secretsicher erfassen.
-2. [x] Sicheren License Delete mit Adminpermission, CSRF, Bestätigung, Referenzprüfung, verständlichem 4xx, Auditnachweis und sofortigem Listenrefresh implementieren; Revoked/blocked erhalten.
-3. [x] Sessions um menschenlesbaren Usernamen plus numerische User-ID und klar benannte persistente Installation/Device ID ergänzen.
-4. [x] Device class, Operating system und Browser als reine Supportmetadaten konservativ trennen; iPadOS Safari/Desktop-UA, Chrome iPad, iPhone, Android, Windows, macOS und Unknown test-first abdecken; keine Fingerprints oder Identitätsänderung.
-5. [x] Backup storage path auf Backup & Restore konfigurierbar machen: Test path, Save, persistente installationsspezifische Konfiguration, geschützter serverseitiger Probe-Write und ehrliche Protected/Needs-host-verification-Auswertung.
-6. [x] Manuellen Backup-Service und Automatic-Backup-Runner denselben gespeicherten Pfad verwenden lassen; bestehende Backups nicht verschieben; `NEUTRAL_BACKUP_KEY` ausschließlich hostlokal und boolesch darstellen.
-7. [x] Device-Limit-Semantik ausdrücklich als Default pro User bewahren und keine Organization-Device-Pool-Semantik einführen.
-8. [x] Pflichtregression vollständig ausführen: Auth/scoped Sessions/Deduplizierung, IDs/Plattformfixtures, Packages, License CRUD/Referenzschutz/Audit, User-Limits, Birthday, Audit Clear, GPS, Settings, Backuppfad/Runner/Secret-Grenzen, PHP/JS/Diff/Vollsuite/Produktionspaket.
-9. [x] `CHATGPT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `Install-README-Server.md` und betroffene API/Security/Architecture/UI-Dokumentation wahrheitsgemäß aktualisieren; kein automatischer Freeze/LIVE-Status.
-10. [x] Implementierungscommit nach `origin/main` gepusht; CodeQL und FTPS Deploy terminal erfolgreich; verbindlicher read-only Production-Smoke bestätigt Deploymentrevision und `migrationsReady:true`. Abschlussdokumentation separat committet und finaler Remote-Gleichstand verifiziert.
+1. [x] Verbindliche Umgebung `Neutral`/Repository prüfen, `origin/main` synchronisieren und alle vorgeschriebenen Architektur-, Security-, API-, Datenbank-, Installations- sowie Backup-/Restore-/Schema-/Migration-/Upload-/Download-/Automatic-Backup-Pfade vollständig lesen.
+2. [x] Den tatsächlichen Create→Export→Serialize→Encrypt→Persist-Vertrag und sämtliche enthaltenen sowie ausgeschlossenen Tabellen/Datenbereiche gegen das verwaltete Schema exakt auditieren.
+3. [x] Die reale Größe von ca. 27,8 KB fachlich anhand Format, Datenumfang, fehlender Kompression, Verschlüsselungs-Overhead und möglicher stiller Ausschlüsse eingeordnet, ohne Produktionsdaten oder Secrets auszulesen.
+4. [x] Reproduzierbaren isolierten End-to-End-Test mit bekannten Records in allen 21 Coretabellen implementiert: Backup, Mutation, Restore, exakte Wiederkehr, Sessionausschluss sowie Schema-/Security-Vertrag.
+5. [x] Falschen Schlüssel, Manipulation und absichtlichen Importfehler auf kontrolliertes, atomisches Scheitern geprüft; Restore hinterlässt keinen Teilzustand.
+6. [x] Download-/Upload-Vertrag einschließlich byteidentischem Artefakt, Content-Type/Dateiname, Auth/Permission/CSRF, Größenlimit, Fehlerhygiene und Traversal geprüft; Upload validiert nun Schema, exakte Tabellenmenge und Zeilenstruktur vor finalem Speichern.
+7. [x] Core-1.0-Backupvertrag in `BACKUP-CONTRACT.md` verbindlich definiert: Muss-Inhalt, bewusste Ausschlüsse, Medien-/Dateivertrag und Neuaufbau aus Release + hostlokaler Umgebung + Datenrestore.
+8. [x] Evidenzbasierte Einstufung: `BACKUP CONTRACT PARTIAL`, weil Modul-Nutzdatentabellen und Medienbinärdateien nicht in v1 enthalten sind; kein Live-/Freeze-Claim.
+9. [x] Vollständige Regression 491/491, PHP-Lint 40 Dateien, JS-Syntax 91 Dateien, `git diff --check`, Secret-Prüfung und Production Package mit 112 Dateien bestanden; keine Produktionsmutation und kein Produktions-Restore.
+10. [x] `CHATGPT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CORE-1.0-READINESS.md`, `Install-README-Server.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md` und `BACKUP-CONTRACT.md` mit tatsächlichem Stand und sicherer isolierter Betreiber-Restore-Anleitung aktualisiert.
+11. [ ] Änderungen committen, PR-Metadaten erstellen, nach `origin/main` pushen, CI/CodeQL/FTPS sowie ausschließlich read-only Production-Smoke terminal abwarten und sauberen `HEAD == origin/main` verifizieren.
 
-**Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.
+**Capture-Prüfung:** `CODEX.md + aktueller Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.

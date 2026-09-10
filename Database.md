@@ -96,7 +96,7 @@ Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Date
 - **GEPLANT:** Adapterfähigkeit für Infrastrukturwechsel ohne Client-Core-Umbau.
 - **FEHLT:** vollständiger clientseitiger Sync-/Konfliktvertrag.
 - **FEHLT:** formale Clientmigrationen mit Tests für Versionssprünge.
-- **FEHLT:** dokumentierte Backup-/Restore- und Aufbewahrungspolitik für Produktion.
+- **TEILWEISE:** Der logische Core-Backup-/Restore-Vertrag ist in `BACKUP-CONTRACT.md` dokumentiert und isoliert geprüft. Aufbewahrung/Cron bleiben Hostbetrieb; Modul-Nutzdatentabellen und Medienbinärdateien sind im aktuellen Format nicht enthalten.
 
 ## 12. Verbindliche Client-Verantwortlichkeiten
 
@@ -137,3 +137,5 @@ The `login_attempts` table is migration-managed. `PdoLoginAttemptStore` performs
 Packages gain an optional description. Licenses and license-user assignments gain explicit device-limit modes so `package default`, numeric override and `unlimited` are unambiguous. License-manager selection remains normalized in `license_users`: replacement is transactional, the selected user must exist and be active, and clearing the selection removes only the manager membership. Permission `audit.clear` is independently assignable and initially granted to the built-in Admin role. Package/license/user assignments remain normalized; reducing a limit never deletes sessions.
 
 License hard-delete is allowed only when `license_users` contains no User or Manager reference; Package, User and Session rows are never silently cascaded by this action, and successful delete plus Audit insert share one transaction. `core.ui.settings.backupStoragePath` stores the optional installation-specific absolute backup directory as non-secret configuration. Changing it affects subsequent list/create/upload/download/restore/retention operations and the automatic runner; files in an earlier directory are not moved. The host-only encryption key is not persisted there.
+
+The portable v1 set is exactly: `roles`, `permissions`, `users`, `user_roles`, `role_permissions`, `settings`, `modules`, `module_state`, `module_migrations`, `setup_status`, `audit_log`, `backups`, `release_state`, `user_profiles`, `packages`, `licenses`, `license_users`, `installation_presence`, `user_media`, `media_moderation_history`, and `schema_migrations`. All rows/columns are exported in one repeatable-read transaction and imported in one transaction. `sessions` and `login_attempts` are excluded/cleared. Module-owned tables and files referenced by `user_media.storage_path` are not currently portable.

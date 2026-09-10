@@ -181,26 +181,7 @@ final class DatabaseBackupService
     public function restore(string $backupId): array
     {
         $payload = $this->decryptFile($this->pathForDownload($backupId));
-        $tables = $payload['tables'] ?? null;
-        if (!is_array($tables)) {
-            throw new \RuntimeException('Backup table payload is invalid.');
-        }
-        if (($payload['schemaVersion'] ?? '') !== SchemaMigrator::schemaVersion()) {
-            throw new \RuntimeException('Backup schema version is incompatible.');
-        }
-        $allowed = array_flip($this->portableTables());
-        foreach ($tables as $table => $rows) {
-            if (!is_string($table) || !isset($allowed[$table]) || !is_array($rows)) {
-                throw new \RuntimeException('Backup contains an unsupported table.');
-            }
-        }
-        $expectedTables = $this->portableTables();
-        $providedTables = array_keys($tables);
-        sort($expectedTables);
-        sort($providedTables);
-        if ($providedTables !== $expectedTables) {
-            throw new \RuntimeException('Backup does not contain the complete managed table set.');
-        }
+        $tables = $this->validatedTables($payload);
         ($this->importer)($tables);
         return ['backupId' => $backupId, 'status' => 'restored', 'restoredTables' => count($tables)];
     }
@@ -254,9 +235,7 @@ final class DatabaseBackupService
                 throw new \RuntimeException('Backup upload size is invalid.');
             }
             $payload = $this->decryptFile($temporary);
-            if (($payload['format'] ?? '') !== self::FORMAT) {
-                throw new \RuntimeException('Backup format is unsupported.');
-            }
+            $this->validatedTables($payload);
             $raw = file_get_contents($temporary);
             $decoded = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
             $backupId = is_array($decoded) ? (string) ($decoded['backupId'] ?? '') : '';
@@ -418,6 +397,40 @@ final class DatabaseBackupService
             throw new \RuntimeException('Backup checksum is invalid.');
         }
         return $payload;
+    }
+
+    /** @param array<string,mixed> $payload @return array<string,list<array<string,mixed>>> */
+    private function validatedTables(array $payload): array
+    {
+        if (($payload['format'] ?? '') !== self::FORMAT) {
+            throw new \RuntimeException('Backup format is unsupported.');
+        }
+        if (($payload['schemaVersion'] ?? '') !== SchemaMigrator::schemaVersion()) {
+            throw new \RuntimeException('Backup schema version is incompatible.');
+        }
+        $tables = $payload['tables'] ?? null;
+        if (!is_array($tables)) {
+            throw new \RuntimeException('Backup table payload is invalid.');
+        }
+        $allowed = array_flip($this->portableTables());
+        foreach ($tables as $table => $rows) {
+            if (!is_string($table) || !isset($allowed[$table]) || !is_array($rows)) {
+                throw new \RuntimeException('Backup contains an unsupported table.');
+            }
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    throw new \RuntimeException('Backup table row is invalid.');
+                }
+            }
+        }
+        $expectedTables = array_keys($allowed);
+        $providedTables = array_keys($tables);
+        sort($expectedTables);
+        sort($providedTables);
+        if ($providedTables !== $expectedTables) {
+            throw new \RuntimeException('Backup does not contain the complete managed table set.');
+        }
+        return $tables;
     }
 
     private function ensureDirectory(): void

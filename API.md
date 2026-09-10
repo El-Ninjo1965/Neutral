@@ -76,8 +76,8 @@ Statuswerte: **VORHANDEN** bedeutet im PHP-Router nachweisbar. Die folgende Tabe
 | POST | `/api/admin/backups` | verschlüsseltes logisches Backup erzeugen | `backups.manage`, CSRF | – | Backup-ID und Metadaten | 401/403/503; verwaltete Coretabellen | VORHANDEN |
 | POST | `/api/admin/backups/path/test` | konfigurierten Backup-Pfad sicher prüfen | Adminsession, `backups.manage`, CSRF | absoluter Pfad | Status + boolesche Existenz-/Verzeichnis-/Schreib-/Schutzwerte | 401/403/422 | VORHANDEN |
 | POST | `/api/admin/backups/path` | installationsspezifischen Backup-Pfad speichern | Adminsession, `backups.manage`, CSRF | absoluter Pfad | gespeicherter Pfad | 401/403/422 | VORHANDEN |
-| GET | `/api/admin/backups/{id}/download` | verschlüsseltes Backup laden | `backups.view` | – | Binärartefakt | 400/401/403/404 | VORHANDEN |
-| POST | `/api/admin/backups/upload` | verschlüsseltes Backup übertragen | `backups.manage`, CSRF | Binärartefakt bis 100 MiB | gespeicherte Metadaten | 400/401/403/413 | VORHANDEN |
+| GET | `/api/admin/backups/{id}/download` | verschlüsseltes Backup laden | Adminsession, `backups.manage` | – | byteexaktes verschlüsseltes Binärartefakt | 400/401/403/404 | VORHANDEN |
+| POST | `/api/admin/backups/upload` | verschlüsseltes Backup übertragen | `backups.manage`, CSRF | authentifiziertes Binärartefakt mit aktueller Schema-Version, vollständiger Core-Tabellenmenge und gültiger Zeilenstruktur; bis 100 MiB | gespeicherte Metadaten | 400/401/403/413 | VORHANDEN |
 | POST | `/api/admin/backups/{id}/restore` | Backup validieren und transaktional wiederherstellen | `backups.manage`, CSRF | – | Restorestatus; Sitzung endet | 400/401/403; verwaltete Coretabellen | VORHANDEN |
 | GET | `/api/admin/updates`, `/api/updates` | Updatezustand lesen | Adminvariante geschützt | – | Updateinformationen | 403; Runtime | VORHANDEN |
 
@@ -136,5 +136,7 @@ Admin-session routes `GET/POST /api/v1/admin/packages`, `PUT/DELETE /api/v1/admi
 Session projections expose the stable random `deviceId` separately from `deviceClass`, `operatingSystem` and `browser`. They also include the numeric User ID beside display name/username. Support metadata never participates in authentication or device-limit identity and falls back to `Unknown` when the user agent is insufficient.
 
 Backup path configuration is ordinary installation settings, not a secret. The test endpoint performs no backup: it rejects non-absolute/traversing paths, requires an existing directory, performs and removes a bounded probe file, and refuses known public roots. Manual and automatic backup creation resolve the same persisted setting; the host-only encryption key is never returned.
+
+The `.neutral-backup` download is the byte-exact stored AES-256-GCM JSON envelope (`application/octet-stream`); the browser never receives plaintext. Restore accepts exactly the 21 current portable Core tables and current schema version. Sessions/login attempts are absent and cleared; module-owned tables and media binaries are not part of the current v1 payload. The complete boundary is defined in `BACKUP-CONTRACT.md`.
 
 `POST /api/v1/admin/audit/clear` requires the dedicated `audit.clear` permission, Admin session, CSRF and an explicit boolean confirmation produced after two UI confirmation dialogs. It returns the deleted count and transactionally creates `audit.clear.completed` after removing all prior entries. No confirmation word is collected.
