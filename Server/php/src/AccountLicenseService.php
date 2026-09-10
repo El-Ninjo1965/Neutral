@@ -12,7 +12,7 @@ final class AccountLicenseService
     /** @return array<string,mixed> */
     public function profile(int $userId): array
     {
-        $statement = $this->database->connect()->prepare('SELECT u.username,u.email,u.display_name,p.public_nickname,p.phone,p.address,p.birthday,p.privacy_json FROM users u LEFT JOIN user_profiles p ON p.user_id=u.id WHERE u.id=:id LIMIT 1');
+        $statement = $this->database->connect()->prepare("SELECT u.username,u.email,u.display_name,p.public_nickname,p.phone,p.address,p.birthday,p.privacy_json,EXISTS(SELECT 1 FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active') organization_sharing_available FROM users u LEFT JOIN user_profiles p ON p.user_id=u.id WHERE u.id=:id LIMIT 1");
         $statement->execute([':id' => $userId]);
         $row = $statement->fetch(\PDO::FETCH_ASSOC);
         if (!is_array($row)) throw new \RuntimeException('User profile not found.');
@@ -26,6 +26,7 @@ final class AccountLicenseService
             'address' => (string) ($row['address'] ?? ''),
             'birthday' => (string) ($row['birthday'] ?? ''),
             'privacy' => self::normalizePrivacy(is_array($privacy) ? $privacy : []),
+            'organizationSharingAvailable' => (bool) ($row['organization_sharing_available'] ?? false),
         ];
     }
 
@@ -42,10 +43,13 @@ final class AccountLicenseService
         $duplicate = $pdo->prepare("SELECT id FROM users WHERE email IS NOT NULL AND email <> '' AND LOWER(email)=LOWER(:email) AND id<>:id LIMIT 1");
         $duplicate->execute([':email' => $email, ':id' => $userId]);
         if ($email !== '' && $duplicate->fetchColumn() !== false) throw new \RuntimeException('Email already exists.');
+        $currentProfile = $this->profile($userId);
+        $privacyProvided = array_key_exists('privacy', $payload);
+        $privacy = $privacyProvided ? self::normalizePrivacy(is_array($payload['privacy'] ?? null) ? $payload['privacy'] : []) : $currentProfile['privacy'];
+        if ($privacyProvided && !($currentProfile['organizationSharingAvailable'] ?? false) && in_array(true, $privacy, true)) throw new \RuntimeException('Organization sharing requires an active organization assignment.');
         $pdo->prepare('UPDATE users SET email=:email,display_name=:display_name,updated_at=CURRENT_TIMESTAMP WHERE id=:id')->execute([
             ':email' => $email === '' ? null : $email, ':display_name' => trim((string) ($payload['displayName'] ?? '')), ':id' => $userId,
         ]);
-        $privacy = self::normalizePrivacy(is_array($payload['privacy'] ?? null) ? $payload['privacy'] : []);
         $pdo->prepare('INSERT INTO user_profiles(user_id,public_nickname,phone,address,birthday,privacy_json) VALUES(:id,:nickname,:phone,:address,:birthday,:privacy) ON DUPLICATE KEY UPDATE public_nickname=VALUES(public_nickname),phone=VALUES(phone),address=VALUES(address),birthday=VALUES(birthday),privacy_json=VALUES(privacy_json)')->execute([
             ':id'=>$userId, ':nickname'=>trim((string)($payload['publicNickname']??'')), ':phone'=>trim((string)($payload['phone']??'')), ':address'=>trim((string)($payload['address']??'')), ':birthday'=>$birthday===''?null:$birthday, ':privacy'=>json_encode($privacy, JSON_THROW_ON_ERROR),
         ]);

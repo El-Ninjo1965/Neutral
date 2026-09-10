@@ -123,3 +123,7 @@ License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Inst
 ## 10. Settings/Profile und Backup-V2
 
 Ausgeloggt sind ausschließlich App Areas und Navigation sichtbar; Privacy & Sharing/Profile benötigen eine bestätigte User-Session. Birthday bleibt Day/Month/Year, kompakt auf Tablet und responsiv auf Telefon. Save übernimmt ausschließlich die autoritative Serverantwort. Backup V2 umfasst deklarierte Modultabellen und verwaltete Medienbytes; V1 bleibt als historischer Teilvertrag lesbar. Kein Produktions-Restore als Test.
+
+## 11. Organization Sharing und Navigation Active-State
+
+Organization Sharing ist nur bei autoritativ bestätigter aktiver User→License/Organization-Zuordnung sichtbar und serverseitig aktivierbar; Rollen oder Clientannahmen reichen nicht. Navigation hat pro Ebene genau einen routenbasierten `aria-current`-Active-State. Farben stammen ausschließlich aus den zentralen `nav-active`-Theme-Tokens.

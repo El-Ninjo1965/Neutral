@@ -186,3 +186,6 @@ default home instead of leaving an empty view.
 - `DatabaseBackupService::validatedTables()` is the shared pre-mutation/pre-storage validator for logical format, current schema, exact table set and row shape, used by both restore and upload.
 
 - Backup v2 `portableTables()` merges Core tables with installed modules' generic manifest table declarations; managed-media export/validation/staging carries byte content with logical paths and SHA-256 while v1 remains readable.
+
+- `AccountLicenseService::profile()` projects the authoritative boolean organization-sharing capability; `updateProfile()` rejects unauthorized true sharing flags before mutation and preserves privacy when omitted.
+- User hash routing reproduces main/Settings-subtab Active-State and applies `aria-current` plus centralized `--nav-active-*` tokens.

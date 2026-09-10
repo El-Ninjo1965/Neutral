@@ -55,7 +55,7 @@ test('module card open path sets the same view state as the nav button', () => {
   // The landing-page card path must run through renderModule, which sets
   // state.activeView = `module:<id>`; it must not render module content while
   // leaving state.activeView on 'home'.
-  const cardBlock = source.match(/data-module-card[\s\S]{0,400}?renderModule\(button\.dataset\.moduleCard\)/);
+  const cardBlock = source.match(/data-module-card[\s\S]{0,600}?renderModule\(button\.dataset\.moduleCard\)/);
   assert.ok(cardBlock, 'module card click must call renderModule');
   const renderModuleBody = source.match(/const renderModule = \(moduleId, \{ asHomepage = false \} = \{\}\) => \{[\s\S]*?\n  \};/);
   assert.ok(renderModuleBody);

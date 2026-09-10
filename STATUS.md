@@ -90,3 +90,7 @@ Operator live evidence now confirms protected-path, encryption, crypto and schem
 ## 2026-09-10 Backup V2 and Settings/Profile follow-up
 
 **CODE/ISOLATED COMPLETE / DEPLOYMENT PENDING:** Backup v2 includes 21 Core tables, generic installed-module tables and managed media bytes with bounded integrity/path checks; v1 remains readable. Birthday authoritative hydration/cache invalidation and authenticated-only Privacy/Profile navigation are corrected with compact responsive selects. No production restore. Host Cron/Move gates still prevent automatic Core Freeze.
+
+## 2026-09-10 organization sharing / active navigation follow-up
+
+**CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED:** Organization Sharing is server-gated by active License membership and hidden for individual users; forged enablement fails before mutation. Main/Settings navigation now has hash-route-derived, accessible, token-colored active states across reload/deep-link/auth changes. Existing Birthday/auth-tab fixes remain intact. No new LIVE or Freeze claim.

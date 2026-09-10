@@ -288,3 +288,7 @@ Backups & Restore contains `Backup storage path`, `Test path` and `Save` togethe
 ## 2026-09-10 Settings/Profile follow-up
 
 Anonymous Settings navigation contains only App Areas and Navigation. Privacy & Sharing and Profile are created only for an authenticated user; an anonymous stale/direct section selection is reset to App Areas. Birthday remains three selects, uses a compact Day/Month/Year row on tablet widths and wraps on small phones. A profile save is successful only after the authoritative returned profile confirms the exact ISO birthday, which is cached for immediate re-opening and invalidated on identity change/logout.
+
+## Organization context and active navigation
+
+Profile renders `Share with my organization` only when the server profile capability confirms an active organization assignment. Main navigation, Settings action and Settings subnavigation expose one clear `aria-current` selection derived from the current hash route; selected colors use theme tokens and survive hover, reload and direct links.

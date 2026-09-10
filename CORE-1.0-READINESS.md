@@ -30,3 +30,5 @@ Manifest/compatibility, discovery, inactive install, activation/deactivation/upd
 ## Quality / release decision
 
 Positive/negative automated suites, PHP/JS static checks, package and deployment smoke are present. No known Critical/High issue is recorded. Final status remains blocked by the explicitly listed **HOST ACTION REQUIRED** and **DEVICE RETEST REQUIRED** evidence; therefore the release must not be marked `BESTANDEN` or frozen yet.
+
+Organization-sharing authorization and global navigation Active-State are code/test covered but remain **DEVICE RETEST REQUIRED**. This follow-up does not independently change Core Freeze status.

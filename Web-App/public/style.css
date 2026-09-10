@@ -1997,6 +1997,18 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
   box-shadow: 0 3px 9px rgba(28, 72, 153, 0.2);
 }
 
+.user-app-link.active,
+.user-app-link.active:hover,
+.user-settings-subnav .ui-button.active,
+.user-settings-subnav .ui-button.active:hover {
+  background: var(--nav-active-bg);
+  border-color: var(--nav-active-border);
+  color: var(--nav-active-text);
+}
+
+.user-app-link.active .ui-button-icon,
+.user-settings-subnav .ui-button.active .ui-button-icon { color: var(--nav-active-icon); }
+
 .user-app-nav-icon {
   display: block;
   width: 21px;

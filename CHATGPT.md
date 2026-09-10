@@ -1,21 +1,23 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-10
-**Status:** IMPLEMENTIERT · `BACKUP CONTRACT COMPLETE` CODE-/ISOLIERT VERIFIZIERT · KEIN PRODUKTIONS-RESTORE
+**Auftrag:** Organization Sharing und routenbasierter Active-State
+**Status:** CODE-SEITIG IMPLEMENTIERT · LOKAL VERIFIZIERT · DEVICE RETEST REQUIRED
 
-## Ergebnis
+## Tatsächlicher Endstand
 
-Backup v2 sichert die 21 Coretabellen, alle generisch über installierte Modulmanifeste deklarierten Tabellen und verwaltete Medienbinärdateien. Medien liegen nur als logische relative Pfade mit Größe/SHA-256/Base64 im vollständig AES-256-GCM-verschlüsselten Payload; Symlinks, Traversal, unbekannte Namen, Integritätsfehler, mehr als 100 MiB und nicht leere Restoreziele werden abgelehnt. V1 bleibt als historischer Core-only-Teilumfang lesbar. Code, `.env`/Secrets, Logs, Caches, Sessions und Login-Attempts bleiben bewusst ausgeschlossen.
+- `Share with my organization` beruht jetzt ausschließlich auf einer autoritativ serverseitig ermittelten aktiven `license_users`-Zuordnung zu einer aktiven License. Das Profil liefert nur das Boolean `organizationSharingAvailable`, keine Organisationsdetails.
+- Einzeluser sehen das Organization-Sharing-Fieldset nicht. Manipulierte Requests, die dennoch eine Freigabe aktivieren, werden vor jeder Profilmutation mit 422 abgelehnt. Fehlende Privacy-Payloads erhalten bestehende Werte; Default bleibt vollständig off.
+- Nach Entfernen, Widerruf oder Deaktivierung der Zuordnung liefert die nächste Profilhydration `false` und die Option verschwindet.
+- Hauptnavigation, Settings-Hauptaktion und Settings-Untertabs leiten Active-State aus View und URL-Hashroute ab. Reload, Back/Forward und direkte Hash-Links werden unterstützt; `aria-current="page"` markiert genau den aktuellen Eintrag.
+- Active Styles verwenden ausschließlich `--nav-active-*`-Tokens und gelten stabil bei Hover; Light, Dark und Custom Design bleiben autoritativ.
+- Die vorherigen Birthday- und Auth-Tab-Fixes bleiben erhalten und sind regressionsgeprüft.
 
-Der isolierte Test bestätigt Core-/Modultabellen und echte Binärdatei bytegenau, Sessionleerung, falschen Key, Manipulation, fehlende Komponenten, Versionen, Limit und Rollback. Kein Produktions-Restore und keine Produktionsmutation erfolgten.
+## Verifikation
 
-Birthday Save übernimmt jetzt das autoritativ zurückgelieferte Profil und meldet nur Erfolg, wenn das ISO-Datum bestätigt ist; Profilcache wird bei Identitätswechsel/Logout verworfen. Day/Month/Year ist auf iPad kompakt horizontal und bricht nur auf kleinen Viewports um. Anonym werden nur App Areas und Navigation gerendert; Privacy & Sharing/Profile erscheinen erst nach Login und verschwinden sofort beim Logout.
+- Vollsuite 496/496, PHP-Lint 40 Dateien, JS-Syntax 91 Dateien und Produktionspaket 112 Dateien bestanden.
+- Chromium-Sichtprüfung bei 1024×768 durchgeführt.
 
-## Wahrheitsgrenze / Betreiber-Retest
+## Wahrheitsgrenze und Betreiber-Retest
 
-`BACKUP CONTRACT COMPLETE` bezeichnet Code und isolierten Vertrag, nicht automatisch Core Freeze. Automatic Backup/Cron und weitere reale Host-/Move-Gates bleiben offen. Betreiber prüft: anonym/eingeloggt Tabs; Birthday Save→neu öffnen→Reload→Relogin→Delete und iPad-Layout; neues V2-Backup erstellen/downloaden. Restore weiterhin ausschließlich auf separatem Staging, niemals Produktion.
-
-
-## Deployment
-
-Implementation and documentation were pushed to `origin/main`. CodeQL and FTPS deployment completed successfully; the bounded read-only production smoke confirmed the deployed revision and `migrationsReady:true`. No production restore was run.
+Kein neuer Live-/Freeze-Claim. Zu prüfen: Einzeluser ohne Organization-Option; zugeordneter User mit Option; Entfernung der Zuordnung; Settings-/Modul-/Untertab-Active-State nach Klick, Reload und Deep-Link; Logout auf Profile; Birthday-Persistenz erneut real. Keine destruktive Produktionsaktion wurde ausgeführt.

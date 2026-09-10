@@ -11,6 +11,7 @@
     settingsSection: 'areas',
     accountProfile: null,
     profileLoading: false,
+    authStatusKnown: false,
     activeModuleId: null,
     discoveryState: 'pending'
   };
@@ -25,6 +26,17 @@
   const LOCATION_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>`;
   const MODULE_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
   const NAV_LABEL_MAX = 32;
+
+  const applyHashRoute = () => {
+    let route = '';
+    try { route = decodeURIComponent((window.location.hash || '').replace(/^#\/?/, '')); } catch (error) { route = ''; }
+    if (route.startsWith('settings/')) { state.activeView = 'settings';state.settingsSection = route.slice(9) || 'areas';state.activeModuleId = null;return; }
+    if (route === 'settings') { state.activeView = 'settings';state.settingsSection = 'areas';state.activeModuleId = null;return; }
+    if (route.startsWith('module/')) { state.activeModuleId = route.slice(7);state.activeView = `module:${state.activeModuleId}`;return; }
+    if (route === 'login') { state.activeView = 'login';state.activeModuleId = null;return; }
+    state.activeView = 'home';state.activeModuleId = null;
+  };
+  const writeHashRoute = (route) => { const hash = `#/${route}`;if (window.location.hash !== hash) window.history.pushState(null, '', hash); };
 
   const defaultUserPreferences = Object.freeze({
     visibleModuleIds: null,
@@ -510,6 +522,7 @@
         settingsButtonElement.addEventListener('click', () => {
           state.activeView = 'settings';
           state.activeModuleId = null;
+          writeHashRoute(`settings/${state.settingsSection}`);
           renderApp();
         });
       }
@@ -535,6 +548,7 @@
         clearServerUser();
         state.activeView = 'home';
         state.activeModuleId = null;
+        writeHashRoute('');
         renderApp();
       });
     }
@@ -543,6 +557,7 @@
       settingsButtonElement.addEventListener('click', () => {
         state.activeView = 'settings';
         state.activeModuleId = null;
+        writeHashRoute(`settings/${state.settingsSection}`);
         renderApp();
       });
     }
@@ -575,6 +590,7 @@
         const nextView = button.dataset.userNav;
         state.activeView = nextView;
         state.activeModuleId = nextView.startsWith('module:') ? nextView.slice('module:'.length) : null;
+        writeHashRoute(nextView === 'home' ? '' : `module/${state.activeModuleId}`);
         renderApp();
       });
     });
@@ -583,6 +599,7 @@
   const showLoginForm = () => {
     state.activeView = 'login';
     state.activeModuleId = null;
+    writeHashRoute('login');
     content.innerHTML = `
       <section class="user-app-panel">
         <h1>Login</h1>
@@ -657,6 +674,7 @@
       status.className = 'message success';
       status.textContent = 'Signed in successfully.';
       state.activeView = 'home';
+      writeHashRoute('');
       renderApp();
     });
   };
@@ -671,7 +689,7 @@
       : new Set(modules.map((module) => module.id));
     const allowedSections = currentUser ? ['areas', 'navigation', 'privacy', 'profile'] : ['areas', 'navigation'];
     const section = allowedSections.includes(state.settingsSection) ? state.settingsSection : 'areas';
-    state.settingsSection = section;
+    if (state.authStatusKnown || currentUser) state.settingsSection = section;
     const profile = state.accountProfile || currentUser || {};
     const birthdayParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(profile.birthday || '') || [];
     const birthdayYear = birthdayParts[1] || '';
@@ -759,7 +777,7 @@
           <div class="form-field"><label>Phone (optional)<input id="profilePhone" maxlength="80" value="${escapeHtml(profile.phone || '')}"></label></div>
           <div class="form-field"><label>Address (optional)<textarea id="profileAddress" maxlength="1000">${escapeHtml(profile.address || '')}</textarea></label></div>
           <fieldset class="form-field birthday-fields"><legend>Birthday (optional)</legend><p class="form-help">Choose day, month and year. Leave all three empty to remove the birthday.</p><div class="birthday-selects"><label>Day<select id="profileBirthdayDay" class="user-settings-select"><option value="">Day</option>${Array.from({ length: 31 }, (_, index) => { const day = String(index + 1).padStart(2, '0'); return `<option value="${day}" ${birthdayDay === day ? 'selected' : ''}>${index + 1}</option>`; }).join('')}</select></label><label>Month<select id="profileBirthdayMonth" class="user-settings-select"><option value="">Month</option>${birthdayMonths.map((month) => `<option value="${month.value}" ${birthdayMonth === month.value ? 'selected' : ''}>${escapeHtml(month.label)}</option>`).join('')}</select></label><label>Year<select id="profileBirthdayYear" class="user-settings-select"><option value="">Year</option>${Array.from({ length: 121 }, (_, index) => String(currentYear - index)).map((year) => `<option value="${year}" ${birthdayYear === year ? 'selected' : ''}>${year}</option>`).join('')}</select></label></div></fieldset>
-          <fieldset><legend>Share with my organization</legend>${['email','displayName','publicNickname','phone','address','birthday'].map((field) => `<label class="user-settings-toggle"><input type="checkbox" data-profile-privacy="${field}" ${profile.privacy?.[field] ? 'checked' : ''}><span>Share ${field}</span></label>`).join('')}</fieldset>
+          ${profile.organizationSharingAvailable ? `<fieldset><legend>Share with my organization</legend>${['email','displayName','publicNickname','phone','address','birthday'].map((field) => `<label class="user-settings-toggle"><input type="checkbox" data-profile-privacy="${field}" ${profile.privacy?.[field] ? 'checked' : ''}><span>Share ${field}</span></label>`).join('')}</fieldset>` : ''}
           <fieldset><legend>Change password</legend><div class="form-field"><label>Current password<input id="profileCurrentPassword" type="password" autocomplete="current-password"></label></div><div class="form-field"><label>New password<input id="profileNewPassword" type="password" minlength="8" maxlength="25" pattern="\\S{8,25}" autocomplete="new-password"></label><small>8–25 characters, no spaces. No other composition rules.</small></div><button id="profilePasswordButton" type="button" class="ui-button ui-button--secondary">Change password</button></fieldset>` : '<p>Sign in to manage your profile.</p>'}
         </div>
         </div><div class="user-settings-actions">
@@ -770,7 +788,7 @@
     `;
 
     const saveButton = document.getElementById('userSettingsSaveButton');
-    document.querySelectorAll('[data-settings-section]').forEach((button) => button.addEventListener('click', () => { state.settingsSection = button.dataset.settingsSection; renderApp(); }));
+    document.querySelectorAll('[data-settings-section]').forEach((button) => button.addEventListener('click', () => { state.settingsSection = button.dataset.settingsSection;writeHashRoute(`settings/${state.settingsSection}`);renderApp(); }));
     document.querySelectorAll('[data-navigation-label-reset]').forEach((button) => button.addEventListener('click', () => {
       const input = document.querySelector(`[data-navigation-label="${button.dataset.navigationLabelReset}"]`);
       if (input) input.value = '';
@@ -803,8 +821,8 @@
           const month = document.getElementById('profileBirthdayMonth')?.value || '';
           const year = document.getElementById('profileBirthdayYear')?.value || '';
           if ([day, month, year].some(Boolean) && ![day, month, year].every(Boolean)) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Choose day, month and year, or leave all birthday fields empty.'; status.className = 'user-settings-status error'; } return; }
-          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: year ? `${year}-${month}-${day}` : '', privacy: {} };
-          document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; });
+          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: year ? `${year}-${month}-${day}` : '' };
+          if (state.accountProfile?.organizationSharingAvailable) { profile.privacy = {};document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; }); }
           const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
           if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }
           const savedProfile = result?.data?.data?.profile || result?.data?.profile;
@@ -850,6 +868,7 @@
     if (!module) {
       state.activeView = 'home';
       state.activeModuleId = null;
+      writeHashRoute('');
       renderLandingPage();
       return;
     }
@@ -965,6 +984,7 @@
         }
         state.activeView = `module:${button.dataset.moduleCard}`;
         state.activeModuleId = button.dataset.moduleCard;
+        writeHashRoute(`module/${button.dataset.moduleCard}`);
         renderModule(button.dataset.moduleCard);
       });
     });
@@ -1033,6 +1053,7 @@
         }
       } finally {
         if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');
+        state.authStatusKnown = true;
         renderApp();
       }
     }, 0);
@@ -1059,6 +1080,8 @@
   }
 
   // First paint and basic navigation do not wait for IndexedDB, auth, network or module discovery.
+  applyHashRoute();
+  window.addEventListener('hashchange', () => { applyHashRoute();renderApp(); });
   if (window.CorePerformance) window.CorePerformance.mark('shell-visible');
   renderApp();
   if (content) content.setAttribute('aria-busy', 'false');

@@ -68,3 +68,6 @@
 
 - [ ] Operator: verify V2 create/download and Automatic Backup/Cron; restore only on isolated staging, never production.
 - [ ] Device: verify anonymous/authenticated Settings tabs and Birthday save/reopen/reload/re-login/delete plus iPad layout.
+
+- [ ] Device retest: individual vs organization-assigned Profile sharing visibility and removal/revocation refresh.
+- [ ] Device retest: main/Settings subnavigation active state across click, reload, deep-link, back/forward and logout; recheck Birthday persistence.

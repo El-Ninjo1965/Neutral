@@ -513,7 +513,8 @@ if ($route === 'account/profile' && $method === 'GET') {
 if ($route === 'account/profile' && $method === 'PUT') {
     if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
     try { Security::assertValidCsrfToken((string)($headers['x-csrf-token'] ?? '')); } catch (Throwable $exception) { JsonResponse::error('Invalid CSRF token.', 403); }
-    JsonResponse::success(['profile' => $accountLicenseService->updateProfile(identity_user_id($identity), parse_json_body())]);
+    try { JsonResponse::success(['profile' => $accountLicenseService->updateProfile(identity_user_id($identity), parse_json_body())]); }
+    catch (RuntimeException $exception) { JsonResponse::error($exception->getMessage(), 422); }
 }
 
 if ($route === 'account/password' && $method === 'POST') {
