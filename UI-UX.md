@@ -304,3 +304,5 @@ Profile renders `Share with my organization` only when the server profile capabi
 - User Create/Edit separates `Package` from `License / Organization`; License selection disables Package editing and explains inheritance/fallback.
 - User lists label the effective source as `Direct package` or `From license / organization`.
 Active system modules may intentionally have no User navigation button. Hidden presentation never means disabled capability or permission. The User Login password eye uses the same shared helper and is included in the offline shell cache so stale warm starts do not omit it.
+
+Profile and Privacy tabs are capability-gated and disappear cleanly while the optional Profile module is inactive. Login and technical account navigation remain available.

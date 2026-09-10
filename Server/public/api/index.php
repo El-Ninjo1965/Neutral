@@ -50,6 +50,11 @@ $userService = new Phase4UserService($store, $roleService, $config, $database);
 $settingsService = new Phase6SettingsService($database, new Phase4SettingsService($store));
 $auditService = new Phase6AuditService($database, $store);
 $moduleRuntime = new Phase7ModuleRuntime($database, $runtime->projectRoot());
+try {
+    $moduleRuntime->bootstrapBundledDefaults();
+} catch (Throwable $exception) {
+    // Public bootstrap/auth routes must not depend on optional-module storage readiness.
+}
 $sessionRegistry = new Phase4SessionRegistry(new Phase4JsonStore($runtime->projectRoot() . '/Server/runtime'), $database);
 $authManager = new Phase4AuthManager($config, $userService, $roleService, $sessionRegistry);
 $accountLicenseService = new AccountLicenseService($database);
@@ -506,18 +511,6 @@ if (($route === 'auth/me' || $route === 'admin/auth/me') && $method === 'GET') {
         'roles' => $identity['roles'] ?? [],
         'permissions' => $identity['permissions'] ?? [],
     ]);
-}
-
-if ($route === 'account/profile' && $method === 'GET') {
-    if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
-    JsonResponse::success(['profile' => $accountLicenseService->profile(identity_user_id($identity))]);
-}
-
-if ($route === 'account/profile' && $method === 'PUT') {
-    if (!$identity || (($identity['via'] ?? '') !== 'session')) JsonResponse::error('User session required.', 401);
-    try { Security::assertValidCsrfToken((string)($headers['x-csrf-token'] ?? '')); } catch (Throwable $exception) { JsonResponse::error('Invalid CSRF token.', 403); }
-    try { JsonResponse::success(['profile' => $accountLicenseService->updateProfile(identity_user_id($identity), parse_json_body())]); }
-    catch (RuntimeException $exception) { JsonResponse::error($exception->getMessage(), 422); }
 }
 
 if ($route === 'account/password' && $method === 'POST') {

@@ -73,8 +73,8 @@ test('admin UX exposes free device limits, user-selected managers, birthday drop
 test('profile hydration is authoritative and authenticated settings tabs fail closed', () => {
   const profile = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
-  assert.match(profile, /allowedSections = currentUser \? \['areas', 'navigation', 'privacy', 'profile'\] : \['areas', 'navigation'\]/);
-  assert.match(profile, /currentUser \? \[\['privacy','Privacy & Sharing'\],\['profile','Profile'\]\] : \[\]/);
+  assert.match(profile, /allowedSections = currentUser && profileAvailable \? \['areas', 'navigation', 'privacy', 'profile'\] : \['areas', 'navigation'\]/);
+  assert.match(profile, /currentUser && profileAvailable \? \[\['privacy','Privacy & Sharing'\],\['profile','Profile'\]\] : \[\]/);
   assert.match(profile, /state\.accountProfile = savedProfile/);
   assert.match(profile, /savedProfile\.birthday !== profile\.birthday/);
   assert.match(profile, /state\.accountProfile = null/);

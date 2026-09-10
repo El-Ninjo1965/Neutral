@@ -246,3 +246,5 @@ Ein Marketplace, CatchTrack-spezifische Fangbilder, Ranglisten, GPS Pro und Vere
 ## Minimal Core rule
 
 Core provides reusable technical mechanisms only. Profile, Media, Sharing, Moderation, Notifications, Postbox and Community are optional modules; an app and unrelated modules must run without them. Active modules may be system-only and absent from User navigation. Hard module dependencies are exceptional; optional enhancements use capability detection.
+
+Profile is an optional invisible module, not a prerequisite for identity, login, licensing, or other application modules.

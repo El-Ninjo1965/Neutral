@@ -102,3 +102,5 @@ Operator live evidence now confirms protected-path, encryption, crypto and schem
 - Full regression/deployment status is recorded in `CHATGPT.md`; no production restore or destructive production action is part of this work.
 - 2026-09-11: implemented recognizable shared password eyes and direct individual-user Package assignment with authoritative License precedence, fallback, audit metadata, device defaults, and entitlement resolution.
 - 2026-09-11: minimal-Core boundary and optional system-module presentation/dependency metadata implemented; User Login feedback helper added to offline precache. Profile extraction and Field Notes proof remain pre-freeze work.
+
+- 2026-09-11: Profile API moved behind the generic optional-module runtime; five independent system capability manifests added. Field Notes intentionally deferred. No production restore performed.

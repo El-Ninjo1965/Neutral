@@ -1,0 +1,151 @@
+{
+  "id": "postbox",
+  "name": "Postbox",
+  "displayName": "Postbox",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, independent Postbox system capability.",
+  "entry": "index.js",
+  "globalName": "NeutralPostboxModule",
+  "defaultActivation": "inactive",
+  "presentation": {
+    "userNavigation": false,
+    "adminNavigation": true,
+    "system": true
+  },
+  "dependencies": [],
+  "optionalDependencies": [
+    "media",
+    "notifications"
+  ],
+  "capabilities": [
+    "postbox.messaging"
+  ],
+  "contracts": {
+    "messaging": {
+      "folders": [
+        "inbox",
+        "sent"
+      ],
+      "recipientKinds": [
+        "user",
+        "users",
+        "role",
+        "group",
+        "organization"
+      ],
+      "readState": true,
+      "reply": true,
+      "attachments": "optional",
+      "organizationBoundary": "server-enforced",
+      "broadcastPermission": "postbox.broadcast"
+    }
+  },
+  "permissions": [
+    {
+      "key": "postbox.read",
+      "description": "Postbox: read.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.write",
+      "description": "Postbox: write.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.reply",
+      "description": "Postbox: reply.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.attachments",
+      "description": "Postbox: attachments.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.group-send",
+      "description": "Postbox: group-send.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.broadcast",
+      "description": "Postbox: broadcast.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "postbox.manage",
+      "description": "Postbox: manage.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": [
+      "postbox.read"
+    ],
+    "usagePermissions": [
+      "postbox.read",
+      "postbox.write",
+      "postbox.reply",
+      "postbox.attachments",
+      "postbox.group-send",
+      "postbox.broadcast",
+      "postbox.manage"
+    ],
+    "managementPermissions": [
+      "postbox.manage"
+    ],
+    "adminPermissions": [
+      "postbox.manage"
+    ]
+  },
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.1.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/postbox/module.php",
+    "services": [
+      "module.postbox.capability"
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.postbox.capability",
+        "action": "status",
+        "permission": "postbox.read",
+        "csrf": false
+      }
+    ]
+  },
+  "database": {
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
+  }
+}

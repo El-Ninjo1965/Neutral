@@ -684,12 +684,13 @@
   const renderUserSettings = () => {
     const currentUser = getCurrentUser();
     const modules = getAvailableModulesForUser();
+    const profileAvailable = getModules().some((module) => module.id === 'profile');
     const preferences = readUserPreferences();
     const hasExplicitVisibility = Array.isArray(preferences.visibleModuleIds);
     const moduleVisibility = hasExplicitVisibility
       ? new Set(preferences.visibleModuleIds)
       : new Set(modules.map((module) => module.id));
-    const allowedSections = currentUser ? ['areas', 'navigation', 'privacy', 'profile'] : ['areas', 'navigation'];
+    const allowedSections = currentUser && profileAvailable ? ['areas', 'navigation', 'privacy', 'profile'] : ['areas', 'navigation'];
     const section = allowedSections.includes(state.settingsSection) ? state.settingsSection : 'areas';
     if (state.authStatusKnown || currentUser) state.settingsSection = section;
     const profile = state.accountProfile || currentUser || {};
@@ -701,7 +702,7 @@
     const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' });
     const birthdayMonths = Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1).padStart(2, '0'), label: monthFormatter.format(new Date(Date.UTC(2020, index, 1))) }));
     const currentYear = new Date().getUTCFullYear();
-    if (section === 'profile' && currentUser && !state.accountProfile && !state.profileLoading) {
+    if (section === 'profile' && currentUser && profileAvailable && !state.accountProfile && !state.profileLoading) {
       state.profileLoading = true;
       const profileClient = getServerApiClient();
       Promise.resolve(profileClient ? profileClient.getProfile() : { ok: false }).then((result) => {
@@ -717,7 +718,7 @@
             <h1>Settings</h1>
           </div>
         </div>
-        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],...(currentUser ? [['privacy','Privacy & Sharing'],['profile','Profile']] : [])].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
+        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],...(currentUser && profileAvailable ? [['privacy','Privacy & Sharing'],['profile','Profile']] : [])].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
         <div class="user-content-grid user-settings-grid"><div class="user-settings-card" ${section === 'areas' ? '' : 'hidden'}>
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
@@ -778,6 +779,7 @@
           <div class="form-field"><label>Public nickname (optional)<input id="profileNickname" maxlength="120" value="${escapeHtml(profile.publicNickname || '')}"></label></div>
           <div class="form-field"><label>Phone (optional)<input id="profilePhone" maxlength="80" value="${escapeHtml(profile.phone || '')}"></label></div>
           <div class="form-field"><label>Address (optional)<textarea id="profileAddress" maxlength="1000">${escapeHtml(profile.address || '')}</textarea></label></div>
+          <div class="form-field"><label>Gender (optional)<select id="profileGender" class="user-settings-select"><option value="unspecified" ${(profile.gender || 'unspecified') === 'unspecified' ? 'selected' : ''}>Unspecified</option><option value="female" ${profile.gender === 'female' ? 'selected' : ''}>Female</option><option value="male" ${profile.gender === 'male' ? 'selected' : ''}>Male</option></select></label></div>
           <fieldset class="form-field birthday-fields"><legend>Birthday (optional)</legend><p class="form-help">Choose day, month and year. Leave all three empty to remove the birthday.</p><div class="birthday-selects"><label>Day<select id="profileBirthdayDay" class="user-settings-select"><option value="">Day</option>${Array.from({ length: 31 }, (_, index) => { const day = String(index + 1).padStart(2, '0'); return `<option value="${day}" ${birthdayDay === day ? 'selected' : ''}>${index + 1}</option>`; }).join('')}</select></label><label>Month<select id="profileBirthdayMonth" class="user-settings-select"><option value="">Month</option>${birthdayMonths.map((month) => `<option value="${month.value}" ${birthdayMonth === month.value ? 'selected' : ''}>${escapeHtml(month.label)}</option>`).join('')}</select></label><label>Year<select id="profileBirthdayYear" class="user-settings-select"><option value="">Year</option>${Array.from({ length: 121 }, (_, index) => String(currentYear - index)).map((year) => `<option value="${year}" ${birthdayYear === year ? 'selected' : ''}>${year}</option>`).join('')}</select></label></div></fieldset>
           ${profile.organizationSharingAvailable ? `<fieldset><legend>Share with my organization</legend>${['email','displayName','publicNickname','phone','address','birthday'].map((field) => `<label class="user-settings-toggle"><input type="checkbox" data-profile-privacy="${field}" ${profile.privacy?.[field] ? 'checked' : ''}><span>Share ${field}</span></label>`).join('')}</fieldset>` : ''}
           <fieldset><legend>Change password</legend><div class="form-field"><label>Current password<input id="profileCurrentPassword" type="password" autocomplete="current-password"></label></div><div class="form-field"><label>New password<input id="profileNewPassword" type="password" minlength="8" maxlength="25" pattern="\\S{8,25}" autocomplete="new-password"></label><small>8–25 characters, no spaces. No other composition rules.</small></div><button id="profilePasswordButton" type="button" class="ui-button ui-button--secondary">Change password</button></fieldset>` : '<p>Sign in to manage your profile.</p>'}
@@ -823,7 +825,7 @@
           const month = document.getElementById('profileBirthdayMonth')?.value || '';
           const year = document.getElementById('profileBirthdayYear')?.value || '';
           if ([day, month, year].some(Boolean) && ![day, month, year].every(Boolean)) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Choose day, month and year, or leave all birthday fields empty.'; status.className = 'user-settings-status error'; } return; }
-          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: year ? `${year}-${month}-${day}` : '' };
+          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', gender: document.getElementById('profileGender')?.value || 'unspecified', birthday: year ? `${year}-${month}-${day}` : '' };
           if (state.accountProfile?.organizationSharingAvailable) { profile.privacy = {};document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; }); }
           const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
           if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }

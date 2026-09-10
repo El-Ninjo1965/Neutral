@@ -78,3 +78,6 @@
 - [ ] Extract the deployed Profile compatibility bridge into the optional `profile` system module without data loss.
 - [ ] Define/implement minimal protected media primitives, then optional `media`, `sharing`, `moderation`, `notifications`, and `postbox` modules independently.
 - [ ] Implement Field Notes without modifying existing Core files; treat any required Core edit as a freeze blocker.
+
+- [ ] Operator retest Profile disable/re-enable and target-device avatar workflow.
+- [ ] Build Field Notes later as the no-Core-change freeze proof.

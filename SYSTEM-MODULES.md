@@ -32,3 +32,7 @@ The deployed account/profile endpoints and tables remain a compatibility bridge 
 ## Field Notes freeze proof
 
 `field-notes` is the immediate post-boundary acceptance module. It must add manifest, route/navigation, permissions, table/migrations, settings, i18n, theme UI, offline behavior and backup declaration without edits to existing Core files. Media and Sharing integrations must be optional. If Core edits are needed, Core 1.0 is not freeze-ready.
+
+## Implemented contract boundary (2026-09-11)
+
+`profile` is the first default-active invisible system module and owns the account profile route and retained profile schema. `media`, `sharing`, `notifications`, `moderation`, and `postbox` are independently installable, default-inactive capability contracts. Their `dependencies` arrays are empty; optional integrations are explicitly listed in `optionalDependencies`. Disabling any one must not deactivate another module. Field Notes is deliberately outside this change.

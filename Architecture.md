@@ -291,3 +291,7 @@ Direct User Package state is stored on `users`; active License membership takes 
 ## Optional system modules
 
 Module lifecycle and presentation are orthogonal. `presentation.userNavigation=false` supports active invisible capability modules; `optionalDependencies` advertises enhancements without installer/lifecycle coupling. Concrete system-feature boundaries and the Profile compatibility bridge are defined in `SYSTEM-MODULES.md`.
+
+## Optional profile boundary
+
+Profile reads and mutations travel through `/api/modules/profile/profile`; Core authentication has no Profile route. The settings shell discovers the active module before exposing profile UI. Bundled default activation runs only for an unregistered module, so persisted Admin lifecycle state always wins afterward.

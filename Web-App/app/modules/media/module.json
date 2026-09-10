@@ -1,0 +1,95 @@
+{
+  "id": "media",
+  "name": "Media & Upload",
+  "displayName": "Media & Upload",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, independent Media & Upload system capability.",
+  "entry": "index.js",
+  "globalName": "NeutralMediaModule",
+  "defaultActivation": "inactive",
+  "presentation": {
+    "userNavigation": false,
+    "adminNavigation": true,
+    "system": true
+  },
+  "dependencies": [],
+  "optionalDependencies": [],
+  "capabilities": [
+    "media.storage",
+    "media.image-processing"
+  ],
+  "contracts": {
+    "upload": {
+      "mimeAllowlist": true,
+      "maxBytes": true,
+      "safeObjectIds": true,
+      "imageResize": true,
+      "replaceDelete": true,
+      "backupManagedFiles": true,
+      "symlinkEscapeProtection": true
+    }
+  },
+  "permissions": [
+    {
+      "key": "media.use",
+      "description": "Media & Upload: use.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "media.manage",
+      "description": "Media & Upload: manage.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": [
+      "media.use"
+    ],
+    "usagePermissions": [
+      "media.use",
+      "media.manage"
+    ],
+    "managementPermissions": [
+      "media.manage"
+    ],
+    "adminPermissions": [
+      "media.manage"
+    ]
+  },
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.1.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/media/module.php",
+    "services": [
+      "module.media.capability"
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.media.capability",
+        "action": "status",
+        "permission": "media.use",
+        "csrf": false
+      }
+    ]
+  },
+  "database": {
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
+  }
+}

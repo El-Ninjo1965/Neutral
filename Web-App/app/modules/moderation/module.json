@@ -1,0 +1,104 @@
+{
+  "id": "moderation",
+  "name": "Moderation",
+  "displayName": "Moderation",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, independent Moderation system capability.",
+  "entry": "index.js",
+  "globalName": "NeutralModerationModule",
+  "defaultActivation": "inactive",
+  "presentation": {
+    "userNavigation": false,
+    "adminNavigation": true,
+    "system": true
+  },
+  "dependencies": [],
+  "optionalDependencies": [],
+  "capabilities": [
+    "moderation.review"
+  ],
+  "contracts": {
+    "review": {
+      "states": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "contentTypes": [
+        "text",
+        "image"
+      ],
+      "filters": [
+        "user",
+        "module",
+        "date",
+        "type",
+        "status"
+      ],
+      "autoApproval": true
+    }
+  },
+  "permissions": [
+    {
+      "key": "moderation.review",
+      "description": "Moderation: review.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "moderation.manage",
+      "description": "Moderation: manage.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": [
+      "moderation.review"
+    ],
+    "usagePermissions": [
+      "moderation.review",
+      "moderation.manage"
+    ],
+    "managementPermissions": [
+      "moderation.manage"
+    ],
+    "adminPermissions": [
+      "moderation.manage"
+    ]
+  },
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.1.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/moderation/module.php",
+    "services": [
+      "module.moderation.capability"
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.moderation.capability",
+        "action": "status",
+        "permission": "moderation.review",
+        "csrf": false
+      }
+    ]
+  },
+  "database": {
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
+  }
+}

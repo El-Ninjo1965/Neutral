@@ -60,3 +60,5 @@ Current acceptance: Organization Sharing capability and route-based navigation A
 - Complete operator acceptance for Admin User/Admin creation and the shared success/password interaction after deployment.
 - Retest password eyes and direct/License Package source semantics on the deployed iPad workflow.
 - Next architecture gate: non-destructive Profile bridge extraction, followed by the no-Core-change Field Notes proof.
+
+- Operator: retest Profile lifecycle/avatar and User Login eye on iPad after deployment.

@@ -169,3 +169,5 @@ Password reveal is an explicit local presentation toggle: values are neither cop
 The duplicate identity lookup uses each named marker once, as required by native MySQL prepared statements; this removes the production-only `HY093` failure without enabling emulated prepares.
 The shared password toggle uses inline Core-owned SVG paths, changes only input presentation type, and never reads, transmits, audits, or logs the password value. Direct Package IDs are validated server-side against active Packages; UI disabling is explanatory, not an authorization boundary.
 Optional-module absence fails as capability absence, never as authorization bypass. Sharing remains private by default and server-authorized; Media owns safe upload policy above minimal protected-storage primitives. System-module navigation metadata does not grant activation, access, or permissions.
+
+Profile avatar data accepts only verified image data URLs, is capped at 256 KiB and square dimensions no larger than 256 px, and is protected by module authentication, permission and CSRF enforcement. Executable uploads and filesystem paths are not accepted.

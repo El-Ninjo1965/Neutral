@@ -199,3 +199,6 @@ default home instead of leaving an empty view.
 - Module manifests support system-only/invisible presentation independently of activation.
 - `optionalDependencies` declares capability enhancements but never blocks install/start when absent.
 - User navigation consumes `isNavigable`; permission/capability visibility remains independently queryable.
+
+- Optional Profile module route, retained schema, gender/privacy validation, and bounded avatar asset.
+- Independent generic system contracts for Media, Sharing, Notifications, Moderation, and Postbox with no mandatory cross-module dependencies.

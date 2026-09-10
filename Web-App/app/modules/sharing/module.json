@@ -1,0 +1,96 @@
+{
+  "id": "sharing",
+  "name": "Sharing & Visibility",
+  "displayName": "Sharing & Visibility",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, independent Sharing & Visibility system capability.",
+  "entry": "index.js",
+  "globalName": "NeutralSharingModule",
+  "defaultActivation": "inactive",
+  "presentation": {
+    "userNavigation": false,
+    "adminNavigation": true,
+    "system": true
+  },
+  "dependencies": [],
+  "optionalDependencies": [],
+  "capabilities": [
+    "sharing.visibility"
+  ],
+  "contracts": {
+    "visibility": {
+      "default": "private",
+      "levels": [
+        "private",
+        "organization",
+        "community",
+        "public"
+      ],
+      "resourceRegistration": "module-owned",
+      "authorization": "server"
+    }
+  },
+  "permissions": [
+    {
+      "key": "sharing.use",
+      "description": "Sharing & Visibility: use.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "sharing.manage",
+      "description": "Sharing & Visibility: manage.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": [
+      "sharing.use"
+    ],
+    "usagePermissions": [
+      "sharing.use",
+      "sharing.manage"
+    ],
+    "managementPermissions": [
+      "sharing.manage"
+    ],
+    "adminPermissions": [
+      "sharing.manage"
+    ]
+  },
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.1.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/sharing/module.php",
+    "services": [
+      "module.sharing.capability"
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.sharing.capability",
+        "action": "status",
+        "permission": "sharing.use",
+        "csrf": false
+      }
+    ]
+  },
+  "database": {
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
+  }
+}

@@ -96,3 +96,5 @@ V2 enthält außerdem jede reguläre, nicht symbolisch verlinkte Datei der verwa
 V1 bleibt lesbar und stellt seinen historischen 21-Tabellen-Teilumfang wieder her; es wird nicht nachträglich als Datei-/Modulvollbackup bezeichnet. Bei V2 ist der für das aktuelle Framework deklarierte verwaltete Core-, Modul- und Medienumfang vollständig. Anwendungscode, `.env`/Secrets, Logs, Caches, Sessions und Login-Attempts bleiben bewusst ausgeschlossen.
 
 **Klassifikation des aktuellen V2-Vertrags: BACKUP CONTRACT COMPLETE (code-/isoliert verifiziert).** Der Core-1.0-Freeze bleibt dennoch von realem Automatic-Backup/Cron und weiteren Host-/Move-Gates abhängig; kein Produktions-Restore wurde ausgeführt.
+
+Profile's retained `user_profiles` rows, including bounded processed avatar data, are covered by the portable database table payload; no original upload is retained.

@@ -41,3 +41,5 @@ Code and isolated tests now cover real eye icons in both login shells and determ
 ### Optional-system-module architecture
 
 Manifest/runtime support for system-only modules, hidden User navigation and non-enforced optional dependencies is implemented and tested. The User Login eye helper is now in the versioned offline shell. Core freeze remains blocked on extracting the documented Profile compatibility bridge and proving Field Notes without Core edits.
+
+- Profile route/schema ownership is optional-module based and disable-safe in automated checks; device/avatar operator acceptance and later Field Notes freeze proof remain open.

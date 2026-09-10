@@ -78,6 +78,22 @@ final class Phase7ModuleRuntime
         return $modules;
     }
 
+    /** Install/activate bundled compatibility modules exactly once; later Admin state is authoritative. */
+    public function bootstrapBundledDefaults(): void
+    {
+        $registered = $this->fetchRegisteredModules();
+        foreach ($this->discover() as $module) {
+            $id = (string) $module['id'];
+            if (($module['manifest']['defaultActivation'] ?? '') !== 'active' || isset($registered[$id])) continue;
+            try {
+                $this->install($id, null);
+                $this->activate($id, null);
+            } catch (\Throwable $exception) {
+                continue;
+            }
+        }
+    }
+
     /**
      * @param array<string,mixed>|null $identity
      * @return list<array<string,mixed>>

@@ -1,0 +1,32 @@
+{
+  "id": "profile",
+  "name": "Profile",
+  "displayName": "Profile",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional user profile and profile-visibility capability.",
+  "entry": "index.js",
+  "globalName": "NeutralProfileModule",
+  "defaultActivation": "active",
+  "presentation": { "userNavigation": false, "adminNavigation": false, "system": true },
+  "dependencies": [],
+  "optionalDependencies": ["media", "sharing"],
+  "capabilities": ["profile", "settings.profile"],
+  "permissions": [
+    { "key": "profile.view", "description": "View the own optional profile.", "defaultRoles": ["admin", "developer", "user"] },
+    { "key": "profile.update", "description": "Update the own optional profile.", "defaultRoles": ["admin", "developer", "user"] }
+  ],
+  "access": { "visibilityPermissions": ["profile.view"], "usagePermissions": ["profile.view", "profile.update"], "managementPermissions": [], "adminPermissions": [] },
+  "compatibility": { "core": ">=1.0.0 <2.0.0", "api": 1, "php": ">=8.1.0" },
+  "server": {
+    "entry": "Server/php/modules/profile/module.php",
+    "services": ["module.profile.account"],
+    "routes": [
+      { "method": "GET", "path": "profile", "service": "module.profile.account", "action": "get", "permission": "profile.view", "csrf": false },
+      { "method": "PUT", "path": "profile", "service": "module.profile.account", "action": "update", "permission": "profile.update", "csrf": true }
+    ]
+  },
+  "database": { "tables": [ { "name": "user_profiles", "description": "Optional profile-owned data; retained while the module is disabled or uninstalled." } ], "migrations": [ { "key": "2026_09_11_0001_profile_gender", "version": "1.0.0" } ] },
+  "limits": [],
+  "uninstall": { "dataPolicy": "retain" }
+}

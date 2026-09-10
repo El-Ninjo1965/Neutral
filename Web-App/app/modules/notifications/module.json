@@ -1,0 +1,97 @@
+{
+  "id": "notifications",
+  "name": "Notifications",
+  "displayName": "Notifications",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, independent Notifications system capability.",
+  "entry": "index.js",
+  "globalName": "NeutralNotificationsModule",
+  "defaultActivation": "inactive",
+  "presentation": {
+    "userNavigation": false,
+    "adminNavigation": true,
+    "system": true
+  },
+  "dependencies": [],
+  "optionalDependencies": [],
+  "capabilities": [
+    "notifications.in-app",
+    "notifications.email"
+  ],
+  "contracts": {
+    "delivery": {
+      "channels": [
+        "in-app",
+        "email"
+      ],
+      "cadence": [
+        "immediate",
+        "digest"
+      ],
+      "recipientPreferences": true
+    }
+  },
+  "permissions": [
+    {
+      "key": "notifications.use",
+      "description": "Notifications: use.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    },
+    {
+      "key": "notifications.manage",
+      "description": "Notifications: manage.",
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
+    }
+  ],
+  "access": {
+    "visibilityPermissions": [
+      "notifications.use"
+    ],
+    "usagePermissions": [
+      "notifications.use",
+      "notifications.manage"
+    ],
+    "managementPermissions": [
+      "notifications.manage"
+    ],
+    "adminPermissions": [
+      "notifications.manage"
+    ]
+  },
+  "compatibility": {
+    "core": ">=1.0.0 <2.0.0",
+    "api": 1,
+    "php": ">=8.1.0"
+  },
+  "server": {
+    "entry": "Server/php/modules/notifications/module.php",
+    "services": [
+      "module.notifications.capability"
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "status",
+        "service": "module.notifications.capability",
+        "action": "status",
+        "permission": "notifications.use",
+        "csrf": false
+      }
+    ]
+  },
+  "database": {
+    "tables": [],
+    "migrations": []
+  },
+  "limits": [],
+  "uninstall": {
+    "dataPolicy": "retain"
+  }
+}
