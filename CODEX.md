@@ -1,218 +1,334 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER DOKUMENTATIONS-KONSISTENZAUFTRAG – KEINE FEATURE-IMPLEMENTIERUNG  
+**Status:** AKTIVER IMPLEMENTIERUNGSAUFTRAG – LIVEFEHLER BEHEBEN + MODULE ADMINISTRATION KLASSIFIZIEREN  
 **Datum:** 2026-09-11
 
 # Ziel
 
-Vor dem nächsten Implementierungsauftrag muss die gesamte Markdown-Dokumentation von Neutral gegen den tatsächlichen aktuellen Code, die jüngsten Architekturentscheidungen und die realen Betreiber-Livebefunde synchronisiert werden.
+Vor dem Field-Notes-Freeze-Proof müssen die aktuell real festgestellten Livefehler behoben und die Module Administration um die neue, rein deklarative Trennung in User Modules und System Modules ergänzt werden.
 
-Dieser Lauf ist primär **Dokumentation und technische Wahrheitsprüfung**. Die neu gefundenen Livefehler werden dokumentiert und technisch eingegrenzt, aber in diesem Auftrag nicht durch umfangreiche Feature-Implementierung verdeckt. Keine falschen `VORHANDEN`-/`LIVE BESTANDEN`-Claims.
+Verbindlich bleibt:
 
-Verbindlicher neuer Input ist `PRODUCT-DECISIONS-2026-09-11.md`. Diese Datei vollständig lesen und ihre Inhalte an die jeweils autoritative Dokumentation überführen.
+> **Core = nur zwingend notwendige technische Mechanismen. Konkrete Funktionen = Module.**
+
+Keine unnötigen Modulabhängigkeiten erzeugen. Keine zweite Modul-Runtime einführen. User Modules und System Modules verwenden denselben technischen Modulvertrag.
+
+Der neue Betreiberinput steht zusätzlich in `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` und ist vollständig zu lesen.
+
+Referral/Rewards ist dort als zukünftiges optionales Systemmodul dokumentiert, wird in diesem Lauf **nicht implementiert** und darf den Freeze-Pfad nicht aufblähen.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: sämtliche Markdown-Dateien des Repositorys, insbesondere `DOCUMENTATION.md`, `PRODUCT-DECISIONS-2026-09-11.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `Architecture.md`, `ModuleCreation.md`, `SYSTEM-MODULES.md`, `UI-UX.md`, `ADMIN-UX-DECISIONS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `I18N.md`, `API.md`, `Database.md`, `Security.md`, `Functions.md`, `BACKUP-CONTRACT.md`, `Install-README-Server.md`, `Install-README-Web-App.md`, `DEVELOPMENT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `ROADMAP.md`, `WORKFLOW.md`, `CHATGPT.md`, `CHANGELOG.md`, `CURRENT-TASK.md` und diese `CODEX.md`.
-3. Relevanten aktuellen Code gegenlesen, bevor technische Aussagen als vorhanden dokumentiert werden: Modulmanifest/-registry/-runtime, Profile, Media, Sharing, Notifications, Moderation, Postbox, Module Administration, User Management, Auth/Login, Device Limits, Backup, Setup/Installation, API/DB/Security.
-4. Dokumenthierarchie aus `DOCUMENTATION.md` respektieren. Bei Widerspruch gilt die dort definierte Autorität.
+2. Vollständig lesen: sämtliche Markdown-Dateien, insbesondere `DOCUMENTATION.md`, `CHATGPT.md`, `CURRENT-TASK.md`, `CODEX.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `Architecture.md`, `ModuleCreation.md`, `SYSTEM-MODULES.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `BACKUP-CONTRACT.md`, `PRODUCT-DECISIONS-2026-09-11.md`, `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md`.
+3. Relevanten Code lesen, bevor Änderungen begonnen werden: Module Runtime/Registry/Manager, Module Admin UI, Profile, Media, User/Login, Device-Limit-Auflösung, User Management, Package/License Resolution, Offline/Precache.
+4. Keine CatchTrack-spezifische Fachlogik in Core/Systemmodule.
 5. Keine Secrets/PII ausgeben oder committen.
 6. Keine destruktiven Produktionsaktionen, keinen Production-Restore.
 
 ---
 
-# 2. Produkt-/Architekturentscheidungen korrekt überführen
+# 2. Profile Activation – Livefehler beheben
 
-`PRODUCT-DECISIONS-2026-09-11.md` enthält verbindlichen Input aus Betreiberentscheidungen und realen Livechecks. Überführe ihn ohne unnötige Duplikation in die richtigen autoritativen Dateien.
+Realer Betreiberbefund:
 
-Mindestens dauerhaft verankern:
+- `profile` ist registriert/inaktiv;
+- `profile.view` und `profile.update` sind vorhanden;
+- Aktivierung über Module Administration endet mit `Activation failed: Internal Server Error`;
+- Profile/Privacy sind dadurch im User-UI nicht verfügbar.
 
-- Core = nur zwingend notwendige technische Mechanismen; konkrete Funktionen soweit sauber möglich als Module.
-- optionale Module dürfen unabhängige Funktionen nicht zu harten Abhängigkeiten machen.
-- unsichtbare System-/Capability-Module sind zulässig.
-- Profile ist optional, nicht Core-Zwang.
-- Media/Upload, Sharing/Visibility, Notifications, Moderation und Postbox sind optionale System-/Funktionsmodule bzw. entsprechende Verträge.
-- Postbox-Vertrag inkl. rollen-/organisationsbasierter Empfänger und separater Broadcast-Permissions.
-- Profilbild-Vertrag: 256×256, rund, Replace/Delete, Default-Avatar nach Gender, Original nicht dauerhaft behalten.
-- Module Administration: Visibility/Navigation pro Rolle **getrennt von Permissions**.
-- User Management: Liste und Edit-Ansicht auf kleinen Screens getrennt; nach Save/Cancel kontrolliert zurück.
-- Standalone-/Self-Test-Vertrag ausgehend von GPS als bestehender Referenz sauber in `ModuleCreation.md` einordnen.
-- Field Notes bleibt späterer unabhängiger Neubau-/Freeze-Test und wird in diesem Dokumentationslauf nicht implementiert.
-- automatische/weitgehend selbst-erkennende Setup-Routine bleibt als unmittelbarer Post-Freeze-Schritt dokumentiert; Installationsdokumente müssen klar zwischen heutigem IST und geplantem Setup-Ziel unterscheiden.
+Aufgabe:
+
+- Root Cause vollständig ermitteln;
+- serverseitigen 500 beseitigen, nicht nur UI-Fehler kaschieren;
+- Lifecycle Install/Register/Activate/Deactivate/Re-activate gegen tatsächlichen Runtimevertrag verifizieren;
+- Daten bei Deaktivierung erhalten;
+- Profile ohne harte Abhängigkeit zu Media/Sharing betreibbar halten;
+- fehlende optionale Enhancements sauber degradieren;
+- keine Core-Pfade so umbauen, dass Profile wieder Pflicht wird.
+
+Abnahme:
+
+- Profile lässt sich aktivieren;
+- deaktivieren;
+- erneut aktivieren;
+- User-Settings zeigt Profile/Privacy nur bei aktiver Capability;
+- keine 500/JS-Fehler;
+- vorhandene Profildaten bleiben erhalten.
 
 ---
 
-# 3. Reale Livebefunde korrekt dokumentieren
+# 3. Media & Upload – Install `Load failed` beheben
 
-Folgende Befunde sind nach Commit `4dae2b5a42e2569834a6d67f749bb85e7406370a` real auf Betreibergerät festgestellt worden und dürfen nicht durch lokale Tests überschrieben werden:
+Realer Betreiberbefund:
 
-## Nicht bestanden / offen
+- `media` startet als Discovered / Not registered;
+- `Install` endet mit `Install failed: Load failed`.
 
-1. User-Login: Eye-Toggle weiterhin nicht sichtbar, normaler und privater Browsermodus.
-2. Unlimited Devices: User mit wirksamem Package `Admin` und Package-Default `Unlimited` wurde bei zwei Sessions wegen Device-Limit blockiert; UI zeigte sinngemäß `2 of 0 sessions`. Technisch als offenen Semantik-/Resolutionfehler dokumentieren.
-3. Profile: registered/inactive; `Activate` schlägt live mit `Activation failed: Internal Server Error` fehl. Profile/Privacy deshalb im User-Settings-Livetest nicht verfügbar. `profile.view`/`profile.update` waren für Admin/Developer/User vorhanden.
-4. Media & Upload: `Discovered / Not registered`; `Install` schlägt live mit `Install failed: Load failed` fehl.
+Aufgabe:
 
-## Lifecycle live bestanden
+- Loader-/Manifest-/Serverentry-/Runtime-Ursache ermitteln;
+- Install/Register sauber ermöglichen;
+- anschließend Activate/Deactivate/Re-activate verifizieren;
+- keine neue harte Abhängigkeit zu Profile oder anderen Modulen erzeugen;
+- vorhandene generische Upload-/Backup-Primitives nur über saubere Modulgrenzen nutzen.
 
-Jeweils Install → Activate → Deactivate → Activate real erfolgreich:
+Noch keine vollständige Media-Produkt-UI erfinden, falls der derzeitige Vertrag nur Lifecycle/Service-Scaffolding vorsieht. Ziel dieses Schritts ist ein belastbarer Modul-Lifecycle ohne falschen Funktionsclaim.
+
+---
+
+# 4. Unlimited Devices – `2 of 0` und Loginblock beheben
+
+Realer Betreiberbefund:
+
+- User hatte wirksam direkt Package `Admin`;
+- Package `Default devices per user` = Unlimited;
+- bei zwei aktiven Sessions wurde Login wegen überschrittenem Device-Limit blockiert;
+- UI zeigte sinngemäß `2 of 0 sessions`.
+
+Aufgabe:
+
+- Root Cause in Entitlement-/Package-/License-/User-Limit-Auflösung finden;
+- `unlimited` darf niemals semantisch in `0 allowed` umgewandelt werden;
+- API, DB-Modell, Resolver, Sessionprüfung und UI müssen dieselbe Semantik verwenden;
+- direkte User-Package-Zuordnung, License-Package-Priorität und Fallback nach License-Entfernung nicht regressieren;
+- bestehende numerische Limits weiter korrekt erzwingen.
+
+Tests mindestens:
+
+- numeric limit 1/2/n;
+- unlimited direct package;
+- unlimited license package;
+- explicit user override unlimited, sofern Vertrag unterstützt;
+- fallback direct package nach License removal;
+- UI darf bei unlimited nicht `0` anzeigen.
+
+---
+
+# 5. User Login Eye – real sichtbar machen
+
+Realer Betreiberbefund nach mehreren Deployments:
+
+- Admin-Login und andere Passwortfelder zeigen korrektes Eye;
+- normaler User-Login zeigt auf iPad/Chrome weder normal noch privat einen Eye-Toggle.
+
+Aufgabe:
+
+- tatsächlichen Render-/Hydration-/Helper-/CSS-/DOM-/Offline-Cache-Pfad untersuchen;
+- denselben zentralen Password-Visibility-Vertrag verwenden;
+- kein separater Sonderhelper;
+- echtes open/crossed eye SVG, ausreichend große Touchfläche, `aria-label`;
+- Offline-/Precache-/Service-Worker-/Asset-Versionierung prüfen;
+- sicherstellen, dass der Toggle nach dynamischem Login-Render wirklich im DOM erscheint und nicht durch CSS/Overlay verborgen wird.
+
+Lokale Unit-Tests allein reichen hier nicht. Nach Deployment klar als Betreiber-Retest kennzeichnen.
+
+---
+
+# 6. User Management – List/Edit/Create auf Mobile trennen
+
+Verbindliche UX-Entscheidung:
+
+- Userliste und Edit/Create nicht gleichzeitig als lange gestapelte Blöcke zeigen;
+- Klick auf `Edit` öffnet eine eigene Edit-Ansicht/State;
+- Klick auf `Create new user` öffnet eigene Create-Ansicht/State;
+- nach erfolgreichem Save zurück zur Userliste;
+- Cancel/Back ebenfalls kontrolliert zurück;
+- keine unnötige lange Scrollstrecke auf kleinen Screens;
+- Desktop darf ebenfalls von der klareren Trennung profitieren;
+- bestehende Create/Edit-Funktionalität, Package/License-Auswahl, Rollen, Device-Limits und Success-Modal nicht regressieren.
+
+---
+
+# 7. Module Visibility/Navigation pro Rolle – getrennt von Permissions
+
+Verbindliche Architektur-/UX-Entscheidung:
+
+- Permissions = technische Autorisierung;
+- Visibility/Navigation = sichtbarer UI-/Navigationseinstieg;
+- Klassifikation User/System = administrative Gruppierung;
+- diese drei Ebenen nicht vermischen.
+
+Aufgabe:
+
+- in Module Administration/Details einen klaren Bereich `Visibility` / `Navigation` oder äquivalent einführen;
+- mindestens rollenbezogene Steuerung für Admin, Developer, User, Viewer, soweit jeweilige Oberfläche relevant;
+- ein Modul kann active sein und für einzelne Rollen keinen Navigationseintrag besitzen;
+- unsichtbare Systemmodule müssen möglich bleiben;
+- Visibility darf keinerlei Serverpermission erteilen;
+- serverseitige Permissionprüfung unverändert autoritativ;
+- bestehendes globales `presentation.userNavigation=false` oder äquivalent als Default/Fallback respektieren;
+- persistente Konfiguration sauber namespacen/migrieren.
+
+Nicht einfach `view`-Permission als Visibility missbrauchen.
+
+---
+
+# 8. Apps & Modules – User Modules / System Modules administrativ trennen
+
+Neue verbindliche Betreiberentscheidung:
+
+Unter `Apps & Modules` soll der Admin klar unterscheiden können zwischen:
+
+1. **Apps**
+2. **User Modules**
+3. **System Modules**
+
+Wichtig:
+
+- dies ist **nur eine deklarative Klassifikation/Präsentation**;
+- keine zweite Modul-Registry;
+- keine zweite Lifecycle-Engine;
+- keine unterschiedlichen Install-/Activate-Mechanismen;
+- alle Module bleiben technisch gleichwertige Module.
+
+Beispielklassifikation:
+
+### User Modules
+- GPS
+- Profile
+- Postbox
+- später Field Notes
+
+### System Modules
+- Media & Upload
+- Moderation
+- Notifications
+- Sharing & Visibility
+- später Referral/Rewards
+
+Aufgabe:
+
+- saubersten Manifest-/Metadatenvertrag gegen bestehenden Validator bestimmen, z. B. `category: user|system` oder äquivalent;
+- backward-compatible Default für bestehende Module definieren;
+- Admin-UI entsprechend gruppieren/tabs/filtern;
+- Mobile-First;
+- Kategorie darf Navigation/Visibility nicht automatisch bestimmen;
+- Kategorie darf Permissions nicht beeinflussen;
+- bestehende Moduldetails/Lifecycleaktionen vollständig erhalten.
+
+Dokumentation in `ModuleCreation.md`, `Architecture.md`, `SYSTEM-MODULES.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md` und Statusdateien aktualisieren.
+
+---
+
+# 9. Standalone-/Self-Test-Vertrag prüfen
+
+GPS ist derzeit das einzige Modul mit deklariertem Standalone-Test.
+
+Aufgabe:
+
+- bestehenden Mechanismus gegen `ModuleCreation.md` prüfen;
+- keine künstlichen Standalone-Tests erzwingen, wenn ein Systemmodul ohne Server/DB fachlich nicht sinnvoll testbar ist;
+- dort, wo sinnvoll, standardisierten Testentry ermöglichen;
+- klar dokumentieren, was ein Standalone-Test beweist und was nicht;
+- Standalone-Test ersetzt keine Lifecycle-, API-, DB-, Permission- oder Liveprüfung.
+
+Kein unnötiger Umbau der Modularchitektur nur für Testbuttons.
+
+---
+
+# 10. Referral / Rewards – nur dokumentiert lassen, nicht implementieren
+
+`PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md`, `SYSTEM-MODULES.md` und `ROADMAP.md` enthalten den neuen Referral-/Rewards-Zielvertrag.
+
+In diesem Lauf:
+
+- nicht implementieren;
+- keinen Core-Hook nur für Referral einbauen;
+- keine Payment-Engine erfinden;
+- nur sicherstellen, dass aktuelle Architekturentscheidungen eine spätere modulare Umsetzung nicht offensichtlich verhindern.
+
+Falls ein tatsächlich universeller Extension Point fehlt, nur dokumentieren und begründen; nicht vorschnell Core aufblasen.
+
+---
+
+# 11. Bestehende erfolgreiche Lifecycle-Befunde nicht regressieren
+
+Folgende Module bestanden real Install → Activate → Deactivate → Activate:
 
 - Moderation
 - Notifications
 - Postbox
 - Sharing & Visibility
 
-Danach wurden diese Module wieder deaktiviert. Das ist ausschließlich ein Lifecycle-Nachweis, kein Nachweis vollständiger Fachfunktion/UI.
+Sie wurden anschließend wieder deaktiviert.
 
-GPS blieb als aktives Referenzmodul bestehen.
+Nach Änderungen erneut lokal/regressiv prüfen. Produktions-Livebefund erst nach Betreiber-Retest aktualisieren.
 
-Diese Befunde mindestens in `STATUS.md`, `CORE-1.0-READINESS.md`, `TODO.md`/`ToDoNow.md`, `CHATGPT.md` und soweit fachlich nötig in den jeweiligen Vertragsdateien korrekt abbilden.
-
----
-
-# 4. ModuleCreation.md vollständig auf aktuellen Vertrag bringen
-
-`ModuleCreation.md` ist die verbindliche Anleitung zur Modulerstellung und muss nach diesem Lauf wieder tatsächlich aktuell sein.
-
-Gegen Code und Architektur prüfen/aktualisieren:
-
-- Manifestfelder und reale Validierung;
-- Lifecycle;
-- install/registered/active getrennt;
-- User-/Admin-/System-Presentation;
-- unsichtbare Systemmodule;
-- Visibility/Navigation vs Permissions;
-- mandatory vs optional dependencies/enhancements;
-- Capability-/Service-/Event-Verträge;
-- Servermodule/API/DB/Migrationen;
-- Settings/i18n/theme/offline/backup;
-- Media-/Sharing-optionale Nutzung;
-- Security und Namespace-Regeln;
-- Standalone-/Self-Test-Vertrag: GPS als Referenz, klar definieren wann sinnvoll/erforderlich und welche Grenzen dieser Test hat;
-- harte Regel: Fachmodul verändert keine Core-Dateien nur zur eigenen Anbindung;
-- Field Notes als späteren Beweistest nennen, ohne es jetzt zu implementieren.
-
-Keine Manifestfelder als unterstützt behaupten, wenn Runtime/Validator sie nicht tatsächlich tragen. Abweichungen als `GEPLANT/FEHLT` dokumentieren.
+GPS bleibt bestehendes aktives Referenzmodul und darf nicht regressieren.
 
 ---
 
-# 5. Architecture / System Modules / Core-Dokumente synchronisieren
+# 12. Field Notes noch nicht bauen
 
-`VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `Architecture.md` und `SYSTEM-MODULES.md` gegeneinander und gegen Code prüfen.
+Field Notes bleibt der **nächste separate Freeze-Proof nach diesem Reparaturlauf**.
 
-Insbesondere:
+Harte spätere Regel:
 
-- Minimal-Core-Grenze;
-- optionale Profile-Architektur;
-- tatsächlicher Stand der Profile-Extraktion: code-seitig vorhanden, aber Live-Aktivierung derzeit fehlgeschlagen;
-- Systemmodule: Vertrag/Scaffolding vs vollständige Produktfunktion klar unterscheiden;
-- keine falsche Behauptung, Postbox/Moderation/Notifications/Sharing seien fachlich vollständig, nur weil Lifecycle funktioniert;
-- Media Install-Fehler ausdrücklich offen;
-- Core Freeze weiterhin blockiert;
-- Field Notes als späteres Freeze-Gate;
-- keine automatische Freeze-Erklärung.
+> Field Notes muss ohne Änderung bestehender Core-Dateien implementierbar sein.
+
+Daher in diesem Lauf keine Field-Notes-Implementierung. Architektur nur so reparieren, dass der anschließende Beweistest sinnvoll durchgeführt werden kann.
 
 ---
 
-# 6. UI-/Admin-/Account-Dokumente synchronisieren
+# 13. Dokumentation aktualisieren
 
-`UI-UX.md`, `ADMIN-UX-DECISIONS.md`, `USER-ACCOUNT-LICENSE-MODEL.md` prüfen/aktualisieren.
+Nach tatsächlicher Implementierung alle betroffenen Dokumente synchronisieren, mindestens:
 
-Mindestens:
+- `CHATGPT.md`
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `CORE-1.0-READINESS.md`
+- `Architecture.md`
+- `ModuleCreation.md`
+- `SYSTEM-MODULES.md`
+- `ADMIN-UX-DECISIONS.md`
+- `UI-UX.md`
+- `API.md`
+- `Database.md`
+- `Security.md`
+- `Functions.md`
+- `CHANGELOG.md`
+- `WORKFLOW.md`
 
-- User Management List/Edit getrennte mobile Ansicht als verbindliches UX-Ziel;
-- Module Administration Visibility/Navigation pro Rolle getrennt von Permissions;
-- Systemmodule können aktiv, aber User-unsichtbar sein;
-- Profil/Gender/Avatar-Vertrag;
-- Organization Sharing nur bei echter Zuordnung;
-- User-Login Eye weiterhin live offen;
-- Unlimited darf niemals als 0 erlaubte Devices interpretiert werden; `unlimited`-Semantik dokumentarisch eindeutig;
-- direkte User-Package-/License-Priorität und Fallback nicht regressieren.
+Keine Livefehler als bestanden markieren, bevor Betreiber-Retest erfolgt ist.
 
----
-
-# 7. API / Database / Security / Functions technisch verifizieren
-
-Diese Dateien nicht aus Produktwünschen heraus umschreiben, sondern gegen realen Code prüfen.
-
-- `API.md`: tatsächliche Modulkernel-/Profile-/Systemmodul-Endpunkte und Status; geplante APIs klar als geplant.
-- `Database.md`: tatsächliche Tabellen/Migrationen/Profile-/Media-/Modulregistrierung; keine erfundenen Postbox-/Moderationstabellen als vorhanden markieren.
-- `Security.md`: Uploadgrenzen, Modulautorisierung, Sharing, Broadcast, Profile, Device-Limit-Semantik, Setup/Recovery.
-- `Functions.md`: nur tatsächlich öffentliche/implementierte Funktionen/Facades/Services als vorhanden dokumentieren.
-- `BACKUP-CONTRACT.md`: Profile/Avatar/Media und Moduldaten nur entsprechend tatsächlichem Backup-Verhalten dokumentieren.
+`PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` bleibt als datierter Herkunftsnachweis erhalten, nachdem seine Inhalte in die autoritativen Dokumente überführt wurden.
 
 ---
 
-# 8. Installationsdokumente und Setup-Ziel synchronisieren
+# 14. Verifikation / Deployment
 
-`Install-README-Server.md` und `Install-README-Web-App.md` gegen heutigen Code und `ROADMAP.md` prüfen.
+Gemäß `WORKFLOW.md`:
 
-Wichtig:
+1. vollständige relevante Tests;
+2. PHP-Lint;
+3. JS-Syntax;
+4. `git diff --check`;
+5. Production package;
+6. commit/push `main`;
+7. CI/CodeQL/FTPS terminal abwarten;
+8. `HEAD == origin/main`, sauberer Tree;
+9. Deploymentrevision + `migrationsReady:true` prüfen;
+10. Production-Smokes nur read-only;
+11. keine destruktiven Produktionsaktionen;
+12. `CHATGPT.md` mit kurzem tatsächlichem Endstand und Betreiber-Retestliste aktualisieren.
 
-- heutige tatsächlich vorhandene `app:create`, Paket-, Preflight-, Setup- und Deploymentwege korrekt beschreiben;
-- geplante weitgehend automatische Setup-Routine **nicht als bereits implementiert ausgeben**;
-- aber als klaren Post-Freeze-Zielvertrag/Weiterentwicklung referenzieren;
-- Serverwechsel/Portabilität: absolute hostabhängige Pfade vermeiden, soweit heutiger Code das trägt; geplante automatische Ableitung als geplant markieren;
-- Module/Systemmodule im Bootstrap-/Installationskontext korrekt einordnen;
-- keine Node-Produktionspflicht erfinden.
+## Betreiber-Retestliste danach
 
----
+1. Profile Install/Activate/Deactivate/Re-activate + Daten erhalten.
+2. Media Install/Activate/Deactivate/Re-activate.
+3. Unlimited Package/User Login mit mehreren Sessions.
+4. User-Login-Eye auf iPad/Chrome normal + privat.
+5. User Management List/Edit/Create auf kleinem Screen.
+6. Module Visibility pro Rolle.
+7. Apps / User Modules / System Modules Darstellung.
+8. Moderation/Notifications/Postbox/Sharing Lifecycle Regression.
+9. GPS Regression.
+10. Danach Field Notes als separater Auftrag.
 
-# 9. Status/TODO/Readiness bereinigen
-
-`STATUS.md`, `TODO.md`, `ToDoNow.md`, `CORE-1.0-READINESS.md` müssen danach denselben aktuellen Stand ausdrücken.
-
-Nächste Implementierungspriorität nach diesem Dokumentationslauf:
-
-1. Profile Activation Internal Server Error beheben.
-2. Media & Upload Install `Load failed` beheben.
-3. Unlimited-Device-Semantik/`2 of 0` beheben.
-4. User-Login Eye real sichtbar machen.
-5. User Management List/Edit UX trennen.
-6. Module Visibility/Navigation pro Rolle getrennt von Permissions implementieren/abschließen.
-7. Systemmodule erneut live lifecycle-testen.
-8. Profile inkl. Avatar/Gender live testen.
-9. Danach Field Notes als separaten Neubau-/Freeze-Test.
-
-Keine erledigten historischen Aufgaben unnötig in TODO halten.
-
----
-
-# 10. Umgang mit PRODUCT-DECISIONS-2026-09-11.md
-
-Nachdem alle Inhalte nachweislich in die autoritativen Dateien überführt wurden:
-
-- entweder Datei als historisches Betreiberentscheidungsprotokoll kennzeichnen und in `DOCUMENTATION.md` entsprechend einordnen;
-- oder entfernen, wenn dadurch keine Information verloren geht und `CHANGELOG.md`/`WORKFLOW.md` die Übernahme nachvollziehbar festhalten.
-
-Keine widersprüchliche zweite Autoritätsquelle dauerhaft stehen lassen.
-
----
-
-# 11. CHANGELOG / WORKFLOW / CHATGPT
-
-- `CHANGELOG.md`: nur neuen Dokumentations-Konsistenzlauf ergänzen, Historie nicht umschreiben.
-- `WORKFLOW.md`: dokumentieren, welche Dateien geprüft/geändert wurden und durch wen.
-- `CHATGPT.md`: kompakte Übergabe mit tatsächlichem Endstand, offenen Livefehlern und nächster Implementierungsreihenfolge.
-
----
-
-# 12. Verifikation und Abschluss
-
-Dieser Auftrag darf Code nur dann minimal anfassen, wenn es zwingend nötig ist, um eine falsche technische Dokumentationsbehauptung eindeutig zu verifizieren; keine Feature-Reparaturen in diesen Dokumentationslauf hineinziehen.
-
-Vor Abschluss:
-
-1. Markdown-Links/Referenzen prüfen.
-2. Dokumenthierarchie/Widersprüche prüfen.
-3. `git diff --check`.
-4. Falls keinerlei Runtime-Code geändert wurde, keine künstliche Production-Feature-Abnahme behaupten.
-5. commit/push `main` gemäß Workflow.
-6. `HEAD == origin/main`, sauberer Tree.
-7. `CHATGPT.md` aktualisieren.
-
-Ergebnis muss sein: Ein neuer Codex-Agent kann anschließend ausschließlich anhand der Markdown-Dokumentation den tatsächlichen Stand, die verbindliche Architektur, die offenen Livefehler und die nächste Implementierungsreihenfolge korrekt verstehen, ohne diesen Chat zu benötigen.
+Keine automatische Core-Freeze-Erklärung in diesem Lauf.
