@@ -1,5 +1,15 @@
 # NEUTRAL – Admin/User UX Decisions
 
+## Aktueller bindender Nachtrag (2026-09-11)
+
+1. Module Administration benötigt eine rollenbezogene `Visibility`/`Navigation`-Steuerung getrennt von Permissions. `presentation.userNavigation=false` bleibt der globale Systemmodul-Fallback; eine Visibility-Einstellung darf keine Berechtigung erteilen.
+2. User Management zeigt auf kleinen Screens Liste und Edit/Create nicht gleichzeitig. Save und Cancel/Back kehren zur Liste zurück.
+3. `Unlimited` bedeutet semantisch unbegrenzt und darf in API oder UI niemals zu `0` werden. Der Livefehler `2 of 0 sessions` ist offen.
+4. Profile bleibt optional. Avatarziel: quadratischer Crop, optimiert ≤256×256, runde Anzeige, Replace/Delete, dynamischer Gender-Default, kein dauerhaftes Original.
+5. User-Login-Eye ist trotz code-seitigem Shared Helper auf dem Betreiber-iPad weiterhin nicht sichtbar und bleibt offen.
+
+---
+
 **Status:** VERBINDLICHE PRODUKT-/UX-ENTSCHEIDUNGEN FÜR CORE 1.0  
 **Datum:** 2026-09-10
 

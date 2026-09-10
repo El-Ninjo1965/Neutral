@@ -1,7 +1,15 @@
 # NEUTRAL Core 1.0 — Backup- und Restore-Vertrag
 
+## Aktuelle Einordnung 2026-09-11
+
+**Aktuelles Format:** Neue Artefakte sind logisch V2 und code-/isoliert verifiziert; die frühere PARTIAL-Einstufung in den historischen V1-Abschnitten gilt nur für V1. V2 nimmt den festen Core-Tabellensatz, Tabellen installierter Module aus deren Manifesten und reguläre Dateien der verwalteten Core-Medienablage auf. Es sichert keine frei erfundenen oder nicht deklarierten Systemmoduldaten.
+
+Profile-`avatar_data` liegt als Tabellenwert in `user_profiles` und reist deshalb mit dem DB-Payload. Das ist nicht gleichbedeutend mit einem fertigen Profile-Upload-/Crop-/Cachevertrag. Sharing, Notifications, Moderation und Postbox deklarieren keine eigenen Tabellen; daher gibt es aktuell keine entsprechenden Fachnutzdaten zu sichern. Media-Install ist live fehlgeschlagen. Ein Produktions-Restore wurde nicht durchgeführt und ist als Test verboten.
+
+---
+
 **Stand:** 2026-09-10  
-**Klassifikation:** **BACKUP CONTRACT PARTIAL**
+**Historische V1-Klassifikation:** **BACKUP CONTRACT PARTIAL**
 
 ## 1. Tatsächliches Dateiformat
 
@@ -85,7 +93,7 @@ Der Restore-Test muss auf einer separaten Staging-/Testinstallation mit separate
 - **Bestanden:** verschlüsselter Export/Import der 21 verwalteten Coretabellen, Integritäts-/Schlüsselprüfung, exakte Tabellenmenge, atomarer Datenbankrollback, Sessioninvalidierung, geschützter Download/Upload und Größenlimit.
 - **Offen:** generischer Vertrag und Implementierung für moduldeklarierte Nutzdatentabellen sowie Binärdateien/Medien; anschließend isolierter Empty-Host-Restore mit diesen Daten und realer Betreiberabnahme.
 
-Daher lautet die Gesamteinstufung: **BACKUP CONTRACT PARTIAL**.
+Daher lautet die historische V1-Einstufung: **BACKUP CONTRACT PARTIAL**.
 
 ## 9. Version 2 – vollständiger verwalteter Datenumfang
 

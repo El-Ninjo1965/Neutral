@@ -1,5 +1,15 @@
 # NEUTRAL – Funktionskatalog des Core
 
+## Aktueller Systemmodul-Funktionsstand (2026-09-11)
+
+**VORHANDEN im Code:** generischer Modul-Lifecycle/-HTTP-Kernel; Präsentationsflags und optionale Dependency-Metadaten; Profile GET/PUT-Service mit Basisvalidierung; Profile-Settings-Gating; Status-Services der fünf Systemmodule; Backup-V2-Discovery deklarierter Modultabellen und verwalteter Core-Medien.
+
+**Nur deklaratives Scaffolding, keine fertige Funktion:** Media Upload/Resize/Replace/Delete, generische Sharing-Engine, Notificationzustellung/-präferenzen, generische Moderationsqueue und Postbox Messaging/Empfänger/Audit. `contracts` in Manifesten werden nicht automatisch ausgeführt.
+
+**FEHLT/FEHLER:** Profile-/Media-Lifecycle live, vollständige Avatar-UX, rollenbezogene Modulnavigation, korrekte Unlimited-Auflösung und live sichtbares User-Login-Eye.
+
+---
+
 **Status:** NACHGEWIESENES FUNKTIONSINVENTAR
 
 **Geprüft:** 2026-09-03

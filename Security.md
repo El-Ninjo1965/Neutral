@@ -1,5 +1,16 @@
 # NEUTRAL – Sicherheit
 
+## Sicherheits- und Wahrheitsnachtrag 2026-09-11
+
+- Modulrouten werden serverseitig über aktiven Lifecycle, Session, Permission und CSRF geschützt; Manifest-Visibility erteilt keine Rechte.
+- Rollenbezogene Navigation/Visibility ist noch nicht implementiert und darf künftig Permissions weder ersetzen noch erweitern.
+- Profile validiert E-Mail, Feldlängen, Gender, Geburtstag, Organization-Zuordnung sowie quadratische Image-Data-URLs bis 256 px/256 KiB. Es verarbeitet/optimiert jedoch kein Original und besitzt noch keinen vollständigen generischen Upload-/Storagepfad.
+- Media-Zielvertrag verlangt MIME-/Inhaltsprüfung, Größenlimits, sichere IDs/Ziele, Traversal-/Symlink-/Executable-Schutz, Replace/Delete und Backup. Das Media-Modul erfüllt diesen Vertrag noch nicht und scheitert live bereits bei Install.
+- Postbox-Broadcast benötigt eine eigene Permission, serverseitige Empfänger-/Organisationsgrenzen und Audit. Das Manifest deklariert Keys; Enforcement ist noch nicht implementiert.
+- Unlimited Device Limit darf nicht numerisch `0` werden. Der live beobachtete Fehlpfad ist sicherheits-/verfügbarkeitsrelevant, weil er berechtigte Logins blockiert.
+
+---
+
 **Status:** DETAILVERTRAG
 
 **Geprüft:** 2026-09-03

@@ -1,9 +1,9 @@
 # NEUTRAL – Betreiberentscheidungen und Livebefunde 2026-09-11
 
-**Status:** VERBINDLICHER INPUT FÜR DEN NÄCHSTEN DOKUMENTATIONS-KONSISTENZLAUF  
+**Status:** HISTORISCHES BETREIBERENTSCHEIDUNGS- UND LIVEBEFUNDPROTOKOLL – IN AUTORITATIVE DOKUMENTE ÜBERFÜHRT
 **Zweck:** Produkt-/UX-Entscheidungen und reale Betreiberbefunde festhalten, bevor technische Vertragsdateien gegen den Code synchronisiert werden.
 
-Diese Datei ist bewusst ein Übergabedokument. Sie ersetzt nicht `VISION.md`, `Architecture.md`, `ModuleCreation.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md` oder andere autoritative Verträge. Codex muss die hier festgehaltenen Entscheidungen im nächsten Dokumentationslauf an die jeweils richtige autoritative Stelle überführen und diese Übergabedatei danach entweder als historisches Protokoll kennzeichnen oder nach vollständiger Übernahme entfernen.
+Diese Datei bewahrt den datierten Originalinput. Seit dem Dokumentations-Konsistenzlauf 2026-09-11 ist sie keine aktive zweite Autoritätsquelle. Aktuelle Verträge und Aufgaben stehen gemäß `DOCUMENTATION.md` in den dort eingeordneten Dateien. Sie ersetzt nicht `VISION.md`, `Architecture.md`, `ModuleCreation.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md` oder andere autoritative Verträge. Die Überführung ist abgeschlossen; diese Datei bleibt ausschließlich als unveränderte fachliche Herkunft und datierter Livebeleg erhalten.
 
 ## 1. Verbindliches Neutral-Prinzip
 

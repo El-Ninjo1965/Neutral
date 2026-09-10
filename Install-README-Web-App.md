@@ -1,5 +1,11 @@
 # NEUTRAL – Web-App installieren
 
+## Aktueller Installationsrahmen und geplante Automatisierung (2026-09-11)
+
+`npm run app:create`, `npm run package:production` und `npm run setup:preflight` sind heutige lokale Entwicklungs-/Paketwerkzeuge. Produktion nutzt das gemeinsame Full-Stack-Paket; es gibt keinen separaten Web-App-only-Produktionsvertrag und keine Node-Pflicht auf Shared Hosting. Die weitgehend automatische, umgebungserkennende Setup-Seite ist ein Post-Freeze-Ziel aus `ROADMAP.md`, nicht implementierter IST-Stand. Module werden entdeckt, aber Discovery bedeutet weder Installation noch Aktivierung. Aktuell sind Profile-Aktivierung und Media-Installation live offen.
+
+---
+
 Diese Anleitung beschreibt den Web-App-Anteil innerhalb des gemeinsamen Full-Stack-Produktionspakets. Der verbindliche Produktionsweg baut und überträgt genau ein verifiziertes Paket mit `Web-App/`, `Server/php/` und `Server/public/`; es gibt dafür keine alternative Client-only-Artefaktart. Die ergänzenden Server-, Datenbank- und Setupschritte stehen in [`Install-README-Server.md`](Install-README-Server.md).
 
 ## 1. Voraussetzungen

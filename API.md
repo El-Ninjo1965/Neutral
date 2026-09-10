@@ -1,5 +1,15 @@
 # NEUTRAL – API
 
+## Technischer Korrekturstand 2026-09-11
+
+- **VORHANDEN (Code):** generischer authentifizierter Dispatcher `/api/v1/modules/<id>/<path>` mit registriert/aktiv, Permission und bei Mutationen CSRF; Profile deklariert `GET|PUT modules/profile/profile`. Der frühere feste Account-Profile-Zweig ist entfernt.
+- **LIVE OFFEN:** Profile-Aktivierung schlägt vor Nutzung der Route mit HTTP 500 fehl; Media-Install liefert `Load failed`.
+- **SCAFFOLDING:** Media, Sharing, Notifications, Moderation und Postbox veröffentlichen derzeit nur `GET .../status`. Die in ihren Manifesten beschriebenen Fachverträge sind keine vorhandenen Upload-, Sharing-, Delivery-, Review- oder Messaging-APIs.
+- **GEPLANT:** rollenbezogene Modul-Visibility/Navigation besitzt noch keine eigenständige API. Permissions bleiben davon getrennt.
+- **LIVE FEHLER:** Device-Limit-Auflösung behandelt einen Unlimited-Package-Fall in Produktion als `0`. Die dokumentierte Sollsemantik bleibt nullable/unbegrenzt; Ursache und API-Projektion sind zu reparieren.
+
+---
+
 **Status:** DETAILVERTRAG
 
 **Geprüft:** 2026-09-03

@@ -1,5 +1,11 @@
 # NEUTRAL – Dokumentationsordnung
 
+## Ergänzung 2026-09-11: Entscheidungsprotokolle
+
+[`PRODUCT-DECISIONS-2026-09-11.md`](PRODUCT-DECISIONS-2026-09-11.md) ist nach diesem Konsistenzlauf ein **historisches, datiertes Betreiberentscheidungs- und Livebefundprotokoll**, keine konkurrierende Vertragsquelle. Seine Entscheidungen stehen dauerhaft in den gemäß dieser Hierarchie zuständigen Vertragsdateien; der aktuelle Nachweis steht in `STATUS.md`, ausführbare Arbeit in `TODO.md`. Bei Abweichungen gelten diese autoritativen Dateien.
+
+---
+
 **Status:** VERBINDLICH  
 **Geprüft:** 2026-09-08
 

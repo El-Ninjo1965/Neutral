@@ -1,5 +1,15 @@
 # NEUTRAL – Architektur
 
+## Aktueller Minimal-Core-/Systemmodul-Vertrag (2026-09-11)
+
+**Zielvertrag:** Core stellt Identity/RBAC, Session/CSRF, Modul-Discovery und Lifecycle, manifestvalidierte Serverrouten, Settings, Events, sichere Storage-/Backup-Primitives sowie UI-/I18N-/Theme-Grundlagen bereit. Konkrete Profile-, Media-, Sharing-, Notification-, Moderation- und Messaging-Semantik gehört in optionale Module. `dependencies` sind nur für zwingende Laufzeitabhängigkeiten; `optionalDependencies` beschreiben nicht blockierende Enhancements und werden derzeit nicht lifecycle-erzwungen.
+
+**Code-IST:** Der Vertrag normalisiert `presentation.userNavigation`, `presentation.adminNavigation`, `presentation.system` und `optionalDependencies`. Runtimezustände Discovery, Registration/Installation und Activation sind getrennt. Die User-Navigation respektiert `userNavigation=false`. Eine separate rollenbezogene Visibility-/Navigation-Matrix existiert noch nicht; aktuelle Sichtbarkeit wird über Manifestpräsentation und Permissions abgeleitet. Das Profile-Manifest und seine generische Route sind vorhanden, Profile scheiterte aber im Betreiber-Livecheck bei der Aktivierung. Die fünf übrigen neuen Systemmodule sind überwiegend Manifest-/Status-Service-Scaffolding, keine fertigen Fachprodukte.
+
+**Live 2026-09-11:** Moderation, Notifications, Postbox und Sharing durchliefen Install → Activate → Deactivate → Activate und wurden danach deaktiviert. Profile-Aktivierung endete mit HTTP 500; Media-Installation mit `Load failed`. GPS blieb aktiv. Diese Lifecyclebefunde beweisen keine Fachfunktion.
+
+---
+
 **Status:** TECHNISCHER IST-/ZIELVERTRAG
 
 **Geprüft:** 2026-09-04
@@ -265,7 +275,7 @@ Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` 
 
 Device sessions identify one browser installation by its random client installation ID. A successful re-login replaces older active server sessions for the same user and installation before registering the current session; dashboards and session views consume the same active registry projection. Admin view navigation owns an isolated per-navigation host and revision, so a late or failed view cannot block or overwrite a newer route.
 
-The Core-1.0 module audit found no missing generic extension point: the GPS and reference-notes contracts already exercise generic client entries, lifecycle, declarative permissions/settings, PHP services/routes, limits and migrations without feature branches in the central router. The freeze decision in `CORE-1.0.md` is authoritative; product behavior stays in modules.
+The Core-1.0 module audit found no missing generic extension point: the GPS and reference-notes contracts already exercise generic client entries, lifecycle, declarative permissions/settings, PHP services/routes, limits and migrations without feature branches in the central router. The current no-freeze decision in `CORE-1.0.md` is authoritative; product behavior stays in modules.
 
 ## 2026-09-09 – Account/license foundation before Core 1.0 freeze
 

@@ -487,3 +487,11 @@ After the native-placeholder correction, production classification advanced back
 - Birthday remains a mobile native date input and now receives real server calendar/leap-year validation instead of format-only validation.
 - Added production Audit Delete All behind dedicated `audit.clear`, CSRF and two confirmations; deletion and its replacement audit record are transactional.
 - Recorded a requirement-by-requirement Core 1.0 readiness audit without prematurely declaring the release passed.
+
+## 2026-09-11 – Documentation consistency after system-module operator review
+
+- Reconciled every repository Markdown document with the current module/profile/device/backup/setup code and the dated operator findings.
+- Classified Profile and Media lifecycle failures, Unlimited-device resolution and the missing User Login eye as live-open despite local code/tests.
+- Distinguished system-module manifests/status services from complete Media, Sharing, Notification, Moderation and Postbox products.
+- Moved role Visibility, mobile User list/edit, avatar and post-freeze setup decisions into their authoritative contracts; retained the source decision file as historical evidence.
+- Replaced task/readiness/status handoffs with one ordered implementation queue. No runtime feature, Field Notes, freeze or production action was performed.

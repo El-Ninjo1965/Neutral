@@ -1,5 +1,39 @@
 # NEUTRAL – Verbindliche Anleitung zur Modulerstellung
 
+## Aktueller Modulvertrag und Abgrenzung (2026-09-11)
+
+### Verbindliches Integrationsprinzip
+
+Ein Fachmodul ändert keine Coredatei nur zu seiner eigenen Anbindung. Es nutzt Manifest, Browserentry, generischen Modulloader, `Server/php/modules/<id>/module.php`, Modulservice/-route, eigene deklarierte Tabellen/Migrationen, Permissions, Settings, Events und öffentliche Facades. Erst eine unabhängig belegte universelle Lücke rechtfertigt einen neutralen Core-Extension-Point.
+
+### Tatsächlich validierte Manifestbereiche
+
+`ModuleContract` validiert `id`, semantische `version`, `permissions`, `compatibility`, `server.entry/services/routes`, mutierende CSRF-Routen, optionale Routenlimits, `database.tables/migrations`, `limits` und `uninstall.dataPolicy`. Zusätzlich werden `presentation` (`userNavigation`, `adminNavigation`, `system`) und `optionalDependencies` normalisiert. `capabilities`, `access`, `admin`, `standalone` und weitere beschreibende Metadaten werden transportiert beziehungsweise von ihren jeweiligen Consumern ausgewertet; freie `contracts`-Objekte sind derzeit deklaratives Scaffolding und kein automatisch ausgeführter Fachvertrag.
+
+Pflichtabhängigkeiten stehen in `dependencies` und dürfen nur verwendet werden, wenn das Modul ohne sie nicht funktionieren kann. `optionalDependencies` blockieren Installation/Aktivierung nicht und müssen per Capability Detection mit sauberem Fallback genutzt werden. Abhängigkeiten verleihen keine Permission.
+
+### Lifecycle und Präsentation
+
+Discovery bedeutet nur gefunden. Installation registriert Manifest, Permissiondefinitionen und Migrationen und endet inaktiv. Aktivierung ist ein eigener Schritt. Deaktivierung behält bei `retain` Daten. Uninstall folgt dem validierten Datenvertrag. `presentation.userNavigation=false` erlaubt aktive unsichtbare Systemmodule; `adminNavigation` steuert nur die deklarierte Präsentation. **FEHLT:** eine eigene rollenbezogene Visibility-/Navigation-Konfiguration getrennt von Permissions. Permissions bleiben alleinige serverseitige Autorisierung.
+
+### Server, Daten, Backup und Sicherheit
+
+Serverrouten liegen unter `/api/v1/modules/<id>/<path>` und deklarieren Service, Action, Permission und CSRF. Tabellen verwenden den Modulnamespace und Manifest-/PHP-Migrationsdeklarationen müssen übereinstimmen. Backup V2 nimmt Tabellen installierter Module aus deren Manifest und verwaltete Core-Mediendateien auf. Ein Modul darf daraus keine Sicherung nicht deklarierter externer Dateien ableiten. Browsercode enthält keine Secrets und behandelt 401/403/404/409/422/503 kontrolliert.
+
+### UI, Settings, I18N, Theme und Offline
+
+Module verwenden zentrale responsive Komponenten/Tokens, stabile I18N-Keys und `moduleSettings.<id>`. Offlinefähigkeit muss konkret angegeben und getestet werden; der gecachte Entry allein beweist weder Offline-Datenhaltung noch Sync. Die generische Sync-/Konfliktengine ist noch geplant.
+
+### Standalone-/Self-Test
+
+Ein `standalone`-Entry ist sinnvoll, wenn eine isolierbare Browser-/Gerätefunktion ohne Auth, DB oder produktiven Serverzustand geprüft werden kann. Er muss Voraussetzungen und Grenzen deklarieren. GPS ist das einzige live bestätigte Referenzbeispiel. Ein Standalone-Test ersetzt niemals Manifest-, Lifecycle-, Permission-, CSRF-, DB-, Backup-, Offline- oder Produktionsprüfung und ist für reine Server-/Systemmodule nicht automatisch Pflicht.
+
+### Systemmodule und nächster Beweistest
+
+Profile, Media, Sharing, Notifications, Moderation und Postbox sind optionale Systemmodule. Ihre vollständigen Zielverträge stehen in `SYSTEM-MODULES.md`; ihr aktueller Implementierungsgrad steht in `STATUS.md`. Field Notes wird **nicht** in diesem Dokumentationslauf gebaut. Es ist später als neues Modul mit eigener Navigation, Permission, Tabelle/Migration, CRUD, Settings, I18N, Theme, Offline- und Backupnachweis ohne fachliche Core-Änderung umzusetzen.
+
+---
+
 **Status:** VERBINDLICHER AKTUELLER MODULVERTRAG
 
 **Geprüft:** 2026-09-03

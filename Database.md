@@ -1,5 +1,13 @@
 # NEUTRAL – Datenhaltung
 
+## Technischer Korrekturstand 2026-09-11
+
+`user_profiles` ist weiterhin Teil des Core-Schema-Baselinesatzes; das Profile-Modul deklariert dieselbe Tabelle und eine additive Migration für `gender` und `avatar_data`. Diese Doppelzuständigkeit ist code-seitig vorhanden und wahrscheinlich relevant für den live fehlgeschlagenen Profile-Lifecycle; bis zur Reparatur ist keine erfolgreiche Modulmigration zu behaupten. Profile-Daten werden bei Deaktivierung laut `retain` nicht gelöscht.
+
+`modules`, `module_state` und `module_migrations` halten Lifecycle-/Manifestzustand. Sharing, Notifications, Moderation und Postbox deklarieren derzeit keine eigenen Tabellen; insbesondere existiert keine Postbox-Nachrichtendatenbank. Media deklariert ebenfalls keine Modultabelle. Bestehende Tabellen `user_media` und `media_moderation_history` stammen aus der Core-Schemabasis und sind nicht Beleg eines vollständigen eigenständigen Media-/Moderation-Moduls.
+
+---
+
 **Status:** DETAILVERTRAG
 
 **Geprüft:** 2026-09-01

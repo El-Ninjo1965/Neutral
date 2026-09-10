@@ -1,5 +1,15 @@
 # NEUTRAL – Server installieren
 
+## IST und Post-Freeze-Ziel (2026-09-11)
+
+**Heute vorhanden:** reproduzierbarer Full-Stack-Paketbau, paketbezogener Preflight, manuelles/GitHub-Actions-FTPS-Deployment, wertfreie `.env.example`, geschützte Setup-/Recovery-Einstiege, SchemaMigrator und Admin-Modul-Lifecycle. Node.js wird nur zum Entwickeln/Bauen/Testen benötigt, nicht auf dem PHP-Produktionshost. Physische Ziel- und Backup-Pfade bleiben hostlokale Konfiguration.
+
+**Noch nicht vorhanden:** eine weitgehend selbsterkennende Setup-Routine. Sie ist unmittelbar **nach** Final Freeze geplant: Paket bereitstellen → Setup öffnen → PHP/Extensions, Root/Base-Path, HTTPS, Routing, Storage-/Runtimepfade, Schreibrechte, Module und Migrationsstand soweit sicher erkennen → nur DB-/Admin-/App-/Providerdaten erfassen → prüfen/installieren → Setup sperren. Generierbare Secrets sollen dabei sicher erzeugt, absolute Hostpfade möglichst aus dem Installationsroot abgeleitet werden. Diese Zielroutine ist kein heutiger Installationsbefehl.
+
+Systemmodule werden heute über Discovery und Admin-Lifecycle verwaltet. Profile-Activation und Media-Install sind live fehlerhaft; sie dürfen nicht als erfolgreicher Bootstrapbestandteil beschrieben werden.
+
+---
+
 Diese Anleitung ergänzt den in [`Install-README-Web-App.md`](Install-README-Web-App.md) beschriebenen Web-App-Anteil um die verbindlichen PHP-, Datenbank-, Setup- und Sperrschritte auf einfachem Shared Hosting. Beide Anleitungen verwenden dasselbe Full-Stack-Produktionspaket mit `Web-App/`, `Server/php/` und `Server/public/`; ein separates Client-only-Paket ist kein vorgesehener Produktionsweg. Node.js ist nur Entwicklungs-/Testwerkzeug und keine Produktionsvoraussetzung.
 
 ## 1. Voraussetzungen

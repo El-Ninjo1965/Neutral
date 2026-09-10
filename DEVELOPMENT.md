@@ -1,5 +1,11 @@
 # NEUTRAL – Lokale Entwicklungsumgebung
 
+## Standabgrenzung 2026-09-11
+
+Lokale Tests und Manifestaudits können Codeverträge belegen, überschreiben aber keine Betreiber-Livefehler. Insbesondere gelten Profile-Aktivierung, Media-Installation, Unlimited-Login und User-Login-Eye trotz grüner lokaler Tests als offen. Node.js bleibt Entwicklungswerkzeug; PHP 8.1+/MySQL/HTTPS bilden die Produktionsbasis.
+
+---
+
 **Status:** VERIFIZIERTE WINDOWS-REFERENZUMGEBUNG
 
 **Geprüft:** 2026-09-01

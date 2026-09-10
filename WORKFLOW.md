@@ -178,3 +178,14 @@ Codex implemented the documented generic administration model, strict birthday v
 ## Module boundary review
 
 Before Core freeze, a new Field Notes module must add its route, permissions, storage/migrations, settings, UI/i18n/offline and backup declaration without changing existing Core files. Optional integration must use capability detection; reviewers reject unnecessary hard module dependencies.
+
+## 2026-09-11 – Full Markdown consistency audit
+
+**Executed and documented by:** Codex (OpenAI)
+
+- Read all tracked repository Markdown files, including historical specs/reports, and fully reviewed `PRODUCT-DECISIONS-2026-09-11.md`.
+- Audited claims against current manifests, PHP module entries, module contract/runtime/kernel, Profile API/UI/schema, device-limit SQL, Admin module/user views, password helper/precache, backup V2 and setup/package scripts.
+- Updated the hierarchy-owned architecture, module creation, UI/account, API/database/security/functions/backup and installation documents.
+- Recorded the four operator-live failures and four lifecycle-only passes without upgrading local evidence to live evidence.
+- Marked the product-decision input historical after transfer, kept Core Freeze blocked and deferred Field Notes.
+- Documentation-only run: no runtime code change, deployment feature claim, destructive production action or restore.

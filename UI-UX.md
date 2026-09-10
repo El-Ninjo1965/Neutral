@@ -1,5 +1,15 @@
 # NEUTRAL – UI/UX-Zielbild
 
+## Verbindliche Nachträge und Livegrenzen (2026-09-11)
+
+- **Module Administration:** Permissions und rollenbezogene Visibility/Navigation sind getrennte Konzepte. Pro relevanter Rolle (Admin, Developer, User, Viewer) muss konfigurierbar werden, ob ein Modul/User-Einstieg sichtbar ist; dies verleiht niemals Serverrechte. Systemmodule dürfen aktiv und User-unsichtbar sein. **IST:** globale Manifestpräsentation plus Permissionfilter; rollenbezogene Visibility-UI fehlt.
+- **User Management mobil:** Liste und Create/Edit werden getrennte Ansichten/States. Edit blendet die lange Liste aus; Save und Cancel/Back führen kontrolliert zurück. **IST:** beide Contentblöcke stehen noch in derselben Ansicht.
+- **Profile:** Ziel sind Gender, Geburtstag und runder Avatar mit Upload/Crop/Replace/Delete und dynamischem Gender-Default. **IST:** Genderfeld und serverseitige begrenzte Data-URL-Grundlage vorhanden; vollständige Avatar-UX fehlt, Profile ist live nicht aktivierbar.
+- **Password Eye:** zentraler Helper und SVGs sind code-seitig eingebunden und im Service-Worker inventarisiert. **LIVE NICHT BESTANDEN:** User-Login zeigt das Eye auf iPad weder normal noch privat; nicht als behoben bezeichnen.
+- **Unlimited:** `unlimited` muss als unbegrenzt erscheinen, nie als numerische Null oder `0 sessions`. **LIVE NICHT BESTANDEN:** Login blockierte einen zweiten Sessionfall und zeigte sinngemäß `2 of 0`.
+
+---
+
 **Status:** VERBINDLICHES LANGFRISTIGES DESIGN- UND UX-ZIELBILD
 
 ## Grundprinzipien

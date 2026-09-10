@@ -1,5 +1,13 @@
 # NEUTRAL – User / Account / License / Privacy Model
 
+## Ergänzende verbindliche Semantik (2026-09-11)
+
+Profile ist optional und keine Voraussetzung für technische Identität, Login, RBAC, Package oder License. Ohne Profile verwenden Oberflächen Username/User-ID beziehungsweise einen neutralen Fallback. Organization-Sharing darf nur bei autoritativ aktiver License-/Organization-Zuordnung aktiviert werden.
+
+Gerätelimits haben drei disjunkte Zustände: geerbter Package-/License-Default, positiver numerischer Override und `unlimited`. `NULL` kann in der Persistenz `unlimited` repräsentieren, darf aber nie client- oder serverseitig zu `0` gecastet werden. Eine aktive License ist für Package/Limit autoritativ; nach Entfernung greift das behaltene direkte User-Package. Der Betreiber-Livecheck 2026-09-11 widerlegt derzeit die korrekte End-to-End-Unlimited-Auflösung (`2 of 0`, Login blockiert); der Vertrag ist deshalb nicht live bestanden.
+
+---
+
 **Status:** VERBINDLICHES LANGFRISTIGES ZIELBILD  
 **Datum:** 2026-09-09  
 **Autorität:** untergeordnet zu `VISION.md` und `CORE-1.0.md`, aber verbindlich für spätere Account-, Lizenz-, Profil-, Privacy-, Device-, Messaging- und Moderationsarbeit.

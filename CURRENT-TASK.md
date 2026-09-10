@@ -1,14 +1,18 @@
-# Current Task — Minimal Core and Optional System Modules
+# Current Task — Profile lifecycle repair
 
-Source: `CODEX.md`, active architecture follow-up dated 2026-09-11.
+**Source of truth:** `TODO.md`, 2026-09-11.
 
-- [x] Synchronize and audit Core/module/profile/media/sharing boundaries.
-- [x] Fix User Login eye delivery through the shared helper and offline shell cache.
-- [x] Add normalized invisible/system-module presentation metadata.
-- [x] Add optional dependency metadata without lifecycle enforcement or coupling.
-- [x] Specify Profile, Media, Sharing, Moderation, Notifications and Postbox ownership/fallback boundaries.
-- [x] Specify the Field Notes no-Core-change freeze proof.
-- [x] Run complete regression, lint, package and visual checks.
-- [x] Commit/push main, await CodeQL/FTPS/read-only smoke, and record actual deployment evidence.
+## Objective
 
-Profile API/schema/UI extraction remains an explicit compatibility-bridge task. No Final Freeze is declared. No destructive production action or production restore.
+Reproduce and fix the live Profile activation `Internal Server Error` without broad feature work. Audit the Core `user_profiles` baseline versus the Profile module migration and lifecycle persistence. Preserve existing profile data.
+
+## Acceptance
+
+- Profile installs/registers/activates without HTTP 500.
+- Profile can be deactivated and reactivated; retained data returns.
+- Login/Core/Admin/Packages/Licenses/Sessions/GPS/Backup still work while Profile is inactive.
+- Errors remain controlled and contain no SQL/secrets.
+- Full tests plus a real operator lifecycle retest; local green is not a live pass.
+- No Field Notes and no production restore.
+
+After this task continue strictly with Media install, Unlimited devices, User Login eye, mobile User list/edit, role visibility, retests, then Field Notes.
