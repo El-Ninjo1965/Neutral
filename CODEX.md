@@ -108,23 +108,56 @@ Tests mindestens:
 
 ---
 
-# 5. User Login Eye – real sichtbar machen
+# 5. User Login Eye – reale Ursache finden und sichtbar beheben
 
 Realer Betreiberbefund nach mehreren Deployments:
 
 - Admin-Login und andere Passwortfelder zeigen korrektes Eye;
 - normaler User-Login zeigt auf iPad/Chrome weder normal noch privat einen Eye-Toggle.
 
+Wichtiger Code-Iststand, der vor einer Änderung ausdrücklich zu beachten ist:
+
+- `Web-App/public/user-app.js` rendert `#userLoginPassword` als `type="password"`.
+- Direkt nach dem dynamischen Login-Render wird bereits `window.NeutralUiFeedback?.enhancePasswordFields(content)` aufgerufen.
+- `Web-App/public/ui-feedback.js` besitzt bereits den zentralen Helper, erzeugt einen `button.password-visibility-toggle` und verwendet echte open/crossed-eye SVGs.
+- `Web-App/public/style.css` enthält bereits Regeln für `.password-input-wrap` und `.password-visibility-toggle` inklusive 44×44 Touchziel.
+- `Web-App/public/index.html` lädt `ui-feedback.js` vor `user-app.js`.
+- `service-worker.js` enthält `ui-feedback.js`, `user-app.js` und `style.css` im öffentlichen Shell-/Precache-Vertrag.
+- vorhandene Tests beweisen bislang im Wesentlichen nur, dass Sourcecode, Helper-Aufruf und CSS-Regeln vorhanden sind. Sie beweisen **nicht**, dass der Toggle im tatsächlich gerenderten User-Login-DOM sichtbar und bedienbar ist.
+
+Daraus folgt: **Nicht erneut nur „Auge hinzufügen“ oder einen weiteren Regex-/Source-Test schreiben.** Der Codepfad existiert bereits, aber der reale Browserbefund widerspricht ihm.
+
 Aufgabe:
 
-- tatsächlichen Render-/Hydration-/Helper-/CSS-/DOM-/Offline-Cache-Pfad untersuchen;
-- denselben zentralen Password-Visibility-Vertrag verwenden;
-- kein separater Sonderhelper;
-- echtes open/crossed eye SVG, ausreichend große Touchfläche, `aria-label`;
-- Offline-/Precache-/Service-Worker-/Asset-Versionierung prüfen;
-- sicherstellen, dass der Toggle nach dynamischem Login-Render wirklich im DOM erscheint und nicht durch CSS/Overlay verborgen wird.
+1. Root Cause entlang des tatsächlichen Produktions-/Browserpfads ermitteln.
+2. Nach dynamischem Login-Render im realen DOM prüfen:
+   - existiert `button.password-visibility-toggle` tatsächlich?
+   - befindet er sich innerhalb der erwarteten `.password-input-wrap`?
+   - wird er nach einem späteren Render wieder entfernt/überschrieben?
+   - verhindert ein Timing-/MutationObserver-/Renderproblem die dauerhafte Anreicherung?
+3. CSS/Computed-Style-Ursachen prüfen:
+   - `display`, `visibility`, `opacity`, `z-index`, `overflow`, Positionierung, Größe und Farbe;
+   - mögliche Überschreibung durch User-UI-Design/Custom CSS/Theme;
+   - Button darf nicht hinter/außerhalb des Input oder unsichtbar transparent liegen.
+4. Script-/Deployment-/Cache-Ursache prüfen:
+   - tatsächlich ausgelieferte Produktionsrevision von `ui-feedback.js`, `user-app.js`, `style.css`;
+   - Service-Worker-/Precache-Versionierung und Updatepfad;
+   - normaler und privater Browser dürfen keinen alten Shell-Stand behalten;
+   - bei Bedarf Cache-Busting/Revisionierung sauber lösen, nicht nur manuelles Cache-Leeren voraussetzen.
+5. Den zentralen Password-Visibility-Helper beibehalten; keinen separaten User-Login-Sonderhelper einführen.
+6. Toggle muss echtes open/crossed-eye SVG, ausreichend große Touchfläche, `aria-label` und `aria-pressed` behalten.
+7. Einen realen DOM-/Browser-nahen Regressionstest ergänzen, der mindestens beweist:
+   - Login wird gerendert;
+   - Toggle-Button wird als DOM-Element erzeugt;
+   - Button ist nicht durch die eigenen CSS-Regeln verborgen;
+   - Klick wechselt `password` ↔ `text` und Icon/ARIA-Zustand.
 
-Lokale Unit-Tests allein reichen hier nicht. Nach Deployment klar als Betreiber-Retest kennzeichnen.
+Abnahme:
+
+- Code-seitig ist die konkrete Root Cause dokumentiert;
+- Produktionsartefakt enthält nachweislich den Fix;
+- der Test prüft nicht nur Sourcecode-Vorkommen;
+- nach Deployment bleibt dieser Punkt ausdrücklich `OPERATOR RETEST REQUIRED`, bis der Betreiber das Auge auf iPad/Chrome normal + privat tatsächlich sieht und bedienen kann.
 
 ---
 
