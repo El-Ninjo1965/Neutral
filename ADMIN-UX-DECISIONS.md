@@ -14,6 +14,7 @@ Dieses Dokument hält Entscheidungen fest, die im Betreiber-Livecheck getroffen 
 - Default Allowed Devices darf **nicht** auf feste Auswahlwerte 1/2/3/5/10 begrenzt sein.
 - Gewünschte UX: freie positive Ganzzahl **oder** `unlimited`.
 - Beispiel: Free Package kann 1 Device erlauben; Vereins-/Businesspakete müssen z. B. 20, 50 oder andere Werte ohne Codeänderung erlauben.
+- Der bestehende Vertrag bleibt eindeutig: `Default Allowed Devices` im Package ist ein **Default pro User**, nicht ein globales Gesamt-Gerätelimit der gesamten Organisation. Die UI soll dies ausdrücklich als `Default devices per user` / `Default device limit per user` kenntlich machen, damit Package-, User- und License-Limits nicht verwechselt werden.
 
 ## 2. Licenses / Organizations
 
@@ -29,6 +30,7 @@ Dieses Dokument hält Entscheidungen fest, die im Betreiber-Livecheck getroffen 
   - `License manager` statt `Manager user ID`.
 - License Manager soll über eine Benutzer-Auswahlliste gewählt werden, nicht über manuelle numerische User-ID-Eingabe.
 - Eine Lizenz muss administrativ deaktivierbar/widerrufbar sein, ohne historische/auditrelevante Daten unkontrolliert zu löschen.
+- Zusätzlich muss eine License/Organization aus dem Adminbereich **löschbar** sein, wenn dies referenziell sicher möglich ist. Die UI benötigt eine klare `Delete`-Aktion mit Bestätigung. Der Server muss referenzielle Abhängigkeiten prüfen; keine stillen Kaskaden oder verwaisten User/Zuordnungen. Wenn Löschen wegen aktiver Zuordnungen nicht zulässig ist, verständliche 4xx-Antwort und UI-Hinweis statt 500. Jeder erfolgreiche Löschvorgang wird auditiert.
 - Package-/License-Defaults und User-Overrides müssen für den Admin nachvollziehbar angezeigt werden.
 
 ## 3. User Management / Device Limits
@@ -63,7 +65,36 @@ Dieses Dokument hält Entscheidungen fest, die im Betreiber-Livecheck getroffen 
 - Nach erfolgreichem Löschen aller bisherigen Audit-Einträge wird genau ein neuer Nachweiseintrag erzeugt, der die vollständige Löschung dokumentiert.
 - Retention 30/90/180/365 bleibt unverändert separat verfügbar.
 
-## 6. Livebefunde 2026-09-10
+## 6. Sessions / Installationsidentität
+
+- Die Session-/Device-Verwaltung soll sich auf **serverseitig verlässliche Identitäten** konzentrieren.
+- Useranzeige enthält menschenlesbaren Namen **und User-ID**, z. B. `Tester · #102`.
+- Die persistente Installations-/Device-ID ist die eindeutige technische Kennung des Endgeräts/der Installation und muss im Drill-down bzw. in der Sessionansicht klar sichtbar sein.
+- Die bisherige Bezeichnung `Device`, wenn darunter lediglich Texte wie `Browser installation` erscheinen, ist missverständlich. Sichtbare Begriffe müssen unterscheiden zwischen:
+  - Installation / Device ID = eindeutige persistente Kennung
+  - Device class = z. B. iPad, iPhone, Android phone/tablet, desktop, soweit zuverlässig ableitbar
+  - Operating system = iPadOS/iOS/Android/Windows/macOS/Linux inklusive Version nur soweit zuverlässig ermittelbar
+- Browser ist für die spätere Store-App nicht zentral und muss nicht prominent angezeigt werden.
+- Betriebssystem-/Geräteinformationen sind Support-Metadaten, **niemals** Authentifizierungs- oder Device-Identitätsquelle.
+- Wenn Browser-/Clientsignale nicht zuverlässig zwischen iPadOS und macOS oder zwischen Geräteklassen unterscheiden können, darf die UI **keine falsche Gewissheit** anzeigen. Dann neutral `Unknown`/leer oder nur die verlässlichere gröbere Information anzeigen.
+- Keine Hardware-Fingerprints. Keine heimliche Identifikation. Die zufällige persistente Installations-ID bleibt der verbindliche Device-Vertrag.
+
+## 7. Backup & Restore – konfigurierbarer Speicherpfad
+
+- Der Backup-Speicherpfad darf **nicht hardcodiert** sein und muss pro Installation/App konfigurierbar sein.
+- Gewünschte Stelle: direkt auf `Admin → Backup & Restore`.
+- Feld: `Backup storage path` mit frei eingebbarem absolutem Serverpfad.
+- Beispiel der aktuellen Installation: `/home/web1819/backup_neutral/`.
+- Der konkrete Beispielpfad ist **keine Core-Vorgabe** und darf nicht in neutralen Defaults hardcodiert werden.
+- Aktionen auf derselben Seite:
+  - `Test path`
+  - `Save`
+- `Test path` prüft mindestens: Pfad vorhanden, Verzeichnis, PHP-Schreibbarkeit, keine offensichtliche öffentliche Auslieferung / Protected-Storage-Vertrag soweit serverseitig zuverlässig prüfbar, keine Path-Traversal-/unsichere Pfadauflösung.
+- Manueller und automatischer Backup-Lauf verwenden denselben persistent gespeicherten Pfad.
+- `NEUTRAL_BACKUP_KEY` bleibt ausschließlich hostlokales Secret in `.env`; Wert niemals im Admin anzeigen, zurückliefern, loggen oder speichern. Im Admin nur boolesche Readiness (`Encryption key: Ready/Not ready`).
+- Der aktuell vorbereitete reale Hostordner liegt außerhalb von `public_html` und hat restriktive Rechte; die konkrete Host-Abnahme erfolgt vor Final Freeze.
+
+## 8. Livebefunde 2026-09-10
 
 Positiv bestätigt:
 
@@ -72,12 +103,15 @@ Positiv bestätigt:
 - parallele User-/Admin-Sessions funktionieren.
 - GPS-Basismodul inklusive Position, Zoom/Pan, Google Maps, OSM in separatem Fenster und Teilen funktioniert.
 - Audit `Delete All` löscht bestehende Einträge und erzeugt anschließend den neuen `Audit Clear Complete`-Nachweis.
+- Package Create funktioniert nach der Nachbesserung beim ersten Submit.
+- License Create funktioniert nach der Nachbesserung beim ersten Submit.
+- freie Custom-Device-Limits und `Unlimited` sind in Package/License sichtbar.
+- License Manager ist als User-Auswahl verfügbar.
 
-Offen/fehlerhaft:
+Neu offen:
 
-- `Create License` liefert trotz plausibel ausgefüllter Felder `Internal server error.`
-- Package Create benötigte im Livecheck beim ersten Aufruf offenbar einen zweiten Speicherversuch; Ursache prüfen.
-- Device-Limit-Auswahl ist zu stark auf feste Werte begrenzt.
-- User-Device-Override-UI ist technisch verständlich, aber unnötig kryptisch.
-- Birthday-UX ist für ältere Geburtsjahre unpraktisch.
-- Audit `Delete All` ist funktional korrekt, aber die zusätzliche Texteingabe `DELETE` ist unerwünscht.
+- License/Organization besitzt in der Übersicht aktuell nur `Edit`; eine sichere `Delete`-Aktion fehlt.
+- Sessions zeigen Usernamen ohne User-ID.
+- Session-/Device-Spalten sind semantisch missverständlich; `Browser installation` ist keine Geräteklasse.
+- Produktionsanzeige meldet für iPad/Chrome derzeit `macOS · Chrome`; diese Information ist als tatsächliches Betriebssystem des Endgeräts unzuverlässig und darf nicht als sichere Geräteidentifikation behandelt werden.
+- Backup Storage Path ist noch nicht direkt auf der Backup-Seite konfigurierbar.
