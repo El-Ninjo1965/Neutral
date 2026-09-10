@@ -190,7 +190,10 @@ function admin_user_payload(array $user): array
         'usedDevices' => $user['usedDevices'] ?? 0,
         'allowedDevices' => $user['allowedDevices'] ?? 5,
         'licenseId' => $user['licenseId'] ?? '',
+        'directPackageId' => $user['directPackageId'] ?? '',
+        'effectivePackageId' => $user['effectivePackageId'] ?? '',
         'packageName' => $user['packageName'] ?? '',
+        'packageSource' => $user['packageSource'] ?? 'unassigned',
         'deviceLimitSource' => $user['deviceLimitSource'] ?? 'system_default',
     ];
 }
@@ -696,6 +699,10 @@ if ($route === 'admin/users' && $method === 'POST') {
     try {
         $pdo->beginTransaction();
         $created = $userService->create($payload);
+        if (array_key_exists('packageId', $payload)) {
+            $packageId = trim((string) $payload['packageId']);
+            $accountLicenseService->assignDirectPackage((int) $created['id'], $packageId === '' ? null : (int) $packageId, $payload['allowedDevices'] ?? 'default');
+        }
         if (array_key_exists('licenseId', $payload)) {
             $licenseId = trim((string) $payload['licenseId']);
             $accountLicenseService->assignUserToLicense((int) $created['id'], $licenseId === '' ? null : (int) $licenseId, $payload['allowedDevices'] ?? 'default');
@@ -703,6 +710,8 @@ if ($route === 'admin/users' && $method === 'POST') {
         $auditService->log('user.create', 'user', (string) ($created['id'] ?? ''), actor_user_id($identity), [
             'username' => (string) ($created['username'] ?? ''),
             'status' => (string) ($created['status'] ?? ''),
+            'directPackageId' => (string) ($payload['packageId'] ?? ''),
+            'licenseId' => (string) ($payload['licenseId'] ?? ''),
         ]);
         $pdo->commit();
     } catch (PDOException $exception) {
@@ -729,23 +738,34 @@ if (preg_match('#^admin/users/([a-z0-9\-]+)$#', $route, $matches) === 1) {
     if ($method === 'PUT') {
         require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
         $payload = parse_json_body();
+        $pdo = $database->connect();
         try {
+            $pdo->beginTransaction();
             $updated = $userService->update($userId, $payload);
+            if (array_key_exists('packageId', $payload)) {
+                $packageId = trim((string) $payload['packageId']);
+                $accountLicenseService->assignDirectPackage((int) $userId, $packageId === '' ? null : (int) $packageId, $payload['allowedDevices'] ?? 'default');
+            }
             if (array_key_exists('licenseId', $payload)) {
                 $licenseId = trim((string) $payload['licenseId']);
                 $accountLicenseService->assignUserToLicense((int) $userId, $licenseId === '' ? null : (int) $licenseId, $payload['allowedDevices'] ?? 'default');
             }
+            $auditService->log('user.update', 'user', $userId, actor_user_id($identity), [
+                'status' => (string) ($updated['status'] ?? ''),
+                'roles' => $updated['roles'] ?? [],
+                'directPackageId' => (string) ($payload['packageId'] ?? ''),
+                'licenseId' => (string) ($payload['licenseId'] ?? ''),
+            ]);
+            $pdo->commit();
         } catch (PDOException $exception) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
             JsonResponse::error('User could not be updated because the email is already in use.', 409);
         } catch (RuntimeException $exception) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
             $message = $exception->getMessage();
             $status = str_contains(strtolower($message), 'already exists') ? 409 : (str_starts_with($message, 'User not found') ? 404 : 422);
             JsonResponse::error($message, $status);
         }
-        $auditService->log('user.update', 'user', $userId, actor_user_id($identity), [
-            'status' => (string) ($updated['status'] ?? ''),
-            'roles' => $updated['roles'] ?? [],
-        ]);
         JsonResponse::success(['user' => admin_user_payload($updated)]);
     }
     if ($method === 'DELETE') {

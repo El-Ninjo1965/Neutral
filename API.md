@@ -147,3 +147,4 @@ Backup create now emits logical payload v2: the Core table set, installed-module
 ### Admin user write errors
 
 `POST /api/admin/users` returns `201` only after user/role/license/audit work completes atomically. Invalid input and unknown role/license constraints return `422`; duplicate username/email returns `409`. `PUT /api/admin/users/{id}` likewise maps invalid input to `422`, duplicates to `409`, and missing users to `404` rather than a generic `500`.
+Admin User create/update accepts nullable `packageId` independently of nullable `licenseId`. User projections include `directPackageId`, `effectivePackageId`, and `packageSource`. Active License membership always determines `effectivePackageId`; otherwise the direct Package applies. Invalid/inactive direct Packages return controlled `422`.

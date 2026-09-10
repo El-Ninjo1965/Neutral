@@ -298,3 +298,8 @@ Profile renders `Share with my organization` only when the server profile capabi
 - The dialog is keyboard/touch accessible, traps its single OK action, supports Escape/backdrop close, and restores focus.
 - Password fields are hidden initially and receive a shared accessible Show/Hide control without changing their value or autocomplete contract.
 - User Management separates its list/filter and editor panels using the standard spacing scale.
+## Password icon and User Package source (2026-09-11)
+
+- Password controls display a real open/crossed eye, never a dot-like placeholder, with a minimum 44×44 touch target.
+- User Create/Edit separates `Package` from `License / Organization`; License selection disables Package editing and explains inheritance/fallback.
+- User lists label the effective source as `Direct package` or `From license / organization`.

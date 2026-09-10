@@ -167,3 +167,4 @@ Organization privacy activation is server-gated by current active license member
 Password reveal is an explicit local presentation toggle: values are neither copied nor logged and existing autocomplete attributes remain authoritative. Admin user creation executes user, role, optional license assignment, and audit work in one database transaction; controlled validation and uniqueness failures return safe 4xx messages without SQL details.
 
 The duplicate identity lookup uses each named marker once, as required by native MySQL prepared statements; this removes the production-only `HY093` failure without enabling emulated prepares.
+The shared password toggle uses inline Core-owned SVG paths, changes only input presentation type, and never reads, transmits, audits, or logs the password value. Direct Package IDs are validated server-side against active Packages; UI disabling is explanatory, not an authorization boundary.

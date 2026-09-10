@@ -620,6 +620,8 @@
       </section>
     `;
 
+    window.NeutralUiFeedback?.enhancePasswordFields(content);
+
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
     loginForm.addEventListener('submit', async (event) => {

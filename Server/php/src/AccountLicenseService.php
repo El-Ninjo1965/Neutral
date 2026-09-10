@@ -215,7 +215,7 @@ final class AccountLicenseService
     }
 
     public function deletePackage(int $id): void
-    { $pdo=$this->database->connect();$q=$pdo->prepare('SELECT COUNT(*) FROM licenses WHERE package_id=:id');$q->execute([':id'=>$id]);if((int)$q->fetchColumn()>0)throw new \RuntimeException('Package is assigned to a license. Set it inactive instead.');$s=$pdo->prepare('DELETE FROM packages WHERE id=:id');$s->execute([':id'=>$id]);if($s->rowCount()<1)throw new \RuntimeException('Package not found.'); }
+    { $pdo=$this->database->connect();$q=$pdo->prepare('SELECT (SELECT COUNT(*) FROM licenses WHERE package_id=:license_package)+(SELECT COUNT(*) FROM users WHERE package_id=:user_package)');$q->execute([':license_package'=>$id,':user_package'=>$id]);if((int)$q->fetchColumn()>0)throw new \RuntimeException('Package is assigned to a license or user. Set it inactive instead.');$s=$pdo->prepare('DELETE FROM packages WHERE id=:id');$s->execute([':id'=>$id]);if($s->rowCount()<1)throw new \RuntimeException('Package not found.'); }
 
     /** @return list<array<string,mixed>> */
     public function licenses(): array
@@ -272,6 +272,25 @@ final class AccountLicenseService
     public function assignUserToLicense(int $userId,?int $licenseId,mixed $override): void
     { $pdo=$this->database->connect();if($licenseId===null){$pdo->prepare("DELETE FROM license_users WHERE user_id=:user AND license_role<>'manager'")->execute([':user'=>$userId]);return;}$seat=$pdo->prepare("SELECT l.seat_limit,(SELECT COUNT(*) FROM license_users WHERE license_id=l.id AND membership_status='active') used FROM licenses l WHERE l.id=:id AND l.status='active'");$seat->execute([':id'=>$licenseId]);$row=$seat->fetch(\PDO::FETCH_ASSOC);if(!is_array($row))throw new \RuntimeException('Active license not found.');$exists=$pdo->prepare('SELECT COUNT(*) FROM license_users WHERE license_id=:license AND user_id=:user');$exists->execute([':license'=>$licenseId,':user'=>$userId]);if((int)$exists->fetchColumn()===0&&$row['seat_limit']!==null&&(int)$row['used']>=(int)$row['seat_limit'])throw new \RuntimeException('License seat limit reached.');$mode=$override==='unlimited'?'unlimited':($override==='default'?'default':'override');$limit=$mode==='override'?$this->nullableLimit($override):null;$pdo->prepare("INSERT INTO license_users(license_id,user_id,license_role,membership_status,device_limit,device_limit_mode) VALUES(:license,:user,'member','active',:limit,:mode) ON DUPLICATE KEY UPDATE membership_status='active',device_limit=VALUES(device_limit),device_limit_mode=VALUES(device_limit_mode)")->execute([':license'=>$licenseId,':user'=>$userId,':limit'=>$limit,':mode'=>$mode]); }
 
+    public function assignDirectPackage(int $userId, ?int $packageId, mixed $override): void
+    {
+        $pdo = $this->database->connect();
+        if ($packageId !== null) {
+            $package = $pdo->prepare("SELECT COUNT(*) FROM packages WHERE id=:id AND status='active'");
+            $package->execute([':id' => $packageId]);
+            if ((int) $package->fetchColumn() !== 1) throw new \RuntimeException('Selected direct package is not active.');
+        }
+        $mode = $override === 'unlimited' ? 'unlimited' : ($override === 'default' ? 'default' : 'override');
+        $limit = $mode === 'override' ? $this->nullableLimit($override) : null;
+        $statement = $pdo->prepare('UPDATE users SET package_id=:package,device_limit=:limit,device_limit_mode=:mode WHERE id=:user');
+        $statement->execute([':package' => $packageId, ':limit' => $limit, ':mode' => $mode, ':user' => $userId]);
+        if ($statement->rowCount() < 1) {
+            $exists = $pdo->prepare('SELECT COUNT(*) FROM users WHERE id=:user');
+            $exists->execute([':user' => $userId]);
+            if ((int) $exists->fetchColumn() !== 1) throw new \RuntimeException('User not found.');
+        }
+    }
+
     private function nullableLimit(mixed $value): ?int { if($value===null||$value===''||$value==='unlimited')return null;$limit=(int)$value;if($limit<1||$limit>1000)throw new \RuntimeException('Limit must be 1–1000 or unlimited.');return $limit; }
     private function packageById(int $id):array{$s=$this->database->connect()->prepare('SELECT p.*,(SELECT COUNT(*) FROM licenses l WHERE l.package_id=p.id AND l.status=\'active\') active_licenses FROM packages p WHERE p.id=:id');$s->execute([':id'=>$id]);$r=$s->fetch(\PDO::FETCH_ASSOC);if(!is_array($r))throw new \RuntimeException('Package not found.');return $this->packagePayload($r);}
     private function packagePayload(array $r):array{$e=json_decode((string)$r['entitlements_json'],true)?:[];$l=json_decode((string)$r['limits_json'],true)?:[];return ['id'=>(string)$r['id'],'key'=>(string)$r['package_key'],'name'=>(string)$r['name'],'description'=>(string)($r['description']??''),'status'=>(string)$r['status'],'modules'=>(array)($e['modules']??[]),'allowedDevices'=>$l['allowedDevices']??null,'activeLicenses'=>(int)($r['active_licenses']??0)];}
@@ -292,7 +311,7 @@ final class AccountLicenseService
 
     /** @return array<string,string> */
     public function moduleEntitlementsForUser(int $userId): array
-    { $s=$this->database->connect()->prepare("SELECT p.entitlements_json FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=:user AND lu.membership_status='active' AND l.status='active' AND p.status='active' LIMIT 1");$s->execute([':user'=>$userId]);$raw=$s->fetchColumn();if($raw===false)return [];$data=json_decode((string)$raw,true);return is_array($data['modules']??null)?$data['modules']:[]; }
+    { $s=$this->database->connect()->prepare("SELECT p.entitlements_json FROM packages p WHERE p.status='active' AND p.id=COALESCE((SELECT l.package_id FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=:user AND lu.membership_status='active' AND l.status='active' ORDER BY lu.license_role='manager' DESC,lu.assigned_at DESC LIMIT 1),(SELECT u.package_id FROM users u WHERE u.id=:direct_user)) LIMIT 1");$s->execute([':user'=>$userId,':direct_user'=>$userId]);$raw=$s->fetchColumn();if($raw===false)return [];$data=json_decode((string)$raw,true);return is_array($data['modules']??null)?$data['modules']:[]; }
 
     /** @return array{mimeType:string,byteSize:int} */
     public static function validateProfileImage(string $bytes): array

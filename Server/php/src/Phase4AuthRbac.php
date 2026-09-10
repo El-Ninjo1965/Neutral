@@ -653,17 +653,20 @@ final class Phase4UserService
                 u.updated_at,
                 (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id=u.id) AS last_activity_at,
                 (SELECT COUNT(DISTINCT s.device_id) FROM sessions s WHERE s.user_id=u.id AND s.device_id<>'' AND s.status='active' AND s.expires_at>CURRENT_TIMESTAMP) AS used_devices,
-                (SELECT CASE WHEN lu.device_limit_mode='unlimited' THEN NULL WHEN lu.device_limit_mode='override' THEN lu.device_limit WHEN l.device_limit_mode='unlimited' THEN NULL WHEN l.device_limit_mode='override' THEN l.device_limit ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1) AS allowed_devices,
+                CASE WHEN EXISTS(SELECT 1 FROM license_users lux JOIN licenses lx ON lx.id=lux.license_id WHERE lux.user_id=u.id AND lux.membership_status='active' AND lx.status='active') THEN (SELECT CASE WHEN lu.device_limit_mode='unlimited' THEN NULL WHEN lu.device_limit_mode='override' THEN lu.device_limit WHEN l.device_limit_mode='unlimited' THEN NULL WHEN l.device_limit_mode='override' THEN l.device_limit ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1) ELSE CASE WHEN u.device_limit_mode='unlimited' THEN NULL WHEN u.device_limit_mode='override' THEN u.device_limit WHEN u.package_id IS NULL THEN 5 ELSE (SELECT CAST(JSON_UNQUOTE(JSON_EXTRACT(dp.limits_json,'$.allowedDevices')) AS UNSIGNED) FROM packages dp WHERE dp.id=u.package_id AND dp.status='active') END END AS allowed_devices,
                 (SELECT lu.license_id FROM license_users lu WHERE lu.user_id=u.id AND lu.membership_status='active' LIMIT 1) AS license_id,
-                (SELECT p.name FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=u.id AND lu.membership_status='active' LIMIT 1) AS package_name,
-                (SELECT CASE WHEN lu.device_limit_mode IN ('override','unlimited') THEN 'user_override' WHEN l.device_limit_mode IN ('override','unlimited') THEN 'license_default' ELSE 'package_default' END FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' LIMIT 1) AS device_limit_source,
+                u.package_id AS direct_package_id,
+                COALESCE((SELECT l.package_id FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1),u.package_id) AS effective_package_id,
+                COALESCE((SELECT p.name FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1),(SELECT dp.name FROM packages dp WHERE dp.id=u.package_id)) AS package_name,
+                CASE WHEN EXISTS(SELECT 1 FROM license_users lux JOIN licenses lx ON lx.id=lux.license_id WHERE lux.user_id=u.id AND lux.membership_status='active' AND lx.status='active') THEN 'license' WHEN u.package_id IS NOT NULL THEN 'direct' ELSE 'unassigned' END AS package_source,
+                COALESCE((SELECT CASE WHEN lu.device_limit_mode IN ('override','unlimited') THEN 'user_override' WHEN l.device_limit_mode IN ('override','unlimited') THEN 'license_default' ELSE 'package_default' END FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1),CASE WHEN u.device_limit_mode IN ('override','unlimited') THEN 'user_override' WHEN u.package_id IS NOT NULL THEN 'package_default' ELSE 'system_default' END) AS device_limit_source,
                 (SELECT COUNT(*) FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active') AS has_license,
                 GROUP_CONCAT(DISTINCT r.role_key ORDER BY r.role_key SEPARATOR ',') AS role_keys
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             LEFT JOIN roles r ON r.id = ur.role_id
             $whereSql
-            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.created_at, u.updated_at
+            GROUP BY u.id, u.username, u.email, u.display_name, u.status, u.password_hash, u.package_id, u.device_limit, u.device_limit_mode, u.created_at, u.updated_at
             ORDER BY u.id ASC
         ");
         $statement->execute($params);
@@ -973,7 +976,10 @@ final class Phase4UserService
             'usedDevices' => (int) ($user['usedDevices'] ?? 0),
             'allowedDevices' => array_key_exists('allowedDevices', $user) ? $user['allowedDevices'] : 5,
             'licenseId' => (string)($user['licenseId'] ?? ''),
+            'directPackageId' => (string)($user['directPackageId'] ?? ''),
+            'effectivePackageId' => (string)($user['effectivePackageId'] ?? ''),
             'packageName' => (string)($user['packageName'] ?? ''),
+            'packageSource' => (string)($user['packageSource'] ?? 'unassigned'),
             'deviceLimitSource' => (string)($user['deviceLimitSource'] ?? 'system_default'),
         ];
     }
@@ -1066,9 +1072,12 @@ final class Phase4UserService
             'updatedAt' => (string) ($row['updated_at'] ?? ''),
             'lastActivityAt' => (string) ($row['last_activity_at'] ?? ''),
             'usedDevices' => (int) ($row['used_devices'] ?? 0),
-            'allowedDevices' => (int)($row['has_license'] ?? 0) > 0 ? ($row['allowed_devices'] === null ? null : (int)$row['allowed_devices']) : 5,
+            'allowedDevices' => array_key_exists('allowed_devices', $row) ? ($row['allowed_devices'] === null ? null : (int)$row['allowed_devices']) : 5,
             'licenseId' => (string)($row['license_id'] ?? ''),
+            'directPackageId' => (string)($row['direct_package_id'] ?? ''),
+            'effectivePackageId' => (string)($row['effective_package_id'] ?? ''),
             'packageName' => (string)($row['package_name'] ?? ''),
+            'packageSource' => (string)($row['package_source'] ?? 'unassigned'),
             'deviceLimitSource' => (string)($row['device_limit_source'] ?? 'system_default'),
         ];
     }
@@ -1373,8 +1382,8 @@ final class Phase4SessionRegistry
     public function licensedDeviceLimit(int $userId, int $fallback): ?int
     {
         try {
-            $statement = $this->requireDatabase()->connect()->prepare("SELECT CASE WHEN lu.device_limit_mode='unlimited' THEN NULL WHEN lu.device_limit_mode='override' THEN lu.device_limit WHEN l.device_limit_mode='unlimited' THEN NULL WHEN l.device_limit_mode='override' THEN l.device_limit ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END device_limit FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=:user AND lu.membership_status='active' AND l.status='active' LIMIT 1");
-            $statement->execute([':user'=>$userId]);
+            $statement = $this->requireDatabase()->connect()->prepare("SELECT CASE WHEN EXISTS(SELECT 1 FROM license_users lux JOIN licenses lx ON lx.id=lux.license_id WHERE lux.user_id=:license_user AND lux.membership_status='active' AND lx.status='active') THEN (SELECT CASE WHEN lu.device_limit_mode='unlimited' THEN NULL WHEN lu.device_limit_mode='override' THEN lu.device_limit WHEN l.device_limit_mode='unlimited' THEN NULL WHEN l.device_limit_mode='override' THEN l.device_limit ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=:limit_user AND lu.membership_status='active' AND l.status='active' LIMIT 1) ELSE (SELECT CASE WHEN u.device_limit_mode='unlimited' THEN NULL WHEN u.device_limit_mode='override' THEN u.device_limit WHEN u.package_id IS NULL THEN :fallback_limit ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END FROM users u LEFT JOIN packages p ON p.id=u.package_id AND p.status='active' WHERE u.id=:direct_user) END device_limit");
+            $statement->execute([':license_user'=>$userId, ':limit_user'=>$userId, ':fallback_limit'=>max(1,$fallback), ':direct_user'=>$userId]);
             $value = $statement->fetchColumn();
             return $value === false ? max(1, $fallback) : ($value === null ? null : max(1, (int)$value));
         } catch (\Throwable $exception) {

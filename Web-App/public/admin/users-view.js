@@ -13,13 +13,14 @@ class AdminUsersView {
     this.users = [];
     this.roles = [];
     this.licenses = [];
+    this.packages = [];
     this.editingUserId = null;
     this.filters = { q: '', status: '', role: '' };
   }
 
   async init(container) {
     this.container = container;
-    await Promise.all([this.loadRoles(), this.loadLicenses()]);
+    await Promise.all([this.loadRoles(), this.loadLicenses(), this.loadPackages()]);
     await this.loadUsers();
     this.render();
   }
@@ -30,6 +31,8 @@ class AdminUsersView {
   }
 
   async loadLicenses() { const result=await this.api.get('/api/admin/licenses');this.licenses=result.ok?AdminCommon.unwrapData(result,'licenses',[]):[]; }
+
+  async loadPackages() { const result=await this.api.get('/api/admin/packages');this.packages=result.ok?AdminCommon.unwrapData(result,'packages',[]):[]; }
 
   async loadUsers() {
     const result = await this.api.searchUsers(this.filters);
@@ -135,7 +138,7 @@ class AdminUsersView {
               <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
               <td>${user.lastActivityAt ? new Date(user.lastActivityAt.replace(' ', 'T') + 'Z').toLocaleString() : 'Inactive'}</td>
               <td><button type="button" class="btn btn-sm btn-secondary" onclick="adminRouter.showView('sessions')">${Number(user.usedDevices || 0)} / ${user.allowedDevices == null ? 'Unlimited' : Number(user.allowedDevices)}</button></td>
-              <td>${escapeHtmlUsers(user.packageName||'Unassigned')}<br><small>${escapeHtmlUsers(user.deviceLimitSource||'system_default')}</small></td>
+              <td>${escapeHtmlUsers(user.packageName||'Unassigned')}<br><small>${user.packageSource === 'license' ? 'From license / organization' : (user.packageSource === 'direct' ? 'Direct package' : 'Unassigned')} · ${escapeHtmlUsers(user.deviceLimitSource||'system_default')}</small></td>
               <td class="action-buttons">
                 <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button>
                 <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button>
@@ -194,6 +197,11 @@ class AdminUsersView {
         <input type="text" id="displayName" name="displayName" value="${escapeHtmlUsers(user?.displayName || '')}">
       </div>
       <div class="form-group">
+        <label for="packageId">Package</label>
+        <select id="packageId" name="packageId"><option value="">Unassigned</option>${this.packages.filter((p) => p.status === 'active' || String(p.id) === String(user?.directPackageId || '')).map((p) => `<option value="${escapeHtmlUsers(p.id)}" ${String(user?.directPackageId || user?.effectivePackageId || '') === String(p.id) ? 'selected' : ''}>${escapeHtmlUsers(p.name)}</option>`).join('')}</select>
+        <small id="package-source-help">Direct package for an individual user.</small>
+      </div>
+      <div class="form-group">
         <label for="licenseId">License / Organization</label>
         <select id="licenseId" name="licenseId"><option value="">Unassigned</option>${this.licenses.map(l=>`<option value="${escapeHtmlUsers(l.id)}" ${String(user?.licenseId||'')===String(l.id)?'selected':''}>${escapeHtmlUsers(l.organizationName)} — ${escapeHtmlUsers(l.packageName)}</option>`).join('')}</select>
       </div>
@@ -227,6 +235,23 @@ class AdminUsersView {
       </div>
     `;
 
+    const licenseSelect = form.querySelector('#licenseId');
+    const packageSelect = form.querySelector('#packageId');
+    const packageHelp = form.querySelector('#package-source-help');
+    const syncPackageSource = () => {
+      const license = this.licenses.find((entry) => String(entry.id) === String(licenseSelect.value));
+      if (license) {
+        packageSelect.value = String(license.packageId);
+        packageSelect.disabled = true;
+        packageHelp.textContent = `Effective package is inherited from ${license.organizationName}. Removing the license keeps this package as the direct fallback.`;
+      } else {
+        packageSelect.disabled = false;
+        packageHelp.textContent = 'Direct package for an individual user.';
+      }
+    };
+    licenseSelect.addEventListener('change', syncPackageSource);
+    syncPackageSource();
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const formData = new FormData(form);
@@ -240,7 +265,7 @@ class AdminUsersView {
         displayName: formData.get('displayName') || '',
         status: formData.get('status') || 'active',
         roles
-        ,licenseId: formData.get('licenseId') || '', allowedDevices: deviceLimitMode === 'custom' ? customDeviceLimit : deviceLimitMode
+        ,licenseId: formData.get('licenseId') || '', packageId: packageSelect.value || '', allowedDevices: deviceLimitMode === 'custom' ? customDeviceLimit : deviceLimitMode
       };
 
       if (!this.editingUserId) {

@@ -131,3 +131,6 @@ Organization Sharing ist nur bei autoritativ bestätigter aktiver User→License
 ## 12. Globale Erfolgsbestätigung, Passwörter und ACCESS-Reihenfolge
 
 Erfolgreiche Save/Create/Update-Aktionen verwenden in User- und Admin-UI den gemeinsamen zugänglichen Success-Dialog mit genau einer OK-Aktion und Fokusrückgabe; Fehler bleiben Inline-/Alert-Fehler. Alle dynamischen und statischen Passwortfelder erhalten über denselben Core-Helper einen Show/Hide-Toggle. Unter ACCESS stehen operative Bereiche in der Reihenfolge Users, Packages, Licenses, Sessions vor Roles und Permission Catalog.
+## 13. Password eyes and individual-user packages
+
+Password visibility uses the same recognizable open/crossed eye SVG and approximately 44×44 touch target in User Login, Admin Login, profile, and dynamic Admin forms. An individual user can receive a direct Package without an Organization. Selecting a License makes its Package authoritative and disables direct Package editing; that same Package is retained as the direct fallback when the License is later removed.

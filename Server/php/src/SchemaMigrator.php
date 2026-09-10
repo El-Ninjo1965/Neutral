@@ -264,6 +264,13 @@ final class SchemaMigrator
             "INSERT INTO permissions (permission_key,description,scope) VALUES ('audit.clear','Permanently clear prior audit entries while preserving a new clear record','audit') ON DUPLICATE KEY UPDATE description=VALUES(description),scope=VALUES(scope)",
             "INSERT IGNORE INTO role_permissions(role_id,permission_id) SELECT r.id,p.id FROM roles r JOIN permissions p ON p.permission_key='audit.clear' WHERE r.role_key='admin'",
         ];
+        $directUserPackageStatements = [
+            "ALTER TABLE users ADD COLUMN package_id BIGINT UNSIGNED NULL AFTER display_name",
+            "ALTER TABLE users ADD COLUMN device_limit INT UNSIGNED NULL AFTER package_id",
+            "ALTER TABLE users ADD COLUMN device_limit_mode VARCHAR(32) NOT NULL DEFAULT 'default' AFTER device_limit",
+            "ALTER TABLE users ADD CONSTRAINT fk_users_package FOREIGN KEY(package_id) REFERENCES packages(id) ON DELETE SET NULL",
+            "CREATE INDEX ix_users_package ON users(package_id)",
+        ];
 
         return [
             [
@@ -300,6 +307,11 @@ final class SchemaMigrator
                 'key' => '2026_09_10_0007_admin_packages_audit',
                 'checksum' => sha1(implode("\n", $adminPackageStatements)),
                 'statements' => $adminPackageStatements,
+            ],
+            [
+                'key' => '2026_09_11_0008_direct_user_packages',
+                'checksum' => sha1(implode("\n", $directUserPackageStatements)),
+                'statements' => $directUserPackageStatements,
             ],
         ];
     }
@@ -409,6 +421,12 @@ final class SchemaMigrator
             if ($isPackageDescription && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
             $isDeviceLimitMode = preg_match('/^ALTER\s+TABLE\s+(licenses|license_users)\s+ADD\s+COLUMN\s+device_limit_mode\b/i', trim($statement)) === 1;
             if ($isDeviceLimitMode && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
+            $isDirectUserColumn = preg_match('/^ALTER\s+TABLE\s+users\s+ADD\s+COLUMN\s+(package_id|device_limit|device_limit_mode)\b/i', trim($statement)) === 1;
+            if ($isDirectUserColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
+            $isDirectUserForeignKey = preg_match('/^ALTER\s+TABLE\s+users\s+ADD\s+CONSTRAINT\s+fk_users_package\b/i', trim($statement)) === 1;
+            if ($isDirectUserForeignKey && $driverCode === 1826) return;
+            $isDirectUserIndex = preg_match('/^CREATE\s+INDEX\s+ix_users_package\b/i', trim($statement)) === 1;
+            if ($isDirectUserIndex && $driverCode === 1061) return;
             throw $exception;
         }
     }

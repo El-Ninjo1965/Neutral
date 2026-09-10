@@ -35,3 +35,6 @@ Organization-sharing authorization and global navigation Active-State are code/t
 ### 2026-09-11 follow-up
 
 Global success-dialog and password-toggle contracts, controlled atomic Admin user creation, ACCESS ordering, and User Management spacing are implemented and covered locally. Final readiness remains dependent on full CI/deployment and real operator/device acceptance; this update does not declare Final Freeze.
+### Password/direct-Package follow-up
+
+Code and isolated tests now cover real eye icons in both login shells and deterministic direct-versus-License Package precedence. Real iPad/operator retest remains required; no Final Freeze is claimed.

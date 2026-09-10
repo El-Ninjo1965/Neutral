@@ -391,3 +391,6 @@ Effective device limits carry an explicit mode rather than overloading SQL `NULL
 ## Organization-sharing capability
 
 Profile privacy values describe sharing with the user's assigned organization. They may be enabled only while an active `license_users` membership points to an active License. The server exposes only a boolean capability to the account itself and rejects activation without that context. Removing/revoking the membership removes the capability without inferring organization context from roles or client state; defaults remain off.
+## Direct package versus License package
+
+An individual user may retain a nullable direct `package_id` without a License/Organization. When an active License membership exists, its Package is the sole effective Package; the direct Package is retained only as an explicit fallback and becomes effective again after membership removal. The User API exposes `directPackageId`, `effectivePackageId`, and `packageSource` (`direct`, `license`, or `unassigned`) so clients never infer precedence. User-level device overrides remain highest priority; otherwise the effective License or direct Package supplies the default.

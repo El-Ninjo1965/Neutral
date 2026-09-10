@@ -193,3 +193,6 @@ default home instead of leaving an empty view.
 
 - `NeutralUiFeedback.showSuccess(message, options)` renders the one-at-a-time accessible User/Admin success dialog and restores focus when closed.
 - `NeutralUiFeedback.enhancePasswordFields(root)` equips static or dynamically rendered password inputs with the shared Show/Hide control.
+- `AccountLicenseService::assignDirectPackage()` validates and stores an individual user's direct Package and device override.
+- `moduleEntitlementsForUser()` resolves active License Package first, then the retained direct Package fallback.
+- `NeutralUiFeedback.enhancePasswordFields()` renders shared open/crossed eye SVGs for static and dynamic password inputs.
