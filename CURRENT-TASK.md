@@ -8,6 +8,6 @@ Source of truth: `CODEX.md` (2026-09-11 active follow-up).
 - [x] Keep device-limit inheritance, entitlements, audit, and package deletion referentially consistent.
 - [x] Update Create/Edit User and list source labels without regressing Success Modal or navigation behavior.
 - [x] Run full lint, tests, production package, and visual review.
-- [ ] Update final deployment evidence, commit/push main, await CodeQL/FTPS, and run read-only smoke.
+- [x] Update final deployment evidence, commit/push main, await CodeQL/FTPS, and run read-only smoke.
 
 No destructive production action or production restore.
