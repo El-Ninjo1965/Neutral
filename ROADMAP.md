@@ -90,6 +90,26 @@ Fehler müssen vor destruktiven Folgeschritten möglichst früh erkannt werden. 
 
 Bei Umsetzung müssen mindestens `Install-README-Server.md`, `Install-README-Web-App.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md` und die Setup-/Recovery-Dokumentation mit dem tatsächlich implementierten Verhalten synchronisiert werden.
 
+## Späteres optionales Systemmodul: Referral / Rewards
+
+Neutral soll später ein generisches Referral-/Rewards-Modul unterstützen. Dieses Modul ist **kein Core-Bestandteil** und blockiert den Core-Freeze nicht.
+
+Ziel:
+
+- Referral-Link/-Code pro werbendem User;
+- Pay-Referral nach serverseitig bestätigtem Zahlungseingang direkt belohnen;
+- Free-Referral erst nach konfigurierbaren Aktivitätskriterien qualifizieren;
+- Punkte für qualifizierte Free-Referrals;
+- Punkte gegen administrativ definierte Rewards bzw. Premium-Zeit einlösen;
+- bei bereits zahlenden Usern verdiente Premium-Zeit an bestehende Laufzeit anhängen;
+- bei Free-Usern verdiente Premium-Zeit nach konfigurierbarer Regel aktivieren;
+- Reward-Katalog, Punktwerte, Schwellen, Limits und ggf. Cooldowns vollständig administrierbar;
+- Audit, Idempotenz und Missbrauchsschutz;
+- keine CatchTrack-spezifische Fachlogik;
+- optionale Integration mit Notifications/Postbox/Profile, aber keine Pflichtabhängigkeit.
+
+Beispielhafte Rewards wie 3 Tage, 7 Tage oder 1 Monat Premium sind Konfiguration und keine fest verdrahtete Core-Regel.
+
 ## Phase 2: Installierbare Web-App
 
 - PWA-Manifest, Service Worker und kontrollierte Cacheupdates
