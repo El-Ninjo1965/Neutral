@@ -1,77 +1,61 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
 **Datum:** 2026-09-10
-**Auftrag:** License Create sowie Package/License/Device-, Manager-, Birthday- und Audit-UX nachbessern
-**Status:** IMPLEMENTIERT · LOKAL VERIFIZIERT · NACH `main` ÜBERTRAGEN · CI/CODEQL/FTPS/PRODUCTION-SMOKE BESTANDEN · DEVICE RETEST REQUIRED
+**Auftrag:** Sicherer License Delete, verständliche Session-Identität und konfigurierbarer Backup Storage Path
+**Status:** IMPLEMENTIERT · LOKAL VERIFIZIERT · NACH `main` ÜBERTRAGEN · CI/CODEQL/FTPS/PRODUCTION-SMOKE BESTANDEN · DEVICE/HOST RETEST REQUIRED
 
 ## Tatsächlicher Endstand
 
-### Root Cause und License Create
+### Sicherer License Delete
 
-- Der reale Beispiel-Key `free_license` wurde von der ersten Implementierung abgelehnt, weil nur Bindestriche, nicht aber Unterstriche zugelassen waren.
-- Diese kontrollierbare Validierungsabweichung lief ungefangen bis zum globalen Production-Handler und erschien deshalb fälschlich als `Internal server error.`
-- Package- und License-Keys akzeptieren jetzt konsistent Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche ohne Leerzeichen.
-- Kontrollierte Eingabefehler liefern verständliche 422-Antworten; Persistenz-/Constraint-Konflikte bleiben generische 409-Antworten ohne SQL- oder Infrastrukturdetails.
-- License Create/Update prüft Package und optionalen Manager serverseitig. Speichern und Managerwechsel erfolgen transaktional; leerer Manager ist erlaubt.
-- Create, unmittelbares Reload der Liste, Edit, Packagewechsel, Status `active`/`inactive`/`blocked` und Package-Delete-Schutz sind lokal regressionsgeprüft. `blocked` ist die verständlich als `Revoked / blocked` dargestellte, nicht destruktive Widerrufsoption.
+- Admins können eine License nach einem expliziten Bestätigungsdialog löschen.
+- Der Endpunkt ist durch Adminsession, `admin.write` und CSRF geschützt.
+- Eine License mit irgendeiner User- oder Managerzuordnung wird nicht still kaskadiert: Der Server antwortet kontrolliert mit einem Konflikt und verweist auf das Entfernen der Zuordnungen oder die nicht destruktive Alternative `Revoked / blocked`.
+- Nur eine unreferenzierte License wird gelöscht. Der Auditnachweis `license.delete` entsteht innerhalb derselben Transaktion; bei einem Fehler werden Löschung und Audit gemeinsam zurückgerollt.
+- Nach erfolgreichem Löschen aktualisiert die Oberfläche die License-Liste unmittelbar. Packages, Users, Sessions und sonstige Daten bleiben unberührt.
 
-### Package, License und User Device Limits
+### Session-Identität und Supportmetadaten
 
-- Keine festen Presets 1/2/3/5/10 mehr.
-- Package: freie positive Ganzzahl 1–1000 oder `Unlimited`.
-- License: `Use package default`, freie positive Ganzzahl 1–1000 oder `Unlimited`.
-- User Create/Edit: `Package / License default`, freie positive Ganzzahl 1–1000 oder `Unlimited`.
-- Serverseitige Validierung bleibt autoritativ; eine Limit-Senkung löscht keine bestehenden Sessions.
-- Submit-Handler werden beim Editor-Render genau einmal gebunden, verhindern parallele Doppelsubmits und bleiben nach einem sichtbaren API-Fehler erneut bedienbar. Frisches Öffnen und erster gültiger Submit sind dadurch nicht von einem zweiten Klick abhängig.
+- Die Sessionliste zeigt den verständlichen Benutzer, die numerische User-ID und die vollständige persistente zufällige `Installation / Device ID` getrennt an.
+- `Device class`, `Operating system` und `Browser` sind eigene Supportspalten und ausdrücklich keine neue Identität oder Fingerprinting-Quelle.
+- Die konservative Erkennung deckt realistische Fixtures für iPad Safari mit Desktop-UA, iPad Chrome, iPhone, Android Phone/Tablet, Windows, macOS und unbekannte Clients ab. Bei unzuverlässiger Information bleibt die Anzeige bewusst allgemein.
+- Session-Zählung, Deduplizierung und Device-Limit-Vertrag bleiben unverändert: Limits gelten weiterhin pro User und sind kein organisationsweiter Gerätepool.
 
-### Verständliche License-/User-UX
+### Backup Storage Path
 
-- Sichtbare Begriffe sind `User limit`, `Device limit per user`, `License manager` und `Custom device limit`.
-- Der License Manager wird aus der Liste aktiver Benutzer gewählt; eine manuelle numerische ID-Eingabe entfällt.
-- Der Server akzeptiert ausschließlich einen tatsächlich vorhandenen aktiven User als Manager.
-
-### Birthday
-
-- Der native mobile Date Picker wurde durch drei eindeutig beschriftete, touchfreundliche Dropdowns ersetzt: Day, lokalisierter ausgeschriebener Month, Year.
-- Der Jahresbereich umfasst das aktuelle Jahr und 120 Jahre rückwärts.
-- Teilweise Auswahl wird clientseitig abgelehnt; vollständig leer löscht das optionale Datum.
-- Gespeichert wird weiterhin kanonisch `YYYY-MM-DD`; PHP validiert echtes Kalenderdatum und Schaltjahr. Privacy `birthday` bleibt default-off.
-
-### Audit Delete All
-
-- Die Texteingabe `DELETE` wurde entfernt.
-- Delete All hat jetzt genau zwei klare Bestätigungsdialoge.
-- Eigene Permission `audit.clear`, Adminsession, CSRF, explizites bestätigtes Request-Flag, Transaktion, Löschung aller vorherigen Einträge und genau ein neuer `audit.clear.completed`-Nachweis bleiben erhalten.
-- Retention 30/90/180/365 bleibt separat und unverändert.
+- `Admin → Backup & Restore` besitzt jetzt ein Feld `Backup storage path` sowie getrennte Aktionen `Test path` und `Save` mit ehrlichem Status.
+- Der Pfad wird installationsspezifisch in den bestehenden Settings gespeichert. Manuelle Backups, Restore-/Download-/Delete-Flows, Readiness und der Automatic-Backup-Runner verwenden denselben gespeicherten Pfad.
+- Ein benutzerdefinierter Pfad muss absolut, bereits vorhanden, ein Verzeichnis und per kurzlebigem, sofort gelöschtem Probe-Write beschreibbar sein. Relative Pfade, Traversal, Nullbytes und bekannte öffentliche Webroots werden abgelehnt.
+- Die Anwendung erstellt benutzerdefinierte Verzeichnisse nicht und verändert weder Besitzer noch Rechte. Bestehende Backups werden bei einer Pfadänderung nicht verschoben.
+- `NEUTRAL_BACKUP_KEY` bleibt ausschließlich hostlokal; UI und API zeigen weiterhin nur die boolesche Readiness, niemals Schlüsselmaterial.
 
 ## Verifikation und Deployment
 
-- Vollsuite lokal: 482/482 Tests bestanden.
-- PHP-Lint über 40 PHP-Dateien bestanden.
+- Vollsuite lokal: **489/489 Tests bestanden**.
+- PHP-Lint über **40 PHP-Dateien** bestanden.
 - JavaScript-Syntaxprüfung über Web-App, Server und Scripts bestanden.
-- Produktionspaket erfolgreich: 112 Dateien.
-- `git diff --check` und Secret-Musterprüfung bestanden.
-- Die neue License-UX wurde zusätzlich in Chromium bei 1024×768 visuell geprüft; die Radio-/Custom-Limit-Anordnung wurde dabei korrigiert und erneut gesichtet.
-- Implementierungscommit `b720450` wurde nach `origin/main` übertragen.
-- GitHub CodeQL Run `34433833527`: erfolgreich, beide Jobs `javascript-typescript` und `actions` terminal grün.
-- FTPS Deploy Run `34433833591`: erfolgreich; vollständige Tests, Paketbau, Upload und read-only Production-Smoke terminal grün.
-- Der CI-Production-Smoke bestätigte HTTP 200 für Root/Rewrite/Status/Modulkatalog, 401 für beide absichtlich ungültigen Loginprobes, geschützte Admin-/Core-Grenzen, Viewer-GPS, HTTPS, passende Deploymentrevision und `migrationsReady:true`.
-- Ein zusätzlicher direkter Smoke aus der Codex-Sandbox wurde vom ausgehenden Proxy mit 403 blockiert. Das ist eine Sandbox-Netzgrenze; der verbindliche Smoke vom GitHub-Runner zum Produktionshost ist erfolgreich und enthält die oben genannten einzelnen Prüfergebnisse.
+- Produktionspaket erfolgreich: **112 Dateien**.
+- `git diff --check` bestanden.
+- Die geänderten Session- und Backup-Flächen wurden zusätzlich in Chromium bei 1180×900 visuell geprüft; User-ID, vollständige Installation-ID, getrennte Supportspalten und Pfadaktionen sind sichtbar.
+- Implementierungscommit `b6e5ecb9d656653a0e80b615206c40fa426d634a` wurde nach `origin/main` übertragen.
+- GitHub CodeQL Run `34438615239`: erfolgreich; `javascript-typescript` und `actions` sind terminal grün.
+- FTPS Deploy Run `34438615583`: erfolgreich; Tests, Paketbau, Upload und read-only Production-Smoke sind terminal grün.
+- Der verbindliche CI-Smoke bestätigte Root, Rewrite, Status und Modulkatalog mit HTTP 200, geschützte Admin-/Core-Grenzen, beide absichtlich ungültigen Loginprobes mit 401, Viewer-GPS, HTTPS, passende Deploymentrevision und `migrationsReady:true`.
+- Der zusätzliche direkte Smoke aus der Codex-Sandbox erreichte den Produktionshost nicht (`fetch failed`). Das ist eine Netzgrenze dieser Umgebung; der identische verbindliche Smoke vom GitHub-Runner war erfolgreich und lieferte die oben genannten Einzelresultate.
 
 ## Wahrheitsgrenze
 
 - Bereits vom Betreiber bestätigte User-/Admin-Logins, parallele Sessions, GPS-Basis, App Areas, Navigation sowie Privacy & Sharing bleiben `LIVE BESTANDEN`.
-- Die hier korrigierten Package-/License-/Device-, Manager-, Birthday- und Audit-Flächen sind deployed und automatisiert geprüft, aber bis zum realen Betreiber-/iPad-Test weiterhin **DEVICE RETEST REQUIRED**.
-- Backup-Key/ACL/Cron sowie isolierter Empty-Host-Install-/Restore-/Move-Test bleiben **HOST ACTION REQUIRED**.
-- Core 1.0 wird nicht automatisch als bestanden oder gefroren erklärt.
+- License Delete, die erweiterte Sessiondarstellung und die Backup-Pfadoberfläche sind deployed und automatisiert geprüft, aber bis zur realen Betreiber-/iPad-Abnahme weiterhin **DEVICE RETEST REQUIRED**.
+- Das tatsächliche Backup-Ziel muss der Betreiber auf dem Host anlegen und mit minimalen Besitz-/Schreibrechten versehen. Backup-Key, ACL, Cron sowie isolierter Empty-Host-Install-/Restore-/Move-Test bleiben **HOST ACTION REQUIRED**.
+- Core 1.0 wird dadurch nicht automatisch als bestanden oder gefroren erklärt.
 
 ## Kurze Betreiber-Retestliste
 
-1. Admin → Packages frisch öffnen und ein Package beim **ersten** Submit mit freiem Device-Limit, z. B. 20 oder 50, anlegen; anschließend `Unlimited` prüfen.
-2. `free_license` für `Privat User`, Package `Free`, User limit 1, Package-Default, Manager leer und Status active beim ersten Submit erstellen.
-3. License bearbeiten, Package wechseln sowie `Revoked / blocked` und erneute Aktivierung prüfen; historische Daten müssen erhalten bleiben.
-4. License Manager über die Userliste wählen und anschließend wieder auf `No manager` setzen.
-5. Admin → Users: Package/License Default, Custom Device Limit 20/50 und Unlimited speichern; eine Senkung darf keine bestehende Session löschen.
-6. Profile: Geburtstag über Day/ausgeschriebenen Month/Year setzen, reloaden, Schaltjahr prüfen und durch drei leere Felder wieder löschen.
-7. Audit Delete All nur wenn betrieblich gewollt: auf Stufe 1 und Stufe 2 jeweils Cancel prüfen; beim echten Lauf genau zwei Dialoge und danach genau einen neuen Clear-Nachweis erwarten.
-8. Kurze Regression: User Login, separater Admin Login, Sessions, GPS und Settings.
+1. Eine neue unreferenzierte Test-License erstellen, Delete einmal abbrechen und anschließend bestätigen; sofortiges Verschwinden sowie genau einen `license.delete`-Auditnachweis prüfen.
+2. Eine User- oder Manager-referenzierte License löschen wollen; verständlichen Konflikt prüfen und bestätigen, dass Package, User, Sessions und License unverändert bleiben. Danach `Revoked / blocked` als sichere Alternative prüfen.
+3. Sessions auf iPad/Chrome und einem zweiten realen Client öffnen: Username plus `#ID`, vollständige stabile Installation-ID und getrennte, plausible Device-/OS-/Browserwerte prüfen. Kein Relogin darf eine zusätzliche Installation erzeugen.
+4. Auf dem Host ein nicht öffentliches Backup-Verzeichnis mit minimalen Rechten vorbereiten. In Backup & Restore `Test path`, danach `Save` ausführen und Status neu laden.
+5. Manuelles verschlüsseltes Backup erstellen, herunterladen und kontrolliert wiederherstellen; danach den Automatic-Runner/Cron gegen denselben Pfad prüfen. Der Key darf nirgends in UI, API, Logs oder Repository erscheinen.
+6. Pfadwechsel nur nach betrieblichem Plan testen: bestehende Backups bleiben am alten Ort und werden nicht automatisch verschoben.
+7. Kurze Regression: User Login, separater Admin Login, Device Limits, Packages/Licenses, Audit, GPS und Settings.
