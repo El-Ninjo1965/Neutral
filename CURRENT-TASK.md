@@ -13,7 +13,7 @@ Source of truth: `CODEX.md` (2026-09-11 active follow-up).
 - [x] Preserve organization-sharing gating, birthday, navigation, commercial, session, audit, GPS, and backup behavior.
 - [x] Add focused automated coverage and run the full test/lint/package suite.
 - [x] Update required documentation with the verified result.
-- [ ] Commit, push `main`, await CodeQL/FTPS, run bounded read-only production smoke, and record the actual outcome in `CHATGPT.md`.
+- [x] Commit, push `main`, await CodeQL/FTPS, run bounded read-only production smoke, and record the actual outcome in `CHATGPT.md`.
 
 ## Safety
 
