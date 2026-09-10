@@ -85,6 +85,7 @@
         'Web-App/public/master-ui.js',
         'Web-App/public/admin/common.js',
         'Web-App/public/admin/users-view.js',
+        'Web-App/public/admin/commercial-view.js',
         'Web-App/public/admin/roles-view.js',
         'Web-App/public/admin/settings-view.js',
         'Web-App/public/admin/appearance-view.js',

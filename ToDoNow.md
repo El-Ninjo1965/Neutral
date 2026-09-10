@@ -45,3 +45,7 @@
 
 - Real iPad/Chrome retest for the four live regressions after the follow-up deployment.
 - Controlled operator acceptance for scoped license management and media moderation. Code/CI/smoke do not by themselves constitute `LIVE BESTANDEN`.
+
+## Current acceptance boundary
+
+Package/License/Device, Birthday and Audit Clear require operator device acceptance. Backup and fresh-host portability require host action. Do not mark Core 1.0 passed before both groups are complete.

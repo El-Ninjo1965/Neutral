@@ -1,44 +1,72 @@
 # NEUTRAL — CODEX → CHATGPT/LEA
 
-**Datum:** 2026-09-09
-**Auftrag:** P0 Produktionsauthentifizierung nach zwei real fehlgeschlagenen Fixversuchen
-**Status:** CODE-SEITIG KORRIGIERT · DEPLOYED · PRODUKTIONS-AUTH-SMOKE BESTANDEN · DEVICE RETEST REQUIRED
+**Datum:** 2026-09-10
+**Auftrag:** Admin Packages/Licenses/Devices, Profil-Datum, Audit-Clear und Core-1.0-Readiness
+**Status:** CODE-SEITIG UMGESETZT UND LOKAL VERIFIZIERT · DEPLOYMENT/CI NOCH AUSSTEHEND · DEVICE/HOST RETEST REQUIRED
 
-## Konkrete Root Cause
+## Übernommene Betreiberwahrheit
 
-Die sichere Produktionsklassifikation trennte zwei aufeinanderfolgende Fehler:
+Die in `CODEX.md` dokumentierten Livebefunde bleiben maßgeblich: User-Login `Tester`, Admin-Login `Developer`, parallele User-/Admin-Sessions, Session-Deduplizierung, GPS-Basis und bereits geprüfte Settings sind **LIVE BESTANDEN**. Diese Punkte wurden nicht zurückgestuft. Backup/Restore bleibt **HOST ACTION REQUIRED**. Für neue Packages-/Licenses-/Birthday-/Audit-Oberflächen gibt es noch keinen realen Betreiber-/Device-Retest und deshalb ausdrücklich kein `LIVE BESTANDEN`.
 
-1. `PdoLoginAttemptStore::ensureSchema()` führte vor jedem Throttle-Read Request-time-DDL aus. Dies war ein echter Blindspot und wurde test-first entfernt.
-2. Der anschließend deployte Auth-Smoke erreichte danach `AUTH_USER_LOOKUP_UNAVAILABLE`. Damit war konkret belegt, dass der verbleibende 503 im Userlookup entstand. `Phase4UserService::authenticate()` verwendete denselben Named Placeholder `:username` zweimal (Username und E-Mail). Produktion verwendet bewusst `PDO::ATTR_EMULATE_PREPARES=false`; native PDO-MySQL-Prepares erlauben die Wiederverwendung eines Named Parameters nicht und werfen `HY093 Invalid parameter number` vor jedem `fetch()`. Deshalb waren bestehende User und Admin gleichermaßen betroffen, während Node-/Mocktests grün blieben.
+## Implementierung
 
-Der Query verwendet jetzt zwei eindeutige Bindings (`:username_name`, `:username_email`) und behandelt nullable Legacy-/aktuelles E-Mail-Schema explizit. Ein PDO-Testadapter mit nativer MySQL-Placeholder-Regel deckt genau diesen bisherigen Blindspot ab.
+### Packages / Entitlements
 
-Der nächste Produktionssmoke erreichte danach wieder `AUTH_THROTTLE_UNAVAILABLE`: Userlookup war damit repariert, aber die produktive `login_attempts`-DML blieb nicht zuverlässig nutzbar. Der Limiter besitzt nun einen fail-safe Fallback auf eine serverprivate, per `flock` serialisierte JSON-Datei mit Modus 0600. Schlägt PDO fehl, bleiben Identifier-/IP-Limits aktiv; es gibt keinen Fail-open-Bypass.
+- Neue neutrale Adminfläche `Packages` mit Create, Edit, Status und sicherem Delete.
+- Frei wählbare Package-Namen und Beschreibungen.
+- Pro Modul die Zustände `available`, `locked` und `hidden`.
+- Package-Default für erlaubte Geräte einschließlich `unlimited`.
+- Löschen wird verweigert, sobald eine License das Package referenziert; die UI macht diese Regel sichtbar.
 
-## Fix
+### Licenses / Organizations
 
-- `PdoLoginAttemptStore` besitzt keine Request-time-Schemaerzeugung mehr. `login_attempts` gehört ausschließlich der checksummed Migration `2026_09_01_0002_login_throttle`; bei nicht nutzbarer Tabellen-DML übernimmt ein privater, gelockter Mode-0600-Dateistore denselben Limitervertrag.
-- Infrastrukturfehler werden ohne interne Exceptiontexte sicher klassifiziert: `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED` oder `AUTH_SESSION_PERSISTENCE_FAILED`, jeweils mit zufälliger 16-Hex-Correlation-ID. Keine SQL-, Credential-, Cookie-, Account- oder PII-Daten gelangen zum Client.
-- Nach erfolgreicher Identitäts- und Sessionpersistenz ist das Löschen alter Throttle-Zähler best effort; ein optionaler Cleanup kann gültigen Login nicht nachträglich in 503 verwandeln. Kritische Sessionpersistenz bleibt fail-closed.
-- `DEVICE_LIMIT_REACHED` bleibt ein eigener 409. Falsche Credentials bleiben 401. User/Admin verwenden weiter denselben ApiClient und Authservice, aber getrennte Session-/CSRF-Cookies.
-- Der Produktionssmoke sendet für beide kanonischen Loginrouten absichtlich ungültige, nicht existierende Dummy-Credentials und verlangt explizit 401 plus Invalid-Credentials-Envelope. 503 lässt das Deployment fehlschlagen. Keine Betreibercredentials werden verwendet.
+- Neue Adminfläche `Licenses` mit Create/Edit, Status, Package, Seats (`unlimited` möglich), Manager und Device-Limit-Modus.
+- Projektion zeigt Used Seats, zugeordnete User und die effektive Limit-Herkunft.
+- User Create/Edit bietet License-Zuweisung sowie Allowed-Devices als `default`, explizites Override oder `unlimited`.
+- Eine Limit-Senkung widerruft keine bestehenden Sessions. Der bestehende Device-/Session-Drill-down und explizite Widerruf bleiben die alleinigen Eingriffe.
+- Die Modulkatalog-Projektion berücksichtigt Package-Entitlements serverseitig; `hidden` wird nicht ausgeliefert, `locked` bleibt als nicht nutzbare Projektion erkennbar.
 
-## Verifikation vor Deployment
+### Geburtstag
 
-- Der neue DDL-Blindspot-Test war vor dem Fix rot und danach grün.
-- Fokussierte PHP-/Auth-/Session-/Shell-/Smoke-Suite bestand einschließlich gültigem Userlogin, gültigem Adminlogin, falschen Credentials, getrennten Scopes, CSRF und Session-Deduplizierung.
-- PHP-Lint, JavaScript-Syntax, `git diff --check` und Produktionspaket inklusive Authclient, Rewrite, Router und PHP-Services bestanden.
-- Keine Secrets oder Produktionsdaten wurden ausgegeben/committed; keine Produktionsmutation außer den ausdrücklich erlaubten ungültigen Auth-Probes, kein Testuser, kein Restore, kein manuelles SQL.
+- Die bestehende mobile native Datumsauswahl (`input[type=date]`) bleibt erhalten.
+- Der PHP-Service validiert jetzt echte ISO-Kalenderdaten mit Leap-Year-Prüfung, akzeptiert leeres Löschen und speichert ausschließlich `YYYY-MM-DD` ohne Zeitzonenumrechnung.
+- Privacy bleibt standardmäßig aus.
 
-## Betreiber-Retest nach Deployment
+### Audit Delete All
 
-Nur diese beiden Punkte zuerst:
+- Neue eigene Permission `audit.clear`, nur für die eingebaute Adminrolle migriert.
+- Die Aktion benötigt Adminsession, Permission, CSRF, eine erste Bestätigung und anschließend die exakte Eingabe `DELETE`.
+- Das Löschen läuft in einer DB-Transaktion. Danach wird innerhalb derselben Transaktion ein neuer minimaler Auditnachweis mit Anzahl und Actor geschrieben; bei Fehler erfolgt Rollback.
+- Retention/Purge bleibt unverändert und getrennt.
 
-1. **DEVICE RETEST REQUIRED:** bestehenden User `Tester` real einloggen.
-2. **DEVICE RETEST REQUIRED:** bestehenden Admin `Developer` real über `admin.php` einloggen.
+### Migration und Core-1.0-Readiness
 
-Erst nach Bestätigung beider Logins dürfen weitere Profile-/License-/Media-Retests oder Core-Freeze-Aussagen folgen.
+- Neue idempotente Migration `2026_09_10_0007_admin_packages_audit` ergänzt Package-Beschreibung, explizite License-/User-Device-Limit-Modi und `audit.clear`.
+- `CORE-1.0-READINESS.md` klassifiziert Installation, Client/Offline, Server/Admin, Module und Quality als belegt, Device-Retest, Host-Action oder fehlend.
+- Ergebnis bleibt bewusst **NICHT CORE 1.0 BESTANDEN**. Offene Host-/Device-Gates werden nicht durch grüne lokale Tests ersetzt.
 
-## Terminaler Deploymentnachweis
+## Testevidenz vor Commit
 
-Implementierung und Nachbesserungen wurden bis Commit `acd2663470b2c89f2865d7ff6ec7dbbe004e926a` nach `main` übertragen. Push-on-main/CodeQL `34357569088` und FTPS Deploy `34357568936` endeten terminal erfolgreich. Der FTPS-Lauf führte 477 Tests aus (477 bestanden, 0 fehlgeschlagen), baute und übertrug das Produktionspaket und bestätigte `deploymentRevision:true` sowie `migrationsReady:true`. Entscheidend: Die real deployten kanonischen User- und Admin-Endpunkte lieferten mit absichtlich ungültigen Dummy-Credentials jeweils HTTP 401 (`userAuthInvalid:401`, `adminAuthInvalid:401`) statt 503. Damit ist die Serverkette bis zum Invalid-Credentials-Vertrag produktiv belegt; echte Accounts bleiben Betreiber-Retest.
+- Fokussierte echte JS-/PHP-/SQLite-Integration: 48/48 grün. Darin Package-/License-Persistenz, Seats, Device-Modi, Zuweisungen, Geburtstag/Leap-Year, bestehende Session-/Permission-/GPS-/Backupverträge.
+- Admin-CMS/DOM-/Router-Verträge: grün.
+- PHP-Lint, JS-Syntax und `git diff --check`: grün.
+- Produktionspaket: erfolgreich, 112 Dateien, neue Adminassets und Migration/Service enthalten.
+- Vollsuite wurde ausgeführt. Alle fachlich geänderten und fokussierten Tests waren grün; ausschließlich zwei bestehende Node-`node:sqlite`-Storage-Tests scheiterten sowohl direkt als auch in den generierten Projekten an `ERR_SQLITE_ERROR: disk I/O error`. Ein minimales unabhängiges `node:sqlite`-Programm reproduziert denselben Containerfehler auf `/tmp` und `/workspace`. Das ist eine lokale **ENVIRONMENT LIMITATION**, kein fachlicher Test wurde dafür abgeschwächt. Die unveränderten Tests müssen in CI terminal grün sein, bevor Abschluss/Deployment als bestanden dokumentiert wird.
+
+## Noch erforderliche terminale Schritte
+
+1. Commit und Push nach `main`.
+2. CodeQL und FTPS inklusive vollständiger CI-Suite terminal abwarten.
+3. `HEAD == origin/main`, sauberer Working Tree, GitHub-Fassung dieses Berichts, Deploymentrevision und `migrationsReady:true` verifizieren.
+4. Sichere Read-only-Produktionssmokes durchführen; keine echten Credentials, kein Restore und keine destruktive Produktionsaktion.
+
+## Betreiber-Retestliste
+
+1. **DEVICE RETEST REQUIRED:** Admin → Packages: Package anlegen, umbenennen, Module auf available/locked/hidden setzen, Device-Default/unlimited speichern; referenziertes Package darf nicht löschbar sein.
+2. **DEVICE RETEST REQUIRED:** Admin → Licenses: License anlegen, Package/Seats/Manager/Status und Limit-Modus speichern; Used Seats/Userliste prüfen.
+3. **DEVICE RETEST REQUIRED:** Admin → Users: License und Allowed-Devices default/override/unlimited speichern; Used Devices und Session-Drill-down prüfen; Senkung darf keine Session automatisch löschen.
+4. **DEVICE RETEST REQUIRED (iPad/Safari + Chrome):** Geburtstag über native Datumsauswahl setzen, speichern, reloaden und wieder leeren; kein Tagversatz.
+5. **DEVICE RETEST REQUIRED:** Package-Entitlements mit einem echten User prüfen: available nutzbar, locked sichtbar aber nicht nutzbar, hidden nicht sichtbar.
+6. **DEVICE RETEST REQUIRED / DESTRUCTIVE:** Audit `Delete All` nur wenn betrieblich gewollt: beide Bestätigungen prüfen, danach genau einen neuen Nachweiseintrag mit Anzahl erwarten. Nicht im Rahmen automatischer Production-Smokes ausführen.
+7. **HOST ACTION REQUIRED:** Migrationen/`migrationsReady:true` bestätigen; Backup-Key/-Verzeichnis/Cron sowie isolierten Restore-/Move-Test außerhalb Produktion abschließen.
+8. **HOST + DEVICE GATE:** Erst nach leerem Host-Setup-/Installationslauf, Backup-Restore/Move und den neuen Device-Retests darf Core 1.0 als bestanden bewertet werden.

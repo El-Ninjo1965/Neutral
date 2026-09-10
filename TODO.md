@@ -47,3 +47,9 @@
 ## P0 external acceptance
 
 - **DEVICE RETEST REQUIRED:** after the auth deployment, first test only existing User `Tester`, then existing Admin `Developer`. Do not proceed to broader freeze acceptance until both are operator-confirmed.
+
+## External freeze acceptance after 2026-09-10
+
+- **DEVICE RETEST REQUIRED:** Packages, Licenses, User license/device override and drill-down, Birthday picker, Audit Delete All, plus short Auth/Session/GPS regression.
+- **HOST ACTION REQUIRED:** backup key/ACL/cron and isolated empty-host install/update/restore/move acceptance; never restore on production.
+- Re-evaluate Core 1.0 only after every external row in `CORE-1.0-READINESS.md` has evidence.

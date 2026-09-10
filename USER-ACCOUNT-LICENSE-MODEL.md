@@ -383,3 +383,7 @@ Später als Module/Featurephasen:
 - Marketplace
 - CatchTrack-Fachlogik
 - GPS Pro
+
+## Device-limit origin precision (2026-09-10)
+
+Effective device limits carry an explicit mode rather than overloading SQL `NULL`: package default, license numeric/unlimited, or user numeric/unlimited. Removing a user override restores license/package derivation. Lowering an effective limit never revokes established installations; it blocks additional activation until an authorized explicit revoke brings usage within the limit.

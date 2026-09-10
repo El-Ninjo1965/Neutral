@@ -126,3 +126,9 @@ Package/module states are `available`, `locked` or `hidden`. They are display pr
 ## Authentication availability contract (2026-09-09)
 
 `POST /api/v1/auth/login` and `POST /api/v1/admin/auth/login` share the authoritative authentication implementation but retain separate cookie/CSRF scopes. Invalid credentials return 401. Device exhaustion returns 409 with `DEVICE_LIMIT_REACHED`. Runtime infrastructure failures return 503 with a bounded safe code and random correlation ID. Production smoke exercises both canonical routes using intentionally invalid non-account credentials and requires 401.
+
+## Admin commercial configuration (2026-09-10)
+
+Admin-session routes `GET/POST /api/v1/admin/packages`, `PUT/DELETE /api/v1/admin/packages/{id}` and `GET/POST /api/v1/admin/licenses`, `PUT /api/v1/admin/licenses/{id}` manage neutral packages and organizations. Mutations require CSRF and global Admin write permission. Assigned packages cannot be deleted. Package module states are `available|locked|hidden`; seats are distinct from effective per-user device limits. Admin user create/update accepts `licenseId` and `allowedDevices` (`default`, positive override, or `unlimited`) and never auto-revokes existing sessions.
+
+`POST /api/v1/admin/audit/clear` requires the dedicated `audit.clear` permission, Admin session, CSRF and exact `DELETE` confirmation. It returns the deleted count and transactionally creates `audit.clear.completed` after removing all prior entries.

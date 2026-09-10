@@ -272,3 +272,7 @@ Core API bootstrap checks the deployed migration ledger and applies only pending
 ## Freeze follow-up boundaries (2026-09-09)
 
 GPS tiles, map center and marker share a single Web-Mercator world-pixel coordinate system. License administration is a scoped association/device capability rather than global account administration. User media is a neutral permission-gated storage/moderation capability, not a community or marketplace feature.
+
+## Admin package/license projection
+
+The Admin UI now exposes the existing Role ≠ Permission ≠ Package ≠ License ≠ Device model. Package module/limit configuration projects through license assignment into client entitlement state and server device enforcement. This is generic platform administration, not product pricing logic.

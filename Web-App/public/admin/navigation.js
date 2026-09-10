@@ -11,6 +11,8 @@ const groups = [
     { id: 'users', label: 'Users' },
     { id: 'roles', label: 'Roles & Permissions' },
     { id: 'permissions', label: 'Permission Catalog' },
+    { id: 'packages', label: 'Packages / Entitlements' },
+    { id: 'licenses', label: 'Licenses / Organizations' },
     { id: 'sessions', label: 'Sessions' }
   ] },
   { id: 'infrastructure', label: 'Infrastructure', items: [

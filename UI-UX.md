@@ -276,3 +276,7 @@ An embedded map is interactive content, never wrapped in a navigation link. Exte
 ## Settings, profile and navigation completion (2026-09-09)
 
 Settings uses a responsive internal button navigation for App Areas, Navigation, Privacy & Sharing and Profile. Exactly one subview is primary; the global navigation remains separate. Save reports status in place and never redirects to Start. Global Login/Settings states use `aria-current` only for the rendered view. Profile keeps username read-only, makes e-mail and personal fields optional, and exposes default-off organization-sharing switches. Password help is exactly “8–25 characters, no spaces; no other composition rules.” GPS consumes the selected locale consistently and the embedded OSM tile viewport handles zoom and pointer pan directly.
+
+## 2026-09-10 Admin management additions
+
+Packages/Entitlements and Licenses/Organizations use responsive cards/forms and existing buttons/tokens. UI always labels Seats as organization users and Devices as per-user installations. User edit exposes effective limit and origin. Birthday uses the native mobile `date` control. Audit Delete All is visually separate from retention and requires both confirmation dialog and typed `DELETE`.

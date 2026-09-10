@@ -189,6 +189,9 @@ function admin_user_payload(array $user): array
         'lastActivityAt' => $user['lastActivityAt'] ?? '',
         'usedDevices' => $user['usedDevices'] ?? 0,
         'allowedDevices' => $user['allowedDevices'] ?? 5,
+        'licenseId' => $user['licenseId'] ?? '',
+        'packageName' => $user['packageName'] ?? '',
+        'deviceLimitSource' => $user['deviceLimitSource'] ?? 'system_default',
     ];
 }
 
@@ -524,6 +527,14 @@ if ($route === 'license/users' && $method === 'GET') {
     JsonResponse::success(['users'=>$accountLicenseService->organizationUsers(identity_user_id($identity))]);
 }
 
+if ($route === 'admin/packages' && $method === 'GET') { require_admin_session_permission_or_fail($identity,$authManager,'admin.read',$headers,false);JsonResponse::success(['packages'=>$accountLicenseService->packages()]); }
+if ($route === 'admin/packages' && $method === 'POST') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$package=$accountLicenseService->savePackage(null,parse_json_body());$auditService->log('package.create','package',(string)$package['id'],actor_user_id($identity),[]);JsonResponse::success(['package'=>$package],201); }
+if (preg_match('#^admin/packages/(\d+)$#',$route,$matches)===1 && $method==='PUT') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$package=$accountLicenseService->savePackage((int)$matches[1],parse_json_body());$auditService->log('package.update','package',$matches[1],actor_user_id($identity),[]);JsonResponse::success(['package'=>$package]); }
+if (preg_match('#^admin/packages/(\d+)$#',$route,$matches)===1 && $method==='DELETE') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$accountLicenseService->deletePackage((int)$matches[1]);$auditService->log('package.delete','package',$matches[1],actor_user_id($identity),[]);JsonResponse::success(['deleted'=>true]); }
+if ($route === 'admin/licenses' && $method === 'GET') { require_admin_session_permission_or_fail($identity,$authManager,'admin.read',$headers,false);JsonResponse::success(['licenses'=>$accountLicenseService->licenses()]); }
+if ($route === 'admin/licenses' && $method === 'POST') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$license=$accountLicenseService->saveLicense(null,parse_json_body());$auditService->log('license.create','license',(string)$license['id'],actor_user_id($identity),[]);JsonResponse::success(['license'=>$license],201); }
+if (preg_match('#^admin/licenses/(\d+)$#',$route,$matches)===1 && $method==='PUT') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$license=$accountLicenseService->saveLicense((int)$matches[1],parse_json_body());$auditService->log('license.update','license',$matches[1],actor_user_id($identity),[]);JsonResponse::success(['license'=>$license]); }
+
 if ($route === 'license/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
     $payload=parse_json_body();
@@ -599,10 +610,10 @@ if ($route === 'modules' && $method === 'GET') {
             'permissions' => $roleService->permissionsForRoles(['viewer']),
         ];
     }
+    $clientModules=$databaseConfigured && $clientIdentity !== null ? $moduleRuntime->listForClient($clientIdentity) : [];
+    if($identity){$entitlements=$accountLicenseService->moduleEntitlementsForUser(identity_user_id($identity));if($entitlements!==[])$clientModules=array_values(array_filter(array_map(static function(array $module)use($entitlements):array{$state=(string)($entitlements[$module['id']]??'hidden');$module['entitlementState']=in_array($state,['available','locked','hidden'],true)?$state:'hidden';return $module;},$clientModules),static fn(array $module):bool=>$module['entitlementState']!=='hidden'));}
     JsonResponse::success([
-        'modules' => $databaseConfigured && $clientIdentity !== null
-            ? $moduleRuntime->listForClient($clientIdentity)
-            : [],
+        'modules' => $clientModules,
         'accessContext' => [
             'mode' => $identity ? 'authenticated' : 'anonymous',
         ],
@@ -663,6 +674,7 @@ if ($route === 'admin/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
     $payload = parse_json_body();
     $created = $userService->create($payload);
+    if(array_key_exists('licenseId',$payload))$accountLicenseService->assignUserToLicense((int)$created['id'],$payload['licenseId']===''?null:(int)$payload['licenseId'],$payload['allowedDevices']??'default');
     $auditService->log('user.create', 'user', (string) ($created['id'] ?? ''), actor_user_id($identity), [
         'username' => (string) ($created['username'] ?? ''),
         'status' => (string) ($created['status'] ?? ''),
@@ -684,6 +696,7 @@ if (preg_match('#^admin/users/([a-z0-9\-]+)$#', $route, $matches) === 1) {
         require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
         $payload = parse_json_body();
         $updated = $userService->update($userId, $payload);
+        if(array_key_exists('licenseId',$payload))$accountLicenseService->assignUserToLicense((int)$userId,$payload['licenseId']===''?null:(int)$payload['licenseId'],$payload['allowedDevices']??'default');
         $auditService->log('user.update', 'user', $userId, actor_user_id($identity), [
             'status' => (string) ($updated['status'] ?? ''),
             'roles' => $updated['roles'] ?? [],
@@ -797,17 +810,18 @@ if ($route === 'admin/audit' && $method === 'GET') {
     ];
     JsonResponse::success([
         'entries' => $auditService->list($filters),
-        'allowClearAll' => Security::allowsAuditClear($config->environment()),
+        'allowClearAll' => $authManager->hasPermission($identity, 'audit.clear'),
     ]);
 }
 
 if ($route === 'admin/audit/clear' && $method === 'POST') {
-    require_admin_session_permission_or_fail($identity, $authManager, 'admin.write', $headers);
-    if (!Security::allowsAuditClear($config->environment())) JsonResponse::error('Audit clear is not available in production.', 404);
+    require_admin_session_permission_or_fail($identity, $authManager, 'audit.clear', $headers);
+    $confirmation=(string)(parse_json_body()['confirmation']??'');
+    if($confirmation!=='DELETE')JsonResponse::error('Explicit DELETE confirmation is required.',422);
     $statement = $database->connect()->query('SELECT COUNT(*) FROM audit_log');
     $count = $statement ? (int) $statement->fetchColumn() : 0;
-    $auditService->log('audit.clear.requested', 'audit', null, actor_user_id($identity), ['entriesBeforeClear' => $count]);
-    $deleted = $database->connect()->exec('DELETE FROM audit_log');
+    $pdo=$database->connect();$pdo->beginTransaction();
+    try{$deleted=$pdo->exec('DELETE FROM audit_log');$auditService->log('audit.clear.completed','audit',null,actor_user_id($identity),['entriesDeleted'=>$deleted===false?0:$deleted,'actorUsername'=>(string)($identity['username']??'')]);$pdo->commit();}catch(Throwable $exception){if($pdo->inTransaction())$pdo->rollBack();throw $exception;}
     JsonResponse::success(['deleted' => $deleted === false ? 0 : $deleted]);
 }
 

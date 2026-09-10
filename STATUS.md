@@ -70,3 +70,7 @@ The six code-side gaps in the active handoff are implemented and locally verifie
 ## 2026-09-09 — Authentication P0 follow-up
 
 The repository now removes all known request-time auth DDL and safely classifies infrastructure failures. Code/test/CI evidence does not prove real credentials: both existing User `Tester` and Admin `Developer` remain **DEVICE RETEST REQUIRED** after deployment.
+
+## 2026-09-10 operator truth and current readiness
+
+User `Tester` login, Admin `Developer` login, parallel separate sessions without duplicates, and the tested GPS basis are **LIVE BESTANDEN**. App Areas, Navigation and Privacy & Sharing are live-positive. Package/License/Device Admin UX, Birthday and Audit Delete All are code-side implemented but **DEVICE RETEST REQUIRED**. Backup key/ACL/cron and isolated installation/restore/move acceptance remain **HOST ACTION REQUIRED**. Core 1.0 is not yet `BESTANDEN`; see `CORE-1.0-READINESS.md`.

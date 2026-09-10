@@ -479,3 +479,11 @@ The first classified smoke reached `AUTH_USER_LOOKUP_UNAVAILABLE`, proving throt
 ### Production throttle persistence fallback
 
 After the native-placeholder correction, production classification advanced back to `AUTH_THROTTLE_UNAVAILABLE`, proving that the credential lookup now completed and the remaining failure was throttle persistence DML. A private, locked, mode-0600 file store now preserves rate limiting if the dedicated DB table is unavailable; it is a fallback, not a bypass or telemetry sink.
+
+## 2026-09-10 — Admin package/license/device management and freeze readiness
+
+- Added neutral Admin Packages/Entitlements and Licenses/Organizations workspaces with configurable module states, device defaults/overrides/unlimited, seats, managers and safe package deletion.
+- User create/edit now supports license assignment and explicit device-limit origin without revoking existing installations when a limit is lowered.
+- Birthday remains a mobile native date input and now receives real server calendar/leap-year validation instead of format-only validation.
+- Added production Audit Delete All behind dedicated `audit.clear`, CSRF and two confirmations; deletion and its replacement audit record are transactional.
+- Recorded a requirement-by-requirement Core 1.0 readiness audit without prematurely declaring the release passed.

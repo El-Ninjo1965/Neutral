@@ -37,8 +37,7 @@ final class AccountLicenseService
         foreach (['displayName' => 190, 'publicNickname' => 120, 'phone' => 80, 'address' => 1000] as $field => $limit) {
             if (strlen(trim((string) ($payload[$field] ?? ''))) > $limit) throw new \RuntimeException($field . ' is too long.');
         }
-        $birthday = trim((string) ($payload['birthday'] ?? ''));
-        if ($birthday !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthday)) throw new \RuntimeException('Birthday is invalid.');
+        $birthday = self::normalizeBirthday($payload['birthday'] ?? '');
         $pdo = $this->database->connect();
         $duplicate = $pdo->prepare("SELECT id FROM users WHERE email IS NOT NULL AND email <> '' AND LOWER(email)=LOWER(:email) AND id<>:id LIMIT 1");
         $duplicate->execute([':email' => $email, ':id' => $userId]);
@@ -71,6 +70,9 @@ final class AccountLicenseService
         foreach (['email','displayName','publicNickname','phone','address','birthday'] as $field) $result[$field] = ($privacy[$field] ?? false) === true;
         return $result;
     }
+
+    public static function normalizeBirthday(mixed $value): string
+    { $birthday=trim((string)$value);if($birthday==='')return '';if(!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/',$birthday,$parts)||!checkdate((int)$parts[2],(int)$parts[3],(int)$parts[1]))throw new \RuntimeException('Birthday is invalid.');return $birthday; }
 
     /** @param array<string,mixed> $package @return array{state:string,requiredEntitlement:?string} */
     public static function moduleState(array $package, string $moduleId): array
@@ -187,6 +189,43 @@ final class AccountLicenseService
     private function recordMediaHistory(int $mediaId, ?int $actorId, ?string $from, string $to, ?string $reason, ?string $note): void
     { $s=$this->database->connect()->prepare('INSERT INTO media_moderation_history(media_id,actor_user_id,from_status,to_status,reason,note) VALUES(:media,:actor,:from,:to,:reason,:note)');$s->execute([':media'=>$mediaId,':actor'=>$actorId,':from'=>$from,':to'=>$to,':reason'=>trim((string)$reason)===''?null:trim((string)$reason),':note'=>trim((string)$note)===''?null:trim((string)$note)]); }
 
+    /** @return list<array<string,mixed>> */
+    public function packages(): array
+    {
+        $rows=$this->database->connect()->query("SELECT p.*,(SELECT COUNT(*) FROM licenses l WHERE l.package_id=p.id AND l.status='active') active_licenses FROM packages p ORDER BY p.name")->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map(fn(array $r):array=>$this->packagePayload($r),$rows);
+    }
+
+    /** @param array<string,mixed> $payload @return array<string,mixed> */
+    public function savePackage(?int $id,array $payload): array
+    {
+        $key=strtolower(trim((string)($payload['key']??'')));$name=trim((string)($payload['name']??''));$description=trim((string)($payload['description']??''));$status=(string)($payload['status']??'active');
+        if(!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',$key)||$name===''||strlen($name)>190||strlen($description)>500||!in_array($status,['active','inactive'],true))throw new \RuntimeException('Invalid package.');
+        $modules=[];foreach((array)($payload['modules']??[]) as $module=>$state){if(preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',(string)$module)&&in_array($state,['available','locked','hidden'],true))$modules[(string)$module]=$state;}
+        $limit=$this->nullableLimit($payload['allowedDevices']??null);$entitlements=json_encode(['modules'=>$modules],JSON_THROW_ON_ERROR);$limits=json_encode(['allowedDevices'=>$limit],JSON_THROW_ON_ERROR);$pdo=$this->database->connect();
+        if($id){$s=$pdo->prepare('UPDATE packages SET package_key=:key,name=:name,description=:description,entitlements_json=:entitlements,limits_json=:limits,status=:status WHERE id=:id');$params=[':id'=>$id];}else{$s=$pdo->prepare('INSERT INTO packages(package_key,name,description,entitlements_json,limits_json,status) VALUES(:key,:name,:description,:entitlements,:limits,:status)');$params=[];}
+        $s->execute($params+[':key'=>$key,':name'=>$name,':description'=>$description===''?null:$description,':entitlements'=>$entitlements,':limits'=>$limits,':status'=>$status]);$savedId=$id?:((int)$pdo->lastInsertId());return $this->packageById($savedId);
+    }
+
+    public function deletePackage(int $id): void
+    { $pdo=$this->database->connect();$q=$pdo->prepare('SELECT COUNT(*) FROM licenses WHERE package_id=:id');$q->execute([':id'=>$id]);if((int)$q->fetchColumn()>0)throw new \RuntimeException('Package is assigned to a license. Set it inactive instead.');$s=$pdo->prepare('DELETE FROM packages WHERE id=:id');$s->execute([':id'=>$id]);if($s->rowCount()<1)throw new \RuntimeException('Package not found.'); }
+
+    /** @return list<array<string,mixed>> */
+    public function licenses(): array
+    { $rows=$this->database->connect()->query("SELECT l.*,p.name package_name,p.limits_json,(SELECT COUNT(*) FROM license_users lu WHERE lu.license_id=l.id AND lu.membership_status='active') used_seats FROM licenses l JOIN packages p ON p.id=l.package_id ORDER BY l.organization_name")->fetchAll(\PDO::FETCH_ASSOC);return array_map(fn(array $r):array=>$this->licensePayload($r),$rows); }
+
+    /** @param array<string,mixed> $payload @return array<string,mixed> */
+    public function saveLicense(?int $id,array $payload): array
+    { $key=strtolower(trim((string)($payload['key']??'')));$organization=trim((string)($payload['organizationName']??''));$packageId=(int)($payload['packageId']??0);$status=(string)($payload['status']??'active');$seats=$this->nullableLimit($payload['seatLimit']??null);$rawDevices=$payload['allowedDevices']??null;$deviceMode=$rawDevices===null||$rawDevices===''?'package':($rawDevices==='unlimited'?'unlimited':'override');$devices=$deviceMode==='override'?$this->nullableLimit($rawDevices):null;if(!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',$key)||$organization===''||$packageId<1||!in_array($status,['active','blocked','inactive'],true))throw new \RuntimeException('Invalid license.');$pdo=$this->database->connect();if($id){$s=$pdo->prepare('UPDATE licenses SET license_key=:key,organization_name=:organization,package_id=:package,seat_limit=:seats,device_limit=:devices,device_limit_mode=:device_mode,status=:status WHERE id=:id');$params=[':id'=>$id];}else{$s=$pdo->prepare('INSERT INTO licenses(license_key,organization_name,package_id,seat_limit,device_limit,device_limit_mode,status) VALUES(:key,:organization,:package,:seats,:devices,:device_mode,:status)');$params=[];}$s->execute($params+[':key'=>$key,':organization'=>$organization,':package'=>$packageId,':seats'=>$seats,':devices'=>$devices,':device_mode'=>$deviceMode,':status'=>$status]);$licenseId=$id?:((int)$pdo->lastInsertId());if(isset($payload['managerUserId'])&&(int)$payload['managerUserId']>0)$pdo->prepare("INSERT INTO license_users(license_id,user_id,license_role,membership_status) VALUES(:license,:user,'manager','active') ON DUPLICATE KEY UPDATE license_role='manager',membership_status='active'")->execute([':license'=>$licenseId,':user'=>(int)$payload['managerUserId']]);foreach($this->licenses() as $license)if((int)$license['id']===$licenseId)return $license;throw new \RuntimeException('License could not be loaded.'); }
+
+    public function assignUserToLicense(int $userId,?int $licenseId,mixed $override): void
+    { $pdo=$this->database->connect();if($licenseId===null){$pdo->prepare("DELETE FROM license_users WHERE user_id=:user AND license_role<>'manager'")->execute([':user'=>$userId]);return;}$seat=$pdo->prepare("SELECT l.seat_limit,(SELECT COUNT(*) FROM license_users WHERE license_id=l.id AND membership_status='active') used FROM licenses l WHERE l.id=:id AND l.status='active'");$seat->execute([':id'=>$licenseId]);$row=$seat->fetch(\PDO::FETCH_ASSOC);if(!is_array($row))throw new \RuntimeException('Active license not found.');$exists=$pdo->prepare('SELECT COUNT(*) FROM license_users WHERE license_id=:license AND user_id=:user');$exists->execute([':license'=>$licenseId,':user'=>$userId]);if((int)$exists->fetchColumn()===0&&$row['seat_limit']!==null&&(int)$row['used']>=(int)$row['seat_limit'])throw new \RuntimeException('License seat limit reached.');$mode=$override==='unlimited'?'unlimited':($override==='default'?'default':'override');$limit=$mode==='override'?$this->nullableLimit($override):null;$pdo->prepare("INSERT INTO license_users(license_id,user_id,license_role,membership_status,device_limit,device_limit_mode) VALUES(:license,:user,'member','active',:limit,:mode) ON DUPLICATE KEY UPDATE membership_status='active',device_limit=VALUES(device_limit),device_limit_mode=VALUES(device_limit_mode)")->execute([':license'=>$licenseId,':user'=>$userId,':limit'=>$limit,':mode'=>$mode]); }
+
+    private function nullableLimit(mixed $value): ?int { if($value===null||$value===''||$value==='unlimited')return null;$limit=(int)$value;if($limit<1||$limit>1000)throw new \RuntimeException('Limit must be 1–1000 or unlimited.');return $limit; }
+    private function packageById(int $id):array{$s=$this->database->connect()->prepare('SELECT p.*,(SELECT COUNT(*) FROM licenses l WHERE l.package_id=p.id AND l.status=\'active\') active_licenses FROM packages p WHERE p.id=:id');$s->execute([':id'=>$id]);$r=$s->fetch(\PDO::FETCH_ASSOC);if(!is_array($r))throw new \RuntimeException('Package not found.');return $this->packagePayload($r);}
+    private function packagePayload(array $r):array{$e=json_decode((string)$r['entitlements_json'],true)?:[];$l=json_decode((string)$r['limits_json'],true)?:[];return ['id'=>(string)$r['id'],'key'=>(string)$r['package_key'],'name'=>(string)$r['name'],'description'=>(string)($r['description']??''),'status'=>(string)$r['status'],'modules'=>(array)($e['modules']??[]),'allowedDevices'=>$l['allowedDevices']??null,'activeLicenses'=>(int)($r['active_licenses']??0)];}
+    private function licensePayload(array $r):array{$limits=json_decode((string)($r['limits_json']??'{}'),true)?:[];$mode=(string)($r['device_limit_mode']??'package');$allowed=$mode==='unlimited'?null:($mode==='override'?(int)$r['device_limit']:($limits['allowedDevices']??null));return ['id'=>(string)$r['id'],'key'=>(string)$r['license_key'],'organizationName'=>(string)$r['organization_name'],'packageId'=>(string)$r['package_id'],'packageName'=>(string)($r['package_name']??''),'seatLimit'=>$r['seat_limit']===null?null:(int)$r['seat_limit'],'usedSeats'=>(int)($r['used_seats']??0),'allowedDevices'=>$allowed,'deviceLimitSource'=>$mode==='package'?'package':'license','status'=>(string)$r['status']];}
+
     /** @return array<string,int> */
     public function installationMetrics(): array
     {
@@ -199,6 +238,10 @@ final class AccountLicenseService
         if (preg_match('/^[a-f0-9]{32}$/', $installationId) !== 1) return;
         $this->database->connect()->prepare("INSERT INTO installation_presence(installation_id,user_id,audience) VALUES(:id,:user,:audience) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),audience=VALUES(audience),last_seen_at=CURRENT_TIMESTAMP")->execute([':id'=>$installationId,':user'=>$userId,':audience'=>$userId ? 'authenticated' : 'anonymous']);
     }
+
+    /** @return array<string,string> */
+    public function moduleEntitlementsForUser(int $userId): array
+    { $s=$this->database->connect()->prepare("SELECT p.entitlements_json FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=:user AND lu.membership_status='active' AND l.status='active' AND p.status='active' LIMIT 1");$s->execute([':user'=>$userId]);$raw=$s->fetchColumn();if($raw===false)return [];$data=json_decode((string)$raw,true);return is_array($data['modules']??null)?$data['modules']:[]; }
 
     /** @return array{mimeType:string,byteSize:int} */
     public static function validateProfileImage(string $bytes): array

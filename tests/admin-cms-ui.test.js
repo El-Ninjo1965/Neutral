@@ -54,7 +54,7 @@ test('admin navigation groups every supported management destination exactly onc
   const ids = AdminNavigation.flatten().map((item) => item.id);
   assert.deepEqual(ids, [
     'dashboard', 'modules', 'settings', 'theme', 'users', 'roles', 'permissions',
-    'sessions', 'connections', 'server', 'database', 'backups', 'updates',
+    'packages', 'licenses', 'sessions', 'connections', 'server', 'database', 'backups', 'updates',
     'diagnostics', 'audit'
   ]);
   assert.equal(new Set(ids).size, ids.length);

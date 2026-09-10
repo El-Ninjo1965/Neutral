@@ -12,13 +12,14 @@ class AdminUsersView {
     this.api = apiClient;
     this.users = [];
     this.roles = [];
+    this.licenses = [];
     this.editingUserId = null;
     this.filters = { q: '', status: '', role: '' };
   }
 
   async init(container) {
     this.container = container;
-    await this.loadRoles();
+    await Promise.all([this.loadRoles(), this.loadLicenses()]);
     await this.loadUsers();
     this.render();
   }
@@ -27,6 +28,8 @@ class AdminUsersView {
     const result = await this.api.getRoles();
     this.roles = result.ok ? AdminCommon.unwrapData(result, 'roles', []) : [];
   }
+
+  async loadLicenses() { const result=await this.api.get('/api/admin/licenses');this.licenses=result.ok?AdminCommon.unwrapData(result,'licenses',[]):[]; }
 
   async loadUsers() {
     const result = await this.api.searchUsers(this.filters);
@@ -117,6 +120,7 @@ class AdminUsersView {
             <th>Created</th>
             <th>Last Activity</th>
             <th>Devices</th>
+            <th>License / Package</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -131,6 +135,7 @@ class AdminUsersView {
               <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
               <td>${user.lastActivityAt ? new Date(user.lastActivityAt.replace(' ', 'T') + 'Z').toLocaleString() : 'Inactive'}</td>
               <td><button type="button" class="btn btn-sm btn-secondary" onclick="adminRouter.showView('sessions')">${Number(user.usedDevices || 0)} / ${user.allowedDevices == null ? 'Unlimited' : Number(user.allowedDevices)}</button></td>
+              <td>${escapeHtmlUsers(user.packageName||'Unassigned')}<br><small>${escapeHtmlUsers(user.deviceLimitSource||'system_default')}</small></td>
               <td class="action-buttons">
                 <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button>
                 <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button>
@@ -189,6 +194,11 @@ class AdminUsersView {
         <input type="text" id="displayName" name="displayName" value="${escapeHtmlUsers(user?.displayName || '')}">
       </div>
       <div class="form-group">
+        <label for="licenseId">License / Organization</label>
+        <select id="licenseId" name="licenseId"><option value="">Unassigned</option>${this.licenses.map(l=>`<option value="${escapeHtmlUsers(l.id)}" ${String(user?.licenseId||'')===String(l.id)?'selected':''}>${escapeHtmlUsers(l.organizationName)} — ${escapeHtmlUsers(l.packageName)}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label for="allowedDevices">Allowed Devices</label><select id="allowedDevices" name="allowedDevices"><option value="default">Package / License default</option><option value="unlimited" ${user?.allowedDevices==null?'selected':''}>Unlimited override</option>${[1,2,3,5,10].map(n=>`<option value="${n}" ${user?.deviceLimitSource==='user_override'&&Number(user.allowedDevices)===n?'selected':''}>Override: ${n}</option>`).join('')}</select><small>Lowering the limit does not revoke existing sessions; additional devices are blocked until explicitly revoked.</small></div>
+      <div class="form-group">
         <label for="status">Status</label>
         <select id="status" name="status" required>
           ${['active', 'blocked'].map((status) => `
@@ -221,6 +231,7 @@ class AdminUsersView {
         displayName: formData.get('displayName') || '',
         status: formData.get('status') || 'active',
         roles
+        ,licenseId: formData.get('licenseId') || '', allowedDevices: formData.get('allowedDevices') || 'default'
       };
 
       if (!this.editingUserId) {

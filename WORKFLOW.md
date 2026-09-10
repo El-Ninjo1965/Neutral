@@ -171,3 +171,7 @@ Codex traced the live generic auth error to schema migration locking inside both
 ## 2026-09-09 — Persistent P0 auth diagnosis (Codex)
 
 After the second real-device 503, Codex traced the request before credential lookup and found a second request-time DDL path in `PdoLoginAttemptStore::ensureSchema()`. A test with a PDO adapter that rejects DDL reproduced the exact blind spot before the implementation was changed. Production acceptance now requires invalid-credential 401 probes for both user and admin routes in every FTPS smoke.
+
+## 2026-09-10 — Package/license/device and freeze-readiness work (Codex)
+
+Codex implemented the documented generic administration model, strict birthday validation and permission-separated production Audit Delete All test-first, then classified every Core 1.0 release family in `CORE-1.0-READINESS.md`. No CatchTrack/product feature or speculative Core hook was added.

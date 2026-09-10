@@ -150,3 +150,9 @@ Login never runs DDL or acquires a schema advisory lock inside the credential tr
 Request handlers never execute auth schema DDL. `login_attempts` is provisioned only by the checksummed schema migration; runtime uses SELECT/INSERT/DELETE DML. Safe 503 details distinguish `AUTH_THROTTLE_UNAVAILABLE`, `AUTH_USER_LOOKUP_UNAVAILABLE`, `AUTH_PERMISSION_RESOLUTION_FAILED`, and `AUTH_SESSION_PERSISTENCE_FAILED`, accompanied only by a random correlation ID. They never expose exception messages, SQL, account identifiers, credentials or cookies. Invalid credentials remain 401 and device exhaustion remains 409 `DEVICE_LIMIT_REACHED`.
 
 If `login_attempts` DML is unavailable, authentication rate limiting fails over to `Server/runtime/login-attempts.json`. The store contains only SHA-256 scope keys and bounded counters/timestamps, uses an exclusive filesystem lock and mode `0600`, and never stores usernames, IP plaintext, credentials, cookies or session data.
+
+## Package administration and Audit Delete All
+
+Roles remain security authority; packages only narrow/enable functional entitlements and quantitative limits. Global package/license mutation requires Admin session, permission and CSRF. Seat and device checks are server authoritative. Existing devices are not silently revoked after limit reduction.
+
+Production Audit Delete All is intentionally enabled only through `audit.clear`, not `audit.read` or a zero-day retention trick. UI confirmation plus typed `DELETE` is repeated server-side. A transaction deletes prior records and writes `audit.clear.completed`; if that record cannot be written, deletion rolls back. The record contains bounded count, actor identity already allowed by the audit contract and time, never request bodies or secrets.

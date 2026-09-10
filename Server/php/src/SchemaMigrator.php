@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_09_0006';
+    public const SCHEMA_VERSION = '2026_09_10_0007';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -257,6 +257,13 @@ final class SchemaMigrator
             "ALTER TABLE license_users ADD COLUMN membership_status VARCHAR(32) NOT NULL DEFAULT 'active' AFTER license_role",
             "CREATE INDEX ix_license_users_status ON license_users (license_id, membership_status)",
         ];
+        $adminPackageStatements = [
+            "ALTER TABLE packages ADD COLUMN description VARCHAR(500) NULL AFTER name",
+            "ALTER TABLE licenses ADD COLUMN device_limit_mode VARCHAR(32) NOT NULL DEFAULT 'package' AFTER device_limit",
+            "ALTER TABLE license_users ADD COLUMN device_limit_mode VARCHAR(32) NOT NULL DEFAULT 'default' AFTER device_limit",
+            "INSERT INTO permissions (permission_key,description,scope) VALUES ('audit.clear','Permanently clear prior audit entries while preserving a new clear record','audit') ON DUPLICATE KEY UPDATE description=VALUES(description),scope=VALUES(scope)",
+            "INSERT IGNORE INTO role_permissions(role_id,permission_id) SELECT r.id,p.id FROM roles r JOIN permissions p ON p.permission_key='audit.clear' WHERE r.role_key='admin'",
+        ];
 
         return [
             [
@@ -288,6 +295,11 @@ final class SchemaMigrator
                 'key' => '2026_09_09_0006_license_media_workflow',
                 'checksum' => sha1(implode("\n", $licenseMediaWorkflowStatements)),
                 'statements' => $licenseMediaWorkflowStatements,
+            ],
+            [
+                'key' => '2026_09_10_0007_admin_packages_audit',
+                'checksum' => sha1(implode("\n", $adminPackageStatements)),
+                'statements' => $adminPackageStatements,
             ],
         ];
     }
@@ -393,6 +405,10 @@ final class SchemaMigrator
             if ($isMembershipColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
             $isMembershipIndex = preg_match('/^CREATE\s+INDEX\s+ix_license_users_status\b/i', trim($statement)) === 1;
             if ($isMembershipIndex && $driverCode === 1061) return;
+            $isPackageDescription = preg_match('/^ALTER\s+TABLE\s+packages\s+ADD\s+COLUMN\s+description\b/i', trim($statement)) === 1;
+            if ($isPackageDescription && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
+            $isDeviceLimitMode = preg_match('/^ALTER\s+TABLE\s+(licenses|license_users)\s+ADD\s+COLUMN\s+device_limit_mode\b/i', trim($statement)) === 1;
+            if ($isDeviceLimitMode && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
             throw $exception;
         }
     }

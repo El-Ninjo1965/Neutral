@@ -766,6 +766,8 @@ class AdminRouter {
       roles: new AdminRolesView(apiClient),
       permissions: new AdminPermissionsView(apiClient),
       sessions: new AdminSessionsView(apiClient),
+      packages: new AdminPackagesView(apiClient),
+      licenses: new AdminLicensesView(apiClient),
       settings: new AdminSettingsView(apiClient),
       theme: new AdminAppearanceView(apiClient),
       audit: new AdminAuditView(apiClient),

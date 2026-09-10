@@ -348,6 +348,7 @@ function updateOperationalDefaults(stagingRoot, sourceAppId, sourceAppName, appI
     'Web-App/public/admin/index.js',
     'Web-App/public/admin/settings-view.js',
     'Web-App/public/admin/appearance-view.js',
+    'Web-App/public/admin/commercial-view.js',
     'Web-App/public/master-ui.js',
     'Web-App/public/user-app.js'
   ];

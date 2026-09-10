@@ -1,18 +1,18 @@
-# CURRENT TASK — P0 Produktionsauthentifizierung
+# CURRENT TASK — Admin Packages/Licenses/Devices, Profile UX, Audit und Freeze-Readiness
 
-**Quelle:** `CODEX.md`, 2026-09-09
-**Status:** CODE-SEITIG ABGESCHLOSSEN · DEPLOYED · DEVICE RETEST REQUIRED
-**Scope:** Ausschließlich User-/Admin-Login; keine GPS-, License-, Media-, Appearance-, i18n- oder Core-Freeze-Featurearbeit.
+**Quelle:** `CODEX.md`, 2026-09-10
+**Status:** IN ARBEIT
 
-1. [x] Mit `origin/main` synchronisieren und Pflichtdokumente sowie Auth-/Bootstrap-/Router-/Client-/Rewrite-/Deploymentpfade vollständig lesen.
-2. [x] Auftrag vollständig erfasst und geprüft: **`CODEX.md == CURRENT-TASK-Anforderungen` bestanden.**
-3. [x] Beide Erzeugungspfade des generischen 503 sowie gemeinsame/separate User-/Admin-Flows rückwärts verfolgen.
-4. [x] Konkrete verborgene Produktionsursache identifizieren: zweistufig klassifiziert: Request-time-DDL im Throttle-Store entfernt; danach produktiv `AUTH_USER_LOOKUP_UNAVAILABLE` belegt und native PDO-MySQL-Exception `HY093` durch doppelt verwendeten `:username`-Placeholder identifiziert; nachfolgende `AUTH_THROTTLE_UNAVAILABLE`-Evidenz durch privaten, gelockten Rate-Limit-Fallback ohne Fail-open geschlossen.
-5. [x] Test-first sicherstellen, dass Login-Throttle-Reads kein DDL ausführen; Schema ausschließlich über checksummed Migrationen bereitstellen.
-6. [x] Authfehler sicher nach Throttle, Userlookup, Permissionauflösung und kritischer Sessionpersistenz klassifizieren; nur Code + zufällige Correlation-ID, keine Secrets/SQL/PII.
-7. [x] Erfolgreiche Authentifizierung von nichtkritischem Throttle-Cleanup entkoppeln; Device-Limit bleibt spezifischer 409.
-8. [x] Echte User-/Admin-Routerintegration, falsche Credentials 401, aktuelle/Legacy-Hashes, getrennte Scopes, CSRF, Sessionpersistenz und Deduplizierung vollständig prüfen.
-9. [x] Produktionspaket, PHP-Lint, JS-Syntax, vollständige Regression, `git diff --check` und Secret-/Artefaktcheck ausführen.
-10. [x] Commit/push `main`, CodeQL/FTPS terminal abwarten, Revision/Readiness und produktiven Dummy-Auth-Smoke User+Admin mit 401 verifizieren.
-11. [x] `CHATGPT.md` mit Root Cause, Exception/Klasse, Fix, CI-/Smoke-Evidenz und ausschließlich zwei Betreiber-Retestpunkten aktualisieren; GitHub-main-Version verifizieren.
-12. [x] `HEAD == origin/main`, sauberer Working Tree; reale Logins bleiben bis Betreiberbestätigung `DEVICE RETEST REQUIRED`.
+1. [x] `origin/main` synchronisiert; Pflicht-, Architektur-, Status-, UI/I18N-, Install-/Deployment- und betroffene Implementierungs-/Testdateien vollständig gelesen; **`CODEX.md == CURRENT-TASK-Anforderungen` geprüft.**
+2. [x] Betreiberwahrheit übernehmen: User `Tester`, Admin `Developer`, parallele Scopes, deduplizierte Sessions, GPS-Basis und geprüfte Settings sind `LIVE BESTANDEN`; Backup bleibt `HOST ACTION REQUIRED`.
+3. [x] Test-first neutrale Adminfläche Packages/Entitlements: CRUD/status, frei benannt/beschrieben, Module available/locked/hidden, Device-Default/unlimited, sichere Löschregel.
+4. [x] Test-first Licenses/Organizations: CRUD/status, Package, Seats/unlimited, Manager, Used Seats, Users und Limit-Herkunft.
+5. [x] User Create/Edit um License und Allowed-Devices-Default/Override/unlimited samt Used-Devices/Drill-down ergänzen; Senkung löscht keine Sessions.
+6. [x] End-to-end Package-/License-/Device-Verträge inklusive Limits, Wechsel, Zustände, Seats, Scope und Auth-/Deduplizierungsregression prüfen.
+7. [x] Birthday als mobile Datumsauswahl; serverseitig echtes Kalenderdatum/Leap-Year prüfen, optional löschbar, ISO ohne Zeitzonenverschiebung, Privacy default-off.
+8. [x] Audit `Delete All` mit eigener Permission, doppelter Bestätigung, CSRF, Anzahl und neuem Nachweis-Eintrag implementieren; Retention erhalten.
+9. [x] CORE-1.0-Anforderungen ausführbar als vorhanden/belegt, Device-Retest, Host-Action oder fehlt auditieren; nur kleine zwingende Corelücken schließen.
+10. [x] Relevante Vertrags-, Status-, Todo-, Changelog-, Workflow- und Übergabedokumente wahrheitsgemäß aktualisieren.
+11. [x] Vollständige Regression, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung.
+12. [ ] Commit/push main; CodeQL/FTPS terminal; Revision, `migrationsReady:true`, sichere Smokes, HEAD/Origin, sauberer Tree und GitHub-CHATGPT verifizieren.
+13. [x] Vollständigen `CHATGPT.md`-Bericht samt Restlücken und Betreiber-Retestliste liefern; kein voreiliges Core-1.0-BESTANDEN.

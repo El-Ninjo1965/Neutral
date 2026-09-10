@@ -169,3 +169,11 @@ default home instead of leaving an empty view.
 - Deterministic Web-Mercator projection, responsive tile placement and safe external OSM navigation.
 - Scoped organization members (create/list/block/remove), usage/activity, devices and revoke.
 - Private validated image submission, owner status, controlled delivery and audited moderation lifecycle.
+
+## Administrative commercial and governance functions
+
+- Package list/create/edit/status/delete-if-unassigned with module states and device default.
+- License/organization list/create/edit with package, seats, manager, status and device-limit origin.
+- User license assignment and default/numeric/unlimited device override without implicit revocation.
+- Native birthday selection plus strict ISO calendar validation.
+- Dedicated, confirmed, transactional and self-auditing Audit Delete All.

@@ -131,3 +131,7 @@ Adds nullable/optional user e-mail plus `user_profiles`, `packages`, `licenses`,
 ## Login-attempt ownership
 
 The `login_attempts` table is migration-managed. `PdoLoginAttemptStore` performs no `CREATE`/`ALTER` at request time, allowing production application credentials to follow least privilege (runtime DML without schema DDL).
+
+## Migration 2026_09_10_0007
+
+Packages gain an optional description. Licenses and license-user assignments gain explicit device-limit modes so `package default`, numeric override and `unlimited` are unambiguous. Permission `audit.clear` is independently assignable and initially granted to the built-in Admin role. Package/license/user assignments remain normalized; reducing a limit never deletes sessions.
