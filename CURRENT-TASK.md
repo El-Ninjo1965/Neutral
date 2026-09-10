@@ -9,6 +9,6 @@ Source: `CODEX.md`, active architecture follow-up dated 2026-09-11.
 - [x] Specify Profile, Media, Sharing, Moderation, Notifications and Postbox ownership/fallback boundaries.
 - [x] Specify the Field Notes no-Core-change freeze proof.
 - [x] Run complete regression, lint, package and visual checks.
-- [ ] Commit/push main, await CodeQL/FTPS/read-only smoke, and record actual deployment evidence.
+- [x] Commit/push main, await CodeQL/FTPS/read-only smoke, and record actual deployment evidence.
 
 Profile API/schema/UI extraction remains an explicit compatibility-bridge task. No Final Freeze is declared. No destructive production action or production restore.
