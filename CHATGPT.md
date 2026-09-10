@@ -21,3 +21,8 @@
 ## Wahrheitsgrenze und Betreiber-Retest
 
 Kein neuer Live-/Freeze-Claim. Zu prüfen: Einzeluser ohne Organization-Option; zugeordneter User mit Option; Entfernung der Zuordnung; Settings-/Modul-/Untertab-Active-State nach Klick, Reload und Deep-Link; Logout auf Profile; Birthday-Persistenz erneut real. Keine destruktive Produktionsaktion wurde ausgeführt.
+
+
+## Deployment
+
+Implementierungscommit `410a5474b0703edffadc065c450aca79a99923b0` ist nach `origin/main` übertragen. CodeQL Run `34472190168` und FTPS Deploy Run `34472190459` sind terminal erfolgreich; der ausschließlich lesende Produktionssmoke bestätigte Deploymentrevision und `migrationsReady:true`.
