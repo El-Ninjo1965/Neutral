@@ -7,6 +7,8 @@
 3. `Unlimited` bedeutet semantisch unbegrenzt und darf in API oder UI niemals zu `0` werden. Der Livefehler `2 of 0 sessions` ist offen.
 4. Profile bleibt optional. Avatarziel: quadratischer Crop, optimiert ≤256×256, runde Anzeige, Replace/Delete, dynamischer Gender-Default, kein dauerhaftes Original.
 5. User-Login-Eye ist trotz code-seitigem Shared Helper auf dem Betreiber-iPad weiterhin nicht sichtbar und bleibt offen.
+6. `Apps & Modules` wird administrativ in **Apps**, **User Modules** und **System Modules** gegliedert. Diese Gliederung ist reine Klassifikation/Präsentation; alle Module verwenden weiterhin denselben Runtime-/Lifecycle-Vertrag.
+7. Modulklassifikation und Sichtbarkeit sind strikt getrennt. Ein Systemmodul kann sichtbare User-Funktionen besitzen, ein User-Modul kann unsichtbar geschaltet werden. Permissions bleiben wiederum eine dritte, getrennte Ebene.
 
 ---
 
