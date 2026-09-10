@@ -288,3 +288,6 @@ Organization-sharing capability is projected by the account service from authori
 
 `Web-App/public/ui-feedback.js` is loaded by both public shells and owns success-dialog lifecycle, focus restoration, and password-visibility enhancement. Admin success notifications delegate to this contract; route errors continue through the existing alert/state channel.
 Direct User Package state is stored on `users`; active License membership takes precedence at projection and entitlement/device-limit resolution time. This preserves a deterministic direct fallback without allowing two effective Packages.
+## Optional system modules
+
+Module lifecycle and presentation are orthogonal. `presentation.userNavigation=false` supports active invisible capability modules; `optionalDependencies` advertises enhancements without installer/lifecycle coupling. Concrete system-feature boundaries and the Profile compatibility bridge are defined in `SYSTEM-MODULES.md`.

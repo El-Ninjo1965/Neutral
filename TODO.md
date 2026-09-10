@@ -75,3 +75,6 @@
 - [ ] Device acceptance: verify password toggles and User Management spacing on iPad, phone and desktop.
 - [ ] Operator retest: real eye icon on User/Admin Login and dynamic password fields.
 - [ ] Operator retest: direct Package user, License Package precedence, License removal fallback, and device limits.
+- [ ] Extract the deployed Profile compatibility bridge into the optional `profile` system module without data loss.
+- [ ] Define/implement minimal protected media primitives, then optional `media`, `sharing`, `moderation`, `notifications`, and `postbox` modules independently.
+- [ ] Implement Field Notes without modifying existing Core files; treat any required Core edit as a freeze blocker.

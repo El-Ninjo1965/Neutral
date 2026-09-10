@@ -204,6 +204,14 @@
                 capabilities: Array.isArray(manifest.capabilities)
                     ? manifest.capabilities.filter(Boolean).map(String)
                     : [],
+                optionalDependencies: Array.isArray(manifest.optionalDependencies)
+                    ? manifest.optionalDependencies.filter(Boolean).map(String)
+                    : [],
+                presentation: {
+                    userNavigation: manifest.presentation?.userNavigation !== false,
+                    adminNavigation: manifest.presentation?.adminNavigation !== false,
+                    system: manifest.presentation?.system === true
+                },
                 source: typeof manifest.source === 'string' ? manifest.source : null,
                 entry: typeof manifest.entry === 'string' ? manifest.entry : null,
                 main: typeof manifest.main === 'string' ? manifest.main : null,
@@ -253,6 +261,8 @@
                 permissions: [...manifest.permissions],
                 permissionDefinitions: [...manifest.permissionDefinitions],
                 capabilities: [...manifest.capabilities],
+                optionalDependencies: [...manifest.optionalDependencies],
+                presentation: { ...manifest.presentation },
                 access: manifest.access,
                 clientAccess: manifest.clientAccess,
                 standalone: manifest.standalone,

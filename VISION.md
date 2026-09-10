@@ -243,3 +243,6 @@ Marketplace, Ranglisten, Vereinsfunktionen oder andere Fachmodule verwenden dies
 ## 18. Zukunftsmodule bleiben Module
 
 Ein Marketplace, CatchTrack-spezifische Fangbilder, Ranglisten, GPS Pro und Vereinsfachfunktionen sind **keine Core-Fachlogik**. Sie werden später als Module entwickelt und nutzen lediglich die generischen Coreverträge für Identität, Entitlements, Geräte, Privacy, Messaging, Medien und Moderation.
+## Minimal Core rule
+
+Core provides reusable technical mechanisms only. Profile, Media, Sharing, Moderation, Notifications, Postbox and Community are optional modules; an app and unrelated modules must run without them. Active modules may be system-only and absent from User navigation. Hard module dependencies are exceptional; optional enhancements use capability detection.

@@ -274,6 +274,10 @@
                     capabilities: Array.isArray(implementation.capabilities)
                         ? [...implementation.capabilities]
                         : [...manifest.capabilities],
+                    optionalDependencies: Array.isArray(implementation.optionalDependencies)
+                        ? [...implementation.optionalDependencies]
+                        : [...manifest.optionalDependencies],
+                    presentation: implementation.presentation || manifest.presentation,
                     access: implementation.access || manifest.access || null,
                     clientAccess: manifest.clientAccess || implementation.clientAccess || null,
                     standalone: implementation.standalone || manifest.standalone || null,

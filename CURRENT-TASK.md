@@ -1,13 +1,14 @@
-# Current Task — Password Eyes + Direct User Packages
+# Current Task — Minimal Core and Optional System Modules
 
-Source of truth: `CODEX.md` (2026-09-11 active follow-up).
+Source: `CODEX.md`, active architecture follow-up dated 2026-09-11.
 
-- [x] Synchronize with `origin/main` and read the required contracts.
-- [x] Replace the ambiguous password indicator with shared open/crossed eye SVGs and explicitly enhance User Login.
-- [x] Add direct Package assignment for individual users with License Package precedence and a retained direct fallback.
-- [x] Keep device-limit inheritance, entitlements, audit, and package deletion referentially consistent.
-- [x] Update Create/Edit User and list source labels without regressing Success Modal or navigation behavior.
-- [x] Run full lint, tests, production package, and visual review.
-- [x] Update final deployment evidence, commit/push main, await CodeQL/FTPS, and run read-only smoke.
+- [x] Synchronize and audit Core/module/profile/media/sharing boundaries.
+- [x] Fix User Login eye delivery through the shared helper and offline shell cache.
+- [x] Add normalized invisible/system-module presentation metadata.
+- [x] Add optional dependency metadata without lifecycle enforcement or coupling.
+- [x] Specify Profile, Media, Sharing, Moderation, Notifications and Postbox ownership/fallback boundaries.
+- [x] Specify the Field Notes no-Core-change freeze proof.
+- [x] Run complete regression, lint, package and visual checks.
+- [ ] Commit/push main, await CodeQL/FTPS/read-only smoke, and record actual deployment evidence.
 
-No destructive production action or production restore.
+Profile API/schema/UI extraction remains an explicit compatibility-bridge task. No Final Freeze is declared. No destructive production action or production restore.

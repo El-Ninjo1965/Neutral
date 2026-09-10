@@ -59,3 +59,4 @@ Current: deploy and device/host-accept Backup V2 plus Settings/Profile fixes. Ba
 Current acceptance: Organization Sharing capability and route-based navigation Active-State are code-complete; perform the concise iPad/device retest in `CHATGPT.md`. Do not promote to LIVE before that evidence.
 - Complete operator acceptance for Admin User/Admin creation and the shared success/password interaction after deployment.
 - Retest password eyes and direct/License Package source semantics on the deployed iPad workflow.
+- Next architecture gate: non-destructive Profile bridge extraction, followed by the no-Core-change Field Notes proof.

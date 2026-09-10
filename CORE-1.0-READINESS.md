@@ -38,3 +38,6 @@ Global success-dialog and password-toggle contracts, controlled atomic Admin use
 ### Password/direct-Package follow-up
 
 Code and isolated tests now cover real eye icons in both login shells and deterministic direct-versus-License Package precedence. Real iPad/operator retest remains required; no Final Freeze is claimed.
+### Optional-system-module architecture
+
+Manifest/runtime support for system-only modules, hidden User navigation and non-enforced optional dependencies is implemented and tested. The User Login eye helper is now in the versioned offline shell. Core freeze remains blocked on extracting the documented Profile compatibility bridge and proving Field Notes without Core edits.

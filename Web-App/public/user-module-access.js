@@ -38,6 +38,10 @@
     return module.entitlementState === 'locked' ? 'locked' : 'available';
   };
 
+  const isNavigable = (module, currentUser) => isVisible(module, currentUser)
+    && module.presentation?.userNavigation !== false
+    && module.manifest?.presentation?.userNavigation !== false;
+
   const visibleModules = (modules, options = {}) => {
     const list = Array.isArray(modules) ? modules : [];
     const currentUser = options.currentUser || null;
@@ -45,14 +49,14 @@
       ? new Set(options.visibleModuleIds.map(String))
       : null;
 
-    return list.filter((module) => isVisible(module, currentUser))
+    return list.filter((module) => isNavigable(module, currentUser))
       .filter((module) => !selected || selected.has(String(module.id)));
   };
 
   const findVisibleModule = (modules, moduleId, options = {}) => visibleModules(modules, options)
     .find((module) => String(module.id) === String(moduleId)) || null;
 
-  const api = Object.freeze({ isActive, isVisible, accessState, visibleModules, findVisibleModule });
+  const api = Object.freeze({ isActive, isVisible, isNavigable, accessState, visibleModules, findVisibleModule });
 
   if (typeof window !== 'undefined') {
     window.NeutralUserModuleAccess = api;

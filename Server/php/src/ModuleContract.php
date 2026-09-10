@@ -47,6 +47,7 @@ final class ModuleContract
         $server = $this->normalizeServer($manifest['server'] ?? null, $moduleId, $permissionKeys, array_column($limits, 'key'));
         $database = $this->normalizeDatabase($manifest['database'] ?? null);
         $uninstall = $this->normalizeUninstall($manifest['uninstall'] ?? null);
+        $presentation = is_array($manifest['presentation'] ?? null) ? $manifest['presentation'] : [];
 
         $normalized = $manifest;
         $normalized['id'] = $moduleId;
@@ -56,6 +57,12 @@ final class ModuleContract
         $normalized['database'] = $database;
         $normalized['limits'] = $limits;
         $normalized['uninstall'] = $uninstall;
+        $normalized['optionalDependencies'] = array_values(array_filter(array_map('strval', is_array($manifest['optionalDependencies'] ?? null) ? $manifest['optionalDependencies'] : [])));
+        $normalized['presentation'] = [
+            'userNavigation' => ($presentation['userNavigation'] ?? true) !== false,
+            'adminNavigation' => ($presentation['adminNavigation'] ?? true) !== false,
+            'system' => ($presentation['system'] ?? false) === true,
+        ];
         return $normalized;
     }
 

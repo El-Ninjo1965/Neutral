@@ -59,6 +59,12 @@
             if (!Array.isArray(module.dependencies)) {
                 module.dependencies = [];
             }
+            if (!Array.isArray(module.optionalDependencies)) {
+                module.optionalDependencies = Array.isArray(module.manifest?.optionalDependencies) ? [...module.manifest.optionalDependencies] : [];
+            }
+            if (!module.presentation || typeof module.presentation !== 'object') {
+                module.presentation = module.manifest?.presentation || { userNavigation: true, adminNavigation: true, system: false };
+            }
 
             if (!Array.isArray(module.permissions)) {
                 module.permissions = [];

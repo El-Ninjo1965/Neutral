@@ -196,3 +196,6 @@ default home instead of leaving an empty view.
 - `AccountLicenseService::assignDirectPackage()` validates and stores an individual user's direct Package and device override.
 - `moduleEntitlementsForUser()` resolves active License Package first, then the retained direct Package fallback.
 - `NeutralUiFeedback.enhancePasswordFields()` renders shared open/crossed eye SVGs for static and dynamic password inputs.
+- Module manifests support system-only/invisible presentation independently of activation.
+- `optionalDependencies` declares capability enhancements but never blocks install/start when absent.
+- User navigation consumes `isNavigable`; permission/capability visibility remains independently queryable.

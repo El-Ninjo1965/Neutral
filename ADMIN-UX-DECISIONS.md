@@ -134,3 +134,6 @@ Erfolgreiche Save/Create/Update-Aktionen verwenden in User- und Admin-UI den gem
 ## 13. Password eyes and individual-user packages
 
 Password visibility uses the same recognizable open/crossed eye SVG and approximately 44×44 touch target in User Login, Admin Login, profile, and dynamic Admin forms. An individual user can receive a direct Package without an Organization. Selecting a License makes its Package authoritative and disables direct Package editing; that same Package is retained as the direct fallback when the License is later removed.
+## 14. Optional and invisible system modules
+
+Activation does not imply a User navigation item. Admin may activate capability/system modules with `userNavigation=false`. Missing optional modules hide enhancements without breaking the independent feature or Core. Profile and other concrete system features are not permanent Core responsibilities.

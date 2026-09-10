@@ -175,3 +175,6 @@ After the second real-device 503, Codex traced the request before credential loo
 ## 2026-09-10 — Package/license/device and freeze-readiness work (Codex)
 
 Codex implemented the documented generic administration model, strict birthday validation and permission-separated production Audit Delete All test-first, then classified every Core 1.0 release family in `CORE-1.0-READINESS.md`. No CatchTrack/product feature or speculative Core hook was added.
+## Module boundary review
+
+Before Core freeze, a new Field Notes module must add its route, permissions, storage/migrations, settings, UI/i18n/offline and backup declaration without changing existing Core files. Optional integration must use capability detection; reviewers reject unnecessary hard module dependencies.
