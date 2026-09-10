@@ -48,4 +48,4 @@
 
 ## Current acceptance boundary
 
-Package/License/Device, Birthday and Audit Clear require operator device acceptance. Backup and fresh-host portability require host action. Do not mark Core 1.0 passed before both groups are complete.
+Corrected Package first-submit, License create/deactivate, free/unlimited Device limits, manager selection, Birthday dropdowns and two-dialog Audit Clear require operator device acceptance. Backup and fresh-host portability require host action. Do not mark Core 1.0 passed before both groups are complete.

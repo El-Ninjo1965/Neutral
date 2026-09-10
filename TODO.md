@@ -50,6 +50,6 @@
 
 ## External freeze acceptance after 2026-09-10
 
-- **DEVICE RETEST REQUIRED:** Packages, Licenses, User license/device override and drill-down, Birthday picker, Audit Delete All, plus short Auth/Session/GPS regression.
+- **DEVICE RETEST REQUIRED:** Package first-submit, `free_license` creation/deactivation, free/unlimited Package/License/User device limits, manager selection, Birthday Day/Month/Year, Audit Delete All's two dialogs, plus short Auth/Session/GPS regression.
 - **HOST ACTION REQUIRED:** backup key/ACL/cron and isolated empty-host install/update/restore/move acceptance; never restore on production.
 - Re-evaluate Core 1.0 only after every external row in `CORE-1.0-READINESS.md` has evidence.

@@ -15,7 +15,7 @@
 
 ## Client / Offline
 
-Public Core contracts, events/services, timeout API, module-separated local storage, offline state, responsive shell and client/server trust separation are **VORHANDEN + TEST/BELEG**. New Packages/Licenses/User-limit and Birthday controls are **DEVICE RETEST REQUIRED** on iPad/Chrome.
+Public Core contracts, events/services, timeout API, module-separated local storage, offline state, responsive shell and client/server trust separation are **VORHANDEN + TEST/BELEG**. The corrected free-value Packages/Licenses/User-limit controls, manager selection and three-select Birthday UX are **DEVICE RETEST REQUIRED** on iPad/Chrome.
 
 ## Server / Admin
 

@@ -668,6 +668,14 @@
       : new Set(modules.map((module) => module.id));
     const section = ['areas', 'navigation', 'privacy', 'profile'].includes(state.settingsSection) ? state.settingsSection : 'areas';
     const profile = state.accountProfile || currentUser || {};
+    const birthdayParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(profile.birthday || '') || [];
+    const birthdayYear = birthdayParts[1] || '';
+    const birthdayMonth = birthdayParts[2] || '';
+    const birthdayDay = birthdayParts[3] || '';
+    const locale = document.documentElement.lang || navigator.language || 'en';
+    const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' });
+    const birthdayMonths = Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1).padStart(2, '0'), label: monthFormatter.format(new Date(Date.UTC(2020, index, 1))) }));
+    const currentYear = new Date().getUTCFullYear();
     if (section === 'profile' && currentUser && !state.accountProfile && !state.profileLoading) {
       state.profileLoading = true;
       const profileClient = getServerApiClient();
@@ -745,7 +753,7 @@
           <div class="form-field"><label>Public nickname (optional)<input id="profileNickname" maxlength="120" value="${escapeHtml(profile.publicNickname || '')}"></label></div>
           <div class="form-field"><label>Phone (optional)<input id="profilePhone" maxlength="80" value="${escapeHtml(profile.phone || '')}"></label></div>
           <div class="form-field"><label>Address (optional)<textarea id="profileAddress" maxlength="1000">${escapeHtml(profile.address || '')}</textarea></label></div>
-          <div class="form-field"><label>Birthday (optional)<input id="profileBirthday" type="date" value="${escapeHtml(profile.birthday || '')}"></label></div>
+          <fieldset class="form-field birthday-fields"><legend>Birthday (optional)</legend><p class="form-help">Choose day, month and year. Leave all three empty to remove the birthday.</p><div class="birthday-selects"><label>Day<select id="profileBirthdayDay" class="user-settings-select"><option value="">Day</option>${Array.from({ length: 31 }, (_, index) => { const day = String(index + 1).padStart(2, '0'); return `<option value="${day}" ${birthdayDay === day ? 'selected' : ''}>${index + 1}</option>`; }).join('')}</select></label><label>Month<select id="profileBirthdayMonth" class="user-settings-select"><option value="">Month</option>${birthdayMonths.map((month) => `<option value="${month.value}" ${birthdayMonth === month.value ? 'selected' : ''}>${escapeHtml(month.label)}</option>`).join('')}</select></label><label>Year<select id="profileBirthdayYear" class="user-settings-select"><option value="">Year</option>${Array.from({ length: 121 }, (_, index) => String(currentYear - index)).map((year) => `<option value="${year}" ${birthdayYear === year ? 'selected' : ''}>${year}</option>`).join('')}</select></label></div></fieldset>
           <fieldset><legend>Share with my organization</legend>${['email','displayName','publicNickname','phone','address','birthday'].map((field) => `<label class="user-settings-toggle"><input type="checkbox" data-profile-privacy="${field}" ${profile.privacy?.[field] ? 'checked' : ''}><span>Share ${field}</span></label>`).join('')}</fieldset>
           <fieldset><legend>Change password</legend><div class="form-field"><label>Current password<input id="profileCurrentPassword" type="password" autocomplete="current-password"></label></div><div class="form-field"><label>New password<input id="profileNewPassword" type="password" minlength="8" maxlength="25" pattern="\\S{8,25}" autocomplete="new-password"></label><small>8–25 characters, no spaces. No other composition rules.</small></div><button id="profilePasswordButton" type="button" class="ui-button ui-button--secondary">Change password</button></fieldset>` : '<p>Sign in to manage your profile.</p>'}
         </div>
@@ -786,7 +794,11 @@
         });
         if (state.settingsSection === 'profile' && currentUser) {
           const client = getServerApiClient();
-          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: document.getElementById('profileBirthday')?.value || '', privacy: {} };
+          const day = document.getElementById('profileBirthdayDay')?.value || '';
+          const month = document.getElementById('profileBirthdayMonth')?.value || '';
+          const year = document.getElementById('profileBirthdayYear')?.value || '';
+          if ([day, month, year].some(Boolean) && ![day, month, year].every(Boolean)) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Choose day, month and year, or leave all birthday fields empty.'; status.className = 'user-settings-status error'; } return; }
+          const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', birthday: year ? `${year}-${month}-${day}` : '', privacy: {} };
           document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; });
           const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
           if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }

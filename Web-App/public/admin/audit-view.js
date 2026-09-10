@@ -69,9 +69,8 @@ class AdminAuditView {
     });
     document.getElementById('auditClearAll')?.addEventListener('click', async () => {
       if (!AdminCommon.confirmAction('Delete ALL previous audit entries? This cannot be undone.')) return;
-      const confirmation = window.prompt('Type DELETE to confirm permanent audit deletion:');
-      if (confirmation !== 'DELETE') return;
-      const result = await this.api.post('/api/admin/audit/clear', { confirmation });
+      if (!AdminCommon.confirmAction('Are you sure you want to permanently delete all previous audit entries?')) return;
+      const result = await this.api.post('/api/admin/audit/clear', { confirmed: true });
       if (result.ok) { const payload = AdminCommon.unwrapData(result, null, {}); AdminCommon.showAlert(`${Number(payload.deleted || 0)} audit entries deleted.`, 'success'); await this.init(this.container); }
       else AdminCommon.showAlert(`Audit clear failed: ${result.error || 'Unknown error'}`, 'error');
     });

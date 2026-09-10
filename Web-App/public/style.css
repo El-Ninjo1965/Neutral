@@ -483,6 +483,22 @@ pre {
   gap: 8px;
 }
 
+.birthday-selects {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.7fr) minmax(150px, 1.4fr) minmax(110px, 1fr);
+  gap: 12px;
+}
+
+.birthday-selects label {
+  display: grid;
+  gap: 6px;
+}
+
+.birthday-selects select {
+  min-height: 44px;
+  width: 100%;
+}
+
 label {
   font-size: 0.82rem;
   color: var(--muted);
@@ -1489,6 +1505,10 @@ body[data-page="admin"] .gps-message {
   .inline-form {
     grid-template-columns: 1fr;
   }
+
+  .birthday-selects {
+    grid-template-columns: 1fr;
+  }
   .audit-filter-grid,
   .audit-retention-section { grid-template-columns: 1fr; }
   .audit-retention-section > div { grid-column: auto; }
@@ -2016,4 +2036,25 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
 
 .user-app-homepage-frame.homepage-frame-ready {
   visibility: visible;
+}
+
+.device-limit-fieldset {
+  display: grid;
+  gap: 10px;
+}
+
+.device-limit-fieldset > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-limit-fieldset > .custom-limit-field {
+  display: grid;
+  align-items: initial;
+}
+
+.device-limit-fieldset input[type="radio"] {
+  margin: 0;
+  width: auto;
 }

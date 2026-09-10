@@ -1,18 +1,19 @@
-# CURRENT TASK — Admin Packages/Licenses/Devices, Profile UX, Audit und Freeze-Readiness
+# CURRENT TASK — License Create und Admin-/Profil-/Audit-UX Nachbesserung
 
-**Quelle:** `CODEX.md`, 2026-09-10
+**Quelle:** `CODEX.md` und `ADMIN-UX-DECISIONS.md`, 2026-09-10
 **Status:** IN ARBEIT
 
-1. [x] `origin/main` synchronisiert; Pflicht-, Architektur-, Status-, UI/I18N-, Install-/Deployment- und betroffene Implementierungs-/Testdateien vollständig gelesen; **`CODEX.md == CURRENT-TASK-Anforderungen` geprüft.**
-2. [x] Betreiberwahrheit übernehmen: User `Tester`, Admin `Developer`, parallele Scopes, deduplizierte Sessions, GPS-Basis und geprüfte Settings sind `LIVE BESTANDEN`; Backup bleibt `HOST ACTION REQUIRED`.
-3. [x] Test-first neutrale Adminfläche Packages/Entitlements: CRUD/status, frei benannt/beschrieben, Module available/locked/hidden, Device-Default/unlimited, sichere Löschregel.
-4. [x] Test-first Licenses/Organizations: CRUD/status, Package, Seats/unlimited, Manager, Used Seats, Users und Limit-Herkunft.
-5. [x] User Create/Edit um License und Allowed-Devices-Default/Override/unlimited samt Used-Devices/Drill-down ergänzen; Senkung löscht keine Sessions.
-6. [x] End-to-end Package-/License-/Device-Verträge inklusive Limits, Wechsel, Zustände, Seats, Scope und Auth-/Deduplizierungsregression prüfen.
-7. [x] Birthday als mobile Datumsauswahl; serverseitig echtes Kalenderdatum/Leap-Year prüfen, optional löschbar, ISO ohne Zeitzonenverschiebung, Privacy default-off.
-8. [x] Audit `Delete All` mit eigener Permission, doppelter Bestätigung, CSRF, Anzahl und neuem Nachweis-Eintrag implementieren; Retention erhalten.
-9. [x] CORE-1.0-Anforderungen ausführbar als vorhanden/belegt, Device-Retest, Host-Action oder fehlt auditieren; nur kleine zwingende Corelücken schließen.
-10. [x] Relevante Vertrags-, Status-, Todo-, Changelog-, Workflow- und Übergabedokumente wahrheitsgemäß aktualisieren.
-11. [x] Vollständige Regression, PHP-Lint, JS-Syntax, `git diff --check`, Produktionspaket sowie Secret-/Artefaktprüfung.
-12. [ ] Commit/push main; CodeQL/FTPS terminal; Revision, `migrationsReady:true`, sichere Smokes, HEAD/Origin, sauberer Tree und GitHub-CHATGPT verifizieren.
-13. [x] Vollständigen `CHATGPT.md`-Bericht samt Restlücken und Betreiber-Retestliste liefern; kein voreiliges Core-1.0-BESTANDEN.
+1. [x] Verbindliche Umgebung/Repository/`origin/main`, Zugang und sauberen Ausgangsstand prüfen; Pflichtdokumente vollständig lesen; Auftrag ohne Secrets erfassen.
+2. [x] `Create License` end-to-end reproduzieren und den tatsächlichen UI/API/PHP/DB-/Migrationsfehler beheben; gültiger First Submit, verständliche 4xx, Refresh sowie Edit/Status/Package-/Delete-Schutz regressionsfest testen.
+3. [x] möglichen Package-First-Submit-/Mount-/Auth-/State-Fehler prüfen und den ersten gültigen Submit zuverlässig machen.
+4. [x] Device-Limits in Package, License und User auf Default, freie positive Ganzzahl und `unlimited` umstellen; autoritative Servervalidierung und bestehende Sessions erhalten.
+5. [x] License-/User-Begriffe verständlich machen, Manager über geeignete Userauswahl statt numerischer ID bedienen und Deaktivieren/Widerrufen sicher erhalten.
+6. [x] Geburtstag als drei touchfreundliche Dropdowns Tag/ausgeschriebener lokalisierter Monat/Jahr implementieren; ISO, Löschen, Leap-Year und Privacy-default-off sichern.
+7. [x] Audit Delete All auf genau zwei Dialogbestätigungen ohne `DELETE`-Eingabe umstellen; Permission, Adminsession, CSRF, Transaktion, Nachweis und Retention regressionsfest testen.
+8. [x] Auth-/Session-, Packages-/Licenses-/Users-/Limits-, GPS-, Settings-, PHP-/JS-, Diff-, Vollsuite- und Produktionspaket-Regression ausführen.
+9. [x] Vertrags-, Status-, Todo-, Readiness- und Übergabedokumentation wahrheitsgemäß aktualisieren; keine automatische Freeze-/Live-Erklärung.
+10. [ ] Änderungen committen, nach `origin/main` pushen und CI/CodeQL/FTPS terminal abwarten.
+11. [ ] Deploymentrevision und `migrationsReady:true` sowie sichere Production-Smokes prüfen; keine destruktiven Aktionen, Secrets oder PII.
+12. [x] `CHATGPT.md` mit tatsächlichem Endstand und kurzer Betreiber-Retestliste aktualisieren; finalen Dokumentationsstand committen/pushen, terminal abwarten und sauberen `HEAD == origin/main` verifizieren.
+
+**Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + neuer Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.

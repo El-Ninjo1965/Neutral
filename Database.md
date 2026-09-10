@@ -134,4 +134,4 @@ The `login_attempts` table is migration-managed. `PdoLoginAttemptStore` performs
 
 ## Migration 2026_09_10_0007
 
-Packages gain an optional description. Licenses and license-user assignments gain explicit device-limit modes so `package default`, numeric override and `unlimited` are unambiguous. Permission `audit.clear` is independently assignable and initially granted to the built-in Admin role. Package/license/user assignments remain normalized; reducing a limit never deletes sessions.
+Packages gain an optional description. Licenses and license-user assignments gain explicit device-limit modes so `package default`, numeric override and `unlimited` are unambiguous. License-manager selection remains normalized in `license_users`: replacement is transactional, the selected user must exist and be active, and clearing the selection removes only the manager membership. Permission `audit.clear` is independently assignable and initially granted to the built-in Admin role. Package/license/user assignments remain normalized; reducing a limit never deletes sessions.

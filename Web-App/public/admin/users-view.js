@@ -197,7 +197,13 @@ class AdminUsersView {
         <label for="licenseId">License / Organization</label>
         <select id="licenseId" name="licenseId"><option value="">Unassigned</option>${this.licenses.map(l=>`<option value="${escapeHtmlUsers(l.id)}" ${String(user?.licenseId||'')===String(l.id)?'selected':''}>${escapeHtmlUsers(l.organizationName)} — ${escapeHtmlUsers(l.packageName)}</option>`).join('')}</select>
       </div>
-      <div class="form-group"><label for="allowedDevices">Allowed Devices</label><select id="allowedDevices" name="allowedDevices"><option value="default">Package / License default</option><option value="unlimited" ${user?.allowedDevices==null?'selected':''}>Unlimited override</option>${[1,2,3,5,10].map(n=>`<option value="${n}" ${user?.deviceLimitSource==='user_override'&&Number(user.allowedDevices)===n?'selected':''}>Override: ${n}</option>`).join('')}</select><small>Lowering the limit does not revoke existing sessions; additional devices are blocked until explicitly revoked.</small></div>
+      <fieldset class="form-group device-limit-fieldset"><legend>Allowed devices</legend>
+        <label><input type="radio" name="deviceLimitMode" value="default" ${user?.deviceLimitSource !== 'user_override' ? 'checked' : ''}> Package / License default</label>
+        <label><input type="radio" name="deviceLimitMode" value="custom" ${user?.deviceLimitSource === 'user_override' && user?.allowedDevices != null ? 'checked' : ''}> Custom device limit</label>
+        <label><input type="radio" name="deviceLimitMode" value="unlimited" ${user?.deviceLimitSource === 'user_override' && user?.allowedDevices == null ? 'checked' : ''}> Unlimited</label>
+        <label class="custom-limit-field" for="allowedDevices">Custom device limit<input id="allowedDevices" name="allowedDevices" type="number" min="1" max="1000" inputmode="numeric" value="${user?.deviceLimitSource === 'user_override' && user?.allowedDevices != null ? Number(user.allowedDevices) : ''}"></label>
+        <small>Lowering the limit does not revoke existing sessions; additional devices are blocked until explicitly revoked.</small>
+      </fieldset>
       <div class="form-group">
         <label for="status">Status</label>
         <select id="status" name="status" required>
@@ -226,12 +232,15 @@ class AdminUsersView {
       const formData = new FormData(form);
       const roles = formData.getAll('roles').map((entry) => String(entry));
       if (roles.length === 0) { AdminCommon.showAlert('Select one role.', 'error'); return; }
+      const deviceLimitMode = formData.get('deviceLimitMode') || 'default';
+      const customDeviceLimit = String(formData.get('allowedDevices') || '').trim();
+      if (deviceLimitMode === 'custom' && customDeviceLimit === '') { AdminCommon.showAlert('Enter a custom device limit.', 'error'); return; }
       const payload = {
         email: formData.get('email') || '',
         displayName: formData.get('displayName') || '',
         status: formData.get('status') || 'active',
         roles
-        ,licenseId: formData.get('licenseId') || '', allowedDevices: formData.get('allowedDevices') || 'default'
+        ,licenseId: formData.get('licenseId') || '', allowedDevices: deviceLimitMode === 'custom' ? customDeviceLimit : deviceLimitMode
       };
 
       if (!this.editingUserId) {
