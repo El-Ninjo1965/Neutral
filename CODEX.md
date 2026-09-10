@@ -1,8 +1,8 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – ORGANIZATION SHARING + ACTIVE NAVIGATION UX  
-**Datum:** 2026-09-10
+**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – GLOBAL SAVE CONFIRMATION + USER CREATE P0 + ACCESS NAV UX  
+**Datum:** 2026-09-11
 
 # Betreiber-Livebefund
 
@@ -14,24 +14,36 @@ Der aktuelle Produktionsstand wurde erneut real auf iPad/Chrome geprüft.
 - parallele User-/Admin-Sessions funktionieren.
 - GPS-Basismodul funktioniert im geprüften Umfang.
 - Packages/Licenses/Device-Limits sind funktionsfähig.
-- Backup Storage Path auf realem Host funktioniert; manuelles Backup wurde erfolgreich erstellt.
+- Backup Storage Path funktioniert auf dem realen Host.
 - Backup V2 ist code-/isoliert als `BACKUP CONTRACT COMPLETE` verifiziert und deployed.
 - ausgeloggt sind in Settings nur `App Areas` und `Navigation` sichtbar; `Privacy & Sharing` und `Profile` erscheinen erst nach Login.
-- Birthday Save/Persistenz und kompaktere Tablet-UI wurden im letzten Auftrag implementiert und müssen im Betreiber-Retest noch bestätigt werden.
-
-## Neue UX-Befunde
-
-1. `Share with my organization` darf nicht jedem eingeloggten Einzeluser angezeigt werden. Der Eintrag ist nur sinnvoll, wenn der Account tatsächlich einer Organization/License mit Organisationskontext zugeordnet ist.
-2. Navigation besitzt keinen durchgängig klaren Active-State. Wenn eine Seite/Unterseite aktiv ist, soll der entsprechende Navigationsbutton visuell eindeutig aktiv sein. Im aktuellen Theme ist das blau; technisch darf die Farbe nicht hart als Blau verdrahtet werden, sondern muss aus dem bestehenden Theme-/Active-State-Token kommen.
+- Birthday Save/Persistenz und kompaktere Tablet-UI sind implementiert; realer Betreibercheck läuft.
+- Organization-Sharing ist serverseitig gated und nur bei aktiver License-/Organization-Zuordnung verfügbar.
+- routenbasierte Active-States für Hauptnavigation und Settings-Untertabs sind implementiert.
 
 Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
+
+## Neue Liveprobleme / UX-Wünsche
+
+1. Erfolgreiche Speicheraktionen zeigen aktuell teilweise nur grünen Inline-Text wie `Settings saved successfully.`. Der Betreiber möchte stattdessen **global in User-UI und Admin-UI ein einheitliches Bestätigungs-Popup/Modal**.
+2. Diese Regel soll **für jede erfolgreiche Save-/Speicher-/Update-Aktion** gelten, nicht nur in Settings.
+3. Im Adminbereich kann aktuell kein neuer User/Admin angelegt werden. Realer Fehler: `Failed to create user: Internal server error.` → **P0-Funktionsfehler**.
+4. In `User Management` kleben die Content-Blöcke `User Management` und `Create New User` optisch zusammen; etwas vertikaler Abstand ist gewünscht.
+5. Alle Passwortfelder in User-UI und Admin-UI sollen einen sichtbaren **Eye-Toggle** zum Ein-/Ausblenden des Passworts erhalten.
+6. In der Admin-Sidebar unter `ACCESS` sollen die technischen Berechtigungsbereiche ans Ende. Gewünschte Reihenfolge:
+   - Users
+   - Packages / Entitlements
+   - Licenses / Organizations
+   - Sessions
+   - Roles & Permissions
+   - Permission Catalog
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante Settings/Auth/License/Organization/Navigation-Dateien.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante User-/Auth-/Form-/Modal-/Navigation-Dateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen.
 4. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community-/Messaging-Erweiterung.
 5. Keine Secrets/PII ausgeben oder committen.
@@ -39,135 +51,188 @@ Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
 
 ---
 
-# 2. `Share with my organization` nur bei echter Organisationszugehörigkeit
+# 2. P0 – Admin `Create New User` liefert Internal Server Error
 
-## Ziel
+## Realer Befund
 
-Der Privacy-/Profile-Bereich darf `Share with my organization` nur rendern, wenn der eingeloggte User tatsächlich einen gültigen Organisationskontext besitzt.
+Im Adminbereich unter `Users` schlägt die Erstellung eines neuen Users/Admins mit folgender sichtbarer Meldung fehl:
 
-## Verbindliche Semantik
+`Failed to create user: Internal server error.`
 
-- Einzeluser / privater Payment-User ohne Organization-/License-Zuordnung: **Option nicht anzeigen**.
-- User mit gültiger Organization-/License-Zuordnung: Option anzeigen.
-- Nicht aus Rollenname, UI-Text oder Clientannahme ableiten, sondern aus autoritativer serverseitiger Zuordnung.
-- Falls mehrere Organisationsbezüge möglich sind, vorhandenen Datenvertrag respektieren und keine neue Mehrfachorganisationslogik erfinden.
-- Wenn eine Organisation/Lizenz entfernt, widerrufen oder die User-Zuordnung gelöst wird, muss die Option nach Refresh bzw. Auth-State-Hydration verschwinden.
-- Bestehender Privacy-Default bleibt `off`.
+Das ist ein echter Produktionsfehler und muss end-to-end diagnostiziert werden.
 
-## Sicherheit / API
+## Auftrag
 
-Nicht nur UI ausblenden:
+Prüfe vollständig:
 
-- API/Service muss serverseitig prüfen, ob der User überhaupt organisationsbezogene Freigaben setzen darf.
-- Ein Einzeluser darf eine Organization-Sharing-Freigabe nicht durch manipulierten Clientrequest aktivieren.
-- Keine Organisationsdaten an unberechtigte User leaken.
-- Bestehende individuelle Privacy-Einstellungen nicht unnötig verändern.
+`Admin UI → Form State → ApiClient → POST User API → PHP Router → Service → Repository/DB → Audit → Response`
 
-## Tests
+Insbesondere:
 
-Mindestens:
+- Payload-Feldnamen/-typen;
+- Pflicht-/Optionalfelder;
+- Rollenarray / Adminrolle / Userrolle;
+- License-/Package-Zuordnung, falls optional;
+- Allowed Devices / Default / Custom / Unlimited;
+- Passwortvalidierung;
+- leere optionale Felder;
+- DB-Constraints / FKs / unique username/email;
+- Audit nach Create;
+- generische Catch-Blöcke, die echte 4xx-Ursachen als 500 maskieren;
+- mögliche Regression aus den letzten License-/Organization-/Profile-Änderungen.
 
-1. eingeloggter Einzeluser ohne Organization → Option fehlt;
-2. User mit gültiger Organization-Zuordnung → Option sichtbar;
-3. Logout → Privacy/Profile verschwinden weiterhin vollständig;
-4. Organization-Zuordnung entfernen → Option verschwindet;
-5. manipulierter Request eines Einzelusers → definierter 4xx, keine Mutation;
-6. Privacy default-off bleibt erhalten.
+## Abnahme
+
+- gültiger neuer User lässt sich beim ersten Versuch erstellen;
+- gültiger neuer Admin lässt sich beim ersten Versuch erstellen;
+- invalides Input → verständlicher 4xx, kein 500;
+- Duplicate Username/Email → definierter Konflikt, kein 500;
+- Liste aktualisiert sich unmittelbar nach Erfolg;
+- Auditnachweis korrekt;
+- keine Regression bestehender User.
 
 ---
 
-# 3. Globaler Active-State für Navigation
+# 3. Globale Save-/Success-Bestätigung als Modal/Popup
 
-## Ziel
+## Produktentscheidung
 
-Jeder Navigationsbereich zeigt eindeutig, welche Seite aktuell aktiv ist.
-
-## Hauptnavigation
-
-Wenn ein Hauptbereich geöffnet ist, muss sein Button aktiv dargestellt werden.
+Jede **erfolgreiche Speicher-/Änderungsaktion** in User-UI und Admin-UI soll nicht mehr nur als grüner Inline-Text unter einem Formular erscheinen, sondern über eine **zentrale einheitliche Success-Modal-Komponente** bestätigt werden.
 
 Beispiele:
 
-- Settings geöffnet → `Settings` aktiv.
-- GPS geöffnet → `GPS` aktiv.
-- andere Hauptmodule analog.
+- `Settings saved successfully.`
+- `Profile saved successfully.`
+- `User created successfully.`
+- `User updated successfully.`
+- `License saved successfully.`
+- `Backup path saved successfully.`
 
-Der Active-State muss aus Route/aktuellem View-State abgeleitet werden und nach Reload sowie direktem Deep-Link weiterhin stimmen.
+## Anforderungen
 
-## Settings-Unternavigation
+- zentrale Core-Komponente, nicht pro Seite neu implementieren;
+- gilt mindestens für Create/Save/Update-Aktionen, die bisher Inline-Success-Text nutzen;
+- Modal mittig, klar, touchfreundlich;
+- `OK`-Button zum Schließen;
+- Escape/Backdrop nur wenn mit bestehender Modal-Konvention konsistent;
+- Fokusmanagement und Accessibility (`role="dialog"`, sinnvolle `aria-*`-Attribute, Fokus ins Modal und zurück zum Auslöser);
+- keine grünen Success-Inline-Texte zusätzlich stehen lassen;
+- Fehler bleiben klar getrennt als Error-State/Fehlermeldung und werden nicht als Success-Modal dargestellt;
+- keine Modal-Spam-Kaskaden: pro erfolgreicher Benutzeraktion genau eine Bestätigung;
+- Text lokalisierbar/i18n-fähig;
+- User-UI und Admin-UI sollen dieselbe zentrale Komponente bzw. denselben UI-Vertrag verwenden.
 
-Innerhalb Settings gilt dasselbe für:
+## Nicht gemeint
 
-- App Areas
-- Navigation
-- Privacy & Sharing
-- Profile
-
-Beispiele:
-
-- Settings → Profile: `Settings` bleibt als Hauptbereich aktiv und `Profile` ist in der Unterebene aktiv.
-- Wechsel auf `Navigation`: `Settings` bleibt aktiv, `Navigation` wird aktiv, `Profile` verliert den Active-State.
-
-## UX-Vertrag
-
-- pro Navigationsebene genau **ein** aktiver Eintrag;
-- aktiver Zustand klar sichtbar;
-- aktuelles Theme verwendet dafür blau, aber **keine hartcodierte blaue Farbe**;
-- bestehende Theme-/Design-Tokens bzw. zentrale Active-/Selected-State-Variable verwenden oder sauber zentral ergänzen;
-- Light/Dark und kundenspezifische Themes respektieren;
-- Active-State muss mindestens Hintergrund, Text/Icon-Kontrast und Accessibility-Zustand (`aria-current`/äquivalent) korrekt setzen;
-- Hover/Focus/Disabled dürfen Active nicht optisch überschreiben;
-- Touch-UX auf iPad/iPhone/Android beachten.
-
-## Routing / Auth
-
-- Active-State aus realem Router-/View-State, nicht nur zuletzt geklicktem Button.
-- direkter Seitenaufruf/Reload muss korrekt markieren.
-- nach Login/Logout muss die sichtbare Settings-Unternavigation neu berechnet werden.
-- ausgeblendete auth-gebundene Tabs dürfen niemals als Active-State zurückbleiben.
+- keine Popups bei reinem Tabwechsel;
+- keine Popups bei automatischen Hintergrund-Refreshes;
+- keine Popups bei jeder einzelnen Feldänderung;
+- destruktive Bestätigungsdialoge bleiben eigene Confirmation-Flows.
 
 ## Tests
 
-Mindestens:
-
-1. Hauptnavigation mehrere Bereiche durchklicken;
-2. Settings-Untertabs durchklicken;
-3. Reload auf aktivem Untertab;
-4. Deep-Link/direkter Aufruf;
-5. Login/Logout bei aktivem Privacy/Profile;
-6. Light/Dark bzw. vorhandene Theme-Tokens;
-7. Accessibility-Attribut für aktuellen Eintrag.
+Mindestens Settings Save, Profile Save, User Create/Edit, License Save/Edit, Backup Path Save sowie Fehlerfall ohne Success-Modal.
 
 ---
 
-# 4. Betreiber-Retest der letzten Settings-Fixes mit absichern
+# 4. Passwortfelder – globaler Eye-Toggle
 
-Die bereits implementierten letzten Änderungen nicht neu erfinden, aber Regressionstests aufnehmen:
+Alle Passwortfelder in User-UI und Admin-UI sollen konsistent einen Show/Hide-Toggle erhalten.
 
-- Birthday speichern → Profile verlassen → erneut öffnen → Reload → Logout/Login → Datum bleibt korrekt;
-- Birthday Day/Month/Year auf iPad kompakt;
-- ausgeloggt nur `App Areas` + `Navigation`;
-- eingeloggt zusätzlich `Privacy & Sharing` + `Profile`;
-- Organization-Sharing nur bei tatsächlich zugeordnetem User.
+## Anforderungen
+
+- Standardzustand: Passwort verborgen (`type=password`);
+- Eye-Icon rechts im Feld;
+- Tap/Klick → sichtbar (`type=text`), erneuter Tap → wieder verborgen;
+- keine Änderung am Feldwert;
+- funktioniert mindestens bei:
+  - User Login
+  - Admin Login
+  - Create New User
+  - Edit User / Reset Password, falls vorhanden
+  - Profile `Current password`
+  - Profile `New password`
+  - sonstigen bestehenden Passwortfeldern
+- touchfreundliche Fläche;
+- Tastatur-/Screenreader-bedienbar;
+- `aria-label` bzw. zugänglicher Name wechselt sinngemäß zwischen Show/Hide password;
+- keine Security-Logs oder Passwortwerte nach außen;
+- kein Autofill-Vertrag unnötig brechen.
+
+Zentrale wiederverwendbare Input-Komponente oder Helper bevorzugen, keine Copy/Paste-Implementierung auf jeder Seite.
 
 ---
 
-# 5. Regression / Freeze-Fortschritt
+# 5. User Management – vertikaler Abstand zwischen Content-Blöcken
+
+Zwischen dem oberen `User Management`-Listen-/Filterblock und dem darunterliegenden `Create New User`-Block soll sichtbar etwas Luft liegen.
+
+Anforderungen:
+
+- moderater vertikaler Abstand entsprechend bestehendem Spacing-System;
+- keine übergroße Leerfläche;
+- responsive stabil auf iPad/Desktop/Phone;
+- kein Spezial-Pixelhack nur für eine Auflösung;
+- bestehende Card-/Panel-Radien und Borders beibehalten.
+
+---
+
+# 6. Admin Sidebar – Reihenfolge unter ACCESS
+
+Gewünschte verbindliche Reihenfolge:
+
+1. `Users`
+2. `Packages / Entitlements`
+3. `Licenses / Organizations`
+4. `Sessions`
+5. `Roles & Permissions`
+6. `Permission Catalog`
+
+Ziel: operative Access-Verwaltung zuerst, technische Berechtigungsdefinitionen zuletzt.
+
+Anforderungen:
+
+- nur Reihenfolge ändern, keine Routen/Permissions/Labels regressieren;
+- Active-State weiterhin korrekt;
+- Responsive-/Collapsed-Navigation weiterhin korrekt;
+- Tests/Snapshots ggf. aktualisieren.
+
+---
+
+# 7. Bestehende Active-State- und Organization-Sharing-Regeln nicht regressieren
+
+Regression sicherstellen:
+
+- Hauptnavigation/Settings-Untertabs bleiben routenbasiert aktiv;
+- Theme-Tokens weiterhin autoritativ;
+- `aria-current="page"` korrekt;
+- `Share with my organization` nur bei echter aktiver Organization-/License-Zuordnung;
+- Einzeluser sehen diese Option nicht;
+- serverseitige 422-Sperre gegen manipulierte Sharing-Requests bleibt erhalten.
+
+---
+
+# 8. Regression / Freeze-Fortschritt
 
 Nach Umsetzung vollständige Regression mindestens für:
 
-- User/Admin Login und Logout;
-- Settings Auth-Sichtbarkeit;
+- User/Admin Login;
+- Create New User und Create New Admin;
+- User Edit;
+- Passwortfelder Show/Hide;
+- Settings/Profile Save → Success Modal;
+- Admin Save/Create/Update → Success Modal;
+- Fehlerfälle ohne falsches Success Modal;
+- Sidebar ACCESS-Reihenfolge;
+- User-Management-Spacing;
 - Organization-Sharing-Gating;
 - Birthday Persistenz/Layout;
-- globale Hauptnavigation Active-State;
-- Settings-Untertabs Active-State;
-- Packages/Licenses/Organization-Zuordnungen;
-- Device Limits;
+- Hauptnavigation/Settings-Untertab Active-State;
+- Packages/Licenses/Device Limits;
 - Sessions/Installation-ID;
 - Audit;
 - GPS;
-- Backup Storage Path und Backup Create/Download ohne Secret-Leak;
+- Backup Storage Path / Backup Create / Download ohne Secret-Leak;
 - PHP-Lint;
 - JS-Syntax;
 - `git diff --check`;
@@ -178,14 +243,13 @@ Nach Umsetzung vollständige Regression mindestens für:
 
 ---
 
-# 6. Dokumentation
+# 9. Dokumentation
 
 Mindestens aktualisieren, soweit betroffen:
 
 - `CHATGPT.md`
 - `ADMIN-UX-DECISIONS.md`
 - `UI-UX.md`
-- `USER-ACCOUNT-LICENSE-MODEL.md`
 - `CORE-1.0-READINESS.md`
 - `STATUS.md`
 - `TODO.md`
@@ -195,14 +259,16 @@ Mindestens aktualisieren, soweit betroffen:
 - `API.md`
 - `Functions.md`
 
-Die beiden neuen Produktentscheidungen dauerhaft festhalten:
+Dauerhaft festhalten:
 
-1. Organization-Sharing ist **kontextabhängig** und nur für tatsächlich organisationszugeordnete User sichtbar/verwendbar.
-2. Navigation verwendet einen zentralen, routenbasierten Active-State auf Haupt- und Unterebene; konkrete Farben kommen aus Theme-Tokens, nicht aus hardcodierten Komponentenwerten.
+1. Save-/Success-Bestätigungen verwenden zentralisierte Modals in User- und Admin-UI.
+2. Passwortfelder besitzen global einen zugänglichen Show/Hide-Toggle.
+3. ACCESS-Reihenfolge entspricht der oben definierten Reihenfolge.
+4. User-Management-Panels verwenden konsistentes vertikales Spacing.
 
 ---
 
-# 7. Deployment / Übergabe
+# 10. Deployment / Übergabe
 
 Gemäß `WORKFLOW.md`:
 
@@ -216,11 +282,12 @@ Gemäß `WORKFLOW.md`:
 
 Betreiber-Retestliste danach kurz halten:
 
-- Einzeluser: kein `Share with my organization`;
-- Organization-User: Option sichtbar;
-- Settings-Hauptbutton aktiv;
-- aktiver Settings-Untertab aktiv;
-- Active-State nach Reload/Deep-Link korrekt;
-- Birthday-Persistenz nochmals real prüfen.
+- neuen User erstellen;
+- neuen Admin erstellen;
+- Save-Aktion in User-UI → Modal;
+- Save/Create/Update in Admin-UI → Modal;
+- Passwort-Eye in Login/Create/Profile prüfen;
+- ACCESS-Reihenfolge prüfen;
+- Abstand zwischen User Management und Create New User prüfen.
 
 Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` markieren.
