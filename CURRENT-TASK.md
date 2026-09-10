@@ -1,19 +1,17 @@
-# CURRENT TASK — License Create und Admin-/Profil-/Audit-UX Nachbesserung
+# CURRENT TASK — License Delete, Session Device UX und Backup Storage Path
 
 **Quelle:** `CODEX.md` und `ADMIN-UX-DECISIONS.md`, 2026-09-10
 **Status:** IN ARBEIT
 
-1. [x] Verbindliche Umgebung/Repository/`origin/main`, Zugang und sauberen Ausgangsstand prüfen; Pflichtdokumente vollständig lesen; Auftrag ohne Secrets erfassen.
-2. [x] `Create License` end-to-end reproduzieren und den tatsächlichen UI/API/PHP/DB-/Migrationsfehler beheben; gültiger First Submit, verständliche 4xx, Refresh sowie Edit/Status/Package-/Delete-Schutz regressionsfest testen.
-3. [x] möglichen Package-First-Submit-/Mount-/Auth-/State-Fehler prüfen und den ersten gültigen Submit zuverlässig machen.
-4. [x] Device-Limits in Package, License und User auf Default, freie positive Ganzzahl und `unlimited` umstellen; autoritative Servervalidierung und bestehende Sessions erhalten.
-5. [x] License-/User-Begriffe verständlich machen, Manager über geeignete Userauswahl statt numerischer ID bedienen und Deaktivieren/Widerrufen sicher erhalten.
-6. [x] Geburtstag als drei touchfreundliche Dropdowns Tag/ausgeschriebener lokalisierter Monat/Jahr implementieren; ISO, Löschen, Leap-Year und Privacy-default-off sichern.
-7. [x] Audit Delete All auf genau zwei Dialogbestätigungen ohne `DELETE`-Eingabe umstellen; Permission, Adminsession, CSRF, Transaktion, Nachweis und Retention regressionsfest testen.
-8. [x] Auth-/Session-, Packages-/Licenses-/Users-/Limits-, GPS-, Settings-, PHP-/JS-, Diff-, Vollsuite- und Produktionspaket-Regression ausführen.
-9. [x] Vertrags-, Status-, Todo-, Readiness- und Übergabedokumentation wahrheitsgemäß aktualisieren; keine automatische Freeze-/Live-Erklärung.
-10. [x] Änderungen committen, nach `origin/main` pushen und CI/CodeQL/FTPS terminal abwarten.
-11. [x] Deploymentrevision und `migrationsReady:true` sowie sichere Production-Smokes prüfen; keine destruktiven Aktionen, Secrets oder PII.
-12. [x] `CHATGPT.md` mit tatsächlichem Endstand und kurzer Betreiber-Retestliste aktualisieren; finalen Dokumentationsstand committen/pushen, terminal abwarten und sauberen `HEAD == origin/main` verifizieren.
+1. [x] `origin/main` synchronisieren; verbindliche Dokumentation und relevante License-/Session-/Backup-Implementierung vollständig lesen; Auftrag secretsicher erfassen.
+2. [x] Sicheren License Delete mit Adminpermission, CSRF, Bestätigung, Referenzprüfung, verständlichem 4xx, Auditnachweis und sofortigem Listenrefresh implementieren; Revoked/blocked erhalten.
+3. [x] Sessions um menschenlesbaren Usernamen plus numerische User-ID und klar benannte persistente Installation/Device ID ergänzen.
+4. [x] Device class, Operating system und Browser als reine Supportmetadaten konservativ trennen; iPadOS Safari/Desktop-UA, Chrome iPad, iPhone, Android, Windows, macOS und Unknown test-first abdecken; keine Fingerprints oder Identitätsänderung.
+5. [x] Backup storage path auf Backup & Restore konfigurierbar machen: Test path, Save, persistente installationsspezifische Konfiguration, geschützter serverseitiger Probe-Write und ehrliche Protected/Needs-host-verification-Auswertung.
+6. [x] Manuellen Backup-Service und Automatic-Backup-Runner denselben gespeicherten Pfad verwenden lassen; bestehende Backups nicht verschieben; `NEUTRAL_BACKUP_KEY` ausschließlich hostlokal und boolesch darstellen.
+7. [x] Device-Limit-Semantik ausdrücklich als Default pro User bewahren und keine Organization-Device-Pool-Semantik einführen.
+8. [x] Pflichtregression vollständig ausführen: Auth/scoped Sessions/Deduplizierung, IDs/Plattformfixtures, Packages, License CRUD/Referenzschutz/Audit, User-Limits, Birthday, Audit Clear, GPS, Settings, Backuppfad/Runner/Secret-Grenzen, PHP/JS/Diff/Vollsuite/Produktionspaket.
+9. [x] `CHATGPT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `Install-README-Server.md` und betroffene API/Security/Architecture/UI-Dokumentation wahrheitsgemäß aktualisieren; kein automatischer Freeze/LIVE-Status.
+10. [ ] Committen, nach `origin/main` pushen, CI/CodeQL/FTPS terminal abwarten, Deploymentrevision + `migrationsReady:true` sicher smoken und sauberen `HEAD == origin/main` verifizieren.
 
-**Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + neuer Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.
+**Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.

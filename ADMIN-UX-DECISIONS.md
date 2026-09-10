@@ -115,3 +115,7 @@ Neu offen:
 - Session-/Device-Spalten sind semantisch missverständlich; `Browser installation` ist keine Geräteklasse.
 - Produktionsanzeige meldet für iPad/Chrome derzeit `macOS · Chrome`; diese Information ist als tatsächliches Betriebssystem des Endgeräts unzuverlässig und darf nicht als sichere Geräteidentifikation behandelt werden.
 - Backup Storage Path ist noch nicht direkt auf der Backup-Seite konfigurierbar.
+
+## 9. Code-seitiger Follow-up-Stand
+
+License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Installation-ID, getrennte konservative Supportmetadaten sowie Backup Storage Path mit Test/Save sind implementiert und lokal testbar. Diese Aussage ist kein neuer Livebefund: License Delete, reale iPad-Klassifikation und der vorbereitete Hostpfad bleiben bis zum Betreibercheck `DEVICE/HOST RETEST REQUIRED`.

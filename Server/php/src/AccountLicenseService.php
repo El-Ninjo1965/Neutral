@@ -252,6 +252,19 @@ final class AccountLicenseService
         throw new \RuntimeException('License could not be loaded.');
     }
 
+    /** @return array{id:string,key:string} */
+    public function deleteLicense(int $id): array
+    {
+        $pdo=$this->database->connect();
+        $license=$pdo->prepare('SELECT license_key FROM licenses WHERE id=:id');$license->execute([':id'=>$id]);$key=$license->fetchColumn();
+        if($key===false)throw new \RuntimeException('License not found.');
+        $references=$pdo->prepare('SELECT COUNT(*) FROM license_users WHERE license_id=:id');$references->execute([':id'=>$id]);
+        if((int)$references->fetchColumn()>0)throw new \RuntimeException('License still has assigned users or a manager. Remove those assignments or use Revoked / blocked instead.');
+        $delete=$pdo->prepare('DELETE FROM licenses WHERE id=:id');$delete->execute([':id'=>$id]);
+        if($delete->rowCount()!==1)throw new \RuntimeException('License could not be deleted.');
+        return ['id'=>(string)$id,'key'=>(string)$key];
+    }
+
     public function assignUserToLicense(int $userId,?int $licenseId,mixed $override): void
     { $pdo=$this->database->connect();if($licenseId===null){$pdo->prepare("DELETE FROM license_users WHERE user_id=:user AND license_role<>'manager'")->execute([':user'=>$userId]);return;}$seat=$pdo->prepare("SELECT l.seat_limit,(SELECT COUNT(*) FROM license_users WHERE license_id=l.id AND membership_status='active') used FROM licenses l WHERE l.id=:id AND l.status='active'");$seat->execute([':id'=>$licenseId]);$row=$seat->fetch(\PDO::FETCH_ASSOC);if(!is_array($row))throw new \RuntimeException('Active license not found.');$exists=$pdo->prepare('SELECT COUNT(*) FROM license_users WHERE license_id=:license AND user_id=:user');$exists->execute([':license'=>$licenseId,':user'=>$userId]);if((int)$exists->fetchColumn()===0&&$row['seat_limit']!==null&&(int)$row['used']>=(int)$row['seat_limit'])throw new \RuntimeException('License seat limit reached.');$mode=$override==='unlimited'?'unlimited':($override==='default'?'default':'override');$limit=$mode==='override'?$this->nullableLimit($override):null;$pdo->prepare("INSERT INTO license_users(license_id,user_id,license_role,membership_status,device_limit,device_limit_mode) VALUES(:license,:user,'member','active',:limit,:mode) ON DUPLICATE KEY UPDATE membership_status='active',device_limit=VALUES(device_limit),device_limit_mode=VALUES(device_limit_mode)")->execute([':license'=>$licenseId,':user'=>$userId,':limit'=>$limit,':mode'=>$mode]); }
 

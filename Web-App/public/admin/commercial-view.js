@@ -68,9 +68,15 @@ class AdminLicensesView {
   }
 
   render() {
-    this.container.innerHTML = `<div class="admin-licenses-view"><div class="section-header"><h2>Licenses / Organizations</h2><button class="btn btn-primary" id="newLicense">+ New License</button></div><p class="form-help">User limits and device limits per user are managed independently.</p><div class="card-grid">${this.licenses.map((license) => `<article class="card"><h3>${commerceEscape(license.organizationName)}</h3><dl class="detail-list"><div><dt>Package</dt><dd>${commerceEscape(license.packageName)}</dd></div><div><dt>Users</dt><dd>${license.usedSeats} / ${license.seatLimit == null ? 'Unlimited' : license.seatLimit}</dd></div><div><dt>Devices per user</dt><dd>${license.allowedDevices == null ? 'Unlimited' : license.allowedDevices} (${commerceEscape(license.deviceLimitSource)})</dd></div><div><dt>License manager</dt><dd>${commerceEscape(license.managerUsername || 'None')}</dd></div><div><dt>Status</dt><dd>${commerceEscape(license.status)}</dd></div></dl><button class="btn btn-secondary" data-edit-license="${license.id}">Edit</button></article>`).join('')}</div><div id="licenseEditor"></div></div>`;
+    this.container.innerHTML = `<div class="admin-licenses-view"><div class="section-header"><h2>Licenses / Organizations</h2><button class="btn btn-primary" id="newLicense">+ New License</button></div><p class="form-help">User limits and device limits per user are managed independently. Revoke a referenced license instead of deleting its history.</p><div class="card-grid">${this.licenses.map((license) => `<article class="card"><h3>${commerceEscape(license.organizationName)}</h3><dl class="detail-list"><div><dt>Package</dt><dd>${commerceEscape(license.packageName)}</dd></div><div><dt>Users</dt><dd>${license.usedSeats} / ${license.seatLimit == null ? 'Unlimited' : license.seatLimit}</dd></div><div><dt>Devices per user</dt><dd>${license.allowedDevices == null ? 'Unlimited' : license.allowedDevices} (${commerceEscape(license.deviceLimitSource)})</dd></div><div><dt>License manager</dt><dd>${commerceEscape(license.managerUsername || 'None')}</dd></div><div><dt>Status</dt><dd>${commerceEscape(license.status)}</dd></div></dl><button class="btn btn-secondary" data-edit-license="${license.id}">Edit</button><button class="btn btn-danger" data-delete-license="${license.id}">Delete</button></article>`).join('')}</div><div id="licenseEditor"></div></div>`;
     this.container.querySelector('#newLicense')?.addEventListener('click', () => this.editor());
     this.container.querySelectorAll('[data-edit-license]').forEach((button) => button.addEventListener('click', () => this.editor(this.licenses.find((license) => String(license.id) === button.dataset.editLicense))));
+    this.container.querySelectorAll('[data-delete-license]').forEach((button) => button.addEventListener('click', async () => {
+      if (!AdminCommon.confirmAction('Delete this unreferenced license permanently? Assigned users or managers must be removed first.')) return;
+      const result = await this.api.delete(`/api/admin/licenses/${button.dataset.deleteLicense}`);
+      if (result.ok) { AdminCommon.showAlert('License deleted.', 'success'); await this.init(this.container); }
+      else AdminCommon.showAlert(result.error || 'License could not be deleted.', 'error');
+    }));
   }
 
   editor(license = {}) {

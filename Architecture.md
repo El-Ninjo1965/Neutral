@@ -253,6 +253,8 @@ Nach mindestens einem erfolgreichen Online-Start registriert die User-Shell unte
 
 User-App/module permissions and Admin/System permissions are separate domains. The User-App consumes only public projections and module APIs. Users, roles, permission catalog, device sessions, audit, maintenance, infrastructure and backups remain Admin API/UI concerns with server-side permission and CSRF enforcement. Runtime health, database status, connection inventory and diagnostics derive from the same PHP runtime/configuration and module registry rather than independent UI placeholders.
 
+**Session-/Backup-Follow-up (2026-09-10):** Session identity remains the random persistent installation ID. User-agent-derived device class, OS and browser are bounded support projections only, never authentication, authorization, fingerprint or limit inputs. Backup storage is an installation setting consumed by both HTTP backup operations and the CLI scheduler; cryptographic key material remains exclusively in host environment configuration. A configured custom directory must pre-exist and pass protected/writable probing—application code neither creates it nor changes ownership/mode.
+
 ## Phase 2 operational DTO flow
 
 Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` → `AdminCommon.unwrapData` → view DTO. Release identity comes from the package manifest; maintenance remains database state. Runtime/database/connection/diagnostic views use the same protected configuration and health sources instead of placeholder fallbacks.

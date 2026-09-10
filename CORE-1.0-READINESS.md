@@ -21,6 +21,8 @@ Public Core contracts, events/services, timeout API, module-separated local stor
 
 Auth, parallel scoped sessions, CSRF, RBAC, users/roles/permissions, module/settings/audit, database/migration status, throttle fallback, cookies and HTTPS are **VORHANDEN + TEST/BELEG**; User/Admin login and GPS basis are additionally **LIVE BESTANDEN** per operator retest. Package/License/Device management and production Audit Delete All are **DEVICE RETEST REQUIRED**. Backup operation remains **HOST ACTION REQUIRED**.
 
+License Delete now has code/test evidence for unreferenced success, assignment blocking, transaction/audit and unchanged Package data. Session UI has code/test evidence for User ID plus stable Installation ID and conservative platform fixtures. Configurable Backup Storage Path has local path/persistence/manual-runner evidence, but the real host path, create/download and Cron remain **HOST/DEVICE RETEST REQUIRED**.
+
 ## Modules
 
 Manifest/compatibility, discovery, inactive install, activation/deactivation/update/uninstall, permission/limit enforcement, module-owned PHP routes/services, checksummed SQL migration/rollback compensation, declarative settings and provider boundaries are **VORHANDEN + TEST/BELEG** for the distinct `gps` and `reference-notes` references. No product-specific Core hook was added.

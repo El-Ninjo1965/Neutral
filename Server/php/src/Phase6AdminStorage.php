@@ -207,6 +207,9 @@ final class Phase6SettingsService
         $settings['backupInterval'] = $interval;
         $settings['backupRetention'] = $retention;
         $settings['backupEnabled'] = ($settings['backupEnabled'] ?? true) === true;
+        $path=trim((string)($settings['backupStoragePath']??''));
+        if($path!==''&&$strict)DatabaseBackupService::normalizeConfiguredDirectory($path);
+        $settings['backupStoragePath']=$path;
         return $settings;
     }
 

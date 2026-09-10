@@ -72,7 +72,7 @@ class AdminSessionsView {
     container.innerHTML = `
       <div class="admin-sessions-view">
         <div class="section-header">
-          <h2>Device Sessions</h2><p class="form-help">One row represents a revocable browser installation. Expired and revoked history is retained server-side only for the configured cleanup period.</p>
+          <h2>Device Sessions</h2><p class="form-help">The persistent Installation / Device ID is the unique identity used for device limits. Device class, operating system and browser are support information only and may be Unknown.</p>
         </div>
         ${sessions.length
           ? `
@@ -81,8 +81,10 @@ class AdminSessionsView {
                 <tr>
                   <th>User</th>
                   <th>Roles</th>
-                  <th>Device</th>
-                  <th>Platform</th>
+                  <th>Installation / Device ID</th>
+                  <th>Device class</th>
+                  <th>Operating system</th>
+                  <th>Browser</th>
                   <th>Status</th>
                   <th>Registered</th>
                   <th>Last activity</th>
@@ -92,10 +94,10 @@ class AdminSessionsView {
               <tbody>
                 ${sessions.map((session) => `
                   <tr>
-                    <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}</td>
+                    <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}${session.userId ? ` <span class="small-muted">· #${session.userId}</span>` : ''}</td>
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
-                    <td>${session.deviceLabel || 'Browser installation'}${session.current ? ' <strong class="status-badge">Current session</strong>' : ''}</td>
-                    <td>${session.platform || 'Browser'}</td><td>${session.status || 'active'}</td>
+                    <td><code>${session.deviceId || 'Unknown'}</code>${session.current ? ' <strong class="status-badge">Current session</strong>' : ''}</td>
+                    <td>${session.deviceClass || 'Unknown'}</td><td>${session.operatingSystem || 'Unknown'}</td><td>${session.browser || 'Browser'}</td><td>${session.status || 'active'}</td>
                     <td><time datetime="${session.issuedAt || ''}">${formatLocalAdminDate(session.issuedAt)}</time></td>
                     <td><time datetime="${session.lastSeenAt || ''}">${formatLocalAdminDate(session.lastSeenAt)}</time></td>
                     <td>${session.current ? '<span class="small-muted">Use Logout</span>' : `<button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">Revoke device</button>`}</td>
@@ -233,7 +235,7 @@ class AdminDashboardView {
           <div class="card panel-box">
             <div class="card-header"><h3>Session overview</h3><span class="small-muted">Showing ${Math.min(sessions.length, 8)} of ${sessions.length}</span></div>
             ${sessions.length
-              ? `<ul class="mini-list">${sessions.slice(0, 8).map((session) => `<li><span>${session.deviceLabel || 'Browser installation'} · ${session.platform || 'Browser'}${session.current ? ' (current)' : ''}</span><span>${session.username ? `@${session.username}` : session.userId || 'User'}</span></li>`).join('')}</ul>`
+              ? `<ul class="mini-list">${sessions.slice(0, 8).map((session) => `<li><span><code>${session.deviceId || 'Unknown'}</code> · ${session.deviceClass || 'Unknown'} · ${session.operatingSystem || 'Unknown'}${session.current ? ' (current)' : ''}</span><span>${session.username ? `@${session.username}` : 'User'}${session.userId ? ` · #${session.userId}` : ''}</span></li>`).join('')}</ul>`
               : '<p class="empty-state">No active sessions recorded.</p>'}
             ${sessions.length > 8 ? '<button type="button" class="btn btn-secondary" data-dashboard-all-sessions>View all device sessions</button>' : ''}
           </div>
@@ -611,11 +613,17 @@ class AdminInfrastructureView {
           <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
           <p class="form-help">Automatic scheduler: ${this.escape(automation.scheduler || 'external-cron-required')}. Last success: ${this.escape(automation.lastSuccess ? new Date(Number(automation.lastSuccess) * 1000).toISOString() : 'No scheduled backup recorded')}. ${automation.lastError ? `Last error: ${this.escape(automation.lastError)}` : ''}</p>
           <dl class="detail-list"><div><dt>Encryption key</dt><dd>${readiness.keyConfigured ? 'Ready' : 'Host configuration required'}</dd></div><div><dt>Crypto</dt><dd>${readiness.cryptoAvailable ? 'Ready' : 'Unavailable'}</dd></div><div><dt>Database/schema</dt><dd>${readiness.databaseReady && readiness.managedTablesReady ? 'Ready' : 'Host check required'}</dd></div><div><dt>Protected storage</dt><dd>${readiness.storageReady ? 'Ready' : 'Host check required'}</dd></div></dl>
+          <form id="backup-path-form" class="admin-form compact-form"><label>Backup storage path<input name="path" value="${this.escape(readiness.storagePath || '')}" placeholder="Absolute protected server path" autocomplete="off" /></label><p class="form-help">Use an existing writable directory outside public web roots. The encryption key remains host-only and is never shown here.</p><div class="form-actions"><button type="button" class="btn btn-secondary" id="backup-path-test">Test path</button><button type="submit" class="btn btn-primary">Save</button></div><p id="backup-path-status" class="form-help" aria-live="polite">${this.escape(readiness.storageStatus || 'Not tested')}</p></form>
           ${backupReady ? '' : '<p class="admin-state admin-state-warning" id="backup-readiness-help">Host encryption key must be configured before manual or automatic encrypted backups can run.</p>'}
           ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button><button class="btn btn-sm btn-danger" data-backup-delete="${this.escape(backup.backupId)}">Delete</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
           <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary" ${backupReady ? '' : 'disabled aria-disabled="true" aria-describedby="backup-readiness-help"'}>Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
         </div>
       </div>`;
+
+    const pathForm=this.container.querySelector('#backup-path-form');
+    const pathStatus=this.container.querySelector('#backup-path-status');
+    this.container.querySelector('#backup-path-test')?.addEventListener('click',async()=>{const path=pathForm?.elements?.path?.value||'';const result=await this.api.post('/api/admin/backups/path/test',{path});const tested=result.ok?AdminCommon.unwrapData(result,'pathTest',{}):null;if(pathStatus)pathStatus.textContent=tested?(`Path status: ${tested.status}`):(result.error||'Path test failed.');});
+    pathForm?.addEventListener('submit',async(event)=>{event.preventDefault();const path=pathForm.elements.path.value||'';const result=await this.api.post('/api/admin/backups/path',{path});if(result.ok){this.notify('Backup storage path saved. Test it before creating a backup.','success');await this.init(this.container);}else this.notify(result.error||'Backup storage path could not be saved.','error');});
 
     const backupForm = this.container.querySelector('#backup-form');
     if (backupForm) {

@@ -116,7 +116,7 @@ Threats addressed include stolen cookies (server revocation, expiry, CSRF and ro
 
 ## Phase 2 operations hardening
 
-Operational readiness endpoints expose booleans/counts only and never configuration values, paths or credentials. Backup failures use stable safe codes while detailed causes remain in protected server diagnostics. Core migrations and automatic backups are CLI-only; production restore remains prohibited as a deployment smoke. Device identifiers remain random installation-local identifiers, not hardware fingerprints or authentication secrets.
+Public operational readiness endpoints expose booleans/counts only and never configuration values, paths or credentials. The permission-protected Backup Admin endpoint may return its non-secret configured storage path to authorized backup operators; it never returns the encryption key. Backup failures use stable safe codes while detailed causes remain in protected server diagnostics. A custom path must be absolute, traversal-free, existing, a directory, writable by a create/remove probe, and outside known public roots before backup use; the app performs no chmod/chown and does not create custom targets. Core migrations and automatic backups are CLI-only; production restore remains prohibited as a deployment smoke. Device identifiers remain random installation-local identifiers, not hardware fingerprints or authentication secrets; inferred platform/browser values are display metadata only.
 
 ## 2026-09-09 Device and Admin re-authentication clarification
 

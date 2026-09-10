@@ -215,6 +215,17 @@ function actor_user_id(?array $identity): ?int
     return $value > 0 ? $value : null;
 }
 
+function configured_backup_storage_path(Phase6SettingsService $settingsService): ?string
+{
+    $snapshot=$settingsService->getAll();$settings=is_array($snapshot['settings']??null)?$snapshot['settings']:[];$path=trim((string)($settings['backupStoragePath']??''));
+    return $path===''?null:$path;
+}
+
+function configured_backup_service($runtime,AppConfig $config,Phase6SettingsService $settingsService): DatabaseBackupService
+{
+    return new DatabaseBackupService($runtime->database(),new SchemaMigrator($runtime->database()),$config,$runtime->projectRoot(),null,null,configured_backup_storage_path($settingsService));
+}
+
 /**
  * @return list<string>
  */
@@ -534,6 +545,13 @@ if (preg_match('#^admin/packages/(\d+)$#',$route,$matches)===1 && $method==='DEL
 if ($route === 'admin/licenses' && $method === 'GET') { require_admin_session_permission_or_fail($identity,$authManager,'admin.read',$headers,false);JsonResponse::success(['licenses'=>$accountLicenseService->licenses()]); }
 if ($route === 'admin/licenses' && $method === 'POST') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);try{$license=$accountLicenseService->saveLicense(null,parse_json_body());}catch(PDOException $exception){JsonResponse::error('License could not be saved. Check that its key, package and manager are valid.',409);}catch(RuntimeException $exception){JsonResponse::error($exception->getMessage(),422);}$auditService->log('license.create','license',(string)$license['id'],actor_user_id($identity),[]);JsonResponse::success(['license'=>$license],201); }
 if (preg_match('#^admin/licenses/(\d+)$#',$route,$matches)===1 && $method==='PUT') { require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);try{$license=$accountLicenseService->saveLicense((int)$matches[1],parse_json_body());}catch(PDOException $exception){JsonResponse::error('License could not be saved. Check that its key, package and manager are valid.',409);}catch(RuntimeException $exception){JsonResponse::error($exception->getMessage(),422);}$auditService->log('license.update','license',$matches[1],actor_user_id($identity),[]);JsonResponse::success(['license'=>$license]); }
+if (preg_match('#^admin/licenses/(\d+)$#',$route,$matches)===1 && $method==='DELETE') {
+    require_admin_session_permission_or_fail($identity,$authManager,'admin.write',$headers);$pdo=$database->connect();$pdo->beginTransaction();
+    try{$deletedLicense=$accountLicenseService->deleteLicense((int)$matches[1]);$auditService->log('license.delete','license',$deletedLicense['id'],actor_user_id($identity),['licenseKey'=>$deletedLicense['key']]);$pdo->commit();}
+    catch(PDOException $exception){if($pdo->inTransaction())$pdo->rollBack();JsonResponse::error('License could not be deleted because it is still referenced.',409);}
+    catch(RuntimeException $exception){if($pdo->inTransaction())$pdo->rollBack();$status=$exception->getMessage()==='License not found.'?404:409;JsonResponse::error($exception->getMessage(),$status);}
+    JsonResponse::success(['deleted'=>true]);
+}
 
 if ($route === 'license/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'license.manage', true, $headers);
@@ -1269,6 +1287,18 @@ if ($route === 'admin/connections' && $method === 'GET') {
     ]);
 }
 
+if ($route === 'admin/backups/path/test' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity,$authManager,'backups.manage',$headers);
+    try{$path=(string)(parse_json_body()['path']??'');$result=DatabaseBackupService::testDirectory($path,$runtime->projectRoot(),(string)($_SERVER['DOCUMENT_ROOT']??''));JsonResponse::success(['pathTest'=>$result]);}
+    catch(RuntimeException $exception){JsonResponse::error('Backup storage path must be an absolute safe server path.',422);}
+}
+
+if ($route === 'admin/backups/path' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity,$authManager,'backups.manage',$headers);
+    try{$path=DatabaseBackupService::normalizeConfiguredDirectory((string)(parse_json_body()['path']??''));$current=$settingsService->getAll();$options=is_array($current['settings']??null)?$current['settings']:[];$options['backupStoragePath']=$path;$settingsService->update(['settings'=>$options],actor_user_id($identity));$auditService->log('backup.storage.update','backup-storage',null,actor_user_id($identity),[]);JsonResponse::success(['saved'=>true,'path'=>$path]);}
+    catch(RuntimeException $exception){JsonResponse::error('Backup storage path must be an absolute safe server path.',422);}
+}
+
 if ($route === 'connections' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'settings.read', false, $headers);
     JsonResponse::success([
@@ -1279,13 +1309,8 @@ if ($route === 'connections' && $method === 'GET') {
 if ($route === 'admin/backups' && $method === 'GET') {
     require_permission_or_fail($identity, $authManager, 'backups.view', false, $headers);
     try {
-        $backupService = new DatabaseBackupService(
-            $runtime->database(),
-            new SchemaMigrator($runtime->database()),
-            $config,
-            $runtime->projectRoot()
-        );
-        $automaticStatePath = $runtime->projectRoot() . '/Server/runtime/backups/.automatic-state.json';
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
+        $automaticStatePath = $runtime->projectRoot() . '/Server/runtime/config/.automatic-backup-state.json';
         $automaticState = is_file($automaticStatePath) ? json_decode((string) file_get_contents($automaticStatePath), true) : [];
         JsonResponse::success([
             'backups' => $backupService->list(),
@@ -1306,7 +1331,7 @@ if ($route === 'admin/backups' && $method === 'GET') {
 if ($route === 'admin/backups' && $method === 'POST') {
     require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     try {
-        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
         $backup = $backupService->create();
         $settings = $settingsService->getAll();
         $retention = max(1, min(100, (int) ($settings['settings']['backupRetention'] ?? 14)));
@@ -1328,16 +1353,17 @@ if ($route === 'admin/backups/readiness' && $method === 'GET') {
         $migrator = new SchemaMigrator($database);
         $checks['managedTablesReady'] = $migrator->status()['pending'] === [];
     } catch (Throwable $exception) { /* Boolean-only safe projection. */ }
-    $backupDir = $runtime->projectRoot() . '/Server/runtime/backups';
-    $parent = dirname($backupDir);
-    $checks['storageReady'] = (is_dir($backupDir) && is_writable($backupDir)) || (!is_dir($backupDir) && is_dir($parent) && is_writable($parent));
-    JsonResponse::success(['readiness' => $checks]);
+    $configuredPath=configured_backup_storage_path($settingsService);
+    if($configuredPath===null){$backupDir=$runtime->projectRoot().'/Server/runtime/backups';$parent=dirname($backupDir);$checks['storageReady']=(is_dir($backupDir)&&is_writable($backupDir))||(!is_dir($backupDir)&&is_dir($parent)&&is_writable($parent));$checks['storageStatus']=$checks['storageReady']?'protected_default':'not_writable';}
+    else{try{$pathTest=DatabaseBackupService::testDirectory($configuredPath,$runtime->projectRoot(),(string)($_SERVER['DOCUMENT_ROOT']??''));$checks['storageReady']=$pathTest['status']==='ready';$checks['storageStatus']=$pathTest['status'];}catch(Throwable $exception){$checks['storageStatus']='invalid';}}
+    $checks['storagePath']=$configuredPath??'';
+    JsonResponse::success(['readiness'=>$checks]);
 }
 
 if (preg_match('#^admin/backups/([a-f0-9]{32})$#', $route, $backupMatches) === 1 && $method === 'DELETE') {
     require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     try {
-        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
         $backupService->delete($backupMatches[1]);
         $auditService->log('backup.delete', 'backup', $backupMatches[1], actor_user_id($identity));
         JsonResponse::success(['deleted' => true]);
@@ -1351,7 +1377,7 @@ if ($route === 'admin/backups/upload' && $method === 'POST') {
         JsonResponse::error('Backup upload is too large.', 413);
     }
     try {
-        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
         $input = fopen('php://input', 'rb');
         if (!is_resource($input)) {
             throw new RuntimeException('Could not open backup upload stream.');
@@ -1371,7 +1397,7 @@ if ($route === 'admin/backups/upload' && $method === 'POST') {
 if (preg_match('#^admin/backups/([a-f0-9]{32})/download$#', $route, $backupMatches) === 1 && $method === 'GET') {
     require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers, false);
     try {
-        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
         $path = $backupService->pathForDownload($backupMatches[1]);
         if (!is_file($path) || !is_readable($path)) {
             JsonResponse::error('Backup not found.', 404);
@@ -1390,7 +1416,7 @@ if (preg_match('#^admin/backups/([a-f0-9]{32})/download$#', $route, $backupMatch
 if (preg_match('#^admin/backups/([a-f0-9]{32})/restore$#', $route, $backupMatches) === 1 && $method === 'POST') {
     require_admin_session_permission_or_fail($identity, $authManager, 'backups.manage', $headers);
     try {
-        $backupService = new DatabaseBackupService($runtime->database(), new SchemaMigrator($runtime->database()), $config, $runtime->projectRoot());
+        $backupService = configured_backup_service($runtime,$config,$settingsService);
         $backup = $backupService->restore($backupMatches[1]);
         $auditService->log('backup.restore', 'backup', $backup['backupId'], actor_user_id($identity), ['restoredTables' => $backup['restoredTables']]);
         $authManager->logout();

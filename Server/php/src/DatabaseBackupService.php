@@ -22,6 +22,8 @@ final class DatabaseBackupService
     private \Closure $importer;
     private string $key;
     private string $backupDirectory;
+    private string $projectRoot;
+    private bool $customDirectory;
     private bool $usesDatabaseExporter;
 
     /**
@@ -34,7 +36,8 @@ final class DatabaseBackupService
         AppConfig $config,
         string $projectRoot,
         ?callable $exporter = null,
-        ?callable $importer = null
+        ?callable $importer = null,
+        ?string $configuredDirectory = null
     ) {
         $configuredKey = $config->backupKey();
         if (strlen($configuredKey) < 32) {
@@ -44,7 +47,11 @@ final class DatabaseBackupService
             throw new BackupRuntimeException('BACKUP_CRYPTO_UNAVAILABLE', 'OpenSSL is unavailable.');
         }
         $this->key = hash('sha256', $configuredKey, true);
-        $this->backupDirectory = rtrim($projectRoot, "/\\") . '/Server/runtime/backups';
+        $this->projectRoot=rtrim($projectRoot,"/\\");
+        $this->customDirectory=$configuredDirectory !== null && trim($configuredDirectory) !== '';
+        $this->backupDirectory = !$this->customDirectory
+            ? rtrim($projectRoot, "/\\") . '/Server/runtime/backups'
+            : self::normalizeConfiguredDirectory($configuredDirectory);
         $this->exporter = $exporter === null
             ? \Closure::fromCallable([$this, 'exportDatabase'])
             : \Closure::fromCallable($exporter);
@@ -53,6 +60,30 @@ final class DatabaseBackupService
             ? \Closure::fromCallable([$this, 'importDatabase'])
             : \Closure::fromCallable($importer);
     }
+
+    public static function normalizeConfiguredDirectory(string $path): string
+    {
+        $normalized=rtrim(trim($path),"/\\");
+        if($normalized===''||strlen($normalized)>1024||str_contains($normalized,"\0")||preg_match('#(^|[\\/])\.\.([\\/]|$)#',$normalized)===1||preg_match('#^(?:/|[A-Za-z]:[\\/])#',$normalized)!==1)throw new \RuntimeException('Backup storage path must be an absolute path without traversal.');
+        return $normalized;
+    }
+
+    /** @return array{status:string,exists:bool,directory:bool,writable:bool,protected:bool} */
+    public static function testDirectory(string $path,string $projectRoot,string $documentRoot=''): array
+    {
+        $normalized=self::normalizeConfiguredDirectory($path);$exists=file_exists($normalized);$directory=is_dir($normalized);$writable=false;$protected=false;
+        $real=$directory?realpath($normalized):false;
+        if(is_string($real)){
+            $publicRoots=array_filter([realpath(rtrim($projectRoot,"/\\").'/Web-App/public'),realpath(rtrim($projectRoot,"/\\").'/Server/public'),$documentRoot!==''?realpath($documentRoot):false],'is_string');
+            $insidePublic=false;foreach($publicRoots as $root){$root=rtrim((string)$root,"/\\");if($real===$root||str_starts_with($real,$root.DIRECTORY_SEPARATOR)){$insidePublic=true;break;}}
+            $protected=!$insidePublic;
+            if(is_writable($real)){$probe=$real.'/.neutral-write-probe-'.bin2hex(random_bytes(8));$handle=@fopen($probe,'xb');if(is_resource($handle)){$writable=fwrite($handle,'ok')===2;fclose($handle);@unlink($probe);}}
+        }
+        $status=!$exists?'missing':(!$directory?'not_directory':(!$writable?'not_writable':(!$protected?'public_path':'ready')));
+        return ['status'=>$status,'exists'=>$exists,'directory'=>$directory,'writable'=>$writable,'protected'=>$protected];
+    }
+
+    public function directory(): string { return $this->backupDirectory; }
 
     /** @return array{backupId:string,status:string,createdAt:string,size:int} */
     public function create(): array
@@ -121,6 +152,7 @@ final class DatabaseBackupService
     /** @return list<array{backupId:string,createdAt:string,size:int}> */
     public function list(): array
     {
+        if($this->customDirectory)$this->ensureDirectory();
         if (!is_dir($this->backupDirectory)) {
             return [];
         }
@@ -390,6 +422,7 @@ final class DatabaseBackupService
 
     private function ensureDirectory(): void
     {
+        if($this->customDirectory){$tested=self::testDirectory($this->backupDirectory,$this->projectRoot,(string)($_SERVER['DOCUMENT_ROOT']??''));if($tested['status']!=='ready')throw new BackupRuntimeException('BACKUP_STORAGE_UNAVAILABLE','Configured protected backup directory is not ready.');return;}
         if (!is_dir($this->backupDirectory) && !mkdir($this->backupDirectory, 0700, true) && !is_dir($this->backupDirectory)) {
             throw new BackupRuntimeException('BACKUP_STORAGE_UNAVAILABLE', 'Could not create the protected backup directory.');
         }

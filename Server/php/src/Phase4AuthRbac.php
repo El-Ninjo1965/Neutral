@@ -1224,6 +1224,9 @@ final class Phase4SettingsService
         $settings['backupInterval'] = $interval;
         $settings['backupRetention'] = $retention;
         $settings['backupEnabled'] = ($settings['backupEnabled'] ?? true) === true;
+        $path=trim((string)($settings['backupStoragePath']??''));
+        if($path!==''&&$strict)DatabaseBackupService::normalizeConfiguredDirectory($path);
+        $settings['backupStoragePath']=$path;
         return $settings;
     }
 }
@@ -1327,6 +1330,7 @@ final class Phase4SessionRegistry
             if (!is_array($session)) {
                 continue;
             }
+            $support = self::supportMetadata((string) ($session['user_agent'] ?? ''), (string) ($session['device_label'] ?? ''));
             $public[] = [
                 'sessionId' => (string) ($session['session_id'] ?? ''),
                 'userId' => $session['user_id'] !== null ? (string) $session['user_id'] : '',
@@ -1340,7 +1344,10 @@ final class Phase4SessionRegistry
                 'updatedAt' => $this->mysqlUtcIso((string) ($session['last_seen_at'] ?? '')),
                 'deviceId' => (string) ($session['device_id'] ?? ''),
                 'deviceLabel' => (string) ($session['device_label'] ?? 'Browser installation'),
-                'platform' => $this->platformLabel((string) ($session['user_agent'] ?? ''), (string) ($session['device_label'] ?? '')),
+                'deviceClass' => $support['deviceClass'],
+                'operatingSystem' => $support['operatingSystem'],
+                'browser' => $support['browser'],
+                'platform' => $support['operatingSystem'] . ' · ' . $support['browser'],
                 'current' => hash_equals((string) ($session['session_id'] ?? ''), session_id()),
             ];
         }
@@ -1406,16 +1413,18 @@ final class Phase4SessionRegistry
         $statement->execute();
     }
 
-    private function platformLabel(string $agent, string $deviceLabel = ''): string
+    /** @return array{deviceClass:string,operatingSystem:string,browser:string} */
+    public static function supportMetadata(string $agent, string $deviceLabel = ''): array
     {
-        if (preg_match('/^iPadOS\s*·\s*(Chrome|Safari|Firefox|Edge|Browser)$/', $deviceLabel, $match) === 1) {
-            return 'iPadOS · ' . $match[1];
-        }
-        $ios = preg_match('/iPad|iPhone|iPod/i', $agent) === 1
-            || (preg_match('/Macintosh/i', $agent) === 1 && preg_match('/Mobile\//i', $agent) === 1);
-        $platform = $ios ? 'iPadOS' : (preg_match('/Android/i', $agent) ? 'Android' : (preg_match('/Windows/i', $agent) ? 'Windows' : (preg_match('/Macintosh/i', $agent) ? 'macOS' : (preg_match('/Linux/i', $agent) ? 'Linux' : 'Other'))));
         $browser = preg_match('/CriOS\//', $agent) ? 'Chrome' : (preg_match('/FxiOS\//', $agent) ? 'Firefox' : (preg_match('/EdgiOS\/|Edg\//', $agent) ? 'Edge' : (preg_match('/Chrome\//', $agent) ? 'Chrome' : (preg_match('/Safari\//', $agent) ? 'Safari' : 'Browser'))));
-        return $platform . ' · ' . $browser;
+        $ipad = preg_match('/iPad/i', $agent) === 1 || (preg_match('/Macintosh/i', $agent) === 1 && preg_match('/Mobile\//i', $agent) === 1) || str_starts_with($deviceLabel, 'iPadOS ·');
+        $iphone = preg_match('/iPhone|iPod/i', $agent) === 1 || str_starts_with($deviceLabel, 'iOS ·');
+        if($ipad||$iphone){$version=preg_match('/OS (\d+)[_\.](\d+)/i',$agent,$match)===1?' '.(int)$match[1].'.'.(int)$match[2]:'';return ['deviceClass'=>$ipad?'iPad':'iPhone','operatingSystem'=>($ipad?'iPadOS':'iOS').$version,'browser'=>$browser];}
+        if(preg_match('/Android/i',$agent)===1){$version=preg_match('/Android\s+([0-9]+(?:\.[0-9]+)?)/i',$agent,$match)===1?' '.$match[1]:'';return ['deviceClass'=>preg_match('/Mobile/i',$agent)===1?'Android phone':'Android tablet','operatingSystem'=>'Android'.$version,'browser'=>$browser];}
+        if(preg_match('/Windows/i',$agent)===1)return ['deviceClass'=>'Desktop','operatingSystem'=>'Windows','browser'=>$browser];
+        if(preg_match('/Macintosh/i',$agent)===1)return ['deviceClass'=>'Desktop','operatingSystem'=>'macOS','browser'=>$browser];
+        if(preg_match('/Linux/i',$agent)===1)return ['deviceClass'=>'Desktop','operatingSystem'=>'Linux','browser'=>$browser];
+        return ['deviceClass'=>'Unknown','operatingSystem'=>'Unknown','browser'=>$browser];
     }
 
     private function toMysqlDateTime(string $value): string

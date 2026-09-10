@@ -53,3 +53,9 @@
 - **DEVICE RETEST REQUIRED:** Package first-submit, `free_license` creation/deactivation, free/unlimited Package/License/User device limits, manager selection, Birthday Day/Month/Year, Audit Delete All's two dialogs, plus short Auth/Session/GPS regression.
 - **HOST ACTION REQUIRED:** backup key/ACL/cron and isolated empty-host install/update/restore/move acceptance; never restore on production.
 - Re-evaluate Core 1.0 only after every external row in `CORE-1.0-READINESS.md` has evidence.
+
+## External acceptance after license/session/backup-path follow-up
+
+- **DEVICE RETEST REQUIRED:** Delete an unreferenced test License; verify a referenced License is blocked and `Revoked / blocked` remains available.
+- **DEVICE RETEST REQUIRED:** Confirm Session User ID, full Installation/Device ID and honest iPad/OS metadata on the real iPad.
+- **HOST ACTION REQUIRED:** Enter the prepared external Backup Storage Path, run `Test path`, save it, then separately create/download one backup and verify a scheduled runner use; no production restore.

@@ -177,3 +177,8 @@ default home instead of leaving an empty view.
 - User license assignment and default/numeric/unlimited device override without implicit revocation.
 - Native birthday selection plus strict ISO calendar validation.
 - Dedicated, confirmed, transactional and self-auditing Audit Delete All.
+# 2026-09-10 License/session/backup additions
+
+- `AccountLicenseService::deleteLicense()` permits only unreferenced License deletion and returns bounded ID/key metadata for same-transaction auditing.
+- `Phase4SessionRegistry::supportMetadata()` projects conservative Device class, Operating system and Browser labels while `deviceId` remains authoritative.
+- `DatabaseBackupService::normalizeConfiguredDirectory()` and `testDirectory()` validate/probe a custom protected path; the constructor's optional directory is consumed by both HTTP backup operations and the automatic CLI runner.

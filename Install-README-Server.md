@@ -146,10 +146,12 @@ Automatic backups require a host scheduler; the Settings checkbox alone does not
 
 1. Im cPanel-Dateimanager bestätigen, dass die produktive, nicht öffentlich auslieferbare `.env` außerhalb des Webzugriffs liegt und nur der Hosting-Benutzer sie lesen kann; niemals `777` verwenden.
 2. Einen kryptografisch zufälligen Wert mit mindestens 32 Zeichen in einem lokalen Passwortmanager erzeugen. Den Wert ausschließlich über den geschützten cPanel-Environment-/Secret-Editor oder direkt im geschützten `.env`-Editor als `NEUTRAL_BACKUP_KEY` setzen. Nicht in Shellargumente, Cronzeile, Tickets, Browser-UI, Logs oder Git kopieren.
-3. Im Adminbereich nur die boolesche Readiness prüfen: Encryption key, Crypto, Database/schema und Protected storage müssen `Ready` sein. Der Wert selbst darf dort nie erscheinen.
-4. Erst danach ein manuelles Backup erstellen und herunterladen. Auf Produktion keinen Restore-Test durchführen.
-5. Bestätigen, dass die deployte Datei `scripts/run-automatic-backup.php` existiert. Dann im cPanel-Cron täglich ausschließlich `php <project>/scripts/run-automatic-backup.php` aufrufen; weder Key noch andere Secrets in die Cronzeile schreiben. Intervall und Retention werden aus den persistierten Systemeinstellungen gelesen.
-6. Einen Cronlauf und dessen sicheren Status kontrollieren. Erst wenn Runner, Key, Schreibrechte und Scheduler real bestätigt sind, darf Automatisierung als betriebsbereit bezeichnet werden.
+3. Den vorbereiteten, außerhalb öffentlicher Webroots liegenden Backupordner mit restriktiven Hosting-Benutzerrechten anlegen; kein `777`, kein automatisches chmod/chown durch Neutral.
+4. In `Admin → Backups & Restore` den installationsspezifischen absoluten `Backup storage path` eintragen, zuerst `Test path` und danach `Save` ausführen. `Ready` erfordert Existenz, Verzeichnis, erfolgreichen sofort entfernten Probe-Write und keine Zuordnung zu einem bekannten öffentlichen Root. Der im Betreiberauftrag genannte Hostpfad ist nur dort einzutragen und kein Core-Default.
+5. Im Adminbereich die Readiness prüfen: Encryption key, Crypto, Database/schema und Protected storage müssen `Ready` sein. Der Keywert selbst darf dort nie erscheinen.
+6. Erst danach ein manuelles Backup erstellen und herunterladen. Auf Produktion keinen Restore-Test durchführen.
+7. Bestätigen, dass die deployte Datei `scripts/run-automatic-backup.php` existiert. Dann im cPanel-Cron täglich ausschließlich `php <project>/scripts/run-automatic-backup.php` aufrufen; weder Key noch andere Secrets in die Cronzeile schreiben. Intervall, Retention und derselbe gespeicherte Storage Path werden aus den persistierten Systemeinstellungen gelesen.
+8. Einen Cronlauf und dessen sicheren Status kontrollieren. Erst wenn Runner, Key, Pfad, Schreibrechte und Scheduler real bestätigt sind, darf Automatisierung als betriebsbereit bezeichnet werden.
 
 ## Core migrations before production verification
 
