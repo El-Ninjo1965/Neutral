@@ -333,15 +333,15 @@ test('anonymous login stays product-facing while preserving labels, action and r
   assert.match(login[0], /Authentication failed\. Check your connection and try again\./);
 });
 
-test('local settings save surfaces both success and error status without admin hints', () => {
+test('local settings save uses the shared success dialog and retains inline errors', () => {
   const source = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
 
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = 'Settings saved successfully\.';\s*status\.className = 'user-settings-status success';\s*\} else \{\s*status\.textContent = 'Settings could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = '';\s*status\.className = 'user-settings-status';\s*window\.NeutralUiFeedback\?\.showSuccess\('Profile and settings saved successfully\.'\);\s*\} else \{\s*status\.textContent = 'Settings could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
   assert.match(css, /\.user-settings-status\.error\s*\{/);
-  assert.doesNotMatch(source, /Settings saved successfully\.'[\s\S]{0,200}[Aa]dmin/);
+  assert.doesNotMatch(source, /Profile and settings saved successfully\.'[\s\S]{0,200}[Aa]dmin/);
 });
 
 test('local feature visibility persists without a show-all control or permission mutation', () => {

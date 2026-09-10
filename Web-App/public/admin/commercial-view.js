@@ -49,7 +49,7 @@ class AdminPackagesView {
       const body = { key: data.get('key'), name: data.get('name'), description: data.get('description'), status: data.get('status'), allowedDevices, modules };
       try {
         const result = packageData.id ? await this.api.put(`/api/admin/packages/${packageData.id}`, body) : await this.api.post('/api/admin/packages', body);
-        if (result.ok) await this.init(this.container); else AdminCommon.showAlert(result.error, 'error');
+        if (result.ok) { AdminCommon.showAlert(packageData.id ? 'Package updated successfully.' : 'Package created successfully.', 'success'); await this.init(this.container); } else AdminCommon.showAlert(result.error, 'error');
       } finally { if (submit.isConnected) submit.disabled = false; }
     });
   }
@@ -99,7 +99,7 @@ class AdminLicensesView {
       submit.disabled = true;
       try {
         const result = license.id ? await this.api.put(`/api/admin/licenses/${license.id}`, body) : await this.api.post('/api/admin/licenses', body);
-        if (result.ok) await this.init(this.container); else AdminCommon.showAlert(result.error, 'error');
+        if (result.ok) { AdminCommon.showAlert(license.id ? 'License updated successfully.' : 'License created successfully.', 'success'); await this.init(this.container); } else AdminCommon.showAlert(result.error, 'error');
       } finally { if (submit.isConnected) submit.disabled = false; }
     });
   }

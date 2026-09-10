@@ -189,3 +189,7 @@ default home instead of leaving an empty view.
 
 - `AccountLicenseService::profile()` projects the authoritative boolean organization-sharing capability; `updateProfile()` rejects unauthorized true sharing flags before mutation and preserves privacy when omitted.
 - User hash routing reproduces main/Settings-subtab Active-State and applies `aria-current` plus centralized `--nav-active-*` tokens.
+## Shared UI feedback
+
+- `NeutralUiFeedback.showSuccess(message, options)` renders the one-at-a-time accessible User/Admin success dialog and restores focus when closed.
+- `NeutralUiFeedback.enhancePasswordFields(root)` equips static or dynamically rendered password inputs with the shared Show/Hide control.

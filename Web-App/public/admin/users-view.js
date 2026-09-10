@@ -262,6 +262,7 @@ class AdminUsersView {
     formDiv.innerHTML = '';
     formDiv.appendChild(form);
     formDiv.style.display = 'block';
+    window.NeutralUiFeedback?.enhancePasswordFields(form);
   }
 
   async createUser(data) {

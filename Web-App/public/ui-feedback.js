@@ -1,0 +1,63 @@
+'use strict';
+
+/** Shared User/Admin feedback and password-field accessibility helpers. */
+const NeutralUiFeedback = (() => {
+  let dialog = null;
+  let returnFocus = null;
+  const closeSuccess = () => {
+    if (!dialog) return;
+    dialog.remove(); dialog = null;
+    const target = returnFocus; returnFocus = null;
+    if (target && target.isConnected && typeof target.focus === 'function') target.focus();
+  };
+  const showSuccess = (message, options = {}) => {
+    if (typeof document === 'undefined') return;
+    closeSuccess();
+    returnFocus = options.returnFocus || document.activeElement;
+    dialog = document.createElement('div');
+    dialog.className = 'neutral-success-dialog-backdrop';
+    dialog.innerHTML = '<section class="neutral-success-dialog" role="dialog" aria-modal="true" aria-labelledby="neutral-success-title" aria-describedby="neutral-success-message"><div class="neutral-success-icon" aria-hidden="true">✓</div><h2 id="neutral-success-title"></h2><p id="neutral-success-message"></p><button type="button" class="ui-button ui-button--primary" data-success-close>OK</button></section>';
+    dialog.querySelector('#neutral-success-title').textContent = options.title || 'Saved';
+    dialog.querySelector('#neutral-success-message').textContent = String(message || 'Changes saved successfully.');
+    const closeButton = dialog.querySelector('[data-success-close]');
+    closeButton.addEventListener('click', closeSuccess);
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) closeSuccess(); });
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeSuccess(); }
+      if (event.key === 'Tab') { event.preventDefault(); closeButton.focus(); }
+    });
+    document.body.appendChild(dialog);
+    closeButton.focus();
+  };
+  const enhancePasswordField = (input) => {
+    if (!input || input.dataset.passwordToggleReady === 'true') return;
+    input.dataset.passwordToggleReady = 'true';
+    const wrapper = document.createElement('span'); wrapper.className = 'password-input-wrap';
+    input.parentNode.insertBefore(wrapper, input); wrapper.appendChild(input);
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'password-visibility-toggle';
+    button.setAttribute('aria-label', 'Show password'); button.setAttribute('aria-pressed', 'false');
+    button.innerHTML = '<span aria-hidden="true">◉</span>';
+    button.addEventListener('click', () => {
+      const visible = input.type === 'text'; input.type = visible ? 'password' : 'text';
+      button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+      button.setAttribute('aria-pressed', visible ? 'false' : 'true'); input.focus();
+    });
+    wrapper.appendChild(button);
+  };
+  const enhancePasswordFields = (root = document) => {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('input[type="password"]:not([data-password-toggle-ready])').forEach(enhancePasswordField);
+  };
+  const start = () => {
+    enhancePasswordFields(document);
+    if (typeof MutationObserver !== 'undefined') new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => {
+      if (node.nodeType === 1) enhancePasswordFields(node.matches?.('input[type="password"]') ? node.parentNode : node);
+    }))).observe(document.body, { childList: true, subtree: true });
+  };
+  if (typeof document !== 'undefined') document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start, { once: true }) : start();
+  return { showSuccess, closeSuccess, enhancePasswordFields };
+})();
+
+if (typeof window !== 'undefined') window.NeutralUiFeedback = NeutralUiFeedback;
+if (typeof module !== 'undefined' && module.exports) module.exports = NeutralUiFeedback;

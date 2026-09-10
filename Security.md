@@ -162,3 +162,8 @@ Production Audit Delete All is intentionally enabled only through `audit.clear`,
 Backup V2 accepts only regular non-symlink managed-media files with service-generated relative names, validates decoded size/SHA-256 and a 100 MiB aggregate bound before mutation, stages into a private runtime directory and refuses a non-empty destination. Installed module tables come only from validated manifest declarations, never arbitrary request table names.
 
 Organization privacy activation is server-gated by current active license membership and returns only a boolean capability, not organization data. A forged profile payload without that capability receives a controlled 422 before mutation. UI hiding is defense in depth, not authorization.
+## Password visibility and Admin user writes
+
+Password reveal is an explicit local presentation toggle: values are neither copied nor logged and existing autocomplete attributes remain authoritative. Admin user creation executes user, role, optional license assignment, and audit work in one database transaction; controlled validation and uniqueness failures return safe 4xx messages without SQL details.
+
+The duplicate identity lookup uses each named marker once, as required by native MySQL prepared statements; this removes the production-only `HY093` failure without enabling emulated prepares.

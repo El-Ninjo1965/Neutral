@@ -699,7 +699,9 @@ final class Phase4UserService
             throw new \RuntimeException('Email is invalid.');
         }
         Phase4PasswordHasher::assertValid($password);
-        $duplicate = $pdo->prepare("SELECT id FROM users WHERE LOWER(username) = LOWER(:username) OR (:email <> '' AND LOWER(email) = LOWER(:email)) LIMIT 1");
+        // Native MySQL prepares reject reused named placeholders. A nullable
+        // e-mail naturally does not match, so every marker stays unique.
+        $duplicate = $pdo->prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
         $duplicate->execute([
             ':username' => $username,
             ':email' => $email === '' ? null : $email,

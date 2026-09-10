@@ -144,3 +144,6 @@ The `.neutral-backup` download is the byte-exact stored AES-256-GCM JSON envelop
 Backup create now emits logical payload v2: the Core table set, installed-module tables declared through `database.tables`, and integrity-described managed media bytes. Upload/restore retain v1 compatibility but never claim legacy artifacts include module/file data. V2 validation occurs before inventory retention or restore mutation.
 
 `GET/PUT /api/account/profile` includes `organizationSharingAvailable` as a non-identifying boolean. PUT rejects any true organization-sharing privacy flag with 422 unless the user currently has an active membership in an active License; omission preserves existing privacy values.
+### Admin user write errors
+
+`POST /api/admin/users` returns `201` only after user/role/license/audit work completes atomically. Invalid input and unknown role/license constraints return `422`; duplicate username/email returns `409`. `PUT /api/admin/users/{id}` likewise maps invalid input to `422`, duplicates to `409`, and missing users to `404` rather than a generic `500`.

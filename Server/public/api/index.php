@@ -692,12 +692,27 @@ if ($route === 'admin/users' && $method === 'GET') {
 if ($route === 'admin/users' && $method === 'POST') {
     require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
     $payload = parse_json_body();
-    $created = $userService->create($payload);
-    if(array_key_exists('licenseId',$payload))$accountLicenseService->assignUserToLicense((int)$created['id'],$payload['licenseId']===''?null:(int)$payload['licenseId'],$payload['allowedDevices']??'default');
-    $auditService->log('user.create', 'user', (string) ($created['id'] ?? ''), actor_user_id($identity), [
-        'username' => (string) ($created['username'] ?? ''),
-        'status' => (string) ($created['status'] ?? ''),
-    ]);
+    $pdo = $database->connect();
+    try {
+        $pdo->beginTransaction();
+        $created = $userService->create($payload);
+        if (array_key_exists('licenseId', $payload)) {
+            $licenseId = trim((string) $payload['licenseId']);
+            $accountLicenseService->assignUserToLicense((int) $created['id'], $licenseId === '' ? null : (int) $licenseId, $payload['allowedDevices'] ?? 'default');
+        }
+        $auditService->log('user.create', 'user', (string) ($created['id'] ?? ''), actor_user_id($identity), [
+            'username' => (string) ($created['username'] ?? ''),
+            'status' => (string) ($created['status'] ?? ''),
+        ]);
+        $pdo->commit();
+    } catch (PDOException $exception) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        JsonResponse::error('User could not be created because the username or email is already in use.', 409);
+    } catch (RuntimeException $exception) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        $status = str_contains(strtolower($exception->getMessage()), 'already exists') ? 409 : 422;
+        JsonResponse::error($exception->getMessage(), $status);
+    }
     JsonResponse::success(['user' => admin_user_payload($created)], 201);
 }
 
@@ -714,8 +729,19 @@ if (preg_match('#^admin/users/([a-z0-9\-]+)$#', $route, $matches) === 1) {
     if ($method === 'PUT') {
         require_permission_or_fail($identity, $authManager, 'user.write', true, $headers);
         $payload = parse_json_body();
-        $updated = $userService->update($userId, $payload);
-        if(array_key_exists('licenseId',$payload))$accountLicenseService->assignUserToLicense((int)$userId,$payload['licenseId']===''?null:(int)$payload['licenseId'],$payload['allowedDevices']??'default');
+        try {
+            $updated = $userService->update($userId, $payload);
+            if (array_key_exists('licenseId', $payload)) {
+                $licenseId = trim((string) $payload['licenseId']);
+                $accountLicenseService->assignUserToLicense((int) $userId, $licenseId === '' ? null : (int) $licenseId, $payload['allowedDevices'] ?? 'default');
+            }
+        } catch (PDOException $exception) {
+            JsonResponse::error('User could not be updated because the email is already in use.', 409);
+        } catch (RuntimeException $exception) {
+            $message = $exception->getMessage();
+            $status = str_contains(strtolower($message), 'already exists') ? 409 : (str_starts_with($message, 'User not found') ? 404 : 422);
+            JsonResponse::error($message, $status);
+        }
         $auditService->log('user.update', 'user', $userId, actor_user_id($identity), [
             'status' => (string) ($updated['status'] ?? ''),
             'roles' => $updated['roles'] ?? [],

@@ -26,3 +26,8 @@ Kein neuer Live-/Freeze-Claim. Zu prüfen: Einzeluser ohne Organization-Option; 
 ## Deployment
 
 Implementierungscommit `410a5474b0703edffadc065c450aca79a99923b0` ist nach `origin/main` übertragen. CodeQL Run `34472190168` und FTPS Deploy Run `34472190459` sind terminal erfolgreich; der ausschließlich lesende Produktionssmoke bestätigte Deploymentrevision und `migrationsReady:true`.
+# 2026-09-11 implementation handoff
+
+The active Global Save Confirmation + User Create P0 + ACCESS Navigation follow-up is implemented locally. The shared User/Admin success dialog replaces success-only inline feedback on covered save/create/update paths, and a shared observer-based helper equips static and dynamic password inputs with accessible visibility controls. Admin user creation now wraps user/roles, optional license assignment and audit in one transaction and maps validation/duplicate failures to controlled 422/409 responses; update errors are likewise controlled. ACCESS order and User Management spacing match the operator decision. No destructive production action or production restore was performed.
+
+Final commit, CI/CodeQL, FTPS deployment and bounded read-only production smoke outcomes will be appended after those checks complete.

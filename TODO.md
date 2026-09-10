@@ -71,3 +71,5 @@
 
 - [ ] Device retest: individual vs organization-assigned Profile sharing visibility and removal/revocation refresh.
 - [ ] Device retest: main/Settings subnavigation active state across click, reload, deep-link, back/forward and logout; recheck Birthday persistence.
+- [ ] Operator retest: create one User and one Admin on the deployed host, verify modal/focus, refreshed list and audit entry.
+- [ ] Device acceptance: verify password toggles and User Management spacing on iPad, phone and desktop.

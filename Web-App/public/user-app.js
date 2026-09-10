@@ -839,8 +839,9 @@
         const status = document.getElementById('userSettingsStatus');
         if (status) {
           if (nextPreferences.persisted) {
-            status.textContent = 'Settings saved successfully.';
-            status.className = 'user-settings-status success';
+            status.textContent = '';
+            status.className = 'user-settings-status';
+            window.NeutralUiFeedback?.showSuccess('Profile and settings saved successfully.');
           } else {
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
@@ -854,7 +855,8 @@
     document.getElementById('profilePasswordButton')?.addEventListener('click', async () => {
       const status = document.getElementById('userSettingsStatus');
       const result = await getServerApiClient()?.changePassword(document.getElementById('profileCurrentPassword')?.value || '', document.getElementById('profileNewPassword')?.value || '');
-      if (status) { status.textContent = result?.ok ? 'Password changed.' : (result?.error || 'Password could not be changed.'); status.className = `user-settings-status ${result?.ok ? 'success' : 'error'}`; }
+      if (status) { status.textContent = result?.ok ? '' : (result?.error || 'Password could not be changed.'); status.className = `user-settings-status ${result?.ok ? '' : 'error'}`; }
+      if (result?.ok) window.NeutralUiFeedback?.showSuccess('Password changed successfully.');
     });
 
   };

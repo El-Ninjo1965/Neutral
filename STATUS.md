@@ -94,3 +94,9 @@ Operator live evidence now confirms protected-path, encryption, crypto and schem
 ## 2026-09-10 organization sharing / active navigation follow-up
 
 **CODE-SEITIG ERLEDIGT / DEVICE RETEST REQUIRED:** Organization Sharing is server-gated by active License membership and hidden for individual users; forged enablement fails before mutation. Main/Settings navigation now has hash-route-derived, accessible, token-colored active states across reload/deep-link/auth changes. Existing Birthday/auth-tab fixes remain intact. No new LIVE or Freeze claim.
+## 2026-09-11 — Global Save / User Create follow-up
+
+- Implemented shared User/Admin success confirmation and password visibility helpers.
+- Hardened Admin user create/update response mapping; create is atomic through audit and optional license assignment.
+- Applied the requested ACCESS navigation order and responsive User Management panel spacing.
+- Full regression/deployment status is recorded in `CHATGPT.md`; no production restore or destructive production action is part of this work.

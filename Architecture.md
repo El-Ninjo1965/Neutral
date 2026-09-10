@@ -284,3 +284,6 @@ The Admin UI now exposes the existing Role ≠ Permission ≠ Package ≠ Licens
 **Backup V2:** installed module tables are discovered from the generic manifest `database.tables` contract; managed Core media is embedded with logical paths, length and SHA-256 inside the encrypted payload. V1 remains readable as its documented Core-only legacy scope. V2 stages validated files and requires an empty managed target, preventing overwrite or path escape.
 
 Organization-sharing capability is projected by the account service from authoritative active license membership, never roles or browser state. User navigation uses a URL-hash/view-state adapter so main and Settings subnavigation are reproducible across reload/back/deep-link; presentation consumes central active-state tokens.
+## Shared browser feedback contract
+
+`Web-App/public/ui-feedback.js` is loaded by both public shells and owns success-dialog lifecycle, focus restoration, and password-visibility enhancement. Admin success notifications delegate to this contract; route errors continue through the existing alert/state channel.

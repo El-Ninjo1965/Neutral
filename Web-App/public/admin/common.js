@@ -173,6 +173,10 @@ const AdminCommon = {
 
   // Create an alert/notification
   showAlert(message, type = 'info', options = {}) {
+    if (type === 'success' && typeof window !== 'undefined' && window.NeutralUiFeedback) {
+      window.NeutralUiFeedback.showSuccess(message, options);
+      return;
+    }
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.dataset.alertScope = options.global === true ? 'global' : 'route';

@@ -292,3 +292,9 @@ Anonymous Settings navigation contains only App Areas and Navigation. Privacy & 
 ## Organization context and active navigation
 
 Profile renders `Share with my organization` only when the server profile capability confirms an active organization assignment. Main navigation, Settings action and Settings subnavigation expose one clear `aria-current` selection derived from the current hash route; selected colors use theme tokens and survive hover, reload and direct links.
+## Global feedback and password fields (2026-09-11)
+
+- Successful save/create/update actions open the shared centered success dialog; they do not leave an additional green success line.
+- The dialog is keyboard/touch accessible, traps its single OK action, supports Escape/backdrop close, and restores focus.
+- Password fields are hidden initially and receive a shared accessible Show/Hide control without changing their value or autocomplete contract.
+- User Management separates its list/filter and editor panels using the standard spacing scale.

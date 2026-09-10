@@ -66,6 +66,7 @@ function render_auth_required_page(AppConfig $config, string $publicConfigJson):
   <script>window.NeutralConfig = <?= $publicConfigJson ?>;</script>
   <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/public-path.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/api-client.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars($config->assetUrl('Web-App/public/ui-feedback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
   (function () {
     const loginButton = document.getElementById('loginBtn');

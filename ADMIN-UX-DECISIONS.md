@@ -127,3 +127,7 @@ Ausgeloggt sind ausschließlich App Areas und Navigation sichtbar; Privacy & Sha
 ## 11. Organization Sharing und Navigation Active-State
 
 Organization Sharing ist nur bei autoritativ bestätigter aktiver User→License/Organization-Zuordnung sichtbar und serverseitig aktivierbar; Rollen oder Clientannahmen reichen nicht. Navigation hat pro Ebene genau einen routenbasierten `aria-current`-Active-State. Farben stammen ausschließlich aus den zentralen `nav-active`-Theme-Tokens.
+
+## 12. Globale Erfolgsbestätigung, Passwörter und ACCESS-Reihenfolge
+
+Erfolgreiche Save/Create/Update-Aktionen verwenden in User- und Admin-UI den gemeinsamen zugänglichen Success-Dialog mit genau einer OK-Aktion und Fokusrückgabe; Fehler bleiben Inline-/Alert-Fehler. Alle dynamischen und statischen Passwortfelder erhalten über denselben Core-Helper einen Show/Hide-Toggle. Unter ACCESS stehen operative Bereiche in der Reihenfolge Users, Packages, Licenses, Sessions vor Roles und Permission Catalog.

@@ -57,3 +57,4 @@ Backup content audit result: **BACKUP CONTRACT PARTIAL**. The 21 non-ephemeral C
 Current: deploy and device/host-accept Backup V2 plus Settings/Profile fixes. Backup contract is code-/isolated COMPLETE; Core Freeze still awaits external Cron/Move gates. No production restore.
 
 Current acceptance: Organization Sharing capability and route-based navigation Active-State are code-complete; perform the concise iPad/device retest in `CHATGPT.md`. Do not promote to LIVE before that evidence.
+- Complete operator acceptance for Admin User/Admin creation and the shared success/password interaction after deployment.
