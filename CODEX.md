@@ -1,295 +1,208 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – BACKUP CONTRACT COMPLETE + SETTINGS/PROFILE UX  
+**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – ORGANIZATION SHARING + ACTIVE NAVIGATION UX  
 **Datum:** 2026-09-10
 
 # Betreiber-Livebefund
 
-Der aktuelle Produktionsstand wurde real auf iPad/Chrome geprüft.
+Der aktuelle Produktionsstand wurde erneut real auf iPad/Chrome geprüft.
 
-## Positiv bestätigt
+## Bereits bestätigt / nicht unnötig regressieren
 
-- `Backup storage path` ist auf dem realen Host gesetzt und erfolgreich getestet.
-- realer Betreiberpfad: `/home/web1819/backup_neutral/` außerhalb `public_html`, Rechte 700.
-- `Encryption key: Ready`, `Crypto: Ready`, `Database/schema: Ready`, `Protected storage: Ready`.
-- ein manuelles verschlüsseltes Backup wurde erfolgreich erstellt.
-- Download/Restore/Delete-Aktionen werden angezeigt.
-- reale Backupgröße ca. 27.8 KB.
-- Backup-Audit ergab: 21 verwaltete nichtflüchtige Coretabellen werden vollständig gesichert; Sessions/Login-Attempts werden bewusst ausgeschlossen und bei Restore geleert.
-- isolierter Datenbank-Restore mit Testmarkern ist bestanden.
-- falscher Key, manipuliertes Artefakt, falsche Schema-Version, unvollständige Tabellenmenge, Traversal-ID und Größenüberschreitung werden kontrolliert abgelehnt.
-- Download-/Uploadartefakt wurde byteidentisch verifiziert.
+- User- und Admin-Login funktionieren.
+- parallele User-/Admin-Sessions funktionieren.
+- GPS-Basismodul funktioniert im geprüften Umfang.
+- Packages/Licenses/Device-Limits sind funktionsfähig.
+- Backup Storage Path auf realem Host funktioniert; manuelles Backup wurde erfolgreich erstellt.
+- Backup V2 ist code-/isoliert als `BACKUP CONTRACT COMPLETE` verifiziert und deployed.
+- ausgeloggt sind in Settings nur `App Areas` und `Navigation` sichtbar; `Privacy & Sharing` und `Profile` erscheinen erst nach Login.
+- Birthday Save/Persistenz und kompaktere Tablet-UI wurden im letzten Auftrag implementiert und müssen im Betreiber-Retest noch bestätigt werden.
 
-## Kritischer Backup-Befund
+## Neue UX-Befunde
 
-Der aktuelle Backup-Vertrag ist weiterhin **BACKUP CONTRACT PARTIAL**.
+1. `Share with my organization` darf nicht jedem eingeloggten Einzeluser angezeigt werden. Der Eintrag ist nur sinnvoll, wenn der Account tatsächlich einer Organization/License mit Organisationskontext zugeordnet ist.
+2. Navigation besitzt keinen durchgängig klaren Active-State. Wenn eine Seite/Unterseite aktiv ist, soll der entsprechende Navigationsbutton visuell eindeutig aktiv sein. Im aktuellen Theme ist das blau; technisch darf die Farbe nicht hart als Blau verdrahtet werden, sondern muss aus dem bestehenden Theme-/Active-State-Token kommen.
 
-Nicht vollständig abgedeckt sind derzeit insbesondere:
-
-- physische Medien/User-Dateien aus `Server/runtime/user-media` bzw. vergleichbaren verwalteten Dateiablagen;
-- moduldeklarierte persistente Nutzdatentabellen, z. B. `reference_notes_items`;
-- damit kein vollständiger Empty-Host-Restore aller verwalteten App-/Moduldaten möglich.
-
-Code, Release-Dateien, `.env`, Secrets, Logs, Caches und vergleichbare reproduzierbare/hostlokale Daten sollen bewusst **nicht** Bestandteil des Datenbackups werden.
-
-## Neue Liveprobleme im User-Settings-Bereich
-
-1. Geburtstag lässt sich auswählen und `Settings saved` wird angezeigt, ist nach erneutem Öffnen von Profile aber wieder leer. Das ist ein echter Persistenz-/Reload-/Hydration-Fehler.
-2. Birthday-UI ist auf iPad unnötig groß. Die drei Felder Day / Month / Year sollen kompakt in einer Zeile stehen, mit sinnvoller Breitenverteilung und deutlich weniger Innenabstand.
-3. Ausgeloggt sind unter Settings derzeit `Privacy & Sharing` und `Profile` als Tabs sichtbar, obwohl dort keine personenbezogene Verwaltung möglich ist. Ausgeloggt sollen nur `App Areas` und `Navigation` sichtbar sein. `Privacy & Sharing` und `Profile` erst nach erfolgreichem Login anzeigen.
-4. Die Freigaben selbst bleiben weiterhin standardmäßig aus.
-
-Reale Produktionsbefunde haben Vorrang vor früheren grünen Tests.
+Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `BACKUP-CONTRACT.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `Install-README-Server.md` sowie alle Backup-/Restore-, Media-, Modul-Data-, Settings-/Profile- und Auth-Dateien.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante Settings/Auth/License/Organization/Navigation-Dateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen.
 4. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community-/Messaging-Erweiterung.
-5. Keine Secrets/PII ausgeben oder committen. `NEUTRAL_BACKUP_KEY` niemals anzeigen, zurückliefern, loggen oder in Artefakte schreiben.
-6. Keine destruktive Produktionsaktion und insbesondere keinen Restore auf Produktion.
+5. Keine Secrets/PII ausgeben oder committen.
+6. Keine destruktiven Produktionsaktionen.
 
 ---
 
-# 2. Backup-Vertrag von PARTIAL auf belastbar vollständig bringen
+# 2. `Share with my organization` nur bei echter Organisationszugehörigkeit
 
 ## Ziel
 
-Neutral Core 1.0 braucht einen generischen Backup-/Restore-Vertrag, der **alle verwalteten persistenten Core- und Modul-/App-Daten** umfasst, die für einen funktionalen Wiederaufbau einer Installation erforderlich sind, ohne Code oder Secrets mitzunehmen.
+Der Privacy-/Profile-Bereich darf `Share with my organization` nur rendern, wenn der eingeloggte User tatsächlich einen gültigen Organisationskontext besitzt.
 
-## Muss gesichert werden
+## Verbindliche Semantik
 
-Mindestens:
+- Einzeluser / privater Payment-User ohne Organization-/License-Zuordnung: **Option nicht anzeigen**.
+- User mit gültiger Organization-/License-Zuordnung: Option anzeigen.
+- Nicht aus Rollenname, UI-Text oder Clientannahme ableiten, sondern aus autoritativer serverseitiger Zuordnung.
+- Falls mehrere Organisationsbezüge möglich sind, vorhandenen Datenvertrag respektieren und keine neue Mehrfachorganisationslogik erfinden.
+- Wenn eine Organisation/Lizenz entfernt, widerrufen oder die User-Zuordnung gelöst wird, muss die Option nach Refresh bzw. Auth-State-Hydration verschwinden.
+- Bestehender Privacy-Default bleibt `off`.
 
-- alle bereits garantierten 21 Coretabellen vollständig mit allen Zeilen/Spalten;
-- alle vom Framework generisch deklarierten persistenten Modultabellen/Nutzdatentabellen;
-- alle verwalteten persistenten User-/Moduldateien und Medienbinärdateien samt notwendiger Metadaten;
-- Modulstatus/-konfiguration;
-- User/Profile/Rollen/Permissions;
-- Packages/Licenses/Device-Limits/Installation-Presence;
-- Settings/Appearance/Systemkonfiguration, soweit nicht secret-only;
-- Auditdaten gemäß bestehendem Vertrag;
-- Migrations-/Setup-/Releasezustand soweit bereits als verwaltete Daten vorgesehen.
+## Sicherheit / API
 
-Nicht hart auf konkrete Modulnamen oder Tabellen wie `reference_notes_items` verdrahten. Der Mechanismus muss generisch aus Framework-/Manifest-/Schema-Verträgen ableiten können, welche Moduldaten persistiert und gesichert werden müssen.
+Nicht nur UI ausblenden:
 
-## Bewusst ausgeschlossen
+- API/Service muss serverseitig prüfen, ob der User überhaupt organisationsbezogene Freigaben setzen darf.
+- Ein Einzeluser darf eine Organization-Sharing-Freigabe nicht durch manipulierten Clientrequest aktivieren.
+- Keine Organisationsdaten an unberechtigte User leaken.
+- Bestehende individuelle Privacy-Einstellungen nicht unnötig verändern.
 
-Weiterhin ausdrücklich nicht sichern:
-
-- Anwendungscode und Release-Dateien;
-- `.env`;
-- Keys/Tokens/Passwörter/Secrets außerhalb bereits sicher gehashter Datenbankwerte;
-- Logs;
-- Caches;
-- temporäre Sessions/Login-Drosselzustände;
-- sonstige reproduzierbare Runtime-Artefakte.
-
-Diese Ausschlüsse in `BACKUP-CONTRACT.md` eindeutig dokumentieren.
-
----
-
-# 3. Datei-/Medienbackup sicher implementieren
-
-Wenn verwaltete Dateien/Medien außerhalb der DB liegen:
-
-- Backup muss deren Binärinhalt einschließen, nicht nur Metadaten;
-- Pfade müssen logisch/relativ und installationsneutral sein, keine absoluten Hostpfade im Artefakt;
-- keine Path Traversal, Symlink-Escape oder Arbitrary File Read/Write;
-- Restore schreibt ausschließlich in erlaubte verwaltete Storage-Ziele;
-- Datei- und DB-Restore müssen so koordiniert sein, dass bei Fehler kein inkonsistenter Halbzustand bleibt;
-- vorhandene Dateien nicht still überschreiben, wenn der Vertrag dies nicht ausdrücklich vorsieht;
-- Größenlimits, Prüfsummen/Integrität und Fehlerbehandlung definieren;
-- Backup bleibt vollständig verschlüsselt; keine Browserentschlüsselung.
-
-Wenn dafür ein Containerformat erweitert werden muss, Versionierung und Rückwärtskompatibilität sauber definieren.
-
----
-
-# 4. Generische Moduldaten-Discovery
-
-Der Core darf modulbezogene Nutzdatentabellen nicht vergessen.
-
-Prüfe, wie Module persistente Daten deklarieren bzw. wie Core/Schema/Migrationen sie erkennen können.
-
-Ziel:
-
-- jedes installierte/aktive Modul kann seine persistenten Tabellen/Storagebereiche über einen generischen Vertrag registrieren;
-- Backup exportiert diese vollständig;
-- Restore validiert, dass erwartete deklarierte Moduldaten vollständig vorhanden sind;
-- ein Backup darf nicht als vollständig gelten, wenn deklarierte persistente Moduldaten fehlen;
-- unbekannte/inkompatible Modulstände müssen sicher und verständlich behandelt werden.
-
-Keine CatchTrack-spezifische Sonderlogik.
-
----
-
-# 5. Isolierter vollständiger Empty-Host-Restore
-
-Nach Erweiterung einen reproduzierbaren vollständigen Restore in isolierter Umgebung durchführen:
-
-1. leere separate Datenbank;
-2. leeres separates verwaltetes Storage-Verzeichnis;
-3. passender hostlokaler Testschlüssel;
-4. Testdaten in allen garantierten Coretabellen;
-5. Testdaten in mindestens einer generisch deklarierten Modultabelle;
-6. mindestens eine echte binäre Testdatei/Media-Datei plus Metadaten;
-7. Backup erstellen;
-8. Zielumgebung leer aufsetzen;
-9. Restore ausführen;
-10. jede DB-Markierung und Datei bytegenau prüfen;
-11. Login nach Restore prüfen;
-12. Sessions müssen weiterhin neu beginnen und dürfen nicht wiederhergestellt werden;
-13. falscher Key, manipuliertes Artefakt, fehlende Datei, fehlende Tabelle, falsche Schema-/Formatversion und Schreibfehler müssen ohne Teilzustand scheitern.
-
-Kein Produktions-Restore.
-
-Ergebnis danach ehrlich einstufen:
-
-- `BACKUP CONTRACT COMPLETE`
-- `BACKUP CONTRACT PARTIAL`
-- `BACKUP DEFECT`
-
-Core 1.0 Freeze nur bei `COMPLETE` plus realen Host-Gates.
-
----
-
-# 6. Birthday-Persistenzfehler beheben
-
-Realer Fehler:
-
-- User wählt Day / Month / Year;
-- Save meldet `Settings saved`;
-- nach erneutem Öffnen von Profile sind alle drei Felder leer.
-
-End-to-end prüfen:
-
-`Profile UI → Settings/Profile API → PHP Service/Repository → DB → GET/Reload → UI hydration`
-
-Mindestens prüfen:
-
-- Payload-Feldname und ISO-Konvertierung;
-- DB-Persistenz;
-- API-Rückgabe nach Reload;
-- Parsing von `YYYY-MM-DD`;
-- Re-Hydration der drei Selects;
-- optionales Löschen durch drei leere Felder;
-- Schaltjahr/unmögliche Daten;
-- keine Zeitzonenverschiebung.
-
-Abnahme:
-
-- Geburtstag speichern;
-- Profile verlassen/neu öffnen;
-- Browser reloaden;
-- erneut einloggen;
-- gespeichertes Datum bleibt korrekt vorausgewählt;
-- drei leere Felder löschen das Datum zuverlässig.
-
-Keine Erfolgsmeldung zeigen, wenn serverseitig nicht tatsächlich gespeichert wurde.
-
----
-
-# 7. Birthday-UI kompakter gestalten
-
-Auf iPad ist der Birthday-Block aktuell deutlich zu groß.
-
-Verbindliche UX:
-
-- Day / Month / Year in einer kompakten horizontalen Zeile, soweit Viewport es zulässt;
-- Day schmal;
-- Month ausreichend breit für ausgeschriebene lokalisierte Monatsnamen;
-- Year schmal/mittel;
-- deutlich weniger Padding/Leerraum als aktuell;
-- Labels eindeutig;
-- Hilfetext kurz und unaufdringlich;
-- responsive auf iPhone/kleinen Android-Geräten sauber umbrechen statt quetschen;
-- Touch-Ziele weiterhin ausreichend groß.
-
-Keine Rückkehr zum nativen Kalender.
-
----
-
-# 8. Settings-Tabs nach Loginzustand steuern
-
-Ausgeloggter Zustand:
-
-- sichtbar: `App Areas`, `Navigation`;
-- **nicht sichtbar**: `Privacy & Sharing`, `Profile`.
-
-Eingeloggter Zustand:
-
-- sichtbar: `App Areas`, `Navigation`, `Privacy & Sharing`, `Profile`.
-
-Anforderungen:
-
-- keine reine CSS-Verdeckung; Routing/Navigation muss Authzustand respektieren;
-- direkter Aufruf eines auth-gebundenen Settings-Unterbereichs ohne Login darf keine personenbezogenen Daten liefern;
-- nach Logout verschwinden die Tabs unmittelbar;
-- nach Login erscheinen sie ohne unnötigen Reload;
-- Privacy-Freigaben bleiben default-off;
-- bestehende anonyme App-Areas-/Navigation-Funktion nicht regressieren.
-
----
-
-# 9. Regression
-
-Nach Umsetzung vollständige Regression.
+## Tests
 
 Mindestens:
 
-- User/Admin Login;
-- Logout/Login-Tab-Sichtbarkeit;
-- App Areas und Navigation anonym;
-- Privacy & Sharing/Profile nur authenticated;
-- Birthday Save/Reload/Re-Login/Delete;
-- Birthday responsive Layout;
-- Packages/Licenses/Device Limits;
+1. eingeloggter Einzeluser ohne Organization → Option fehlt;
+2. User mit gültiger Organization-Zuordnung → Option sichtbar;
+3. Logout → Privacy/Profile verschwinden weiterhin vollständig;
+4. Organization-Zuordnung entfernen → Option verschwindet;
+5. manipulierter Request eines Einzelusers → definierter 4xx, keine Mutation;
+6. Privacy default-off bleibt erhalten.
+
+---
+
+# 3. Globaler Active-State für Navigation
+
+## Ziel
+
+Jeder Navigationsbereich zeigt eindeutig, welche Seite aktuell aktiv ist.
+
+## Hauptnavigation
+
+Wenn ein Hauptbereich geöffnet ist, muss sein Button aktiv dargestellt werden.
+
+Beispiele:
+
+- Settings geöffnet → `Settings` aktiv.
+- GPS geöffnet → `GPS` aktiv.
+- andere Hauptmodule analog.
+
+Der Active-State muss aus Route/aktuellem View-State abgeleitet werden und nach Reload sowie direktem Deep-Link weiterhin stimmen.
+
+## Settings-Unternavigation
+
+Innerhalb Settings gilt dasselbe für:
+
+- App Areas
+- Navigation
+- Privacy & Sharing
+- Profile
+
+Beispiele:
+
+- Settings → Profile: `Settings` bleibt als Hauptbereich aktiv und `Profile` ist in der Unterebene aktiv.
+- Wechsel auf `Navigation`: `Settings` bleibt aktiv, `Navigation` wird aktiv, `Profile` verliert den Active-State.
+
+## UX-Vertrag
+
+- pro Navigationsebene genau **ein** aktiver Eintrag;
+- aktiver Zustand klar sichtbar;
+- aktuelles Theme verwendet dafür blau, aber **keine hartcodierte blaue Farbe**;
+- bestehende Theme-/Design-Tokens bzw. zentrale Active-/Selected-State-Variable verwenden oder sauber zentral ergänzen;
+- Light/Dark und kundenspezifische Themes respektieren;
+- Active-State muss mindestens Hintergrund, Text/Icon-Kontrast und Accessibility-Zustand (`aria-current`/äquivalent) korrekt setzen;
+- Hover/Focus/Disabled dürfen Active nicht optisch überschreiben;
+- Touch-UX auf iPad/iPhone/Android beachten.
+
+## Routing / Auth
+
+- Active-State aus realem Router-/View-State, nicht nur zuletzt geklicktem Button.
+- direkter Seitenaufruf/Reload muss korrekt markieren.
+- nach Login/Logout muss die sichtbare Settings-Unternavigation neu berechnet werden.
+- ausgeblendete auth-gebundene Tabs dürfen niemals als Active-State zurückbleiben.
+
+## Tests
+
+Mindestens:
+
+1. Hauptnavigation mehrere Bereiche durchklicken;
+2. Settings-Untertabs durchklicken;
+3. Reload auf aktivem Untertab;
+4. Deep-Link/direkter Aufruf;
+5. Login/Logout bei aktivem Privacy/Profile;
+6. Light/Dark bzw. vorhandene Theme-Tokens;
+7. Accessibility-Attribut für aktuellen Eintrag.
+
+---
+
+# 4. Betreiber-Retest der letzten Settings-Fixes mit absichern
+
+Die bereits implementierten letzten Änderungen nicht neu erfinden, aber Regressionstests aufnehmen:
+
+- Birthday speichern → Profile verlassen → erneut öffnen → Reload → Logout/Login → Datum bleibt korrekt;
+- Birthday Day/Month/Year auf iPad kompakt;
+- ausgeloggt nur `App Areas` + `Navigation`;
+- eingeloggt zusätzlich `Privacy & Sharing` + `Profile`;
+- Organization-Sharing nur bei tatsächlich zugeordnetem User.
+
+---
+
+# 5. Regression / Freeze-Fortschritt
+
+Nach Umsetzung vollständige Regression mindestens für:
+
+- User/Admin Login und Logout;
+- Settings Auth-Sichtbarkeit;
+- Organization-Sharing-Gating;
+- Birthday Persistenz/Layout;
+- globale Hauptnavigation Active-State;
+- Settings-Untertabs Active-State;
+- Packages/Licenses/Organization-Zuordnungen;
+- Device Limits;
 - Sessions/Installation-ID;
 - Audit;
 - GPS;
-- Backup Storage Path;
-- Backup Create/Download/Upload in Testumgebung;
-- vollständiger Core+Module+File Backup/Restore in isolierter Umgebung;
-- falscher Key / manipuliertes Backup / inkompatible Version / fehlende Komponenten;
+- Backup Storage Path und Backup Create/Download ohne Secret-Leak;
 - PHP-Lint;
 - JS-Syntax;
 - `git diff --check`;
 - vollständige Tests;
 - Production package.
 
+`CORE-1.0-READINESS.md` nur wahrheitsgemäß aktualisieren. Kein automatischer Final Freeze.
+
 ---
 
-# 10. Dokumentation / Freeze-Fortschritt
+# 6. Dokumentation
 
-Mindestens aktualisieren:
+Mindestens aktualisieren, soweit betroffen:
 
 - `CHATGPT.md`
-- `BACKUP-CONTRACT.md`
+- `ADMIN-UX-DECISIONS.md`
+- `UI-UX.md`
+- `USER-ACCOUNT-LICENSE-MODEL.md`
 - `CORE-1.0-READINESS.md`
 - `STATUS.md`
 - `TODO.md`
 - `ToDoNow.md`
-- `ADMIN-UX-DECISIONS.md`
-- `UI-UX.md`
 - `Architecture.md`
 - `Security.md`
 - `API.md`
-- `Database.md`
 - `Functions.md`
-- `Install-README-Server.md`
 
-Keine automatische Freeze-Erklärung.
+Die beiden neuen Produktentscheidungen dauerhaft festhalten:
 
-Offene reale Host-Gates wie Cron/Automatic Backup und weitere isolierte Install-/Move-Tests nur dann als bestanden markieren, wenn tatsächlich belegt.
+1. Organization-Sharing ist **kontextabhängig** und nur für tatsächlich organisationszugeordnete User sichtbar/verwendbar.
+2. Navigation verwendet einen zentralen, routenbasierten Active-State auf Haupt- und Unterebene; konkrete Farben kommen aus Theme-Tokens, nicht aus hardcodierten Komponentenwerten.
 
 ---
 
-# 11. Deployment / Übergabe
+# 7. Deployment / Übergabe
 
 Gemäß `WORKFLOW.md`:
 
@@ -298,15 +211,16 @@ Gemäß `WORKFLOW.md`:
 3. `HEAD == origin/main`, sauberer Tree;
 4. Deploymentrevision + `migrationsReady:true` prüfen;
 5. Production-Smokes ausschließlich read-only;
-6. **keinen Production-Restore**;
-7. `CHATGPT.md` mit tatsächlichem Ergebnis und klarer Restliste aktualisieren.
+6. keine destruktiven Produktionsaktionen;
+7. `CHATGPT.md` mit tatsächlichem Endstand und kurzer Betreiber-Retestliste aktualisieren.
 
-Kurze Betreiber-Retestliste danach:
+Betreiber-Retestliste danach kurz halten:
 
-- ausgeloggt: nur App Areas + Navigation sichtbar;
-- eingeloggt: Privacy & Sharing + Profile sichtbar;
-- Geburtstag speichern, Profile neu öffnen/reloaden und Persistenz prüfen;
-- Birthday-Layout auf iPad prüfen;
-- Backup erstellen und herunterladen;
-- Status des vollständigen Backup-Vertrags mitteilen;
-- Automatic Backup/Cron bleibt separater Hosttest, falls noch nicht real bestätigt.
+- Einzeluser: kein `Share with my organization`;
+- Organization-User: Option sichtbar;
+- Settings-Hauptbutton aktiv;
+- aktiver Settings-Untertab aktiv;
+- Active-State nach Reload/Deep-Link korrekt;
+- Birthday-Persistenz nochmals real prüfen.
+
+Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` markieren.
