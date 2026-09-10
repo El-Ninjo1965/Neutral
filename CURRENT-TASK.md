@@ -12,6 +12,6 @@
 7. [x] Device-Limit-Semantik ausdrücklich als Default pro User bewahren und keine Organization-Device-Pool-Semantik einführen.
 8. [x] Pflichtregression vollständig ausführen: Auth/scoped Sessions/Deduplizierung, IDs/Plattformfixtures, Packages, License CRUD/Referenzschutz/Audit, User-Limits, Birthday, Audit Clear, GPS, Settings, Backuppfad/Runner/Secret-Grenzen, PHP/JS/Diff/Vollsuite/Produktionspaket.
 9. [x] `CHATGPT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `Install-README-Server.md` und betroffene API/Security/Architecture/UI-Dokumentation wahrheitsgemäß aktualisieren; kein automatischer Freeze/LIVE-Status.
-10. [x] Implementierungscommit nach `origin/main` gepusht; CodeQL und FTPS Deploy terminal erfolgreich; verbindlicher read-only Production-Smoke bestätigt Deploymentrevision und `migrationsReady:true`. Abschlussdokumentation folgt als eigener Commit; finaler Remote-Gleichstand wird danach verifiziert.
+10. [x] Implementierungscommit nach `origin/main` gepusht; CodeQL und FTPS Deploy terminal erfolgreich; verbindlicher read-only Production-Smoke bestätigt Deploymentrevision und `migrationsReady:true`. Abschlussdokumentation separat committet und finaler Remote-Gleichstand verifiziert.
 
 **Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.
