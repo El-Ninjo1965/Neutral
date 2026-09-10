@@ -1,49 +1,43 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – GLOBAL SAVE CONFIRMATION + USER CREATE P0 + ACCESS NAV UX  
+**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – LOGIN PASSWORD TOGGLE + USER PACKAGE ASSIGNMENT + LIVE RETEST  
 **Datum:** 2026-09-11
 
 # Betreiber-Livebefund
 
 Der aktuelle Produktionsstand wurde erneut real auf iPad/Chrome geprüft.
 
-## Bereits bestätigt / nicht unnötig regressieren
+## Bereits positiv bestätigt / nicht unnötig regressieren
 
-- User- und Admin-Login funktionieren.
+- User- und Admin-Login funktionieren grundsätzlich.
 - parallele User-/Admin-Sessions funktionieren.
 - GPS-Basismodul funktioniert im geprüften Umfang.
-- Packages/Licenses/Device-Limits sind funktionsfähig.
 - Backup Storage Path funktioniert auf dem realen Host.
 - Backup V2 ist code-/isoliert als `BACKUP CONTRACT COMPLETE` verifiziert und deployed.
 - ausgeloggt sind in Settings nur `App Areas` und `Navigation` sichtbar; `Privacy & Sharing` und `Profile` erscheinen erst nach Login.
-- Birthday Save/Persistenz und kompaktere Tablet-UI sind implementiert; realer Betreibercheck läuft.
+- Birthday Save/Persistenz ist im aktuellen Livecheck sichtbar: gespeichertes Datum wird erneut korrekt angezeigt.
 - Organization-Sharing ist serverseitig gated und nur bei aktiver License-/Organization-Zuordnung verfügbar.
 - routenbasierte Active-States für Hauptnavigation und Settings-Untertabs sind implementiert.
+- ACCESS-Reihenfolge wurde angepasst.
+- User-Management-Spacing wurde angepasst.
+- zentrale Success-Modal-Logik und Passwort-Show/Hide-Helper sind grundsätzlich implementiert.
 
 Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
 
-## Neue Liveprobleme / UX-Wünsche
+## Neue Liveprobleme
 
-1. Erfolgreiche Speicheraktionen zeigen aktuell teilweise nur grünen Inline-Text wie `Settings saved successfully.`. Der Betreiber möchte stattdessen **global in User-UI und Admin-UI ein einheitliches Bestätigungs-Popup/Modal**.
-2. Diese Regel soll **für jede erfolgreiche Save-/Speicher-/Update-Aktion** gelten, nicht nur in Settings.
-3. Im Adminbereich kann aktuell kein neuer User/Admin angelegt werden. Realer Fehler: `Failed to create user: Internal server error.` → **P0-Funktionsfehler**.
-4. In `User Management` kleben die Content-Blöcke `User Management` und `Create New User` optisch zusammen; etwas vertikaler Abstand ist gewünscht.
-5. Alle Passwortfelder in User-UI und Admin-UI sollen einen sichtbaren **Eye-Toggle** zum Ein-/Ausblenden des Passworts erhalten.
-6. In der Admin-Sidebar unter `ACCESS` sollen die technischen Berechtigungsbereiche ans Ende. Gewünschte Reihenfolge:
-   - Users
-   - Packages / Entitlements
-   - Licenses / Organizations
-   - Sessions
-   - Roles & Permissions
-   - Permission Catalog
+1. **Admin-Login Passworttoggle unverständlich:** Rechts im Passwortfeld erscheint lediglich ein kleiner Punkt/Kreis. Das ist als Show/Hide-Passwortfunktion nicht verständlich. Gewünscht ist ein echtes, allgemein erkennbares Eye-Icon.
+2. **User-UI Login ohne Passworttoggle:** Im normalen User-Login fehlt der Show/Hide-Toggle vollständig.
+3. **User Edit ohne direkte Package-Auswahl:** Im Adminbereich `Edit User` gibt es `License / Organization`, aber keine direkte `Package`-Auswahl. Ein Einzeluser ohne Organization/License muss dennoch direkt einem Package zugeordnet werden können.
+4. Die bestehende Package-/License-/Device-Limit-Semantik darf dabei nicht widersprüchlich werden.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante User-/Auth-/Form-/Modal-/Navigation-Dateien.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante User-/Auth-/Password-/Package-/License-Dateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen.
 4. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community-/Messaging-Erweiterung.
 5. Keine Secrets/PII ausgeben oder committen.
@@ -51,184 +45,185 @@ Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
 
 ---
 
-# 2. P0 – Admin `Create New User` liefert Internal Server Error
+# 2. Passwort-Show/Hide global wirklich konsistent machen
 
-## Realer Befund
+## Livebefund
 
-Im Adminbereich unter `Users` schlägt die Erstellung eines neuen Users/Admins mit folgender sichtbarer Meldung fehl:
+### Admin Login
 
-`Failed to create user: Internal server error.`
+Der Toggle ist technisch vorhanden, erscheint auf iPad/Chrome aber nur als kleiner Punkt/Kreis. Das ist UX-seitig nicht akzeptabel.
 
-Das ist ein echter Produktionsfehler und muss end-to-end diagnostiziert werden.
+### User Login
 
-## Auftrag
+Im normalen Plattform-Login fehlt der Toggle vollständig.
 
-Prüfe vollständig:
+## Verbindlicher UI-Vertrag
 
-`Admin UI → Form State → ApiClient → POST User API → PHP Router → Service → Repository/DB → Audit → Response`
+Alle Passwortfelder in User-UI und Admin-UI verwenden dieselbe zentrale Password-Field-/Toggle-Komponente bzw. denselben Helper.
 
-Insbesondere:
+Anforderungen:
 
-- Payload-Feldnamen/-typen;
-- Pflicht-/Optionalfelder;
-- Rollenarray / Adminrolle / Userrolle;
-- License-/Package-Zuordnung, falls optional;
-- Allowed Devices / Default / Custom / Unlimited;
-- Passwortvalidierung;
-- leere optionale Felder;
-- DB-Constraints / FKs / unique username/email;
-- Audit nach Create;
-- generische Catch-Blöcke, die echte 4xx-Ursachen als 500 maskieren;
-- mögliche Regression aus den letzten License-/Organization-/Profile-Änderungen.
+- Standardzustand `type=password`;
+- rechts im Feld ein **echtes Eye-Icon**, allgemein verständlich;
+- verborgen: geschlossenes bzw. durchgestrichenes Auge;
+- sichtbar: offenes Auge;
+- keine Darstellung als bloßer Punkt/Kreis;
+- Toggle rechts im Feld, visuell klar vom Text getrennt;
+- Touchfläche mindestens ungefähr 44×44 CSS-Pixel, Symbol selbst klar sichtbar;
+- Tap/Klick toggelt ausschließlich `password` ↔ `text`, ohne Wertänderung;
+- zugänglich per Tastatur/Screenreader;
+- `aria-label` wechselt sinngemäß `Show password` / `Hide password`;
+- i18n-fähige Beschriftung;
+- kein Passwortwert in Logs/Audit/Analytics;
+- Autofill nicht unnötig brechen.
 
-## Abnahme
+Mindestabdeckung:
 
-- gültiger neuer User lässt sich beim ersten Versuch erstellen;
-- gültiger neuer Admin lässt sich beim ersten Versuch erstellen;
-- invalides Input → verständlicher 4xx, kein 500;
-- Duplicate Username/Email → definierter Konflikt, kein 500;
-- Liste aktualisiert sich unmittelbar nach Erfolg;
-- Auditnachweis korrekt;
-- keine Regression bestehender User.
+- normaler User Login;
+- Admin Login;
+- Create New User;
+- Edit/Reset Password, falls vorhanden;
+- Profile `Current password`;
+- Profile `New password`;
+- dynamisch erzeugte Passwortfelder.
+
+Tests müssen explizit sicherstellen, dass der User-Login nicht vergessen wird und der Admin-Login ein tatsächliches Eye-Symbol rendert.
 
 ---
 
-# 3. Globale Save-/Success-Bestätigung als Modal/Popup
+# 3. User muss unabhängig von Organization/License direkt einem Package zugeordnet werden können
 
-## Produktentscheidung
+## Livebefund
 
-Jede **erfolgreiche Speicher-/Änderungsaktion** in User-UI und Admin-UI soll nicht mehr nur als grüner Inline-Text unter einem Formular erscheinen, sondern über eine **zentrale einheitliche Success-Modal-Komponente** bestätigt werden.
+In `Admin → Users → Edit User` ist derzeit nur `License / Organization` auswählbar. Eine direkte Package-Auswahl fehlt.
 
-Beispiele:
+Das ist für Einzeluser fachlich unvollständig: Ein privater/normaler Payment-User kann keinem Verein/keiner Organisation angehören, braucht aber dennoch ein Package/Entitlement.
 
-- `Settings saved successfully.`
-- `Profile saved successfully.`
-- `User created successfully.`
-- `User updated successfully.`
-- `License saved successfully.`
-- `Backup path saved successfully.`
+## Verbindliche Semantik
 
-## Anforderungen
+Die UI und das Datenmodell müssen klar zwischen **Package** und **License / Organization** unterscheiden.
 
-- zentrale Core-Komponente, nicht pro Seite neu implementieren;
-- gilt mindestens für Create/Save/Update-Aktionen, die bisher Inline-Success-Text nutzen;
-- Modal mittig, klar, touchfreundlich;
-- `OK`-Button zum Schließen;
-- Escape/Backdrop nur wenn mit bestehender Modal-Konvention konsistent;
-- Fokusmanagement und Accessibility (`role="dialog"`, sinnvolle `aria-*`-Attribute, Fokus ins Modal und zurück zum Auslöser);
-- keine grünen Success-Inline-Texte zusätzlich stehen lassen;
-- Fehler bleiben klar getrennt als Error-State/Fehlermeldung und werden nicht als Success-Modal dargestellt;
-- keine Modal-Spam-Kaskaden: pro erfolgreicher Benutzeraktion genau eine Bestätigung;
-- Text lokalisierbar/i18n-fähig;
-- User-UI und Admin-UI sollen dieselbe zentrale Komponente bzw. denselben UI-Vertrag verwenden.
+### Einzeluser
 
-## Nicht gemeint
+- darf direkt ein Package erhalten;
+- keine Organization/License erforderlich;
+- Package bestimmt die verfügbaren Entitlements und den Package-Default für Devices pro User.
 
-- keine Popups bei reinem Tabwechsel;
-- keine Popups bei automatischen Hintergrund-Refreshes;
-- keine Popups bei jeder einzelnen Feldänderung;
-- destruktive Bestätigungsdialoge bleiben eigene Confirmation-Flows.
+### Organization-/License-User
+
+- kann einer License/Organization zugeordnet sein;
+- diese License verweist auf ein Package;
+- die UI muss klar und widerspruchsfrei zeigen, welches Package dadurch effektiv gilt.
+
+## Konflikt-/Prioritätsregel
+
+Prüfe den bereits vorhandenen Datenvertrag in `USER-ACCOUNT-LICENSE-MODEL.md` und bestehender Implementierung. Keine neue Semantik frei erfinden, wenn bereits festgelegt.
+
+Falls bislang nicht eindeutig geregelt, dann als Produktvertrag sauber definieren und dokumentieren:
+
+- direkte User-Package-Zuordnung gilt für Einzeluser;
+- sobald eine aktive License/Organization zugeordnet ist, darf es **keinen stillen widersprüchlichen zweiten effektiven Package-Zustand** geben;
+- entweder License-Package ist dann autoritativ oder direkte Package-Auswahl wird gesperrt/als abgeleitet angezeigt;
+- UI muss die Quelle des effektiven Packages deutlich machen (`Direct package` vs `From license/organization` oder äquivalent);
+- Wechsel zwischen Einzeluser und Organization-User muss kontrolliert und nachvollziehbar sein;
+- bestehende Device-Limit-Vererbung muss dazu konsistent bleiben:
+  - Package default devices per user;
+  - License device limit per user kann Package-Default übernehmen/überschreiben;
+  - User kann gemäß bestehendem Vertrag Default übernehmen oder User-Override besitzen.
+
+## UI-Anforderungen
+
+In Create/Edit User mindestens klar trennen:
+
+- `Package`
+- `License / Organization`
+
+Wenn eine License gewählt ist und deren Package autoritativ ist:
+
+- direkte Package-Auswahl entweder deaktivieren und das geerbte Package anzeigen;
+- oder die direkte Auswahl kontrolliert entfernen/ersetzen;
+- niemals zwei unterschiedliche Packages gleichzeitig als scheinbar aktiv darstellen.
+
+Wenn `License / Organization = Unassigned`:
+
+- `Package` muss frei auswählbar sein.
+
+## API/DB
+
+End-to-end prüfen:
+
+- Create User mit direktem Package und ohne License;
+- Edit User Package-Wechsel ohne License;
+- Zuordnung einer License mit Package;
+- Entfernung der License → definierter Fallback auf direktes Package oder klar dokumentierter Zustand;
+- keine FK-/Referenzfehler;
+- Audit nachvollziehbar;
+- keine stillen Entitlement-Verluste.
 
 ## Tests
 
-Mindestens Settings Save, Profile Save, User Create/Edit, License Save/Edit, Backup Path Save sowie Fehlerfall ohne Success-Modal.
+Mindestens:
+
+1. Einzeluser + direktes Package → erfolgreich;
+2. Einzeluser Package wechseln → erfolgreich;
+3. User ohne License hat sichtbares/eindeutiges effektives Package;
+4. License zuweisen → effektives Package entspricht dem definierten Vertrag;
+5. Konflikt zwischen direktem Package und License-Package kann nicht still entstehen;
+6. License entfernen → definierter Package-Zustand;
+7. Device-Limits bleiben konsistent;
+8. User-Liste zeigt verständlich das effektive Package bzw. die License-/Package-Quelle.
 
 ---
 
-# 4. Passwortfelder – globaler Eye-Toggle
+# 4. Bestehende globale Success-Modal-Regel nicht regressieren
 
-Alle Passwortfelder in User-UI und Admin-UI sollen konsistent einen Show/Hide-Toggle erhalten.
+Weiterhin verbindlich:
 
-## Anforderungen
+- erfolgreiche Save/Create/Update-Aktionen in User- und Admin-UI verwenden die zentrale Success-Modal-Komponente;
+- keine zusätzlichen grünen Inline-Erfolgstexte;
+- Fehler bleiben separate Error-States;
+- pro Benutzeraktion genau ein Success-Modal;
+- Fokusmanagement, Touch-UX und i18n bleiben erhalten.
 
-- Standardzustand: Passwort verborgen (`type=password`);
-- Eye-Icon rechts im Feld;
-- Tap/Klick → sichtbar (`type=text`), erneuter Tap → wieder verborgen;
-- keine Änderung am Feldwert;
-- funktioniert mindestens bei:
-  - User Login
-  - Admin Login
-  - Create New User
-  - Edit User / Reset Password, falls vorhanden
-  - Profile `Current password`
-  - Profile `New password`
-  - sonstigen bestehenden Passwortfeldern
-- touchfreundliche Fläche;
-- Tastatur-/Screenreader-bedienbar;
-- `aria-label` bzw. zugänglicher Name wechselt sinngemäß zwischen Show/Hide password;
-- keine Security-Logs oder Passwortwerte nach außen;
-- kein Autofill-Vertrag unnötig brechen.
-
-Zentrale wiederverwendbare Input-Komponente oder Helper bevorzugen, keine Copy/Paste-Implementierung auf jeder Seite.
+Beim Package-/User-Edit entsprechend mitprüfen.
 
 ---
 
-# 5. User Management – vertikaler Abstand zwischen Content-Blöcken
-
-Zwischen dem oberen `User Management`-Listen-/Filterblock und dem darunterliegenden `Create New User`-Block soll sichtbar etwas Luft liegen.
-
-Anforderungen:
-
-- moderater vertikaler Abstand entsprechend bestehendem Spacing-System;
-- keine übergroße Leerfläche;
-- responsive stabil auf iPad/Desktop/Phone;
-- kein Spezial-Pixelhack nur für eine Auflösung;
-- bestehende Card-/Panel-Radien und Borders beibehalten.
-
----
-
-# 6. Admin Sidebar – Reihenfolge unter ACCESS
-
-Gewünschte verbindliche Reihenfolge:
-
-1. `Users`
-2. `Packages / Entitlements`
-3. `Licenses / Organizations`
-4. `Sessions`
-5. `Roles & Permissions`
-6. `Permission Catalog`
-
-Ziel: operative Access-Verwaltung zuerst, technische Berechtigungsdefinitionen zuletzt.
-
-Anforderungen:
-
-- nur Reihenfolge ändern, keine Routen/Permissions/Labels regressieren;
-- Active-State weiterhin korrekt;
-- Responsive-/Collapsed-Navigation weiterhin korrekt;
-- Tests/Snapshots ggf. aktualisieren.
-
----
-
-# 7. Bestehende Active-State- und Organization-Sharing-Regeln nicht regressieren
+# 5. Bestehende Navigation/Organization/Birthday-Regeln nicht regressieren
 
 Regression sicherstellen:
 
-- Hauptnavigation/Settings-Untertabs bleiben routenbasiert aktiv;
-- Theme-Tokens weiterhin autoritativ;
-- `aria-current="page"` korrekt;
+- ACCESS-Reihenfolge bleibt:
+  1. Users
+  2. Packages / Entitlements
+  3. Licenses / Organizations
+  4. Sessions
+  5. Roles & Permissions
+  6. Permission Catalog
+- Hauptnavigation und Settings-Untertabs behalten routenbasierten Active-State;
 - `Share with my organization` nur bei echter aktiver Organization-/License-Zuordnung;
-- Einzeluser sehen diese Option nicht;
-- serverseitige 422-Sperre gegen manipulierte Sharing-Requests bleibt erhalten.
+- Einzeluser ohne Organization sehen diese Option nicht;
+- Birthday-Persistenz bleibt korrekt;
+- ausgeloggt nur `App Areas` + `Navigation`.
 
 ---
 
-# 8. Regression / Freeze-Fortschritt
+# 6. Regression / Freeze-Fortschritt
 
 Nach Umsetzung vollständige Regression mindestens für:
 
-- User/Admin Login;
-- Create New User und Create New Admin;
+- User Login inkl. Eye-Toggle;
+- Admin Login inkl. korrekt sichtbarem Eye-Toggle;
+- Create New User/Admin;
 - User Edit;
-- Passwortfelder Show/Hide;
-- Settings/Profile Save → Success Modal;
-- Admin Save/Create/Update → Success Modal;
-- Fehlerfälle ohne falsches Success Modal;
-- Sidebar ACCESS-Reihenfolge;
-- User-Management-Spacing;
+- direktes Package für Einzeluser;
+- License-/Organization-Zuordnung und effektives Package;
+- Device-Limit-Vererbung;
+- Success-Modal auf User/Admin Save/Create/Update;
 - Organization-Sharing-Gating;
 - Birthday Persistenz/Layout;
-- Hauptnavigation/Settings-Untertab Active-State;
-- Packages/Licenses/Device Limits;
+- Navigation Active-State;
+- ACCESS-Reihenfolge;
 - Sessions/Installation-ID;
 - Audit;
 - GPS;
@@ -243,11 +238,12 @@ Nach Umsetzung vollständige Regression mindestens für:
 
 ---
 
-# 9. Dokumentation
+# 7. Dokumentation
 
 Mindestens aktualisieren, soweit betroffen:
 
 - `CHATGPT.md`
+- `USER-ACCOUNT-LICENSE-MODEL.md`
 - `ADMIN-UX-DECISIONS.md`
 - `UI-UX.md`
 - `CORE-1.0-READINESS.md`
@@ -257,18 +253,19 @@ Mindestens aktualisieren, soweit betroffen:
 - `Architecture.md`
 - `Security.md`
 - `API.md`
+- `Database.md`
 - `Functions.md`
 
 Dauerhaft festhalten:
 
-1. Save-/Success-Bestätigungen verwenden zentralisierte Modals in User- und Admin-UI.
-2. Passwortfelder besitzen global einen zugänglichen Show/Hide-Toggle.
-3. ACCESS-Reihenfolge entspricht der oben definierten Reihenfolge.
-4. User-Management-Panels verwenden konsistentes vertikales Spacing.
+1. Passwortfelder verwenden global ein klar erkennbares Eye-Icon, nicht nur irgendeinen Toggle-Indikator.
+2. User-Login und Admin-Login verwenden denselben Password-Visibility-Vertrag.
+3. Einzeluser können direkt einem Package zugeordnet werden, unabhängig von Organization/License.
+4. Organization-/License-Package und direktes User-Package dürfen keinen widersprüchlichen effektiven Zustand erzeugen.
 
 ---
 
-# 10. Deployment / Übergabe
+# 8. Deployment / Übergabe
 
 Gemäß `WORKFLOW.md`:
 
@@ -282,12 +279,11 @@ Gemäß `WORKFLOW.md`:
 
 Betreiber-Retestliste danach kurz halten:
 
-- neuen User erstellen;
-- neuen Admin erstellen;
-- Save-Aktion in User-UI → Modal;
-- Save/Create/Update in Admin-UI → Modal;
-- Passwort-Eye in Login/Create/Profile prüfen;
-- ACCESS-Reihenfolge prüfen;
-- Abstand zwischen User Management und Create New User prüfen.
+- User-Login: echtes Auge sichtbar und funktionsfähig;
+- Admin-Login: echtes Auge statt Punkt/Kreis;
+- Einzeluser ohne License: Package direkt auswählbar;
+- Organization-User: effektives Package eindeutig und widerspruchsfrei;
+- Device-Limits weiterhin korrekt;
+- Save/Create/Update → Success-Modal.
 
 Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` markieren.
