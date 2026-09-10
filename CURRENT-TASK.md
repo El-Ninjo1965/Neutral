@@ -12,8 +12,8 @@
 7. [x] Audit Delete All auf genau zwei Dialogbestätigungen ohne `DELETE`-Eingabe umstellen; Permission, Adminsession, CSRF, Transaktion, Nachweis und Retention regressionsfest testen.
 8. [x] Auth-/Session-, Packages-/Licenses-/Users-/Limits-, GPS-, Settings-, PHP-/JS-, Diff-, Vollsuite- und Produktionspaket-Regression ausführen.
 9. [x] Vertrags-, Status-, Todo-, Readiness- und Übergabedokumentation wahrheitsgemäß aktualisieren; keine automatische Freeze-/Live-Erklärung.
-10. [ ] Änderungen committen, nach `origin/main` pushen und CI/CodeQL/FTPS terminal abwarten.
-11. [ ] Deploymentrevision und `migrationsReady:true` sowie sichere Production-Smokes prüfen; keine destruktiven Aktionen, Secrets oder PII.
+10. [x] Änderungen committen, nach `origin/main` pushen und CI/CodeQL/FTPS terminal abwarten.
+11. [x] Deploymentrevision und `migrationsReady:true` sowie sichere Production-Smokes prüfen; keine destruktiven Aktionen, Secrets oder PII.
 12. [x] `CHATGPT.md` mit tatsächlichem Endstand und kurzer Betreiber-Retestliste aktualisieren; finalen Dokumentationsstand committen/pushen, terminal abwarten und sauberen `HEAD == origin/main` verifizieren.
 
 **Capture-Prüfung:** `CODEX.md + ADMIN-UX-DECISIONS.md + neuer Betreiberauftrag == CURRENT-TASK-Anforderungen` — bestanden.
