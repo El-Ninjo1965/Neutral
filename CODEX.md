@@ -1,271 +1,450 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER NACHBESSERUNGSAUFTRAG – LOGIN PASSWORD TOGGLE + USER PACKAGE ASSIGNMENT + LIVE RETEST  
+**Status:** AKTIVER ARCHITEKTUR-/NACHBESSERUNGSAUFTRAG – MINIMALER CORE + OPTIONALE SYSTEMMODULE + USER-LOGIN-EYE  
 **Datum:** 2026-09-11
 
-# Betreiber-Livebefund
+# Betreiber-Livebefund / Produktentscheidungen
 
-Der aktuelle Produktionsstand wurde erneut real auf iPad/Chrome geprüft.
+Der aktuelle Produktionsstand wurde real auf iPad/Chrome geprüft.
 
-## Bereits positiv bestätigt / nicht unnötig regressieren
+## Bereits live bestätigt / nicht regressieren
 
-- User- und Admin-Login funktionieren grundsätzlich.
-- parallele User-/Admin-Sessions funktionieren.
-- GPS-Basismodul funktioniert im geprüften Umfang.
-- Backup Storage Path funktioniert auf dem realen Host.
+- Admin-Login-Auge funktioniert.
+- direkte Package-Zuordnung für Einzeluser funktioniert.
+- aktive License-Package-Priorität funktioniert.
+- nach Entfernen der License greift das direkte User-Package wieder.
+- Device-Limit-Vererbung funktioniert.
+- Success-Modal funktioniert.
+- User-/Admin-Login funktionieren grundsätzlich.
+- Packages/Licenses/Organization-Zuordnungen funktionieren im geprüften Umfang.
+- Backup Storage Path funktioniert auf realem Host.
 - Backup V2 ist code-/isoliert als `BACKUP CONTRACT COMPLETE` verifiziert und deployed.
-- ausgeloggt sind in Settings nur `App Areas` und `Navigation` sichtbar; `Privacy & Sharing` und `Profile` erscheinen erst nach Login.
-- Birthday Save/Persistenz ist im aktuellen Livecheck sichtbar: gespeichertes Datum wird erneut korrekt angezeigt.
-- Organization-Sharing ist serverseitig gated und nur bei aktiver License-/Organization-Zuordnung verfügbar.
-- routenbasierte Active-States für Hauptnavigation und Settings-Untertabs sind implementiert.
-- ACCESS-Reihenfolge wurde angepasst.
-- User-Management-Spacing wurde angepasst.
-- zentrale Success-Modal-Logik und Passwort-Show/Hide-Helper sind grundsätzlich implementiert.
+- Birthday-Persistenz funktioniert im Betreibercheck.
+- Organization-Sharing ist serverseitig gated.
+- Active-State-Navigation ist implementiert.
 
-Reale Betreiberbefunde haben Vorrang vor früheren grünen Tests.
+## Noch offener Livefehler
 
-## Neue Liveprobleme
+- Im normalen **User-Login** fehlt der Passwort-Eye-Toggle weiterhin. Admin-Login und andere Passwortfelder funktionieren.
 
-1. **Admin-Login Passworttoggle unverständlich:** Rechts im Passwortfeld erscheint lediglich ein kleiner Punkt/Kreis. Das ist als Show/Hide-Passwortfunktion nicht verständlich. Gewünscht ist ein echtes, allgemein erkennbares Eye-Icon.
-2. **User-UI Login ohne Passworttoggle:** Im normalen User-Login fehlt der Show/Hide-Toggle vollständig.
-3. **User Edit ohne direkte Package-Auswahl:** Im Adminbereich `Edit User` gibt es `License / Organization`, aber keine direkte `Package`-Auswahl. Ein Einzeluser ohne Organization/License muss dennoch direkt einem Package zugeordnet werden können.
-4. Die bestehende Package-/License-/Device-Limit-Semantik darf dabei nicht widersprüchlich werden.
+## Neue verbindliche Architekturentscheidung
+
+Neutral soll vor dem Core-Freeze stärker modularisiert werden:
+
+> **Core = ausschließlich notwendige technische Mechanismen. Konkrete Funktionen = Module.**
+
+Eine Neutral-App muss vollständig lauffähig sein, auch wenn optionale Module wie Profile, Sharing, Community, Postbox, Moderation oder Notifications nicht installiert/aktiviert sind.
+
+Keine unnötigen Modul-zu-Modul-Abhängigkeiten erzeugen. Module dürfen Core-Fähigkeiten nutzen, aber unabhängige Module dürfen sich nicht gegenseitig voraussetzen, sofern fachlich nicht zwingend.
 
 ---
 
 # 1. Pflicht-Preflight
 
 1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md` sowie relevante User-/Auth-/Password-/Package-/License-Dateien.
+2. Vollständig lesen: `CHATGPT.md`, `CODEX.md`, `CURRENT-TASK.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `ADMIN-UX-DECISIONS.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `UI-UX.md`, `Architecture.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `BACKUP-CONTRACT.md` sowie relevante Module/Registry/Settings/Profile/Privacy/Media/Auth/Event/Notification-Dateien.
 3. Auftrag vollständig nach `CURRENT-TASK.md` übernehmen.
-4. Keine CatchTrack-Fachlogik, kein GPS Pro, kein Marketplace, keine Community-/Messaging-Erweiterung.
+4. Keine CatchTrack-spezifische Fachlogik in den Core aufnehmen.
 5. Keine Secrets/PII ausgeben oder committen.
-6. Keine destruktiven Produktionsaktionen.
+6. Keine destruktiven Produktionsaktionen und keinen Production-Restore.
 
 ---
 
-# 2. Passwort-Show/Hide global wirklich konsistent machen
+# 2. Sofortiger Restfix – User-Login Passwort-Auge
 
-## Livebefund
-
-### Admin Login
-
-Der Toggle ist technisch vorhanden, erscheint auf iPad/Chrome aber nur als kleiner Punkt/Kreis. Das ist UX-seitig nicht akzeptabel.
-
-### User Login
-
-Im normalen Plattform-Login fehlt der Toggle vollständig.
-
-## Verbindlicher UI-Vertrag
-
-Alle Passwortfelder in User-UI und Admin-UI verwenden dieselbe zentrale Password-Field-/Toggle-Komponente bzw. denselben Helper.
+Der User-Login besitzt weiterhin keinen sichtbaren Show/Hide-Toggle.
 
 Anforderungen:
 
-- Standardzustand `type=password`;
-- rechts im Feld ein **echtes Eye-Icon**, allgemein verständlich;
-- verborgen: geschlossenes bzw. durchgestrichenes Auge;
-- sichtbar: offenes Auge;
-- keine Darstellung als bloßer Punkt/Kreis;
-- Toggle rechts im Feld, visuell klar vom Text getrennt;
-- Touchfläche mindestens ungefähr 44×44 CSS-Pixel, Symbol selbst klar sichtbar;
-- Tap/Klick toggelt ausschließlich `password` ↔ `text`, ohne Wertänderung;
-- zugänglich per Tastatur/Screenreader;
-- `aria-label` wechselt sinngemäß `Show password` / `Hide password`;
-- i18n-fähige Beschriftung;
-- kein Passwortwert in Logs/Audit/Analytics;
-- Autofill nicht unnötig brechen.
-
-Mindestabdeckung:
-
-- normaler User Login;
-- Admin Login;
-- Create New User;
-- Edit/Reset Password, falls vorhanden;
-- Profile `Current password`;
-- Profile `New password`;
-- dynamisch erzeugte Passwortfelder.
-
-Tests müssen explizit sicherstellen, dass der User-Login nicht vergessen wird und der Admin-Login ein tatsächliches Eye-Symbol rendert.
+- denselben zentralen Password-Visibility-Vertrag verwenden wie Admin-Login und übrige Passwortfelder;
+- echtes Eye-Icon, nicht Punkt/Kreis;
+- hidden = durchgestrichen/geschlossen, visible = offen;
+- Touchfläche ausreichend groß;
+- `aria-label` Show/Hide password;
+- i18n-fähig;
+- keine Sonderimplementierung nur für diesen Screen, sondern denselben wiederverwendbaren Helper/Component-Pfad verwenden;
+- iPad/Chrome explizit regressionsprüfen.
 
 ---
 
-# 3. User muss unabhängig von Organization/License direkt einem Package zugeordnet werden können
+# 3. Core-Grenze neu prüfen und minimalisieren
 
-## Livebefund
+## Ziel
 
-In `Admin → Users → Edit User` ist derzeit nur `License / Organization` auswählbar. Eine direkte Package-Auswahl fehlt.
+Der Core soll nur Mechanismen enthalten, die praktisch jede Neutral-App benötigt oder ohne die das Modulsystem nicht funktionieren kann.
 
-Das ist für Einzeluser fachlich unvollständig: Ein privater/normaler Payment-User kann keinem Verein/keiner Organisation angehören, braucht aber dennoch ein Package/Entitlement.
+Im Core dürfen bleiben bzw. generisch bereitgestellt werden:
 
-## Verbindliche Semantik
+- Modul-Loader / Registry / Manifest-Vertrag;
+- Auth-/Account-Grundlage, soweit Core-Betrieb erforderlich;
+- User-ID / technische Identität;
+- Rollen-/Permission-Engine;
+- generische Settings-Infrastruktur;
+- generische DB-/Storage-Schnittstellen;
+- Event-/Hook-/Capability-System;
+- Navigation-/Routing-Grundlage;
+- Theme-/UI-Basis;
+- Backup-/Restore-Mechanismus und generische Moduldaten-Discovery;
+- Sicherheits-/API-Grundverträge;
+- minimal notwendige File-/Storage-Sicherheitsmechanismen, falls sonst kein Upload-Modul sicher implementierbar ist.
 
-Die UI und das Datenmodell müssen klar zwischen **Package** und **License / Organization** unterscheiden.
+Alles, was eine konkrete fachliche Funktion darstellt, soll – soweit technisch sauber möglich – als Modul realisiert werden.
 
-### Einzeluser
+Wichtig:
 
-- darf direkt ein Package erhalten;
-- keine Organization/License erforderlich;
-- Package bestimmt die verfügbaren Entitlements und den Package-Default für Devices pro User.
+- keine versteckten Abhängigkeiten;
+- deaktiviertes/fehlendes Modul darf Core und unabhängige Module nicht beschädigen;
+- Module dürfen unsichtbar sein: technisch aktiv, aber ohne User-Menüpunkt;
+- Admin entscheidet, welche Module aktiv/sichtbar sind;
+- `visibleInUserNavigation=false` bzw. äquivalenter Manifestvertrag muss möglich sein.
 
-### Organization-/License-User
+---
 
-- kann einer License/Organization zugeordnet sein;
-- diese License verweist auf ein Package;
-- die UI muss klar und widerspruchsfrei zeigen, welches Package dadurch effektiv gilt.
+# 4. Profile aus dem Core lösen / als optionales Systemmodul vorbereiten
 
-## Konflikt-/Prioritätsregel
+## Produktentscheidung
 
-Prüfe den bereits vorhandenen Datenvertrag in `USER-ACCOUNT-LICENSE-MODEL.md` und bestehender Implementierung. Keine neue Semantik frei erfinden, wenn bereits festgelegt.
+`Profile` soll **kein Core-Zwang** sein. Jede App muss ohne Profile-Modul funktionieren können.
 
-Falls bislang nicht eindeutig geregelt, dann als Produktvertrag sauber definieren und dokumentieren:
+Profile-Modul enthält bzw. soll enthalten:
 
-- direkte User-Package-Zuordnung gilt für Einzeluser;
-- sobald eine aktive License/Organization zugeordnet ist, darf es **keinen stillen widersprüchlichen zweiten effektiven Package-Zustand** geben;
-- entweder License-Package ist dann autoritativ oder direkte Package-Auswahl wird gesperrt/als abgeleitet angezeigt;
-- UI muss die Quelle des effektiven Packages deutlich machen (`Direct package` vs `From license/organization` oder äquivalent);
-- Wechsel zwischen Einzeluser und Organization-User muss kontrolliert und nachvollziehbar sein;
-- bestehende Device-Limit-Vererbung muss dazu konsistent bleiben:
-  - Package default devices per user;
-  - License device limit per user kann Package-Default übernehmen/überschreiben;
-  - User kann gemäß bestehendem Vertrag Default übernehmen oder User-Override besitzen.
+- `display_name`;
+- `gender` mit stabilen Werten mindestens `male`, `female`, `unspecified`;
+- `birthday`;
+- Profilbild / Avatar;
+- Profil-Privacy/Visibility;
+- ggf. Organization-Sharing-bezogene Profileinstellungen;
+- spätere Community-Nutzung der freigegebenen Profilfelder.
 
-## UI-Anforderungen
+## Profilbild
 
-In Create/Edit User mindestens klar trennen:
+Profilbild-Upload nicht vergessen.
 
-- `Package`
-- `License / Organization`
+Verbindlicher Vertrag:
 
-Wenn eine License gewählt ist und deren Package autoritativ ist:
+- User kann Bild auswählen/hochladen;
+- quadratischer Zuschnitt;
+- optimierte gespeicherte Version max. **256×256 px**;
+- bevorzugt effizientes Webformat, ohne unnötige Qualitätsverluste;
+- Original nach Verarbeitung nicht dauerhaft behalten;
+- serverseitig persistent speichern, lokal cachen;
+- Darstellung immer rund;
+- Bild ersetzen/löschen möglich;
+- Backup/Restore muss die gespeicherte Datei mitführen;
+- kein eigenes Bild → Default-Avatar abhängig von `gender`:
+  - male → neutraler männlicher Avatar;
+  - female → neutraler weiblicher Avatar;
+  - unspecified → neutraler allgemeiner Avatar.
+- Default-Avatar selbst nicht pro User speichern; dynamisch anhand des Feldes rendern.
 
-- direkte Package-Auswahl entweder deaktivieren und das geerbte Package anzeigen;
-- oder die direkte Auswahl kontrolliert entfernen/ersetzen;
-- niemals zwei unterschiedliche Packages gleichzeitig als scheinbar aktiv darstellen.
+Wichtig:
 
-Wenn `License / Organization = Unassigned`:
+- Core darf `display_name`, birthday, gender oder profile image nicht voraussetzen;
+- fehlen Profildaten, müssen andere Module mit technischen Fallbacks funktionieren;
+- Profilmodul kann aktiv sein, ohne als eigener sichtbarer User-Menüpunkt aufzutauchen.
 
-- `Package` muss frei auswählbar sein.
+---
 
-## API/DB
+# 5. Generische Upload-/Media-Fähigkeit so modular wie möglich
 
-End-to-end prüfen:
+## Ziel
 
-- Create User mit direktem Package und ohne License;
-- Edit User Package-Wechsel ohne License;
-- Zuordnung einer License mit Package;
-- Entfernung der License → definierter Fallback auf direktes Package oder klar dokumentierter Zustand;
-- keine FK-/Referenzfehler;
-- Audit nachvollziehbar;
-- keine stillen Entitlement-Verluste.
+Uploads/Bilder/Dateien sollen generisch nutzbar sein, ohne dass der Core konkrete Profilbild-, Community- oder Fangfoto-Logik kennt.
 
-## Tests
+Prüfe die sauberste Grenze:
+
+- Core nur minimal notwendige sichere Storage-/File-Primitives;
+- darüber optionales **Media/Upload-Systemmodul** oder generischer Modulservice.
+
+Benötigte Fähigkeiten:
+
+- Upload-Endpunkt/API;
+- Auth/Permission-Prüfung;
+- MIME-/Dateityp-Prüfung;
+- Größenlimits;
+- sichere Datei-IDs/-namen;
+- erlaubte Storage-Ziele;
+- Bildoptimierung/Resize;
+- Metadaten;
+- Ersetzen/Löschen;
+- Backup/Restore-Integration;
+- lokale Cache-Unterstützung;
+- Schutz gegen Traversal, Symlink-Escape, ausführbare Uploads und manipulierte Dateien.
+
+Das jeweilige Fachmodul entscheidet:
+
+- welche Dateien/Bilder erlaubt sind;
+- wie viele;
+- welche Maximalgröße innerhalb Core/Systemgrenzen;
+- fachliche Zuordnung/Owner;
+- Darstellung/Verwendung;
+- Sharing-Regeln.
+
+Damit müssen später Texte/strukturierte Daten und Bilder/Dateien beliebig kombinierbar sein.
+
+---
+
+# 6. Sharing / Visibility als optionales Systemmodul, nicht als Fachlogik im Core
+
+## Produktentscheidung
+
+Der Core soll keine fachlichen Sharing-Felder kennen. Wenn Sharing nicht zwingend Core sein muss, als optionales **Sharing/Visibility-Systemmodul** realisieren.
+
+Anforderungen:
+
+- generischer Mechanismus, keine Begriffe wie catch, fish, location, note usw.;
+- Module können teilbare Ressourcen/Felder registrieren;
+- Default immer `private`;
+- mögliche Sichtbarkeitsstufen generisch, z. B. `private`, `organization`, `community`, `public` bzw. erweiterbar;
+- serverseitige Autorisierung zwingend;
+- Sharing-Modul muss ohne Profile funktionieren;
+- andere Module sollen Sharing optional nutzen können, aber bei fehlendem Sharing-Modul weiterhin funktionieren;
+- Modul entscheidet selbst, was fachlich eine eingeschränkte/ungefähre Freigabe bedeutet.
+
+Beispiel nur zur Architekturprüfung, **nicht als CatchTrack-Corelogik implementieren**:
+
+- genaue vs. ungefähre Location wäre Sache des jeweiligen Fachmoduls;
+- exakte sensible Position nur nach ausdrücklicher Zustimmung;
+- Core/Sharing kennt lediglich den generischen Freigabevertrag.
+
+---
+
+# 7. Moderation / Content Review als optionales Modul
+
+Eigenständiges Modul `Moderation` oder `Content Review`.
+
+Admin-Funktionen:
+
+- Review-Queue für hochgeladene Texte und Bilder;
+- Status mindestens `pending`, `approved`, `rejected`;
+- Texte im Admin editierbar;
+- Bilder ansehen, freigeben, ablehnen, optional löschen;
+- Filter nach User, Modul, Datum, Content-Typ, Status;
+- Module können deklarieren, ob ihre Inhalte reviewpflichtig sind;
+- optional Auto-Approval konfigurierbar;
+- keine Pflichtabhängigkeit zu Community.
+
+Moderation soll Notifications/Postbox nutzen können, wenn vorhanden, aber ohne diese Module weiterhin funktionieren.
+
+---
+
+# 8. Notifications als optionales Modul
+
+Eigenständiges Modul `Notifications`.
 
 Mindestens:
 
-1. Einzeluser + direktes Package → erfolgreich;
-2. Einzeluser Package wechseln → erfolgreich;
-3. User ohne License hat sichtbares/eindeutiges effektives Package;
-4. License zuweisen → effektives Package entspricht dem definierten Vertrag;
-5. Konflikt zwischen direktem Package und License-Package kann nicht still entstehen;
-6. License entfernen → definierter Package-Zustand;
-7. Device-Limits bleiben konsistent;
-8. User-Liste zeigt verständlich das effektive Package bzw. die License-/Package-Quelle.
+- In-App-Popup/Notification;
+- E-Mail;
+- pro Admin/User konfigurierbar, soweit Rolle/Permission es erlaubt;
+- Kanalwahl: Mail, Popup, beides, nichts;
+- später erweiterbar um weitere Kanäle;
+- optional sofort oder gebündelt (z. B. stündlich/täglich), falls bestehende Infrastruktur dies sauber trägt;
+- keine Pflichtabhängigkeit zu Moderation oder Postbox.
+
+Moderation kann darüber z. B. neue Content-Items melden.
+Postbox kann neue Nachrichten darüber ankündigen.
 
 ---
 
-# 4. Bestehende globale Success-Modal-Regel nicht regressieren
+# 9. Postbox als optionales, rollenbasiertes Messaging-Modul
 
-Weiterhin verbindlich:
+Modul-Key: `postbox`  
+Anzeigename: **Postbox**
 
-- erfolgreiche Save/Create/Update-Aktionen in User- und Admin-UI verwenden die zentrale Success-Modal-Komponente;
-- keine zusätzlichen grünen Inline-Erfolgstexte;
-- Fehler bleiben separate Error-States;
-- pro Benutzeraktion genau ein Success-Modal;
-- Fokusmanagement, Touch-UX und i18n bleiben erhalten.
+## Ziel
 
-Beim Package-/User-Edit entsprechend mitprüfen.
+Generisches internes Postfach für alle Benutzer, gesteuert ausschließlich über Rollen/Permissions.
+
+Funktionen:
+
+- Inbox / Sent;
+- Nachricht lesen;
+- Nachricht schreiben;
+- antworten;
+- gelesen/ungelesen;
+- optional Bilder/Anhänge;
+- Einzeluser anschreiben;
+- mehrere ausgewählte User;
+- Rollen/Gruppen;
+- alle Mitglieder einer eigenen Organization/License;
+- Broadcast/Rundmail nur mit eigener Permission.
+
+## Rollen/Permissions
+
+Mindestens getrennt steuerbar:
+
+- read;
+- write;
+- reply;
+- attachments;
+- send-to-role/group;
+- organization broadcast;
+- global broadcast;
+- admin/system messages.
+
+Ein Vereins-/Organization-Manager darf ausschließlich User der eigenen Organisation erreichen. Plattform-Admins dürfen organisationsübergreifend senden, aber nur mit entsprechender Permission.
+
+## Admin-Konfiguration
+
+- maximale Nachrichtenlänge;
+- Bilder/Anhänge erlaubt an/aus;
+- maximale Anzahl Bilder/Anhänge;
+- maximale Dateigröße;
+- erlaubte Dateitypen;
+- Rollen mit Lese-/Schreib-/Antwortrechten;
+- Rollen mit Broadcast-Rechten;
+- maximale Empfängerzahl für Rundsendungen;
+- optional Bestätigung vor Massenversand;
+- optional Aufbewahrungsdauer.
+
+Broadcasts sollen auditiert werden.
+
+Postbox muss ohne Profile, Community, Moderation und Notifications funktionieren. Sind Media/Notifications vorhanden, darf Postbox diese optional nutzen.
 
 ---
 
-# 5. Bestehende Navigation/Organization/Birthday-Regeln nicht regressieren
+# 10. Modulabhängigkeiten strikt minimieren
 
-Regression sicherstellen:
+Verbindliche Regel:
 
-- ACCESS-Reihenfolge bleibt:
-  1. Users
-  2. Packages / Entitlements
-  3. Licenses / Organizations
-  4. Sessions
-  5. Roles & Permissions
-  6. Permission Catalog
-- Hauptnavigation und Settings-Untertabs behalten routenbasierten Active-State;
-- `Share with my organization` nur bei echter aktiver Organization-/License-Zuordnung;
-- Einzeluser ohne Organization sehen diese Option nicht;
-- Birthday-Persistenz bleibt korrekt;
-- ausgeloggt nur `App Areas` + `Navigation`.
+> **Module sollen Fähigkeiten des Core konsumieren, nicht andere Module voraussetzen.**
+
+Nur wenn fachlich zwingend, darf eine explizite Modulabhängigkeit existieren. Dann muss sie im Manifest eindeutig deklariert und vom Admin/Installer verständlich angezeigt werden.
+
+Beispiele:
+
+- Profile darf nicht Voraussetzung für Core sein.
+- Sharing darf nicht Profile voraussetzen.
+- Postbox darf nicht Notifications voraussetzen.
+- Moderation darf nicht Notifications/Postbox voraussetzen.
+- Media darf nicht Profile voraussetzen.
+
+Fehlt ein optional verwendetes Modul:
+
+- Funktion sauber ausblenden oder Fallback nutzen;
+- keine Fehlerkaskade;
+- kein 500;
+- unabhängige Hauptfunktion bleibt nutzbar.
 
 ---
 
-# 6. Regression / Freeze-Fortschritt
+# 11. Unsichtbare/Systemmodule unterstützen
 
-Nach Umsetzung vollständige Regression mindestens für:
+Admin muss Module aktivieren/deaktivieren können, ohne dass jedes aktive Modul zwingend als User-Menüpunkt erscheint.
 
-- User Login inkl. Eye-Toggle;
-- Admin Login inkl. korrekt sichtbarem Eye-Toggle;
-- Create New User/Admin;
-- User Edit;
-- direktes Package für Einzeluser;
-- License-/Organization-Zuordnung und effektives Package;
-- Device-Limit-Vererbung;
-- Success-Modal auf User/Admin Save/Create/Update;
+Manifest/Registry soll mindestens unterscheiden können zwischen:
+
+- installiert;
+- aktiviert;
+- für User-Navigation sichtbar;
+- ggf. nur Admin sichtbar;
+- ggf. komplett unsichtbares System-/Capability-Modul.
+
+Beispiel: `Profile` kann aktiv sein und Settings/Profile-Funktionen liefern, ohne als eigener Modul-Button in der Hauptnavigation aufzutauchen.
+
+---
+
+# 12. Field Notes als verbindliches Testmodul für die Neutral-Vision vormerken
+
+Testmodul: **Field Notes**
+
+Zweck: beweisen, dass ein neues neutrales Modul ohne Core-Änderung erstellt werden kann.
+
+Geplanter Funktionsumfang:
+
+- eigene Modulmanifest-Datei;
+- eigene Route/Navigation;
+- eigene Permissions (`fieldnotes.view/create/edit/delete` oder äquivalent);
+- eigene DB-Tabelle;
+- Notiztitel;
+- Notiztext;
+- Datum/Uhrzeit;
+- optional Standort;
+- Create/Edit/Delete;
+- eigene Settings;
+- i18n;
+- Theme/Core-Komponenten;
+- Backup/Restore;
+- Offline-tauglicher Grundvertrag;
+- optional Media/Sharing nutzen, falls diese Module vorhanden sind, aber nicht davon abhängig sein.
+
+**Harte Abnahmeregel:** Field Notes soll nach Abschluss der Architekturarbeit ohne Änderung bestehender Core-Dateien implementierbar sein. Wenn dafür Core-Sonderänderungen nötig sind, ist die Modularchitektur noch nicht freeze-reif.
+
+Field Notes jetzt nur dann implementieren, wenn der Architekturauftrag es zur Verifikation sinnvoll benötigt; andernfalls als unmittelbar folgenden Freeze-Test dokumentieren.
+
+---
+
+# 13. Bestehende funktionierende Bereiche nicht regressieren
+
+Mindestens regressionsprüfen:
+
+- User/Admin Login;
+- User-Login-Eye;
+- Admin-Login-Eye;
+- User Create/Edit;
+- direkte User-Package-Zuordnung;
+- License-Package-Priorität/Fallback;
+- Device Limits;
+- Success-Modals;
+- Birthday;
 - Organization-Sharing-Gating;
-- Birthday Persistenz/Layout;
+- Settings Auth-Sichtbarkeit;
 - Navigation Active-State;
 - ACCESS-Reihenfolge;
 - Sessions/Installation-ID;
 - Audit;
 - GPS;
-- Backup Storage Path / Backup Create / Download ohne Secret-Leak;
+- Backup Storage Path;
+- Backup V2 Create/Download/isolierter Restore-Vertrag;
 - PHP-Lint;
 - JS-Syntax;
 - `git diff --check`;
 - vollständige Tests;
 - Production package.
 
-`CORE-1.0-READINESS.md` nur wahrheitsgemäß aktualisieren. Kein automatischer Final Freeze.
-
 ---
 
-# 7. Dokumentation
+# 14. Dokumentation / Architekturvertrag
 
-Mindestens aktualisieren, soweit betroffen:
+Mindestens aktualisieren:
 
 - `CHATGPT.md`
-- `USER-ACCOUNT-LICENSE-MODEL.md`
+- `VISION.md`
+- `CORE-1.0.md`
+- `CORE-1.0-READINESS.md`
 - `ADMIN-UX-DECISIONS.md`
 - `UI-UX.md`
-- `CORE-1.0-READINESS.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
 - `Architecture.md`
 - `Security.md`
 - `API.md`
 - `Database.md`
 - `Functions.md`
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `WORKFLOW.md`
+- Modul-/Manifest-Dokumentation, falls vorhanden
 
 Dauerhaft festhalten:
 
-1. Passwortfelder verwenden global ein klar erkennbares Eye-Icon, nicht nur irgendeinen Toggle-Indikator.
-2. User-Login und Admin-Login verwenden denselben Password-Visibility-Vertrag.
-3. Einzeluser können direkt einem Package zugeordnet werden, unabhängig von Organization/License.
-4. Organization-/License-Package und direktes User-Package dürfen keinen widersprüchlichen effektiven Zustand erzeugen.
+1. Core = technische Mechanismen, konkrete Funktionen = Module.
+2. Apps müssen ohne Profile/Sharing/Postbox/Moderation/Notifications/Community funktionieren.
+3. Module können aktiv aber userseitig unsichtbar sein.
+4. Modulabhängigkeiten sind Ausnahme, nicht Standard.
+5. Profile ist optionales Systemmodul.
+6. Sharing/Visibility ist optionales generisches Systemmodul, sofern technisch möglich.
+7. Media/Upload wird so modular wie sicher vertretbar realisiert.
+8. Postbox ist optionales rollenbasiertes Messaging-Modul.
+9. Moderation und Notifications sind eigenständige optionale Module.
+10. Field Notes ist der vorgesehene Neutralitäts-/Modularitätstest vor Freeze.
+
+Keine automatische Freeze-Erklärung.
 
 ---
 
-# 8. Deployment / Übergabe
+# 15. Deployment / Übergabe
 
 Gemäß `WORKFLOW.md`:
 
@@ -275,15 +454,16 @@ Gemäß `WORKFLOW.md`:
 4. Deploymentrevision + `migrationsReady:true` prüfen;
 5. Production-Smokes ausschließlich read-only;
 6. keine destruktiven Produktionsaktionen;
-7. `CHATGPT.md` mit tatsächlichem Endstand und kurzer Betreiber-Retestliste aktualisieren.
+7. keinen Production-Restore;
+8. `CHATGPT.md` mit tatsächlichem Endstand, Architekturentscheidungen und Restliste aktualisieren.
 
-Betreiber-Retestliste danach kurz halten:
+## Betreiber-Retestliste danach kurz halten
 
-- User-Login: echtes Auge sichtbar und funktionsfähig;
-- Admin-Login: echtes Auge statt Punkt/Kreis;
-- Einzeluser ohne License: Package direkt auswählbar;
-- Organization-User: effektives Package eindeutig und widerspruchsfrei;
-- Device-Limits weiterhin korrekt;
-- Save/Create/Update → Success-Modal.
+- User-Login-Auge sichtbar/funktional;
+- bestehende User/Admin/Package/License-Funktionen unverändert;
+- falls bereits modularisiert: Profile deaktivierbar ohne Core-/App-Fehler;
+- unsichtbares aktives Modul ohne User-Menüpunkt verifizieren;
+- optionale Module deaktivieren → Core bleibt stabil;
+- ggf. Status des Field-Notes-Freeze-Tests mitteilen.
 
 Nichts ohne realen Betreibercheck als `LIVE BESTANDEN` markieren.
