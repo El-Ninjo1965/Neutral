@@ -119,3 +119,7 @@ Neu offen:
 ## 9. Code-seitiger Follow-up-Stand
 
 License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Installation-ID, getrennte konservative Supportmetadaten sowie Backup Storage Path mit Test/Save sind implementiert und lokal testbar. Diese Aussage ist kein neuer Livebefund: License Delete, reale iPad-Klassifikation und der vorbereitete Hostpfad bleiben bis zum Betreibercheck `DEVICE/HOST RETEST REQUIRED`.
+
+## 10. Settings/Profile und Backup-V2
+
+Ausgeloggt sind ausschließlich App Areas und Navigation sichtbar; Privacy & Sharing/Profile benötigen eine bestätigte User-Session. Birthday bleibt Day/Month/Year, kompakt auf Tablet und responsiv auf Telefon. Save übernimmt ausschließlich die autoritative Serverantwort. Backup V2 umfasst deklarierte Modultabellen und verwaltete Medienbytes; V1 bleibt als historischer Teilvertrag lesbar. Kein Produktions-Restore als Test.

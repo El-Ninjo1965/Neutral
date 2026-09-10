@@ -11,7 +11,7 @@
 | Host-only secrets | VORHANDEN + TEST/BELEG | Public package/secret scans and protected runtime paths are automated. |
 | Central app/API addresses | VORHANDEN + TEST/BELEG | Base-path resolver and subpath tests. |
 | Reproducible package/update | VORHANDEN + TEST/BELEG | Manifest, hashes, deploy stamp, FTPS revision smoke. |
-| Backup/restore/move | PARTIAL / HOST ACTION REQUIRED | All 21 non-ephemeral Core tables round-trip atomically in isolation; sessions/throttle are intentionally cleared. Module-owned data tables and media binaries are not backed up, so the full data contract and Empty-Host acceptance remain open. No production restore. |
+| Backup/restore/move | CODE/ISOLATED COMPLETE · HOST ACTION REQUIRED | V2 includes all Core tables, generically declared installed-module tables and managed media bytes; v1 remains compatible. Sessions/throttle are intentionally cleared. Cron and remaining real host/move acceptance remain open. No production restore. |
 
 ## Client / Offline
 

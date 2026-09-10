@@ -70,6 +70,18 @@ test('admin UX exposes free device limits, user-selected managers, birthday drop
   assert.doesNotMatch(audit, /window\.prompt|Type DELETE/);
 });
 
+test('profile hydration is authoritative and authenticated settings tabs fail closed', () => {
+  const profile = read('Web-App/public/user-app.js');
+  const css = read('Web-App/public/style.css');
+  assert.match(profile, /allowedSections = currentUser \? \['areas', 'navigation', 'privacy', 'profile'\] : \['areas', 'navigation'\]/);
+  assert.match(profile, /currentUser \? \[\['privacy','Privacy & Sharing'\],\['profile','Profile'\]\] : \[\]/);
+  assert.match(profile, /state\.accountProfile = savedProfile/);
+  assert.match(profile, /savedProfile\.birthday !== profile\.birthday/);
+  assert.match(profile, /state\.accountProfile = null/);
+  assert.match(css, /\.birthday-selects \{[\s\S]*?max-width: 440px/);
+  assert.match(css, /grid-template-columns: minmax\(72px,[\s\S]*?minmax\(150px,[\s\S]*?minmax\(96px/);
+});
+
 test('commercial API maps controlled input and database failures without leaking SQL', () => {
   const api = read('Server/public/api/index.php');
   assert.match(api, /catch\(PDOException \$exception\)\{JsonResponse::error\('License could not be saved/);

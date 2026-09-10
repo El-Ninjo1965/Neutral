@@ -65,3 +65,6 @@
 - **DEVICE RETEST REQUIRED:** Delete an unreferenced test License; verify a referenced License is blocked and `Revoked / blocked` remains available.
 - **DEVICE RETEST REQUIRED:** Confirm Session User ID, full Installation/Device ID and honest iPad/OS metadata on the real iPad.
 - **HOST ACTION REQUIRED:** Enter the prepared external Backup Storage Path, run `Test path`, save it, then separately create/download one backup and verify a scheduled runner use; no production restore.
+
+- [ ] Operator: verify V2 create/download and Automatic Backup/Cron; restore only on isolated staging, never production.
+- [ ] Device: verify anonymous/authenticated Settings tabs and Birthday save/reopen/reload/re-login/delete plus iPad layout.

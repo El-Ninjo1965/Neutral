@@ -86,3 +86,7 @@ User `Tester` login, Admin `Developer` login, parallel separate sessions without
 ## 2026-09-10 backup completeness audit
 
 Operator live evidence now confirms protected-path, encryption, crypto and schema readiness plus manual backup creation (about 27.8 KB). Code audit and isolated destructive-only-in-test restore prove all 21 portable Core tables round-trip and failed imports roll back; upload now rejects authenticated partial/schema-incompatible payloads before inventory storage. Classification is **BACKUP CONTRACT PARTIAL**, because module-owned data tables and media binaries are not in v1. No production restore was performed and the overall Core gate remains open.
+
+## 2026-09-10 Backup V2 and Settings/Profile follow-up
+
+**CODE/ISOLATED COMPLETE / DEPLOYMENT PENDING:** Backup v2 includes 21 Core tables, generic installed-module tables and managed media bytes with bounded integrity/path checks; v1 remains readable. Birthday authoritative hydration/cache invalidation and authenticated-only Privacy/Profile navigation are corrected with compact responsive selects. No production restore. Host Cron/Move gates still prevent automatic Core Freeze.

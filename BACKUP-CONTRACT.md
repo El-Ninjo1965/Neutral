@@ -86,3 +86,13 @@ Der Restore-Test muss auf einer separaten Staging-/Testinstallation mit separate
 - **Offen:** generischer Vertrag und Implementierung für moduldeklarierte Nutzdatentabellen sowie Binärdateien/Medien; anschließend isolierter Empty-Host-Restore mit diesen Daten und realer Betreiberabnahme.
 
 Daher lautet die Gesamteinstufung: **BACKUP CONTRACT PARTIAL**.
+
+## 9. Version 2 – vollständiger verwalteter Datenumfang
+
+Neue Backups verwenden `neutral-logical-backup-v2`. Zusätzlich zu den 21 Coretabellen werden die Tabellen aller installierten Module generisch aus `modules.manifest_json → database.tables` ermittelt und vollständig exportiert. Der Core enthält keinen fest verdrahteten Modulnamen. Restore erwartet auf dem kompatibel installierten Ziel exakt dieselbe deklarierte Tabellenmenge.
+
+V2 enthält außerdem jede reguläre, nicht symbolisch verlinkte Datei der verwalteten Core-Medienablage als installationsneutralen logischen Pfad `user-media/<zufällige-id>.<typ>`, Länge, SHA-256 und Base64-Inhalt innerhalb des vollständig AES-256-GCM-verschlüsselten Payloads. Zulässig sind nur die vom Media-Service erzeugten Namen und Typen; Gesamtinhalt und Upload bleiben auf 100 MiB begrenzt. Restore validiert alle Pfade, Größen und Hashes vor DB-Mutation, verlangt ein leeres Ziel, schreibt zunächst in ein privates Stagingverzeichnis und finalisiert per Umbenennung. Vorhandene Medien werden niemals still überschrieben.
+
+V1 bleibt lesbar und stellt seinen historischen 21-Tabellen-Teilumfang wieder her; es wird nicht nachträglich als Datei-/Modulvollbackup bezeichnet. Bei V2 ist der für das aktuelle Framework deklarierte verwaltete Core-, Modul- und Medienumfang vollständig. Anwendungscode, `.env`/Secrets, Logs, Caches, Sessions und Login-Attempts bleiben bewusst ausgeschlossen.
+
+**Klassifikation des aktuellen V2-Vertrags: BACKUP CONTRACT COMPLETE (code-/isoliert verifiziert).** Der Core-1.0-Freeze bleibt dennoch von realem Automatic-Backup/Cron und weiteren Host-/Move-Gates abhängig; kein Produktions-Restore wurde ausgeführt.

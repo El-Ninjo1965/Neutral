@@ -344,6 +344,7 @@
 
   const applyServerUser = (identityData) => {
     const user = normalizeServerUser(identityData);
+    if ((serverUser?.id || null) !== (user?.id || null)) state.accountProfile = null;
     serverUser = user;
     if (user) {
       if (window.CoreAuth && typeof window.CoreAuth === 'object') window.CoreAuth.currentUser = user;
@@ -354,6 +355,8 @@
 
   const clearServerUser = () => {
     serverUser = null;
+    state.accountProfile = null;
+    if (['privacy', 'profile'].includes(state.settingsSection)) state.settingsSection = 'areas';
     if (window.CoreAuth && typeof window.CoreAuth === 'object') window.CoreAuth.currentUser = null;
     if (window.UserModule && typeof window.UserModule === 'object') window.UserModule.currentUser = null;
   };
@@ -666,7 +669,9 @@
     const moduleVisibility = hasExplicitVisibility
       ? new Set(preferences.visibleModuleIds)
       : new Set(modules.map((module) => module.id));
-    const section = ['areas', 'navigation', 'privacy', 'profile'].includes(state.settingsSection) ? state.settingsSection : 'areas';
+    const allowedSections = currentUser ? ['areas', 'navigation', 'privacy', 'profile'] : ['areas', 'navigation'];
+    const section = allowedSections.includes(state.settingsSection) ? state.settingsSection : 'areas';
+    state.settingsSection = section;
     const profile = state.accountProfile || currentUser || {};
     const birthdayParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(profile.birthday || '') || [];
     const birthdayYear = birthdayParts[1] || '';
@@ -692,7 +697,7 @@
             <h1>Settings</h1>
           </div>
         </div>
-        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],['privacy','Privacy & Sharing'],['profile','Profile']].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
+        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],...(currentUser ? [['privacy','Privacy & Sharing'],['profile','Profile']] : [])].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
         <div class="user-content-grid user-settings-grid"><div class="user-settings-card" ${section === 'areas' ? '' : 'hidden'}>
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
@@ -802,6 +807,9 @@
           document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; });
           const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
           if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }
+          const savedProfile = result?.data?.data?.profile || result?.data?.profile;
+          if (!savedProfile || savedProfile.birthday !== profile.birthday) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Profile could not be verified after saving.'; status.className = 'user-settings-status error'; } return; }
+          state.accountProfile = savedProfile;
         }
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
           const currentUser = getCurrentUser();

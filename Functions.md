@@ -184,3 +184,5 @@ default home instead of leaving an empty view.
 - `DatabaseBackupService::normalizeConfiguredDirectory()` and `testDirectory()` validate/probe a custom protected path; the constructor's optional directory is consumed by both HTTP backup operations and the automatic CLI runner.
 - `DatabaseBackupService::portableTables()` defines the exact 21-table Core v1 backup boundary, excluding `sessions` and `login_attempts`; module-owned tables and media binaries are not silently implied.
 - `DatabaseBackupService::validatedTables()` is the shared pre-mutation/pre-storage validator for logical format, current schema, exact table set and row shape, used by both restore and upload.
+
+- Backup v2 `portableTables()` merges Core tables with installed modules' generic manifest table declarations; managed-media export/validation/staging carries byte content with logical paths and SHA-256 while v1 remains readable.

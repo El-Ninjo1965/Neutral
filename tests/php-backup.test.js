@@ -283,3 +283,19 @@ echo json_encode(['message' => $message, 'stored' => $service->list()]);
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('v2 backup restores managed media byte-for-byte and discovers module tables generically', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'neutral-backup-v2-'));
+  try {
+    const media = path.join(root, 'Server/runtime/user-media'); fs.mkdirSync(media, { recursive: true });
+    const name = `${'a'.repeat(32)}.png`; const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 255]); fs.writeFileSync(path.join(media, name), bytes);
+    const result = runPhp(`
+require getenv('NEUTRAL_TEST_ROOT') . '/Server/php/bootstrap.php';
+$config=new \\Neutral\\Core\\AppConfig(['NEUTRAL_BACKUP_KEY'=>str_repeat('v',32)]);$database=new \\Neutral\\Core\\Database($config);$service=new \\Neutral\\Core\\DatabaseBackupService($database,new \\Neutral\\Core\\SchemaMigrator($database),$config,getenv('CASE_ROOT'),static function(array $tables):array{$out=[];foreach($tables as $table)$out[$table]=[];return $out;},static fn(array $tables)=>null);$created=$service->create();unlink(getenv('MEDIA_FILE'));rmdir(dirname(getenv('MEDIA_FILE')));$service->restore($created['backupId']);echo json_encode(['bytes'=>base64_encode(file_get_contents(getenv('MEDIA_FILE')))]);
+`, { CASE_ROOT: root, MEDIA_FILE: path.join(media, name) });
+    assert.equal(result.status, 0, result.stderr || result.stdout); assert.equal(JSON.parse(result.stdout).bytes, bytes.toString('base64'));
+    const source = fs.readFileSync(path.join(projectRoot, 'Server/php/src/DatabaseBackupService.php'), 'utf8');
+    assert.match(source, /manifest_json FROM modules WHERE is_present=1/);
+    assert.match(source, /\['database'\]\['tables'\]/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});

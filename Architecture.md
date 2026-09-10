@@ -280,3 +280,5 @@ GPS tiles, map center and marker share a single Web-Mercator world-pixel coordin
 ## Admin package/license projection
 
 The Admin UI now exposes the existing Role ≠ Permission ≠ Package ≠ License ≠ Device model. Package module/limit configuration projects through license assignment into client entitlement state and server device enforcement. This is generic platform administration, not product pricing logic.
+
+**Backup V2:** installed module tables are discovered from the generic manifest `database.tables` contract; managed Core media is embedded with logical paths, length and SHA-256 inside the encrypted payload. V1 remains readable as its documented Core-only legacy scope. V2 stages validated files and requires an empty managed target, preventing overwrite or path escape.

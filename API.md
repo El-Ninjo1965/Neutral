@@ -140,3 +140,5 @@ Backup path configuration is ordinary installation settings, not a secret. The t
 The `.neutral-backup` download is the byte-exact stored AES-256-GCM JSON envelope (`application/octet-stream`); the browser never receives plaintext. Restore accepts exactly the 21 current portable Core tables and current schema version. Sessions/login attempts are absent and cleared; module-owned tables and media binaries are not part of the current v1 payload. The complete boundary is defined in `BACKUP-CONTRACT.md`.
 
 `POST /api/v1/admin/audit/clear` requires the dedicated `audit.clear` permission, Admin session, CSRF and an explicit boolean confirmation produced after two UI confirmation dialogs. It returns the deleted count and transactionally creates `audit.clear.completed` after removing all prior entries. No confirmation word is collected.
+
+Backup create now emits logical payload v2: the Core table set, installed-module tables declared through `database.tables`, and integrity-described managed media bytes. Upload/restore retain v1 compatibility but never claim legacy artifacts include module/file data. V2 validation occurs before inventory retention or restore mutation.

@@ -284,3 +284,7 @@ Packages/Entitlements and Licenses/Organizations use responsive cards/forms and 
 License cards expose Edit and confirmed Delete. Delete is intentionally refused while any User or Manager remains assigned; `Revoked / blocked` is the non-destructive path. Session Overview shows `Display name · @username · #User-ID`, the full `Installation / Device ID`, and separate Device class, Operating system and Browser support columns. The random installation ID is visually primary; uncertain platform metadata reads `Unknown` rather than asserting a false device.
 
 Backups & Restore contains `Backup storage path`, `Test path` and `Save` together. Status is explicit (`ready`, missing, not a directory, not writable, or public path); Create remains disabled until key, database/schema and protected storage are ready. The UI never offers an encryption-key input or displays its value.
+
+## 2026-09-10 Settings/Profile follow-up
+
+Anonymous Settings navigation contains only App Areas and Navigation. Privacy & Sharing and Profile are created only for an authenticated user; an anonymous stale/direct section selection is reset to App Areas. Birthday remains three selects, uses a compact Day/Month/Year row on tablet widths and wraps on small phones. A profile save is successful only after the authoritative returned profile confirms the exact ISO birthday, which is cached for immediate re-opening and invalidated on identity change/logout.

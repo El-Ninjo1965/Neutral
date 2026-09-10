@@ -14,7 +14,8 @@ final class BackupRuntimeException extends \RuntimeException
 
 final class DatabaseBackupService
 {
-    private const FORMAT = 'neutral-logical-backup-v1';
+    private const FORMAT = 'neutral-logical-backup-v2';
+    private const LEGACY_FORMAT = 'neutral-logical-backup-v1';
     private const ENVELOPE = 'neutral-encrypted-backup-v1';
     /** @var \Closure(list<string>):array<string,list<array<string,mixed>>> */
     private \Closure $exporter;
@@ -121,6 +122,7 @@ final class DatabaseBackupService
             'schemaVersion' => SchemaMigrator::schemaVersion(),
             'createdAt' => $createdAt,
             'tables' => $tables,
+            'files' => $this->exportManagedFiles(),
         ];
         $payloadJson = $this->encode($payload);
         $plaintext = $this->encode([
@@ -182,7 +184,9 @@ final class DatabaseBackupService
     {
         $payload = $this->decryptFile($this->pathForDownload($backupId));
         $tables = $this->validatedTables($payload);
-        ($this->importer)($tables);
+        $stagedFiles = $this->stageManagedFiles($payload);
+        try { ($this->importer)($tables);$this->commitManagedFiles($stagedFiles); }
+        catch (\Throwable $exception) { if($stagedFiles!==null)$this->removeTree($stagedFiles['stage']);throw $exception; }
         return ['backupId' => $backupId, 'status' => 'restored', 'restoredTables' => count($tables)];
     }
 
@@ -291,10 +295,16 @@ final class DatabaseBackupService
     /** @return list<string> */
     public function portableTables(): array
     {
-        return array_values(array_filter(
+        $core = array_values(array_filter(
             $this->migrator->managedTables(),
             static fn (string $table): bool => !in_array($table, ['sessions', 'login_attempts'], true)
         ));
+        if (!$this->usesDatabaseExporter) return $core;
+        try {
+            $rows=$this->database->connect()->query("SELECT manifest_json FROM modules WHERE is_present=1")->fetchAll(\PDO::FETCH_COLUMN);
+            foreach($rows as $json){$manifest=json_decode((string)$json,true);foreach((array)($manifest['database']['tables']??[]) as $entry){$table=is_array($entry)?(string)($entry['name']??''):(string)$entry;if($table!==''){$this->assertIdentifier($table);$core[]=$table;}}}
+        } catch (\Throwable $exception) { /* Core-only test/fallback path. */ }
+        return array_values(array_unique($core));
     }
 
     /** @param list<string> $tables @return array<string,list<array<string,mixed>>> */
@@ -389,7 +399,7 @@ final class DatabaseBackupService
         }
         $decoded = json_decode($plaintext, true, 512, JSON_THROW_ON_ERROR);
         $payload = is_array($decoded) ? ($decoded['payload'] ?? null) : null;
-        if (!is_array($payload) || ($payload['format'] ?? '') !== self::FORMAT) {
+        if (!is_array($payload) || !in_array(($payload['format'] ?? ''), [self::FORMAT,self::LEGACY_FORMAT], true)) {
             throw new \RuntimeException('Backup payload is invalid.');
         }
         $payloadJson = $this->encode($payload);
@@ -402,7 +412,7 @@ final class DatabaseBackupService
     /** @param array<string,mixed> $payload @return array<string,list<array<string,mixed>>> */
     private function validatedTables(array $payload): array
     {
-        if (($payload['format'] ?? '') !== self::FORMAT) {
+        if (!in_array(($payload['format'] ?? ''), [self::FORMAT,self::LEGACY_FORMAT], true)) {
             throw new \RuntimeException('Backup format is unsupported.');
         }
         if (($payload['schemaVersion'] ?? '') !== SchemaMigrator::schemaVersion()) {
@@ -430,8 +440,34 @@ final class DatabaseBackupService
         if ($providedTables !== $expectedTables) {
             throw new \RuntimeException('Backup does not contain the complete managed table set.');
         }
+        $this->validatedManagedFiles($payload);
         return $tables;
     }
+
+    /** @param array<string,mixed> $payload @return array<string,string> */
+    private function validatedManagedFiles(array $payload): array
+    {
+        if(($payload['format']??'')===self::LEGACY_FORMAT)return [];$files=$payload['files']??null;if(!is_array($files))throw new \RuntimeException('Backup file payload is invalid.');$decoded=[];$total=0;
+        foreach($files as $logical=>$entry){if(!is_string($logical)||!preg_match('#^user-media/([a-f0-9]{32}\.(?:jpg|png|webp))$#',$logical)||!is_array($entry))throw new \RuntimeException('Backup file path is invalid.');$bytes=base64_decode((string)($entry['bytes']??''),true);if(!is_string($bytes)||(int)($entry['size']??-1)!==strlen($bytes)||!hash_equals((string)($entry['sha256']??''),hash('sha256',$bytes)))throw new \RuntimeException('Backup file integrity is invalid.');$total+=strlen($bytes);if($total>100*1024*1024)throw new \RuntimeException('Backup file payload is too large.');$decoded[$logical]=$bytes;}return $decoded;
+    }
+
+    /** @return array<string,array{size:int,sha256:string,bytes:string}> */
+    private function exportManagedFiles(): array
+    {
+        $root=$this->projectRoot.'/Server/runtime/user-media';$files=[];$total=0;if(!is_dir($root))return $files;
+        foreach(new \FilesystemIterator($root,\FilesystemIterator::SKIP_DOTS) as $item){if(!$item->isFile()||$item->isLink())throw new BackupRuntimeException('BACKUP_FILE_UNSAFE','Managed media storage contains an unsupported entry.');$name=$item->getBasename();if(!preg_match('/^[a-f0-9]{32}\.(?:jpg|png|webp)$/',$name))throw new BackupRuntimeException('BACKUP_FILE_UNSAFE','Managed media filename is invalid.');$bytes=file_get_contents($item->getPathname());if(!is_string($bytes))throw new BackupRuntimeException('BACKUP_FILE_READ_FAILED','Managed media could not be read.');$total+=strlen($bytes);if($total>100*1024*1024)throw new BackupRuntimeException('BACKUP_FILE_LIMIT','Managed media exceeds the backup limit.');$files['user-media/'.$name]=['size'=>strlen($bytes),'sha256'=>hash('sha256',$bytes),'bytes'=>base64_encode($bytes)];}
+        ksort($files);return $files;
+    }
+
+    /** @param array<string,mixed> $payload @return array{stage:string,target:string}|null */
+    private function stageManagedFiles(array $payload): ?array
+    {
+        if(($payload['format']??'')===self::LEGACY_FORMAT)return null;$files=$this->validatedManagedFiles($payload);$target=$this->projectRoot.'/Server/runtime/user-media';if(is_dir($target)&&(new \FilesystemIterator($target))->valid())throw new \RuntimeException('Managed media target must be empty before restore.');$stage=$this->projectRoot.'/Server/runtime/.user-media-restore-'.bin2hex(random_bytes(8));if(!mkdir($stage,0700,true))throw new \RuntimeException('Could not stage managed media.');try{foreach($files as $logical=>$bytes){$name=basename($logical);if(file_put_contents($stage.'/'.$name,$bytes,LOCK_EX)===false)throw new \RuntimeException('Could not stage managed media.');}return ['stage'=>$stage,'target'=>$target];}catch(\Throwable $e){$this->removeTree($stage);throw $e;}
+    }
+
+    /** @param array{stage:string,target:string}|null $staged */
+    private function commitManagedFiles(?array $staged): void { if($staged===null)return;if(is_dir($staged['target']))rmdir($staged['target']);if(!rename($staged['stage'],$staged['target'])){$this->removeTree($staged['stage']);throw new \RuntimeException('Could not finalize managed media restore.');} }
+    private function removeTree(string $dir): void { if(!is_dir($dir))return;foreach(new \FilesystemIterator($dir,\FilesystemIterator::SKIP_DOTS) as $item)@unlink($item->getPathname());@rmdir($dir); }
 
     private function ensureDirectory(): void
     {

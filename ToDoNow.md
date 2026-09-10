@@ -53,3 +53,5 @@ Corrected Package first-submit, License create/deactivate, free/unlimited Device
 Current follow-up is code-side complete: License Delete reference protection, Session User/Installation identity and configurable Backup Storage Path await the concise real Device/Host acceptance in `CHATGPT.md`. Do not hardcode the operator's host path and do not run a production restore.
 
 Backup content audit result: **BACKUP CONTRACT PARTIAL**. The 21 non-ephemeral Core tables are isolated-round-trip and rollback verified, while module-owned data and media binaries are outside v1. Next code gate is the generic module/file portability contract followed by an isolated Empty-Host restore; production restore remains prohibited.
+
+Current: deploy and device/host-accept Backup V2 plus Settings/Profile fixes. Backup contract is code-/isolated COMPLETE; Core Freeze still awaits external Cron/Move gates. No production restore.

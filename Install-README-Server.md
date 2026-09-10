@@ -162,3 +162,5 @@ Restore ausschließlich auf einer eindeutig separaten Staging-/Testinstallation 
 ## Core migrations before production verification
 
 Run `php scripts/run-core-migrations.php` through the protected cPanel terminal/CLI after uploading a release and before considering deployment complete. It is idempotent, emits counts only and exits non-zero on failure or remaining migrations. Both this entrypoint and `scripts/run-automatic-backup.php` are part of the production package. The HTTP smoke checks boolean migration readiness and performs no mutation or restore.
+
+Current v2 backups include installed modules' declared database tables and managed media bytes. Before an isolated restore, install the compatible release/modules and keep the target media directory empty; Neutral refuses silent overwrite. Legacy v1 files remain restorable with their documented Core-only scope. Production restore remains prohibited as a test.
