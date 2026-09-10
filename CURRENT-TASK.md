@@ -1,7 +1,7 @@
 # CURRENT TASK — Backup Contract Complete + Settings/Profile UX
 
 **Quelle:** `CODEX.md`, Betreiber-Livebefund 2026-09-10
-**Status:** IMPLEMENTIERT UND LOKAL VERIFIZIERT · DEPLOYMENT AUSSTEHEND · KEIN PRODUKTIONS-RESTORE
+**Status:** ABGESCHLOSSEN UND DEPLOYED · KEIN PRODUKTIONS-RESTORE
 
 1. [x] `origin/main` synchronisieren und sämtliche vorgeschriebenen Verträge sowie Backup/Restore-, Moduldata-, Media-, Settings/Profile- und Authpfade lesen.
 2. [ ] Generische deklarierte Modultabellen und verwaltete Datei-/Medienbereiche in ein versioniertes, verschlüsseltes Backupformat aufnehmen; sichere relative Pfade, Integrität, Limits und kompatible v1-Behandlung gewährleisten.

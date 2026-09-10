@@ -14,3 +14,8 @@ Birthday Save übernimmt jetzt das autoritativ zurückgelieferte Profil und meld
 ## Wahrheitsgrenze / Betreiber-Retest
 
 `BACKUP CONTRACT COMPLETE` bezeichnet Code und isolierten Vertrag, nicht automatisch Core Freeze. Automatic Backup/Cron und weitere reale Host-/Move-Gates bleiben offen. Betreiber prüft: anonym/eingeloggt Tabs; Birthday Save→neu öffnen→Reload→Relogin→Delete und iPad-Layout; neues V2-Backup erstellen/downloaden. Restore weiterhin ausschließlich auf separatem Staging, niemals Produktion.
+
+
+## Deployment
+
+Implementation and documentation were pushed to `origin/main`. CodeQL and FTPS deployment completed successfully; the bounded read-only production smoke confirmed the deployed revision and `migrationsReady:true`. No production restore was run.
