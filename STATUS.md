@@ -1,7 +1,7 @@
 # Neutral status — operator-retest repairs
 
 **Stand:** 2026-09-11
-**Code status:** repariert, 528/528 lokal sowie CodeQL/FTPS/read-only Smoke erfolgreich für `4038a62`
+**Code status:** Frontend-Hotfix repariert, 533/533 lokal sowie CodeQL/FTPS/read-only Smoke erfolgreich für `e21f7fe`
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 
