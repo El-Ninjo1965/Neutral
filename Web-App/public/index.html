@@ -83,6 +83,27 @@
     <script defer src="homepage-document.js"></script>
     <script defer src="user-module-access.js"></script>
     <script defer src="password-hold-reveal.js"></script>
+    <script>
+      window.NeutralPasswordHoldReveal = window.NeutralPasswordHoldReveal || {
+        bind: function (input, button) {
+          if (!input || !button) return;
+          var conceal = function () {
+            input.type = 'password';
+            button.setAttribute('aria-pressed', 'false');
+          };
+          button.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            input.type = 'text';
+            button.setAttribute('aria-pressed', 'true');
+            if (button.setPointerCapture && event.pointerId != null) button.setPointerCapture(event.pointerId);
+          });
+          ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture', 'blur'].forEach(function (name) {
+            button.addEventListener(name, conceal);
+          });
+          button.addEventListener('click', function (event) { event.preventDefault(); });
+        }
+      };
+    </script>
     <script defer src="user-app.js"></script>
   </body>
 </html>
