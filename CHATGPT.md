@@ -23,15 +23,8 @@ Lokale Tests, CI, Deployment und read-only Smokes sind kein Operator-Live-Pass. 
 
 ## Einzige priorisierte Operator-Retestliste
 
-1. User Login Eye auf iPad/Chrome normal und privat: zweimal klicken, tatsächliche Sichtbarkeit, ARIA/Fokus und keine Duplikate prüfen.
-2. Profile: Install → Activate → Deactivate → Re-activate sowie absichtlich wiederholten Install/Reload prüfen; danach Profile/Privacy und Permission Catalog/Role Management verifizieren.
-3. User Settings: Apps/Navigation ändern, Save und Restore Defaults prüfen; Success-Dialog und sofortige Navigation ohne Reload bestätigen.
-4. Admin Shell auf Desktop/iPad: Headerfreiheit, Theme-/Logout-Position, jede Route/Reload am Contentanfang, Deep-Link/Back für App Modules und System Modules.
-5. Dashboard, Packages, Licenses und Roles: kompakte Summary sowie exklusive List/Create/Edit-, Save-/Cancel-/Back-Flows prüfen.
-6. User Management: Sortierung aller geforderten Spalten, Organization getrennt von License/Package, E-Mail nur im Editor, Device-Quelle verständlich.
-7. Device Limits: User Override → License → direct Package → Systempolicy; numerisch und Unlimited mit mehreren Sessions, keine `0`, keine automatische Sessionlöschung.
-8. Package/License Delete: User-/Manager-/Package-Zuordnungen getrennt prüfen; Sessions dürfen nicht als License-Zuordnung fehlbeschriftet werden.
-9. Sessions: responsive Fünf-Spalten-Tabelle ohne technische ID/UA-Raten; bestehende Support-/Audit-Identität intern erhalten.
-10. Database Test und Backup Path Test: Dialog, persistenter Timestamp/Status nach Reload und Audit; keinen Restore ausführen.
-11. Regression der bereits live bestandenen Befunde: GPS Produktfunktion, Media Lifecycle, Postbox Lifecycle, Sharing & Visibility Lifecycle, Audit Delete All und Maintenance State.
-12. Field Notes unverändert operator-live prüfen und verbleibende Host-Gates aus `CORE-1.0-READINESS.md` abschließen.
+1. **User Login Eye:** auf iPad/Chrome normal und privat zweimal klicken; tatsächliches sichtbares Feld muss `password → text → password` wechseln, Icon/ARIA/Fokus müssen folgen und das Feld darf nicht ersetzt werden.
+2. **Modulaktionen:** in **App Modules** und **System Modules** jeweils Install/Activate/Deactivate/Uninstall sowie Details/Reload bedienen; genau eine Aktion, sichtbarer Success/Error und korrekter Lifecycle müssen folgen.
+3. Erst wenn 1 und 2 live bestanden sind, die verbleibende gesammelte Abnahme fortsetzen: Profile/Privacy, Settings-Sofortupdate, Admin Shell/Scroll, Management-Editoren, User-/Device-Projektion, Sessions, Database/Backup-Testfeedback, die bisherigen PASS-Regressionen, Field Notes und Host-Gates.
+
+Beide Hotfixpunkte sind nach Code- und Testabschluss weiterhin **OPERATOR RETEST REQUIRED**. Kein Production Restore und kein automatischer Core Freeze.

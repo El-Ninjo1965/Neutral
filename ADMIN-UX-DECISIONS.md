@@ -84,3 +84,7 @@
 ## Implementierungsstand des Nachtrags (2026-09-11)
 
 Alle Punkte 1–20 wurden im Code des anschließenden Reparaturbatches umgesetzt und automatisiert geprüft; die in Punkten 21/27 beschriebenen Profile-/Device-Ursachen besitzen nun kompensierende bzw. nachvollziehbare Verträge. Das ändert die Livebewertung nicht: sämtliche reparierten Bedienpunkte bleiben bis zur Liste in `CHATGPT.md` **OPERATOR RETEST REQUIRED**. Die bestätigten PASS-Befunde 22–25 sowie Audit/Maintenance bleiben als reale Beobachtungen erhalten. Kein Production Restore und kein Core Freeze.
+
+## Frontend-Binding-Hotfix (2026-09-11)
+
+Neuer Livebefund nach dem Reparaturbatch: Das User-Login-Eye blieb trotz Fokus ohne Umschaltung; außerdem waren die Lifecyclebuttons der getrennten App-/System-Module sichtbar, aber durch die veraltete globale `adminModules`-Inlinebindung ohne Funktion. Der Hotfix verwendet für Passwortbuttons einen dokumentweiten Capture-Handler mit aktuellem DOM-Feld und genau einem abgesicherten Direktfallback. Jede `AdminModulesView` bindet ihre Lifecycleaktionen nun selbst über `data-module-action` und einen lokalen Listener; die globale `adminModules`-Abhängigkeit entfällt. Beide Punkte bleiben **OPERATOR RETEST REQUIRED**.

@@ -12,3 +12,7 @@ Der aktive CODEX-Batch ist implementiert: Login-Eye, Profile-Install-Kompensatio
 ## Live-Wahrheit
 
 Weiterhin als datierter Operator-PASS erhalten: GPS Produktfunktion; Media, Postbox und Sharing & Visibility Lifecycle; Audit Delete All; Maintenance State. Alle in diesem Lauf reparierten Punkte sind bis zur gesammelten Bedienabnahme **OPERATOR RETEST REQUIRED**. Kein Production Restore, keine destruktive Produktionsaktion, kein Referral/Rewards, keine automatische Setup-Routine und kein Core Freeze.
+
+## Frontend-Binding-Hotfix
+
+Code-IST: Password-Toggle wird im Capture-Pfad am aktuell sichtbaren Feld aufgelöst und gegen doppeltes Umschalten markiert. App-/System-Module besitzen instanzlokale Lifecycle-Listener; der tote globale Kompatibilitätseintrag wurde entfernt. Live-Status für beide: **OPERATOR RETEST REQUIRED**. Alle früher bestätigten PASS-Befunde bleiben unverändert.

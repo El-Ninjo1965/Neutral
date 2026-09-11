@@ -524,3 +524,9 @@ After the native-placeholder correction, production classification advanced back
 - Simplified Admin shell, Dashboard and Sessions; split App/System Module destinations and added exclusive Package/License/Role editors.
 - Added sortable organization-aware User projection and traceable device-source resolution with an explicit one-device System fallback.
 - Persisted and audited timestamped Database/Backup-path tests without secrets; retained all prior operator PASS findings and left repaired points for retest.
+
+## 2026-09-11 — Frontend binding hotfix
+
+- Replaced dead global `adminModules` inline handlers with instance-owned delegated lifecycle actions for both App Modules and System Modules.
+- Made password visibility resilient to dynamic User Login rendering through capture delegation, idempotent direct fallback and attribute/property synchronization.
+- Added interaction tests for production script order, stable visible input identity, double-click toggle, both module categories and every lifecycle action; operator retest remains required.

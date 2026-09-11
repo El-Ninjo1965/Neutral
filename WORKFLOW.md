@@ -206,3 +206,7 @@ CodeQL run `34550129103` passed. FTPS run `34550129504` passed its complete test
 ## 2026-09-11 operator-retest repair run
 
 Repaired the concrete failed interaction/lifecycle paths, added focused DOM/source/integration regressions, then runs the complete suite, production package, push, CI/CodeQL, FTPS and bounded read-only smoke. The next human step is the single list in `CHATGPT.md`; local/CI evidence never converts those items into live PASS and no freeze follows automatically.
+
+## 2026-09-11 frontend binding hotfix
+
+Root Cause Module Admin: Nach Aufteilung in `app-modules` und `system-modules` verwiesen Inline-Handler weiterhin auf `window.adminModules`, während `admin-init.js` das nicht mehr vorhandene `views.modules` publizierte. Ersetzt durch instanzlokale delegierte Events. Das Login-Eye erhält zusätzlich zur idempotenten Direktbindung einen früh installierten dokumentweiten Capture-Pfad, der den aktuell sichtbaren Input auflöst, synchron per Attribut/Property umschaltet und ein doppeltes Bubble-Toggle verhindert. Browsernahe Tests bilden Produktions-Ladereihenfolge, zwei Clicks und unveränderte Inputidentität ab. Live-Retest bleibt erforderlich.
