@@ -41,20 +41,21 @@ class AdminModulesView {
       <div class="admin-modules-view">
         <div class="section-header">
           <h2>${this.category === 'system' ? 'System Modules' : (this.category === 'user' ? 'App Modules' : 'Module Administration')}</h2>
-          <button class="btn btn-secondary" onclick="adminModules.reload()">Reload</button>
+          <button type="button" class="btn btn-secondary" data-module-action="reload">Reload</button>
         </div>
         <div id="modules-table"></div>
         <div id="module-details" class="card" style="margin-top: 1rem; display: none;"></div>
       </div>
     `;
     this.renderTable();
+    this.bindLifecycleActions();
     if (this.activeModuleId) {
       this.showDetails(this.activeModuleId);
     }
   }
 
   renderTable() {
-    const host = document.getElementById('modules-table');
+    const host = this.container.querySelector('#modules-table');
     if (!host) {
       return;
     }
@@ -108,14 +109,34 @@ class AdminModulesView {
         <td><span class="status-badge ${isActive ? 'ok' : ''}">${lifecycle}</span><div class="small-muted">${status}</div></td>
         <td>${registered}</td>
         <td class="action-buttons">
-          <button class="btn btn-sm btn-secondary" onclick="adminModules.showDetails('${moduleId}')">Details</button>
-          <button class="btn btn-sm btn-primary" onclick="adminModules.install('${moduleId}')" ${canInstall ? '' : 'disabled'}>Install</button>
-          <button class="btn btn-sm btn-info" onclick="adminModules.activate('${moduleId}')" ${canActivate ? '' : 'disabled'}>Activate</button>
-          <button class="btn btn-sm btn-warning" onclick="adminModules.deactivate('${moduleId}')" ${canDeactivate ? '' : 'disabled'}>Deactivate</button>
-          <button class="btn btn-sm btn-danger" onclick="adminModules.uninstall('${moduleId}')" ${canUninstall ? '' : 'disabled'}>Uninstall</button>
+          <button type="button" class="btn btn-sm btn-secondary" data-module-action="details" data-module-id="${moduleId}">Details</button>
+          <button type="button" class="btn btn-sm btn-primary" data-module-action="install" data-module-id="${moduleId}" ${canInstall ? '' : 'disabled'}>Install</button>
+          <button type="button" class="btn btn-sm btn-info" data-module-action="activate" data-module-id="${moduleId}" ${canActivate ? '' : 'disabled'}>Activate</button>
+          <button type="button" class="btn btn-sm btn-warning" data-module-action="deactivate" data-module-id="${moduleId}" ${canDeactivate ? '' : 'disabled'}>Deactivate</button>
+          <button type="button" class="btn btn-sm btn-danger" data-module-action="uninstall" data-module-id="${moduleId}" ${canUninstall ? '' : 'disabled'}>Uninstall</button>
         </td>
       </tr>
     `;
+  }
+
+  bindLifecycleActions() {
+    const root = this.container.querySelector('.admin-modules-view');
+    if (!root) return;
+    root.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-module-action]');
+      if (!button || !root.contains(button) || button.disabled) return;
+      const action = button.dataset.moduleAction;
+      const moduleId = button.dataset.moduleId;
+      if (action === 'reload') { void this.reload(); return; }
+      const handlers = {
+        details: () => this.showDetails(moduleId),
+        install: () => this.install(moduleId),
+        activate: () => this.activate(moduleId),
+        deactivate: () => this.deactivate(moduleId),
+        uninstall: () => this.uninstall(moduleId)
+      };
+      if (handlers[action] && moduleId) void handlers[action]();
+    });
   }
 
   renderPermissionEditor(module, modulePermissions) {
@@ -196,7 +217,7 @@ class AdminModulesView {
 
   async showDetails(moduleId) {
     this.activeModuleId = String(moduleId);
-    const detailHost = document.getElementById('module-details');
+    const detailHost = this.container.querySelector('#module-details');
     if (!detailHost) {
       return;
     }
@@ -277,7 +298,7 @@ class AdminModulesView {
   }
 
   collectRoleAssignments(moduleId) {
-    const host = document.getElementById('module-details');
+    const host = this.container.querySelector('#module-details');
     if (!host) {
       return {};
     }

@@ -42,8 +42,7 @@
         adminRoles: window.adminRouter.views.roles,
         adminSettings: window.adminRouter.views.settings,
         adminAppearance: window.adminRouter.views.theme,
-        adminAudit: window.adminRouter.views.audit,
-        adminModules: window.adminRouter.views.modules
+        adminAudit: window.adminRouter.views.audit
       });
       if (window.CorePerformance) window.CorePerformance.mark('admin-router-ready');
       return true;
