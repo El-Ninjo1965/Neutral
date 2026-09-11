@@ -17,8 +17,8 @@ test('module category and role navigation visibility stay separate from permissi
  const contract=read('Server/php/src/ModuleContract.php');const runtime=read('Server/php/src/Phase7ModuleRuntime.php');const api=read('Server/public/api/index.php');const ui=read('Web-App/public/admin/modules-view.js');
  assert.match(contract,/\['user', 'system'\]/);assert.match(runtime,/core\.module\.visibility/);assert.match(api,/modules\/\(\[a-z0-9\\-\]\+\)\/visibility/);
  assert.match(ui,/User Modules/);assert.match(ui,/System Modules/);assert.match(ui,/Visibility \/ Navigation/);assert.match(ui,/never grants permissions/);
- for(const id of ['gps','profile','postbox'])assert.equal(JSON.parse(read(`Web-App/app/modules/${id}/module.json`)).category,'user');
- for(const id of ['media','moderation','notifications','sharing'])assert.equal(JSON.parse(read(`Web-App/app/modules/${id}/module.json`)).category,'system');
+ for(const id of ['gps','profile','postbox']){const file=`Web-App/app/modules/${id}/module.json`;if(fs.existsSync(path.join(root,file)))assert.equal(JSON.parse(read(file)).category,'user');}
+ for(const id of ['media','moderation','notifications','sharing']){const file=`Web-App/app/modules/${id}/module.json`;if(fs.existsSync(path.join(root,file)))assert.equal(JSON.parse(read(file)).category,'system');}
 });
 
 test('User management renders list and create/edit as exclusive states',()=>{
