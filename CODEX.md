@@ -9,16 +9,16 @@
 1. Repository `/workspace/Neutral`, Branch `main`, `origin/main` und sauberen Working Tree prüfen.
 2. `WORKFLOW.md`, `CURRENT-TASK.md`, `CHATGPT.md`, `VISION.md`, `CORE-1.0.md` und die für den Fehler relevanten Dateien lesen.
 3. Diesen Auftrag vollständig nach `CURRENT-TASK.md` übernehmen bzw. mit dem dortigen Auftrag abgleichen.
-4. Erst Root Cause belegen, dann minimal ändern.
+4. Simple first: vorhandene funktionierende Lösung wiederverwenden, bevor neue Mechanismen gebaut werden.
 5. Keine Secrets ausgeben, kein Production Restore, keine neuen Features, keine unnötigen Refactorings, kein Core Freeze.
 
 ## Aktueller Betreiber-Livebefund
 
 ### 1. User Login Eye
 
-Auf Betreiber-iPad/Chrome fehlt das Eye im User-Login live vollständig; Admin-Login-Eye funktioniert. Repository/CI allein gelten nicht als Live-Beweis.
+Auf Betreiber-iPad/Chrome fehlt das Eye im User-Login; das Eye im Admin-Login funktioniert.
 
-**Auftrag:** Reale Auslieferungskette prüfen: live ausgelieferte HTML/JS/CSS-Dateien, Production-Package, Public/Base Path, Service Worker, Cache-/Revision-Invalidierung und mögliche stale/doppelte Assets. Nicht einfach einen weiteren Eye-Handler ergänzen. Nach Deployment muss genau ein Eye ohne manuellen Cache-Trick funktionieren. PWA/Offline und Admin-Login erhalten. Read-only Production-Prüfung für tatsächliche Assetrevision und erwarteten User-Login-Code ergänzen/verwenden.
+**Auftrag:** Nicht neu erfinden. Prüfe zuerst die funktionierende Admin-Login-Lösung und übernehme denselben einfachen Passwort-Sichtbarkeitsmechanismus für den User-Login, soweit technisch möglich. Ziel ist ausschließlich: genau ein Eye direkt am Passwortfeld; Klick schaltet `password ↔ text`; erneuter Klick wieder zurück. Keine Serverabhängigkeit, keine besondere Backend-Logik und keine zusätzliche Komplexität dafür einführen. Nur wenn die direkte Wiederverwendung der Admin-Lösung nachweislich nicht möglich ist, die kleinste nötige Abweichung verwenden. Danach lokal testen, deployen und Betreiber-Retest abwarten.
 
 ### 2. Module Install
 
@@ -47,12 +47,11 @@ Vor Abschluss:
 3. JS-Syntax und PHP-Lint;
 4. `git diff --check`;
 5. Production Package prüfen;
-6. Service-Worker-/Asset-Upgrade-Szenario prüfen;
-7. Modul-Lifecycle-Integrationstests;
-8. Commit/Push nach `main` gemäß `WORKFLOW.md`;
-9. erforderliche GitHub Actions/CodeQL/FTPS bis terminal abwarten;
-10. read-only Production Smoke prüfen;
-11. `CHATGPT.md` mit tatsächlichem Ergebnis und verbleibender Operator-Retestliste aktualisieren.
+6. Modul-Lifecycle-Integrationstests;
+7. Commit/Push nach `main` gemäß `WORKFLOW.md`;
+8. erforderliche GitHub Actions/CodeQL/FTPS bis terminal abwarten;
+9. read-only Production Smoke prüfen;
+10. `CHATGPT.md` mit tatsächlichem Ergebnis und verbleibender Operator-Retestliste aktualisieren.
 
 ## Verbindliche Operator-Retest-Reihenfolge danach
 
