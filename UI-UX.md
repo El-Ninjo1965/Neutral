@@ -330,3 +330,7 @@ User Management removes E-mail from the table, adds Organization, keeps Package/
 ## User Login password reveal (2026-09-11)
 
 The User Login renders exactly one static Eye beside the password input. Passwords are hidden by default and visible only while the control is held. Pointer release, cancellation, leaving the control, lost capture, or blur conceals immediately. This path does not use the dynamic Admin password enhancer.
+
+## User Login Eye – Layout-Recovery (2026-09-11)
+
+Das statische User-Eye liegt im selben `password-input-wrap` wie das Passwortfeld. Dadurch bleibt das 44-px-Touchziel absolut innerhalb des Controls, ohne den Formularcontainer zu verbreitern. Pointer-Hold zeigt; Release, Cancel, Leave, Captureverlust oder Blur verbirgt. Kein Observer, keine globale Delegation und kein paralleler Fallback.

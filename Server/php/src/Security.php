@@ -12,6 +12,11 @@ final class Security
         }
 
         session_name($cookieName);
+        $lifetime = $persistent ? 60 * 60 * 24 * 400 : 60 * 60 * 24 * 30;
+        // Keep PHP's server-side session payload at least as long as the cookie.
+        // The database registry remains authoritative and can recover a payload
+        // if host-level garbage collection nevertheless removes the file.
+        ini_set('session.gc_maxlifetime', (string) $lifetime);
         $providedSessionId = isset($_COOKIE[$cookieName]) && is_string($_COOKIE[$cookieName])
             ? trim((string) $_COOKIE[$cookieName])
             : '';
@@ -22,7 +27,7 @@ final class Security
             // Browsers require a finite cookie date. User sessions therefore use
             // the maximum broadly supported 400-day window and renew on requests;
             // server-side validity itself has no calendar/idle expiry.
-            'lifetime' => $persistent ? 60 * 60 * 24 * 400 : 60 * 60 * 24 * 30,
+            'lifetime' => $lifetime,
             'path' => '/',
             'secure' => self::isHttpsRequest(),
             'httponly' => true,

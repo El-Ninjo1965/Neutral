@@ -77,6 +77,20 @@ async function probeInvalidLogin(fetchImpl, baseUrl, route, scope) {
   const safeCode = String(payload?.error?.details?.code || 'none');
   requireCondition(response.status === 401, `${scope} auth smoke returned ${response.status} instead of 401 (safeCode=${safeCode}).`);
   requireCondition(payload?.ok === false && /invalid username or password/i.test(payload?.error?.message || ''), `${scope} auth smoke did not return the invalid-credentials contract.`);
+  const authHeader = response.headers.get('set-cookie') || '';
+  requireCondition(!new RegExp(`neutral_${scope === 'admin' ? 'admin_' : ''}session=`, 'i').test(authHeader), `${scope} auth smoke received a session cookie for invalid credentials.`);
+  return response.status;
+}
+
+async function probeUnauthenticatedIdentity(fetchImpl, baseUrl, route, scope) {
+  const requestedUrl = endpoint(baseUrl, route);
+  const response = await fetchImpl(requestedUrl, {
+    method: 'GET', redirect: 'follow', cache: 'no-store', signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    headers: { Accept: 'application/json' },
+  });
+  assertFinalUrl(response.url, requestedUrl, baseUrl);
+  const payload = parseJson(await response.text(), `${scope} identity smoke`);
+  requireCondition(response.status === 401 && payload?.ok === false, `${scope} identity smoke did not preserve its protected boundary.`);
   return response.status;
 }
 
@@ -139,6 +153,8 @@ async function runSmoke({
   results.internal = await readResponse(fetchImpl, publicBase, '/Server/php/bootstrap.php');
   results.userAuthInvalid = await probeInvalidLogin(fetchImpl, publicBase, '/api/v1/auth/login', 'user');
   results.adminAuthInvalid = await probeInvalidLogin(fetchImpl, publicBase, '/api/v1/admin/auth/login', 'admin');
+  results.userIdentityUnauthenticated = await probeUnauthenticatedIdentity(fetchImpl, publicBase, '/api/v1/auth/me', 'user');
+  results.adminIdentityUnauthenticated = await probeUnauthenticatedIdentity(fetchImpl, publicBase, '/api/v1/admin/auth/me', 'admin');
 
   requireCondition(results.root.status === 200, 'Öffentlicher Root ist nicht erreichbar.');
   requireCondition(results.rewrite.status === 200, 'SPA-Rewrite ist nicht erreichbar.');
@@ -244,6 +260,8 @@ async function runSmoke({
     httpsEnforced,
     userAuthInvalid: results.userAuthInvalid,
     adminAuthInvalid: results.adminAuthInvalid,
+    userIdentityUnauthenticated: results.userIdentityUnauthenticated,
+    adminIdentityUnauthenticated: results.adminIdentityUnauthenticated,
   };
   write(JSON.stringify(summary));
   return summary;

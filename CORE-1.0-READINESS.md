@@ -18,3 +18,7 @@ Bereits beobachtete PASS-Befunde bleiben erhalten, ersetzen aber keine Regressio
 ## 2026-09-11 operator-repair gate
 
 Profile lifecycle is operator-live PASS. Persistent User sessions, User Login hold-to-reveal, Profile/Privacy projection, Organization list projection, exclusive License/Package editor states, and Edit User identity remain OPERATOR RETEST REQUIRED after deployment. Core Freeze readiness is therefore **NO** until those checks pass.
+
+## 2026-09-11 Auth-Recovery-Gate
+
+Die kritische User-/Admin-Session-Regression ist technisch scopegebunden repariert. Core Freeze bleibt **NEIN**, bis User Login, Admin Login samt geschützten Kernseiten und das User-Eye operator-live bestanden sind.

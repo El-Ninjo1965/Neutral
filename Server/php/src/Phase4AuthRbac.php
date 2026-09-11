@@ -1272,13 +1272,14 @@ final class Phase4SessionRegistry
         $lastSeenAt = (string) ($identity['lastSeenAt'] ?? gmdate('c'));
         $expiresAt = isset($identity['expiresAt']) && $identity['expiresAt'] !== '' ? (string) $identity['expiresAt'] : null;
         $statement = $pdo->prepare('
-            INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, status, ip, user_agent, device_id, device_label)
-            VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :status, NULL, :user_agent, :device_id, :device_label)
+            INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, session_scope, status, ip, user_agent, device_id, device_label)
+            VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :session_scope, :status, NULL, :user_agent, :device_id, :device_label)
             ON DUPLICATE KEY UPDATE
                 user_id = VALUES(user_id),
                 csrf_token = VALUES(csrf_token),
                 last_seen_at = VALUES(last_seen_at),
                 expires_at = VALUES(expires_at),
+                session_scope = VALUES(session_scope),
                 status = VALUES(status),
                 ip = VALUES(ip),
                 user_agent = VALUES(user_agent),
@@ -1292,6 +1293,7 @@ final class Phase4SessionRegistry
             ':issued_at' => $this->toMysqlDateTime($issuedAt),
             ':last_seen_at' => $this->toMysqlDateTime($lastSeenAt),
             ':expires_at' => $expiresAt === null ? null : $this->toMysqlDateTime($expiresAt),
+            ':session_scope' => (string) ($identity['sessionScope'] ?? 'user'),
             ':status' => (string) ($identity['status'] ?? 'active'),
             ':user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
             ':device_id' => (string) ($identity['deviceId'] ?? ''),
@@ -1309,12 +1311,33 @@ final class Phase4SessionRegistry
         $statement->execute([':session_id' => $sessionId]);
     }
 
-    public function isActive(string $sessionId): bool
+    public function isActive(string $sessionId, string $scope): bool
     {
         if ($sessionId === '') return false;
-        $statement = $this->requireDatabase()->connect()->prepare("SELECT COUNT(*) FROM sessions WHERE session_id = :session_id AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)");
-        $statement->execute([':session_id' => $sessionId]);
+        $statement = $this->requireDatabase()->connect()->prepare("SELECT COUNT(*) FROM sessions WHERE session_id = :session_id AND session_scope = :session_scope AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)");
+        $statement->execute([':session_id' => $sessionId, ':session_scope' => $scope]);
         return (int) $statement->fetchColumn() === 1;
+    }
+
+    /** @return array<string,mixed>|null */
+    public function recover(string $sessionId, string $scope): ?array
+    {
+        if ($sessionId === '') return null;
+        $statement = $this->requireDatabase()->connect()->prepare("SELECT user_id, csrf_token, issued_at, last_seen_at, expires_at, status, device_id, device_label, session_scope FROM sessions WHERE session_id = :session_id AND session_scope = :session_scope AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) LIMIT 1");
+        $statement->execute([':session_id' => $sessionId, ':session_scope' => $scope]);
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+        if (!is_array($row)) return null;
+        return [
+            'userId' => (string) ($row['user_id'] ?? ''),
+            'csrfToken' => (string) ($row['csrf_token'] ?? ''),
+            'issuedAt' => $this->mysqlUtcIso((string) ($row['issued_at'] ?? '')),
+            'lastSeenAt' => $this->mysqlUtcIso((string) ($row['last_seen_at'] ?? '')),
+            'expiresAt' => $row['expires_at'] === null ? null : $this->mysqlUtcIso((string) $row['expires_at']),
+            'status' => (string) ($row['status'] ?? 'active'),
+            'deviceId' => (string) ($row['device_id'] ?? ''),
+            'deviceLabel' => (string) ($row['device_label'] ?? 'Recovered browser installation'),
+            'sessionScope' => (string) ($row['session_scope'] ?? ''),
+        ];
     }
 
     /**
@@ -1371,7 +1394,7 @@ final class Phase4SessionRegistry
     public function activeDeviceCount(int $userId, string $exceptDeviceId = ''): int
     {
         $pdo = $this->requireDatabase()->connect();
-        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND device_id <> '' AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";
+        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND session_scope = 'user' AND device_id <> '' AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";
         $params = [':user_id' => $userId];
         if ($exceptDeviceId !== '') {
             $sql .= ' AND device_id <> :device_id';
@@ -1394,7 +1417,7 @@ final class Phase4SessionRegistry
         }
     }
 
-    public function replaceActiveInstallation(int $userId, string $deviceId, string $currentSessionId): void
+    public function replaceActiveInstallation(int $userId, string $deviceId, string $currentSessionId, string $scope = 'user'): void
     {
         if ($userId <= 0 || preg_match('/^[a-f0-9]{32}$/', $deviceId) !== 1 || $currentSessionId === '') {
             throw new \RuntimeException('A valid device session is required.');
@@ -1405,12 +1428,14 @@ final class Phase4SessionRegistry
         WHERE user_id = :user_id
           AND (device_id = :device_id OR device_id = '')
           AND session_id <> :session_id
+          AND session_scope = :session_scope
           AND status = 'active'
         SQL);
         $statement->execute([
             ':user_id' => $userId,
             ':device_id' => $deviceId,
             ':session_id' => $currentSessionId,
+            ':session_scope' => $scope,
         ]);
     }
 
@@ -1570,7 +1595,7 @@ final class Phase4AuthManager
         $fallbackLimit = max(1, (int) ($this->config->env()['AUTH_MAX_DEVICES_PER_USER'] ?? 1));
         $privilegedUnlimited = strtolower((string)($this->config->env()['AUTH_PRIVILEGED_DEVICES'] ?? 'limited')) === 'unlimited' && array_intersect($roles, ['admin','developer']) !== [];
         $deviceLimit = $privilegedUnlimited ? null : $this->sessions->licensedDeviceLimit($userId, $fallbackLimit);
-        if ($deviceLimit !== null && $this->sessions->activeDeviceCount($userId, $deviceId) >= $deviceLimit) {
+        if ($scope === 'user' && $deviceLimit !== null && $this->sessions->activeDeviceCount($userId, $deviceId) >= $deviceLimit) {
             throw new \RuntimeException('Active device limit reached. Revoke another device session in Admin before adding this device.');
         }
         $ttlMs = (int) ($this->config->env()['AUTH_DEVICE_SESSION_TTL_MS'] ?? (1000 * 60 * 60 * 24 * 30));
@@ -1602,7 +1627,7 @@ final class Phase4AuthManager
         ];
         $csrf = Security::ensureCsrfToken();
         try {
-            $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id());
+            $this->sessions->replaceActiveInstallation($userId, $deviceId, session_id(), $scope);
             $this->sessions->upsert(session_id(), $_SESSION['auth_identity']);
         } catch (\Throwable $exception) {
             unset($_SESSION['auth_identity']);
@@ -1626,10 +1651,19 @@ final class Phase4AuthManager
         $this->startSession($scope);
         $identity = $_SESSION['auth_identity'] ?? null;
         if (!is_array($identity)) {
-            return null;
+            try {
+                $identity = $this->sessions->recover(session_id(), $this->normalizeSessionScope($scope));
+            } catch (\Throwable $exception) {
+                // Anonymous/public requests and the login route must stay
+                // reachable when session recovery storage is unavailable.
+                return null;
+            }
+            if (!is_array($identity)) return null;
+            if (($identity['csrfToken'] ?? '') !== '') $_SESSION['_csrf_token'] = (string) $identity['csrfToken'];
+            unset($identity['csrfToken']);
         }
 
-        if (!$this->sessions->isActive(session_id())) {
+        if (!$this->sessions->isActive(session_id(), $this->normalizeSessionScope($scope))) {
             $this->logout($scope);
             return null;
         }

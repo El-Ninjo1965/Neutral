@@ -167,3 +167,7 @@ Role navigation visibility is stored as namespaced JSON in `settings.setting_key
 ## Schema `2026_09_11_0009`
 
 Migration `2026_09_11_0009_persistent_user_sessions` makes `sessions.expires_at` nullable. `NULL` represents an active User session without normal time expiry; timestamps remain available for finite Admin sessions and revoked/replaced rows. Active nullable sessions are retained by cleanup and counted for device limits.
+
+## Schema `2026_09_11_0010`
+
+Migration `2026_09_11_0010_recoverable_scoped_sessions` ergänzt `sessions.session_scope` (`user`/`admin`) und einen Scope-/Statusindex. Bestehende Zeilen werden konservativ als User-Scope übernommen; bestehende Admins melden sich einmal neu an. Neue Validierung, Recovery und Replacement sind scopegebunden.

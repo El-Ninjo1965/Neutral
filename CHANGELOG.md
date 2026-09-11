@@ -546,3 +546,12 @@ After the native-placeholder correction, production classification advanced back
 - Gated Profile/Privacy Settings on active Profile capability and effective Profile permissions.
 - Made Package/License Create and Edit mutually exclusive with their list views and added immutable identity fields to Edit User.
 - Preserved separate Organization and Package user projections and added behavioral regression coverage.
+
+## 2026-09-11 — Kritische Auth-/Session-Recovery
+
+- Scopegebundene DB-Sessions verhindern gegenseitiges Ersetzen von User- und Admin-Sessions.
+- Gültige Sessions können nach Verlust der PHP-Sessiondatei aus der DB-Registry samt CSRF-Kontext wiederhergestellt werden.
+- PHP-Session-GC-Lifetime folgt der jeweiligen Cookie-Lifetime; öffentliche Requests bleiben von Recovery-Storage-Ausfällen unabhängig.
+- User-Device-Limits zählen keine Admin-Sessions.
+- User Login Eye verwendet den korrekten lokalen Passwort-Wrapper und bleibt innerhalb des Feldes.
+- Read-only Production Smoke prüft zusätzlich beide unauthentifizierten Identity-Grenzen und verhindert Auth-Cookies bei ungültigen Logins.

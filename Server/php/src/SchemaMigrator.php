@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_11_0009';
+    public const SCHEMA_VERSION = '2026_09_11_0010';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -107,6 +107,7 @@ final class SchemaMigrator
                 issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP NULL,
+                session_scope VARCHAR(16) NOT NULL DEFAULT 'user',
                 status VARCHAR(32) NOT NULL DEFAULT 'active',
                 ip VARCHAR(45) NULL,
                 user_agent VARCHAR(255) NULL,
@@ -274,6 +275,10 @@ final class SchemaMigrator
         $persistentUserSessionStatements = [
             "ALTER TABLE sessions MODIFY COLUMN expires_at TIMESTAMP NULL",
         ];
+        $recoverableSessionStatements = [
+            "ALTER TABLE sessions ADD COLUMN session_scope VARCHAR(16) NOT NULL DEFAULT 'user' AFTER expires_at",
+            "CREATE INDEX ix_sessions_scope_status ON sessions(session_scope, status)",
+        ];
 
         return [
             [
@@ -320,6 +325,11 @@ final class SchemaMigrator
                 'key' => '2026_09_11_0009_persistent_user_sessions',
                 'checksum' => sha1(implode("\n", $persistentUserSessionStatements)),
                 'statements' => $persistentUserSessionStatements,
+            ],
+            [
+                'key' => '2026_09_11_0010_recoverable_scoped_sessions',
+                'checksum' => sha1(implode("\n", $recoverableSessionStatements)),
+                'statements' => $recoverableSessionStatements,
             ],
         ];
     }
@@ -421,6 +431,10 @@ final class SchemaMigrator
             if ($isDeviceIndex && $driverCode === 1061) {
                 return;
             }
+            $isSessionScopeColumn = preg_match('/^ALTER\s+TABLE\s+sessions\s+ADD\s+COLUMN\s+session_scope\b/i', trim($statement)) === 1;
+            if ($isSessionScopeColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
+            $isSessionScopeIndex = preg_match('/^CREATE\s+INDEX\s+ix_sessions_scope_status\b/i', trim($statement)) === 1;
+            if ($isSessionScopeIndex && $driverCode === 1061) return;
             $isMembershipColumn = preg_match('/^ALTER\s+TABLE\s+license_users\s+ADD\s+COLUMN\s+membership_status\b/i', trim($statement)) === 1;
             if ($isMembershipColumn && ($exception->getCode() === '42S21' || $driverCode === 1060)) return;
             $isMembershipIndex = preg_match('/^CREATE\s+INDEX\s+ix_license_users_status\b/i', trim($statement)) === 1;

@@ -196,3 +196,7 @@ Database/path test history persists only status and UTC timestamp; Audit metadat
 ## Session lifetime split (2026-09-11)
 
 User-scope sessions have no application-side calendar or idle expiry. A nullable `sessions.expires_at` denotes this persistent contract; Logout, revoke/replacement, inactive accounts and security invalidation remain authoritative. Cleanup never removes an active session. Admin-scope sessions retain finite expiry. Browser persistence uses a renewable secure, HTTP-only, SameSite cookie (400-day browser compatibility window); the server session is renewed on requests without changing its explicit-revocation validity contract.
+
+## Scopegebundene Session-Recovery (2026-09-11)
+
+User- und Admin-Cookies werden zusätzlich durch `sessions.session_scope` serverseitig getrennt. Validierung, Recovery und Installation-Replacement akzeptieren ausschließlich denselben Scope. Eine gültige DB-Session darf die durch Host-GC verlorene PHP-Sessionidentität samt gespeichertem CSRF-Kontext wiederherstellen; unbekannte, abgelaufene, widerrufene oder scopefremde IDs bleiben abgewiesen. Ein Fehler des Recovery-Stores blockiert keine öffentlichen Routen. Device-Limits zählen nur User-Sessions; Admin behält eigenes RBAC und CSRF.

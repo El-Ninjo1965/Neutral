@@ -181,3 +181,7 @@ The generic `/api/v1/modules/<module-id>/<route>` kernel exposes Field Notes onl
 ## Authentication projection (2026-09-11)
 
 `POST /api/v1/auth/login` returns `expiresAt: null` for persistent User-scope sessions. Admin-scope login continues returning a finite timestamp. `/auth/me`, Logout, revocation, device-limit enforcement and CSRF remain unchanged in authority. Client module discovery continues projecting only active modules permitted to the current identity; Profile Settings additionally requires `profile.view` and `profile.update`.
+
+## Auth-/Session-Recovery (2026-09-11)
+
+`/api/v1/auth/*` und `/api/v1/admin/auth/*` lösen ihre getrennten Cookies ausschließlich gegen DB-Sessions desselben `session_scope` auf. Nach Verlust der PHP-Sessiondatei kann `/auth/me` eine weiterhin aktive, scopegleiche DB-Session wiederherstellen. User-/Admin-Login und Replacement verändern den jeweils anderen Scope nicht. Unauthentifizierte `auth/me`-Routen bleiben 401; ungültige Logins erzeugen keinen Auth-Cookie.

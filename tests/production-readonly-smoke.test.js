@@ -35,6 +35,8 @@ function productionFixture(overrides = {}) {
     })),
     '/api/v1/auth/login': response(401, JSON.stringify({ ok: false, error: { message: 'Invalid username or password.' } })),
     '/api/v1/admin/auth/login': response(401, JSON.stringify({ ok: false, error: { message: 'Invalid username or password.' } })),
+    '/api/v1/auth/me': response(401, JSON.stringify({ ok: false, error: { message: 'Not authenticated.' } })),
+    '/api/v1/admin/auth/me': response(401, JSON.stringify({ ok: false, error: { message: 'Not authenticated.' } })),
     '/Server/php/bootstrap.php': response(403, ''),
     '/manifest.json': response(200, JSON.stringify({ basePath: '', sourceCommit: 'abc123', sourceDirty: false })),
     '/Web-App/app/modules/example-module/module.json': response(200, JSON.stringify({
@@ -168,6 +170,8 @@ test('production smoke emits only bounded status evidence for a valid deployment
     httpsEnforced: true,
     userAuthInvalid: 401,
     adminAuthInvalid: 401,
+    userIdentityUnauthenticated: 401,
+    adminIdentityUnauthenticated: 401,
   });
   // Bounded output: an HTTPS probe evidence line plus the final summary.
   const parsed = output.map(JSON.parse);

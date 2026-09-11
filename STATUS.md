@@ -27,3 +27,7 @@ Code-IST: Password-Toggle wird im Capture-Pfad am aktuell sichtbaren Feld aufgel
 - User Login now uses one static pointer hold-to-reveal control; user sessions have no server-side normal expiry; Profile Settings require the active module plus both Profile permissions.
 - License/package editors now replace their lists, and Edit User exposes immutable account identity before editable presentation data.
 - These repairs remain **OPERATOR RETEST REQUIRED** until the production deployment is verified. No Core Freeze has been declared.
+
+## 2026-09-11 — Kritische Auth-/Session-Recovery
+
+Root Cause: serverseitiges Installation-Replacement war trotz getrennter Cookies nicht scopegebunden und konnte User-/Admin-Sessions gegenseitig ersetzen; eine verlorene PHP-Sessiondatei konnte nicht aus der gültigen DB-Registry rekonstruiert werden. Scopegebundene DB-Sessions, Recovery und User-only Device-Zählung sind implementiert. Technisch verifiziert, aber bis Deployment und Betreiberprüfung **OPERATOR RETEST REQUIRED**; kein Core Freeze.
