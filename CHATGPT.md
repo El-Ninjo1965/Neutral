@@ -1,7 +1,7 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** AUTH-/SESSION-RECOVERY IMPLEMENTIERT / DEPLOYMENT PENDING
+**Status:** AUTH-/SESSION-RECOVERY IMPLEMENTIERT / DEPLOYMENT-KORREKTUR LÄUFT
 **Core Freeze:** NICHT erklärt
 
 ## Root Cause und Reparatur
@@ -15,6 +15,8 @@ Das User-Eye verwendete die falsche Wrapperklasse und erhielt deshalb die vorhan
 ## Technische Verifikation
 
 Fokussierte Auth-/Scope-/Recovery-, PHP-Entry-, Read-only-Smoke- und Eye-Tests sind erfolgreich. Vollsuite, Package, Commit, CI und Produktionsdeployment werden unten erst nach terminalem Abschluss als Ergebnis eingetragen.
+
+Der erste Deploymentlauf `34587606641` lud erfolgreich hoch, scheiterte aber ausschließlich an einer neu hinzugefügten Smoke-Annahme: PHP setzt bereits beim anonymen Sessionstart einen nicht authentifizierten Session-Cookie. Das ist kein erfolgreicher Login. Die zu strenge Cookie-Annahme wurde entfernt; die getrennten `/auth/me`-401-Grenzen bleiben als sichere credentialfreie Prüfung erhalten.
 
 ## Priorisierter Operator-Retest nach Deployment
 

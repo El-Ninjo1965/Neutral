@@ -554,4 +554,4 @@ After the native-placeholder correction, production classification advanced back
 - PHP-Session-GC-Lifetime folgt der jeweiligen Cookie-Lifetime; öffentliche Requests bleiben von Recovery-Storage-Ausfällen unabhängig.
 - User-Device-Limits zählen keine Admin-Sessions.
 - User Login Eye verwendet den korrekten lokalen Passwort-Wrapper und bleibt innerhalb des Feldes.
-- Read-only Production Smoke prüft zusätzlich beide unauthentifizierten Identity-Grenzen und verhindert Auth-Cookies bei ungültigen Logins.
+- Read-only Production Smoke prüft zusätzlich beide unauthentifizierten Identity-Grenzen; der bestehende sichere Invalid-Credentials-Vertrag bleibt erhalten.

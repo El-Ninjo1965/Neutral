@@ -77,8 +77,6 @@ async function probeInvalidLogin(fetchImpl, baseUrl, route, scope) {
   const safeCode = String(payload?.error?.details?.code || 'none');
   requireCondition(response.status === 401, `${scope} auth smoke returned ${response.status} instead of 401 (safeCode=${safeCode}).`);
   requireCondition(payload?.ok === false && /invalid username or password/i.test(payload?.error?.message || ''), `${scope} auth smoke did not return the invalid-credentials contract.`);
-  const authHeader = response.headers.get('set-cookie') || '';
-  requireCondition(!new RegExp(`neutral_${scope === 'admin' ? 'admin_' : ''}session=`, 'i').test(authHeader), `${scope} auth smoke received a session cookie for invalid credentials.`);
   return response.status;
 }
 
