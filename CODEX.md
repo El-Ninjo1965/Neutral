@@ -1,12 +1,22 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER FRONTEND-BINDING-HOTFIX VOR WEITERER OPERATOR-ABNAHME  
+**Status:** AKTIVER LIVE-ROOT-CAUSE-REPARATURAUFTRAG VOR WEITERER OPERATOR-ABNAHME  
 **Datum:** 2026-09-11
 
 # Ziel
 
-Der neue Operator-Retest hat zwei grundlegende Frontend-Interaktionsfehler gezeigt, die weitere Live-Tests aktuell verfälschen. Diese beiden Fehler zuerst vollständig beheben und deployen. Danach erst weitere Operator-Abnahme.
+Der letzte Frontend-Hotfix hat die lokalen Tests und das Deployment bestanden, aber der reale Betreiber-Retest zeigt weiterhin zwei Blocker:
+
+1. **User Login Eye fehlt live erneut vollständig**, obwohl der aktuelle Repository-Code das Eye statisch rendert.
+2. **Module-Install-Button reagiert jetzt**, endet aber live mit `Install failed: Internal server error.`
+
+Zusätzlich wurden zwei klare Admin-UX-Fehler festgestellt:
+
+3. Sidebar lässt sich horizontal verschieben und wirkt beim Tippen „schwimmend“.
+4. Logout soll ausschließlich `Logout` anzeigen, ohne `· Bootstrap Administrator` oder andere Benutzerbezeichnung.
+
+Dieser Lauf darf nicht wieder nur symptomatisch am Eye-Helper arbeiten. Erst die **tatsächliche Live-Ursache** belegen, dann korrigieren.
 
 Kein Core Freeze. Kein Production Restore. Keine neuen Features. Keine unnötigen Refactorings.
 
@@ -14,187 +24,283 @@ Kein Core Freeze. Kein Production Restore. Keine neuen Features. Keine unnötige
 
 # 1. Pflicht-Preflight
 
-1. Mit `origin/main` synchronisieren.
-2. `CHATGPT.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `WORKFLOW.md`, `CHANGELOG.md` und diese Datei lesen.
-3. Den aktuell deployten Stand ab `4eecadf702638780942c69daef785a3d59293386` prüfen.
-4. Insbesondere lesen:
+Vor jeder Änderung:
+
+1. Repository `/workspace/Neutral` verwenden.
+2. Sicherstellen, dass Working Tree sauber ist.
+3. GitHub-/Repository-/Actions-/Deployment-Verbindung gemäß separat ausgeführtem sicheren Preflight prüfen bzw. dessen Ergebnis übernehmen.
+4. `origin/main` lesen/synchronisieren; erwarteter Stand mindestens `34911416752dc73d7f085ce1612161336a08462d`.
+5. Folgende Dokumente vollständig lesen:
+   - `CHATGPT.md`
+   - `ADMIN-UX-DECISIONS.md`
+   - `STATUS.md`
+   - `UI-UX.md`
+   - `WORKFLOW.md`
+   - `CHANGELOG.md`
+   - `CORE-1.0-READINESS.md`
+   - diese Datei.
+6. Relevanten Code lesen:
+   - `Web-App/public/index.html`
    - `Web-App/public/user-app.js`
    - `Web-App/public/ui-feedback.js`
+   - `Web-App/public/service-worker.js`
+   - `Web-App/public/public-path.js`
+   - Production-Package-/Asset-Revision-Code
+   - `Server/public/admin.php`
    - `Web-App/public/admin/modules-view.js`
    - `Web-App/public/admin/index.js`
    - `Web-App/public/admin-init.js`
    - `Web-App/public/api-client.js`
-   - relevante Tests und Service-Worker/Asset-Revision-Pfade.
-5. Erst Root Cause belegen, dann ändern.
+   - Modul-Lifecycle-/Migration-/Registry-Servercode
+   - relevante Tests.
+
+Erst Root Cause belegen, dann ändern.
 
 ---
 
-# 2. User Login Eye – sichtbar, aber weiterhin ohne Funktion
+# 2. User Login Eye – LIVE fehlt erneut vollständig
 
 ## Reeller Livebefund
 
-Auf Betreiber-iPad mit Chrome:
+Betreiber-iPad, Chrome:
 
-- Eye-Button ist sichtbar;
-- Passwortfeld zeigt weiterhin Punkte;
-- Klick auf Eye erzeugt sichtbaren Fokus-/Blau-Rahmen;
-- Passwort wird **nicht** sichtbar;
-- damit ist der vorherige Fix erneut LIVE FAILED.
+- User-Login zeigt Username und Password.
+- Eye ist **nicht sichtbar**.
+- Admin-Login-Eye funktioniert weiterhin.
+- Dies trat nach einem Hotfix auf, dessen Repository-Code das Eye im User-Login statisch enthält und dessen lokale Tests erfolgreich waren.
 
-Admin-Login-Passworttoggle funktioniert dagegen.
+Damit reicht keine weitere isolierte Änderung an `bindPasswordToggle()`.
 
-## Aktueller Codehinweis
+## Zentrale Hypothese, die jetzt bewiesen oder widerlegt werden muss
 
-`user-app.js` rendert das Passwortfeld und den statischen Eye-Button korrekt gemeinsam und ruft anschließend `NeutralUiFeedback.bindPasswordToggle(...)` auf.
+Der reale User-Shell-Pfad liefert möglicherweise **nicht dieselbe öffentliche Assetrevision**, die in `main` und im Production-Package erwartet wird. Kandidaten:
 
-`ui-feedback.js` enthält grundsätzlich den erwarteten Click-Handler mit `password ↔ text`.
+- alter Service-Worker-Cache;
+- gemischte Shell-/Scriptrevision;
+- stale `index.html` oder `user-app.js`;
+- falscher Base-Path/Public-Path;
+- Cache-Control-/ETag-Verhalten;
+- Production-Package enthält zwar neuen Code, aber der tatsächlich vom Browser verwendete Pfad zeigt auf einen anderen/stalen Assetpfad;
+- Service Worker aktiviert neue Revision nicht sauber oder cached Shell falsch.
 
-Damit darf nicht nochmals nur behauptet werden, dass der Helper logisch korrekt aussieht. Der tatsächliche Browserpfad muss untersucht werden.
+Admin-Login ist hiervon weitgehend getrennt und daher ein wichtiger funktionierender Vergleichspfad.
 
-## Auftrag
+## Auftrag A – reale Auslieferungskette vollständig nachvollziehen
 
-Finde die konkrete Ursache, warum der Click live Fokus erzeugt, aber `input.type` nicht sichtbar auf `text` wechselt bzw. sofort wieder zurückgesetzt wird.
+Prüfe konkret:
 
-Prüfe mindestens:
+1. Welche HTML-Datei wird beim User-Login live wirklich ausgeliefert?
+2. Welche `user-app.js`, `ui-feedback.js`, `style.css`, Service-Worker-Datei und Revision werden live wirklich geladen?
+3. Stimmen diese Inhalte/Hashes/Revisionen mit dem aktuellen Production-Package und `main` überein?
+4. Welche Dateien liegen tatsächlich im Deploymentartefakt?
+5. Welche Cache-Strategie verwendet der Service Worker für Shell und öffentliche Scripts?
+6. Wird `index.html` cache-first, network-first oder stale-while-revalidate geliefert?
+7. Kann ein alter Service Worker nach Deployment alte `user-app.js` weiterreichen?
+8. Wird beim neuen Deployment der Cache-Key/Revision-Key sicher geändert?
+9. Werden alte Caches gelöscht?
+10. Wird ein neu installierter Worker tatsächlich aktiviert/übernommen oder bleibt der alte Controller aktiv?
+11. Gibt es unterschiedliche Pfade zwischen Browser normal/privat/PWA?
+12. Gibt es doppelte/public-path-abweichende Kopien von `user-app.js` oder `ui-feedback.js` im Paket/Host?
 
-- ob `bindPasswordToggle()` im User-Shell-Pfad zum Zeitpunkt des Renderns tatsächlich existiert und ausgeführt wird;
-- ob der Button wirklich an **genau das aktuell sichtbare** `#userLoginPassword` gebunden wird;
-- ob ein späterer Render/MutationObserver den Input oder Button ersetzt;
-- ob mehrfaches Binding oder ein alter Listener gegeneinander arbeitet;
-- ob ein übergeordnetes Click-/Submit-/Pointer-Handling eingreift;
-- ob Service Worker / Asset-Versionierung eine gemischte Revision ausliefert;
-- ob iOS/Chrome beim `input.type`-Wechsel eine Besonderheit zeigt und ein robuster browserkompatibler Weg nötig ist;
-- ob Admin und User unterschiedliche Initialisierungsreihenfolgen haben.
+## Auftrag B – Beweis statt Annahme
+
+Baue eine **read-only verifizierbare Produktionsprüfung**, die nach Deployment ohne Login/Mutation zeigen kann:
+
+- welche öffentliche Revision live ist;
+- dass das live ausgelieferte User-Login-Markup bzw. `user-app.js` tatsächlich `password-visibility-toggle` enthält;
+- dass die geladene `ui-feedback.js` die erwartete Toggle-Implementierung enthält;
+- dass Service-Worker-/Cache-Version zur Deploymentrevision passt.
+
+Dabei keine Secrets, keine Auth-Cookies und keine sensiblen Inhalte ausgeben.
+
+Wenn direkte Produktions-HTTP-Abfragen im Workspace nicht möglich sind, die Prüfung in den bestehenden read-only GitHub-Actions-Smoke integrieren, ohne Deployment oder Login zu mutieren.
 
 ## Verbindliche Lösung
 
-- statisches User-Login-Markup beibehalten;
-- genau ein Eye;
-- Click muss auf realem DOM zuverlässig `password → text → password` schalten;
-- Icon und ARIA synchron;
-- Fokus erhalten;
-- kein Reload;
-- Admin-Login und andere Passwortfelder nicht regressieren.
-
-## Tests
-
-Kein reiner String-/Regex-Test.
-
-Mindestens ein DOM-/browsernaher Test muss:
-
-1. echten User-Login-Renderpfad aufbauen;
-2. `ui-feedback.js` in derselben Reihenfolge wie Produktion laden;
-3. Button klicken;
-4. den **tatsächlichen sichtbaren Input** prüfen;
-5. nach erstem Klick `type=text`, nach zweitem Klick `type=password` erwarten;
-6. beweisen, dass kein Re-Render den Zustand sofort zurücksetzt.
-
-Wenn im vorhandenen Teststack möglich zusätzlich WebKit-/browsernah testen.
-
----
-
-# 3. App Modules / System Modules – Buttons sichtbar, Aktionen tot
-
-## Reeller Livebefund
-
-Die neuen getrennten Admin-Seiten **App Modules** und **System Modules** werden korrekt angezeigt.
-
-Aber:
-
-- `Install` ist sichtbar und aktiv;
-- Klick bewirkt **gar nichts**;
-- kein API-Request sichtbar für den Operator;
-- kein Success;
-- kein Error;
-- keine Statusänderung.
-
-Damit sind die neuen Modulansichten zwar optisch korrekt, aber funktional unbrauchbar.
-
-## Sehr wahrscheinliche Root Cause im aktuellen Code
-
-`admin/index.js` erzeugt getrennte Instanzen:
-
-- `'app-modules': new AdminModulesView(apiClient, 'user')`
-- `'system-modules': new AdminModulesView(apiClient, 'system')`
-
-`modules-view.js` rendert die Lifecycle-Buttons aber weiterhin mit Inline-Handlern wie:
-
-```js
-onclick="adminModules.install('profile')"
-```
-
-sowie entsprechend `showDetails`, `activate`, `deactivate`, `uninstall`.
-
-Nach der Aufteilung auf mehrere Views ist dieses alte globale `adminModules`-Kompatibilitätsobjekt offensichtlich nicht mehr zuverlässig die aktuell sichtbare View-Instanz.
-
-## Auftrag
-
-Diese alte globale Inline-Bindung entfernen bzw. sauber ersetzen.
-
-Verbindliche Architektur:
-
-- jede `AdminModulesView`-Instanz bindet ihre eigenen Buttons an ihre eigenen Methoden;
-- bevorzugt `data-action` / `data-module-id` + `addEventListener` / Event Delegation innerhalb der View;
-- **keine** Abhängigkeit von einem globalen `adminModules` für Lifecycleaktionen der getrennten Views;
-- App Modules und System Modules verwenden dieselbe generische Viewklasse;
-- keine doppelte Lifecyclelogik;
-- Details, Install, Activate, Deactivate, Uninstall müssen für beide Kategorien funktionieren;
-- Reload/Render darf Listener nicht verlieren oder duplizieren;
-- Fehler müssen über bestehenden Admin-Alert sichtbar sein.
+- Nicht einfach noch einen dritten Eye-Handler hinzufügen.
+- Ursache muss nachweislich im Auslieferungs-/Cache-/Initialisierungspfad behoben werden.
+- Genau ein Eye im User-Login.
+- Nach normalem Deployment muss der aktuelle User-Shell-Code ohne manuellen Browsercache-Trick ausgeliefert werden.
+- Bestehende PWA-/Offline-Funktion erhalten.
+- Admin-Login nicht regressieren.
+- Cache-Invalidierung darf nicht zu Endlosschleifen oder ständigem Voll-Reload führen.
 
 ## Tests
 
 Mindestens:
 
-1. App-Modules-View rendern;
-2. Install klicken;
-3. Stub/Mock beweist `api.installModule(moduleId)` exakt einmal;
-4. System-Modules-View dasselbe;
-5. Activate/Deactivate/Uninstall/Details analog mindestens repräsentativ testen;
-6. nach `reload()` funktionieren Buttons weiterhin;
-7. kein `ReferenceError: adminModules is not defined` oder falsche Instanz;
-8. keine Regression im früheren einheitlichen Modulvertrag.
+- Production-Package-Test: tatsächlich enthaltene `user-app.js` besitzt statisches Eye.
+- Service-Worker-Test: neue Revision invalidiert alte öffentliche Shell-/Script-Caches korrekt.
+- Upgrade-Test: Simuliere alten Cache + neue Deploymentrevision und beweise, dass anschließend neuer User-Login-Code verwendet wird.
+- Kein reiner Regex-Test als alleiniger Beweis.
+
+Nach Deployment bleibt **OPERATOR RETEST REQUIRED**.
 
 ---
 
-# 4. Dokumentationsstatus
+# 3. Module Install – Frontend reagiert, Backend liefert Internal Server Error
 
-Nach dem Fix aktualisieren:
+## Reeller Livebefund
+
+Nach dem letzten Binding-Fix:
+
+- App Modules/System Modules werden korrekt angezeigt.
+- Install-Button reagiert jetzt.
+- Es erscheint ein echter Fehler:
+  `Install failed: Internal server error.`
+
+Damit ist die frühere tote Button-Bindung behoben. Jetzt liegt ein **realer Backend-/Lifecycle-Fehler** vor.
+
+## Auftrag
+
+Keine weitere generische `catch`-Schicht als Hauptlösung. Finde die echte Exception.
+
+Prüfe end-to-end:
+
+1. konkreten HTTP-Request beim Install;
+2. Route und Permission-/CSRF-Pfad;
+3. `ModuleLifecycle` / Registry / MigrationRunner;
+4. Manifest-/Serverentry-Auflösung;
+5. DB-DDL/Migrationsstatus;
+6. vorhandene partielle Registry-/State-Zeilen;
+7. MySQL-Fehler / Constraint / Duplicate / fehlende Tabelle/Spalte;
+8. Unterschiede zwischen Profile, Field Notes, Postbox, Media etc.;
+9. ob ein generischer Fehler alle Module betrifft oder nur einzelne;
+10. ob der aktuelle kompensierende Fehlerpfad die eigentliche Exception verschluckt.
+
+## Logging / Diagnose
+
+- In Dev/Test muss die konkrete Root-Cause sichtbar sein.
+- In Production keine Secrets/SQL-Credentials ausgeben.
+- Benutzer bekommt weiterhin kontrollierte Fehlermeldung.
+- Audit/Serverlog darf einen sicheren Fehlercode/Korrelationseintrag enthalten.
+
+## Verbindliches Verhalten
+
+- Install ist retry-safe.
+- Bei Fehler kein falsches `Registered: Yes`.
+- Kein halb-installierter inkonsistenter Lifecycle.
+- Erfolgreicher Install → Registered/Inactive konsistent.
+- Activate → Active.
+- Deactivate/Re-activate funktionieren.
+- Uninstall gemäß bestehendem Retention-Vertrag.
+- Modul-Permissions registrieren sich automatisch.
+- keine modul-spezifische Core-Sonderlogik.
+
+## Tests
+
+Mindestens:
+
+- ein erfolgreiches App Module;
+- ein erfolgreiches System Module;
+- Profile;
+- Field Notes oder Postbox als zweites reales Referenzmodul;
+- bewusst simulierte fehlschlagende Migration → kontrollierter rollback/kompensierter Zustand;
+- erneuter Install danach erfolgreich;
+- API liefert keine nackte 500 ohne sinnvolle interne Diagnose.
+
+Nach Deployment Operator-Retest mit Install → Activate → Deactivate → Re-activate.
+
+---
+
+# 4. Admin Sidebar – horizontales „Schwimmen“ beseitigen
+
+## Livebefund
+
+Auf iPad lässt sich die linke Sidebar horizontal nach links/rechts verschieben. Beim Tippen bewegt sie sich leicht seitlich und wirkt schwimmend.
+
+## Auftrag
+
+- Sidebar horizontal vollständig fixieren;
+- `overflow-x: hidden` bzw. korrekte Layoutlösung;
+- nur vertikales Scrollen zulassen, falls nötig;
+- keine horizontale Scrollbar / Overscroll;
+- `touch-action`/Overscroll nur soweit nötig korrekt setzen;
+- lange Menüeinträge dürfen die Sidebar nicht verbreitern;
+- Texte sauber umbrechen oder innerhalb der festen Breite bleiben;
+- keine `min-width`-/Intrinsic-Width-Regel darf Container verbreitern;
+- Tap/Klick darf keine horizontale Verschiebung auslösen;
+- Contentbereich darf dadurch nicht abgeschnitten werden.
+
+Test auf iPad-/schmaler Viewportbreite.
+
+---
+
+# 5. Logout-Text vereinfachen
+
+Aktuell zeigt die Sidebar sinngemäß:
+
+`Logout · Bootstrap Administrator`
+
+Verbindliches Ziel:
+
+`Logout`
+
+- keine Benutzer-/Rollenbezeichnung daneben;
+- keine zusätzliche redundante Admin-Identität im Sidebar-Logout;
+- Logout-Funktion unverändert.
+
+---
+
+# 6. Bereits funktionierende Bereiche nicht regressieren
+
+Erhalten:
+
+- Admin Login Eye funktioniert live;
+- Module-Buttons sind jetzt grundsätzlich gebunden und reagieren;
+- App Modules/System Modules getrennte Views;
+- GPS live funktional;
+- Media/Postbox/Sharing Lifecycle früher live bestanden;
+- Audit Delete All;
+- Maintenance State;
+- User/Package/License/Session-UX-Reparaturen des letzten Batches soweit nicht von diesem Auftrag betroffen.
+
+Keine erneute Architektur-Umschreibung dieser Bereiche.
+
+---
+
+# 7. Dokumentation
+
+Nach tatsächlicher Reparatur aktualisieren:
 
 - `CHATGPT.md`
 - `ADMIN-UX-DECISIONS.md`
 - `STATUS.md`
+- `CORE-1.0-READINESS.md`
 - `WORKFLOW.md`
 - `CHANGELOG.md` append-only
 
-Wahrheitsgrenze:
+Wahrheitsgrenzen:
 
-- beide Punkte nach Codefix weiterhin `OPERATOR RETEST REQUIRED`;
-- nicht als live bestanden markieren;
-- bisher bestätigte PASS-Befunde unverändert lassen;
-- Core Freeze weiterhin nicht erklären.
+- Eye bleibt bis realem iPad/Chrome-Test **OPERATOR RETEST REQUIRED**.
+- Module Install/Lifecycle bleibt bis realem Operator-Test **OPERATOR RETEST REQUIRED**.
+- Sidebar/Logout ebenfalls Retest erforderlich.
+- Kein Core Freeze erklären.
 
 ---
 
-# 5. Verifikation und Deployment
+# 8. Verifikation und Deployment
 
 Vor Abschluss:
 
-1. fokussierte Tests für Eye und Module-Buttons;
+1. fokussierte Root-Cause-Tests;
 2. vollständige Testsuite;
 3. JS-Syntax;
-4. PHP-Lint soweit betroffen;
+4. PHP-Lint;
 5. `git diff --check`;
-6. Production Package bauen;
-7. prüfen, dass die tatsächlich paketierten User-/Admin-Assets die neue Revision enthalten;
-8. commit/push `main`;
-9. CodeQL/FTPS terminal abwarten;
-10. read-only Production-Smoke und Deploymentrevision prüfen;
-11. kein Production Restore.
+6. Production Package bauen und Inhalt prüfen;
+7. Service-Worker-/Asset-Revision-Upgrade-Szenario testen;
+8. Modul-Lifecycle Integrationstests;
+9. commit/push `main` gemäß Workflow;
+10. CodeQL/FTPS terminal abwarten;
+11. read-only Production-Smoke erweitern/prüfen, insbesondere tatsächliche User-Assetrevision und Modul-API-Readiness;
+12. kein Production Restore;
+13. keine Secrets/Tokenwerte ausgeben.
 
-Am Ende `CHATGPT.md` mit genau diesen beiden priorisierten Retests an erster Stelle aktualisieren:
+Am Ende `CHATGPT.md` mit folgender priorisierter Retest-Reihenfolge aktualisieren:
 
-1. User Login Eye auf iPad/Chrome normal + privat;
-2. Install/Activate/Deactivate/Uninstall in App Modules und System Modules.
-
-Erst nach deren erfolgreichem Operator-Test wird die restliche Live-Abnahme fortgesetzt.
+1. User Login Eye – normal + privat auf Betreiber-iPad/Chrome;
+2. App/System Module Install/Activate/Deactivate/Re-activate;
+3. Sidebar horizontal stabil;
+4. Logout zeigt nur `Logout`;
+5. danach restliche gesammelte Operator-Abnahme fortsetzen.
