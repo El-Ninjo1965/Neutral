@@ -1,6 +1,6 @@
 # CURRENT TASK – OPERATOR REPAIR BATCH
 
-**Status:** AKTIV
+**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 

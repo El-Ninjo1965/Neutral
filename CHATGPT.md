@@ -44,3 +44,10 @@ Implementation and local verification are complete: 538/538 tests pass, PHP/Java
 5. Licenses: List → New/Edit must be an exclusive view; verify Save/Cancel/Back/refresh and top positioning.
 6. Packages: repeat the same exclusive List → New/Edit checks.
 7. Edit User: User ID and Username must be read-only above Display Name and E-mail.
+
+### Verified deployment evidence
+
+- Implementation commit: `cf4513b329aabc4e12c79c46cf52e7ea205e198c`.
+- CodeQL run `34582382302`: success.
+- FTPS Deploy run `34582382439`: success. Tests, production package, FTPS client, 137-file upload and read-only production smoke all passed.
+- Smoke: root/rewrite/status/module catalog HTTP checks passed, protected routes remained protected, deployed revision matched, and `migrationsReady:true`.
