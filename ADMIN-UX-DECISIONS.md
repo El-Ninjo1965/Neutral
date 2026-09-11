@@ -4,11 +4,12 @@
 
 1. Module Administration benötigt eine rollenbezogene `Visibility`/`Navigation`-Steuerung getrennt von Permissions. `presentation.userNavigation=false` bleibt der globale Systemmodul-Fallback; eine Visibility-Einstellung darf keine Berechtigung erteilen.
 2. User Management zeigt auf kleinen Screens Liste und Edit/Create nicht gleichzeitig. Save und Cancel/Back kehren zur Liste zurück.
-3. `Unlimited` bedeutet semantisch unbegrenzt und darf in API oder UI niemals zu `0` werden. Der Livefehler `2 of 0 sessions` ist offen.
+3. `Unlimited` bedeutet semantisch unbegrenzt und darf in API oder UI niemals zu `0` werden. Der frühere Livefehler `2 of 0 sessions` besitzt einen Codefix, bleibt bis Betreiber-Retest offen.
 4. Profile bleibt optional. Avatarziel: quadratischer Crop, optimiert ≤256×256, runde Anzeige, Replace/Delete, dynamischer Gender-Default, kein dauerhaftes Original.
-5. User-Login-Eye ist trotz code-seitigem Shared Helper auf dem Betreiber-iPad weiterhin nicht sichtbar und bleibt offen.
+5. User-Login-Eye: Der bisherige dynamische Enhancement-/Self-Heal-Ansatz ist nach Deployment erneut auf Betreiber-iPad/Chrome normal und privat live durchgefallen. Verbindliches Ziel ist nun ein Eye-Button, der zusammen mit dem User-Login-Passwortfeld direkt im Login-Markup gerendert wird. Der gemeinsame Password-Visibility-Helper steuert nur Verhalten/Zustand; die Existenz des Buttons darf nicht von nachträglicher DOM-Anreicherung abhängen. Bis erneuter Betreiberabnahme bleibt der Punkt offen.
 6. `Apps & Modules` wird administrativ in **Apps**, **User Modules** und **System Modules** gegliedert. Diese Gliederung ist reine Klassifikation/Präsentation; alle Module verwenden weiterhin denselben Runtime-/Lifecycle-Vertrag.
 7. Modulklassifikation und Sichtbarkeit sind strikt getrennt. Ein Systemmodul kann sichtbare User-Funktionen besitzen, ein User-Modul kann unsichtbar geschaltet werden. Permissions bleiben wiederum eine dritte, getrennte Ebene.
+8. Die übrigen Reparaturen dieses Durchlaufs werden erst nach Abschluss der unmittelbar folgenden Änderungen gesammelt vom Betreiber live abgenommen; lokale/grüne Tests sind kein Live-Pass.
 
 ---
 
@@ -33,127 +34,80 @@ Dieses Dokument hält Entscheidungen fest, die im Betreiber-Livecheck getroffen 
 - License-Key = technische eindeutige Kennung.
 - Organization = menschenlesbarer Kunden-/Organisationsname.
 - Package wird der Lizenz zugeordnet.
-- `Seats` und `Devices` bleiben fachlich getrennt:
-  - Seats = Anzahl Nutzerplätze einer Organisation.
-  - Devices = erlaubte Installationen pro User.
-- UI-Begriffe sollen möglichst verständlich sein. Bevorzugt:
-  - `User limit` statt `Seat limit`, sofern die Semantik unverändert bleibt.
-  - `Device limit per user` statt `License device limit`.
-  - `License manager` statt `Manager user ID`.
-- License Manager soll über eine Benutzer-Auswahlliste gewählt werden, nicht über manuelle numerische User-ID-Eingabe.
-- Eine Lizenz muss administrativ deaktivierbar/widerrufbar sein, ohne historische/auditrelevante Daten unkontrolliert zu löschen.
-- Zusätzlich muss eine License/Organization aus dem Adminbereich **löschbar** sein, wenn dies referenziell sicher möglich ist. Die UI benötigt eine klare `Delete`-Aktion mit Bestätigung. Der Server muss referenzielle Abhängigkeiten prüfen; keine stillen Kaskaden oder verwaisten User/Zuordnungen. Wenn Löschen wegen aktiver Zuordnungen nicht zulässig ist, verständliche 4xx-Antwort und UI-Hinweis statt 500. Jeder erfolgreiche Löschvorgang wird auditiert.
-- Package-/License-Defaults und User-Overrides müssen für den Admin nachvollziehbar angezeigt werden.
+- `Seats` und `Devices` bleiben fachlich getrennt: Seats = Nutzerplätze; Devices = Installationen pro User.
+- UI-Begriffe bevorzugt `User limit`, `Device limit per user`, `License manager`.
+- License Manager über Benutzer-Auswahlliste, nicht manuelle ID.
+- Lizenz deaktivierbar/widerrufbar; sichere Delete-Aktion nur referenziell kontrolliert und auditiert.
+- Package-/License-Defaults und User-Overrides nachvollziehbar anzeigen.
 
 ## 3. User Management / Device Limits
 
-- Allowed Devices im User Create/Edit muss flexibel sein:
-  - Package/License Default
-  - freie positive Ganzzahl als User-Override
-  - `unlimited` als expliziter Override, wenn berechtigt
-- Feste UI-Auswahlwerte wie `Override: 1/2/3/5/10` sind nicht das Ziel.
-- Das Wort `Override` darf technisch intern bleiben, soll aber in der UI verständlicher formuliert werden, z. B. `Custom device limit` / `Eigenes Gerätelimit`.
-- Used Devices bleibt read-only Istwert.
-- Eine Limit-Senkung löscht bestehende Sessions nicht automatisch.
+- Allowed Devices: Package/License Default, freie positive Ganzzahl oder `unlimited` als berechtigter Override.
+- Keine festen 1/2/3/5/10-Auswahlwerte als Ziel.
+- `Override` in UI verständlich benennen, z. B. `Custom device limit`.
+- Used Devices read-only.
+- Limit-Senkung löscht bestehende Sessions nicht automatisch.
 
 ## 4. Birthday / Profile
 
-- Geburtstag darf **kein Freitextfeld** sein.
-- Der native iPad-Kalender ist für weit zurückliegende Geburtsjahre unpraktisch, weil der Nutzer sonst viele Monate/Jahre zurücknavigieren muss.
-- Verbindliche gewünschte UX: **drei Auswahlfelder**:
-  1. Tag
-  2. Monat – ausgeschriebener Monatsname gemäß aktueller Sprache
-  3. Jahr
-- Reihenfolge sichtbar und eindeutig; keine kulturabhängige Mehrdeutigkeit wie MM/DD/YYYY vs. DD/MM/YYYY.
-- Serverseitig weiterhin echtes Kalenderdatum validieren, inklusive Schaltjahr und unmöglicher Daten.
-- Speicherung kanonisch als `YYYY-MM-DD`, ohne Zeitzonenverschiebung.
-- Feld bleibt optional und kann gelöscht werden.
+- Geburtstag kein Freitext.
+- Drei Auswahlfelder: Tag, lokalisierter Monatsname, Jahr.
+- Server validiert echtes Kalenderdatum; Speicherung `YYYY-MM-DD`; optional/löschbar.
 
 ## 5. Audit Delete All
 
-- `Delete All` bleibt eine separate, hochkritische Adminaktion mit eigener Permission.
-- Gewünschte Bedienung: **zwei klare Bestätigungsdialoge reichen aus**.
-- Keine Pflicht, zusätzlich `DELETE` in Großbuchstaben einzutippen.
-- Nach erfolgreichem Löschen aller bisherigen Audit-Einträge wird genau ein neuer Nachweiseintrag erzeugt, der die vollständige Löschung dokumentiert.
-- Retention 30/90/180/365 bleibt unverändert separat verfügbar.
+- Separate kritische Adminaktion mit eigener Permission.
+- Zwei Bestätigungsdialoge genügen; kein `DELETE`-Tippen.
+- Nach Löschung genau ein neuer Audit-Nachweiseintrag.
+- Retention 30/90/180/365 separat.
 
 ## 6. Sessions / Installationsidentität
 
-- Die Session-/Device-Verwaltung soll sich auf **serverseitig verlässliche Identitäten** konzentrieren.
-- Useranzeige enthält menschenlesbaren Namen **und User-ID**, z. B. `Tester · #102`.
-- Die persistente Installations-/Device-ID ist die eindeutige technische Kennung des Endgeräts/der Installation und muss im Drill-down bzw. in der Sessionansicht klar sichtbar sein.
-- Die bisherige Bezeichnung `Device`, wenn darunter lediglich Texte wie `Browser installation` erscheinen, ist missverständlich. Sichtbare Begriffe müssen unterscheiden zwischen:
-  - Installation / Device ID = eindeutige persistente Kennung
-  - Device class = z. B. iPad, iPhone, Android phone/tablet, desktop, soweit zuverlässig ableitbar
-  - Operating system = iPadOS/iOS/Android/Windows/macOS/Linux inklusive Version nur soweit zuverlässig ermittelbar
-- Browser ist für die spätere Store-App nicht zentral und muss nicht prominent angezeigt werden.
-- Betriebssystem-/Geräteinformationen sind Support-Metadaten, **niemals** Authentifizierungs- oder Device-Identitätsquelle.
-- Wenn Browser-/Clientsignale nicht zuverlässig zwischen iPadOS und macOS oder zwischen Geräteklassen unterscheiden können, darf die UI **keine falsche Gewissheit** anzeigen. Dann neutral `Unknown`/leer oder nur die verlässlichere gröbere Information anzeigen.
-- Keine Hardware-Fingerprints. Keine heimliche Identifikation. Die zufällige persistente Installations-ID bleibt der verbindliche Device-Vertrag.
+- Serververlässliche Identitäten; Useranzeige Name + User-ID.
+- Persistente Installations-ID ist technische Identität.
+- Device class/OS nur soweit zuverlässig; keine falsche Gewissheit.
+- Browser nicht als Identitätsquelle; keine Hardware-Fingerprints.
 
 ## 7. Backup & Restore – konfigurierbarer Speicherpfad
 
-- Der Backup-Speicherpfad darf **nicht hardcodiert** sein und muss pro Installation/App konfigurierbar sein.
-- Gewünschte Stelle: direkt auf `Admin → Backup & Restore`.
-- Feld: `Backup storage path` mit frei eingebbarem absolutem Serverpfad.
-- Beispiel der aktuellen Installation: `/home/web1819/backup_neutral/`.
-- Der konkrete Beispielpfad ist **keine Core-Vorgabe** und darf nicht in neutralen Defaults hardcodiert werden.
-- Aktionen auf derselben Seite:
-  - `Test path`
-  - `Save`
-- `Test path` prüft mindestens: Pfad vorhanden, Verzeichnis, PHP-Schreibbarkeit, keine offensichtliche öffentliche Auslieferung / Protected-Storage-Vertrag soweit serverseitig zuverlässig prüfbar, keine Path-Traversal-/unsichere Pfadauflösung.
-- Manueller und automatischer Backup-Lauf verwenden denselben persistent gespeicherten Pfad.
-- `NEUTRAL_BACKUP_KEY` bleibt ausschließlich hostlokales Secret in `.env`; Wert niemals im Admin anzeigen, zurückliefern, loggen oder speichern. Im Admin nur boolesche Readiness (`Encryption key: Ready/Not ready`).
-- Der aktuell vorbereitete reale Hostordner liegt außerhalb von `public_html` und hat restriktive Rechte; die konkrete Host-Abnahme erfolgt vor Final Freeze.
+- Backup-Speicherpfad nicht hardcodiert, pro Installation konfigurierbar auf `Admin → Backup & Restore`.
+- `Test path` + `Save`; Schutz gegen unsichere Pfade/öffentliche Auslieferung.
+- `NEUTRAL_BACKUP_KEY` bleibt hostlokales Secret und wird nie angezeigt/geloggt.
 
 ## 8. Livebefunde 2026-09-10
 
-Positiv bestätigt:
+Positiv bestätigt: User/Admin Login, parallele Sessions, GPS-Basismodul, Audit Delete All, Package/License Create, flexible Device-Limits/Unlimited und License-Manager-Auswahl.
 
-- User Login funktioniert.
-- Admin Login funktioniert.
-- parallele User-/Admin-Sessions funktionieren.
-- GPS-Basismodul inklusive Position, Zoom/Pan, Google Maps, OSM in separatem Fenster und Teilen funktioniert.
-- Audit `Delete All` löscht bestehende Einträge und erzeugt anschließend den neuen `Audit Clear Complete`-Nachweis.
-- Package Create funktioniert nach der Nachbesserung beim ersten Submit.
-- License Create funktioniert nach der Nachbesserung beim ersten Submit.
-- freie Custom-Device-Limits und `Unlimited` sind in Package/License sichtbar.
-- License Manager ist als User-Auswahl verfügbar.
-
-Neu offen:
-
-- License/Organization besitzt in der Übersicht aktuell nur `Edit`; eine sichere `Delete`-Aktion fehlt.
-- Sessions zeigen Usernamen ohne User-ID.
-- Session-/Device-Spalten sind semantisch missverständlich; `Browser installation` ist keine Geräteklasse.
-- Produktionsanzeige meldet für iPad/Chrome derzeit `macOS · Chrome`; diese Information ist als tatsächliches Betriebssystem des Endgeräts unzuverlässig und darf nicht als sichere Geräteidentifikation behandelt werden.
-- Backup Storage Path ist noch nicht direkt auf der Backup-Seite konfigurierbar.
+Frühere offene Punkte wurden teilweise code-seitig nachgebessert; deren aktueller Live-Status steht im bindenden Nachtrag und in `CHATGPT.md`/`STATUS.md`.
 
 ## 9. Code-seitiger Follow-up-Stand
 
-License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Installation-ID, getrennte konservative Supportmetadaten sowie Backup Storage Path mit Test/Save sind implementiert und lokal testbar. Diese Aussage ist kein neuer Livebefund: License Delete, reale iPad-Klassifikation und der vorbereitete Hostpfad bleiben bis zum Betreibercheck `DEVICE/HOST RETEST REQUIRED`.
+License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Installation-ID, konservative Supportmetadaten sowie Backup Storage Path mit Test/Save wurden implementiert; reale Host-/Device-Abnahme bleibt getrennt.
 
 ## 10. Settings/Profile und Backup-V2
 
-Ausgeloggt sind ausschließlich App Areas und Navigation sichtbar; Privacy & Sharing/Profile benötigen eine bestätigte User-Session. Birthday bleibt Day/Month/Year, kompakt auf Tablet und responsiv auf Telefon. Save übernimmt ausschließlich die autoritative Serverantwort. Backup V2 umfasst deklarierte Modultabellen und verwaltete Medienbytes; V1 bleibt als historischer Teilvertrag lesbar. Kein Produktions-Restore als Test.
+Ausgeloggt ausschließlich App Areas und Navigation; Profile/Privacy benötigen bestätigte User-Session und aktive Capability. Birthday Day/Month/Year. Backup V2 umfasst deklarierte Modultabellen und verwaltete Medienbytes. Kein Production-Restore als Test.
 
 ## 11. Organization Sharing und Navigation Active-State
 
-Organization Sharing ist nur bei autoritativ bestätigter aktiver User→License/Organization-Zuordnung sichtbar und serverseitig aktivierbar; Rollen oder Clientannahmen reichen nicht. Navigation hat pro Ebene genau einen routenbasierten `aria-current`-Active-State. Farben stammen ausschließlich aus den zentralen `nav-active`-Theme-Tokens.
+Organization Sharing nur bei autoritativ bestätigter User→License/Organization-Zuordnung. Navigation pro Ebene genau ein routenbasierter `aria-current`-Active-State; Farben aus zentralen Tokens.
 
 ## 12. Globale Erfolgsbestätigung, Passwörter und ACCESS-Reihenfolge
 
-Erfolgreiche Save/Create/Update-Aktionen verwenden in User- und Admin-UI den gemeinsamen zugänglichen Success-Dialog mit genau einer OK-Aktion und Fokusrückgabe; Fehler bleiben Inline-/Alert-Fehler. Alle dynamischen und statischen Passwortfelder erhalten über denselben Core-Helper einen Show/Hide-Toggle. Unter ACCESS stehen operative Bereiche in der Reihenfolge Users, Packages, Licenses, Sessions vor Roles und Permission Catalog.
+Save/Create/Update verwenden gemeinsamen zugänglichen Success-Dialog. Password-Visibility nutzt einen gemeinsamen Interaktionsvertrag; statische Kernformulare dürfen ihre Toggle-Control direkt rendern. Unter ACCESS: Users, Packages, Licenses, Sessions vor Roles/Permission Catalog.
+
 ## 13. Password eyes and individual-user packages
 
-Password visibility uses the same recognizable open/crossed eye SVG and approximately 44×44 touch target in User Login, Admin Login, profile, and dynamic Admin forms. An individual user can receive a direct Package without an Organization. Selecting a License makes its Package authoritative and disables direct Package editing; that same Package is retained as the direct fallback when the License is later removed.
+Password visibility uses the same recognizable open/crossed eye SVG and approximately 44×44 touch target in User Login, Admin Login, profile, and dynamic Admin forms. For the User Login specifically, the toggle control is part of the rendered login markup and is not dependent on post-render DOM enhancement. An individual user can receive a direct Package without an Organization. License Package takes precedence; retained direct Package becomes fallback after License removal.
+
 ## 14. Optional and invisible system modules
 
-Activation does not imply a User navigation item. Admin may activate capability/system modules with `userNavigation=false`. Missing optional modules hide enhancements without breaking the independent feature or Core. Profile and other concrete system features are not permanent Core responsibilities.
+Activation does not imply User navigation. Admin may activate capability/system modules with `userNavigation=false`. Missing optional modules hide enhancements without breaking Core/independent features.
 
 ## 15. Optional Profile lifecycle
 
-Profile is a default-active invisible system module. Admin deactivation hides Profile/Privacy without deleting data; reactivation restores it. Core Login and administration remain independent.
+Profile is an optional invisible system module. Admin deactivation hides Profile/Privacy without deleting data; reactivation restores it. Core Login/Admin remain independent.
 
 ## Implemented follow-up, operator retest pending
 
-Apps remain their own Admin destination. Module Administration groups User Modules and System Modules from manifest `category` and provides role-specific Visibility/Navigation independently from the permission editor. User Management now shows list or create/edit as exclusive states and returns to the list on Save/Cancel. These are code-/test-verified, not yet operator-live accepted.
+Apps remain their own Admin destination. Module Administration groups User Modules/System Modules from manifest `category` and provides role-specific Visibility/Navigation independently from permissions. User Management uses exclusive list/create/edit states. Profile/Media/Unlimited and these UX repairs remain operator-retest pending. The User Login Eye has already failed its first post-repair operator retest and therefore requires the static-markup correction above before the collected retest round.
