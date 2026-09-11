@@ -1,170 +1,92 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** USER-LOGIN BRANCH VERIFY / MERGE – KEIN CORE FREEZE  
+**Status:** USER-LOGIN PASSWORD SICHTBAR – KEIN CORE FREEZE  
 **Datum:** 2026-09-11
 
-# Ausgangslage
+# Neuer Betreiberentscheid
 
-Der User-Login funktioniert operator-live weiterhin nicht. Admin-Login ist wieder erreichbar.
+Der User-Login funktioniert operator-live wieder.
 
-Lea/ChatGPT hat deshalb selbst einen isolierten Fix vorbereitet auf:
+Der Eye-/Hold-to-reveal-Mechanismus funktioniert trotz mehrerer Reparaturversuche weiterhin nicht zuverlässig. Dieser Punkt wird **nicht weiter verfolgt**.
 
-`chatgpt/user-login-fix`
+Verbindliche Produktentscheidung:
 
-Der Branch basiert auf dem aktuellen `main` und enthält ausschließlich:
+- User-Login-Passwortfeld wird dauerhaft sichtbar angezeigt.
+- Kein Eye mehr.
+- Kein Hold-to-reveal mehr.
+- Kein `password-hold-reveal.js` im User-Loginpfad notwendig.
+- Login-Funktion hat Vorrang vor Passwortmaskierung.
+- Admin-Login bleibt unverändert.
 
-- `Web-App/public/index.html`
-- `tests/user-login-bootstrap-fallback.test.js`
-
-## Hypothese / vermutete Root Cause
-
-Im User-Login wird vor dem eigentlichen Submit-Handler direkt
-
-`window.NeutralPasswordHoldReveal.bind(password, reveal)`
-
-aufgerufen.
-
-Wenn `password-hold-reveal.js` live fehlt, verzögert/aus Cache falsch geliefert wird oder `window.NeutralPasswordHoldReveal` aus irgendeinem Grund nicht initialisiert ist, entsteht dort ein JavaScript-Abbruch. Dann werden die danach folgenden Login-Bindings – insbesondere der `submit`-Handler – gar nicht mehr registriert.
-
-Das passt exakt zum Livebefund:
-
-- Eye sichtbar/teilweise vorhanden, aber ohne Funktion;
-- Login-Button wirkt komplett ohne Funktion;
-- Admin-Login funktioniert separat wieder.
-
-Der vorbereitete Branch ergänzt deshalb einen kleinen lokalen Bootstrap-Fallback, damit `NeutralPasswordHoldReveal.bind(...)` im User-Pfad nicht mehr den gesamten Login initialisieren kann, falls der Helper nicht verfügbar ist.
-
-WICHTIG: Diese Hypothese ist noch **nicht als live bewiesen**. Der Codex-Agent muss sie technisch verifizieren und darf den Branch nicht blind mergen.
+Das ist bewusst ein pragmatischer UX-Fallback für die Entwicklungs-/App-Umgebung.
 
 ---
 
-# 1. Branch zuerst prüfen
+# 1. User Login vereinfachen
 
-1. Repository `/workspace/Neutral`, Branch `main`, `origin/main`, sauberen Working Tree prüfen.
-2. Branch `chatgpt/user-login-fix` holen/prüfen.
-3. Diff `main...chatgpt/user-login-fix` vollständig lesen.
-4. Sicherstellen, dass tatsächlich nur die oben genannten zwei Dateien geändert wurden.
-5. Keine anderen offenen Admin-/UX-Themen anfassen.
+Im User-Login:
 
----
+- Passwortfeld von `type="password"` auf `type="text"` ändern.
+- Eye-Button vollständig aus dem User-Login-Markup entfernen.
+- zugehörige User-Login-Bindelogik für `NeutralPasswordHoldReveal` entfernen.
+- keine Ersatz-Toggle-Logik bauen.
+- keine globalen Password-Helper anfassen, wenn sie noch für Admin oder andere Bereiche benötigt werden.
+- Login-Submit-Flow unverändert lassen.
 
-# 2. Root-Cause-Hypothese technisch prüfen
+Wichtig:
 
-Verifiziere konkret:
-
-- Wird `password-hold-reveal.js` vor `user-app.js` geladen?
-- Kann `window.NeutralPasswordHoldReveal` trotzdem im realen Browserpfad fehlen oder noch nicht existieren?
-- Wird `window.NeutralPasswordHoldReveal.bind(...)` im Login-Renderpfad ausgeführt, bevor der `userLoginForm`-Submit-Handler gebunden wird?
-- Würde ein Fehler an genau dieser Stelle die restliche Login-Bindung abbrechen?
-- Passt das zum beobachteten Liveverhalten „Eye tot + Login tot“?
-
-Wenn **ja**, Hypothese als Root Cause bestätigen.
-
-Wenn **nein**, den Branch nicht blind übernehmen. Dann die tatsächliche Ursache anhand des echten User-Login-Pfades finden und nur den kleinsten notwendigen Fix vornehmen.
+- User Login muss weiter normal und Inkognito funktionieren.
+- Admin Login darf nicht regressieren.
+- Auth-/Sessioncode nicht ändern.
+- Keine weiteren offenen Admin-/UX-Themen anfassen.
 
 ---
 
-# 3. Branch-Fix kritisch bewerten
+# 2. Tests
 
-Prüfe den vorbereiteten Fallback in `Web-App/public/index.html`:
+Mindestens:
 
-- syntaktisch korrekt;
-- läuft vor `user-app.js`;
-- greift nur, wenn `window.NeutralPasswordHoldReveal` nicht bereits vorhanden ist;
-- kollidiert nicht mit dem regulären `password-hold-reveal.js`;
-- verändert Admin nicht;
-- erzeugt keine zweite konkurrierende Eye-Implementierung;
-- verhindert zuverlässig, dass ein fehlender Helper den User-Login-Submit-Handler blockiert.
+1. User Login rendert genau ein Passwort-Eingabefeld mit `type="text"`.
+2. User Login enthält keinen Eye-Button mehr.
+3. User Login ruft `NeutralPasswordHoldReveal` nicht mehr auf.
+4. User Login Submit bleibt funktionsfähig.
+5. normaler User Login funktioniert im bestehenden Integrationstest weiterhin.
+6. Admin Login Regressionstest bleibt grün.
+7. vollständige Testsuite.
+8. JavaScript-Syntax.
+9. PHP-Lint.
+10. `git diff --check`.
+11. Production Package bauen.
 
-Keine neue allgemeine Auth-/UI-Abstraktion bauen.
-
----
-
-# 4. TDD / Verifikation
-
-Zuerst den neuen fokussierten Regressionstest ausführen:
-
-`tests/user-login-bootstrap-fallback.test.js`
-
-Danach relevante Tests für:
-
-- User Login;
-- Eye / Password Hold Reveal;
-- Frontend Binding;
-- Auth / User Session;
-- Admin Login Regression.
-
-Danach:
-
-- vollständige Testsuite;
-- JavaScript Syntax;
-- PHP Lint;
-- `git diff --check`;
-- Production Package bauen.
-
-Tests dürfen nicht nur Strings zählen. Der neue Regressionstest muss das tatsächliche Bootstrap-Verhalten sinnvoll abdecken.
+Bestehende Tests, die ausdrücklich Eye/Hold-to-reveal für den User-Login verlangen, auf den neuen verbindlichen Produktvertrag anpassen oder entfernen. Admin-bezogene Passwortsichtbarkeit nicht unnötig verändern.
 
 ---
 
-# 5. Merge-/Fix-Entscheidung
+# 3. Deployment
 
-## Falls Branch-Fix korrekt und Tests grün
+1. Minimalfix implementieren.
+2. fokussierte Tests.
+3. vollständige Suite.
+4. Production Package.
+5. Commit/Push nach `main`.
+6. CodeQL und FTPS terminal abwarten.
+7. read-only Production Smoke prüfen.
+8. `CHATGPT.md`, `CURRENT-TASK.md`, `UI-UX.md` und weitere wirklich betroffene MD-Dateien wahrheitsgemäß aktualisieren.
 
-- nur die notwendigen Änderungen nach `main` übernehmen;
-- keine Zusatzrefactorings;
-- keine anderen Baustellen;
-- Commit/Push nach `main`;
-- CodeQL und FTPS bis terminal abwarten;
-- read-only Production Smoke prüfen.
-
-## Falls Branch-Fix nicht korrekt
-
-- nicht mergen;
-- konkrete Gegen-Evidenz dokumentieren;
-- kleinsten nötigen Fix auf Basis der tatsächlich gefundenen Root Cause vornehmen;
-- erneut fokussiert + vollständig testen;
-- erst dann nach `main` übernehmen.
-
----
-
-# 6. Dokumentation
-
-Nur tatsächlich notwendige Dateien aktualisieren, insbesondere:
-
-- `CHATGPT.md`
-- `CURRENT-TASK.md`
-
-Weitere MD-Dateien nur wenn der tatsächliche technische Vertrag verändert wurde.
-
-Kein Core Freeze.
 Kein Production Restore.
 Keine Secrets ausgeben.
+Kein Core Freeze.
 
 ---
 
-# Abschlussbericht
+# Operator-Retest danach
 
-Kurz und konkret berichten:
+Nur:
 
-- Root Cause bestätigt: ja/nein
-- Branch-Fix unverändert übernommen oder angepasst
-- betroffene Dateien
-- fokussierte Tests
-- vollständige Testsuite
-- Production Package
-- Commit auf `main`
-- CodeQL Status
-- FTPS Status
-- Production Smoke
-- verbleibender Operator-Retest
+1. User Login normal funktioniert.
+2. User Login Inkognito funktioniert.
+3. Passwort ist während der Eingabe dauerhaft sichtbar.
+4. Kein Eye wird mehr angezeigt.
 
-# Nächster Operator-Retest
-
-Ausschließlich:
-
-1. User Login normal.
-2. User Login Inkognito.
-3. Eye Hold-to-reveal.
-
-Admin nur regressionsfrei halten.
+Danach gilt das Eye-Thema als beendet.
