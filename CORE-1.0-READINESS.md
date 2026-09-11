@@ -1,35 +1,25 @@
 # Neutral Core 1.0 – Readiness
 
 **Stand:** 2026-09-11
-**Gesamtstatus:** **NICHT FREEZE-BEREIT**
+**Gesamtstatus:** **NICHT EINGEFROREN — OPERATOR-/HOST-ABNAHME OFFEN**
 
-## Nachgewiesene Grundlage
+## Code-/testseitig nachgewiesen
 
-- Produktionsfähige PHP/MySQL-/HTTPS-Basis, Auth/RBAC/CSRF, getrennte Sessions, Audit und Adminbetrieb.
-- Generischer Modulvertrag mit Discovery, Registration/Installation, Activation, Permission-/CSRF-Routen, Migrationen, Settings und Backupdeklaration.
-- Unsichtbare Systemmodulpräsentation und optionale Dependency-Metadaten.
-- Packages/Licenses/direct Package, Sessions/Installation-ID, konfigurierbarer Backup-Pfad und Backup V2 sind code-/testseitig vorhanden; frühere datierte Livebefunde bleiben in Changelog/Workflow.
-- Moderation, Notifications, Postbox und Sharing bestanden am 2026-09-11 real den Lifecycle Install/Activate/Deactivate/Activate; danach deaktiviert. Kein Fachfunktionsnachweis.
+- PHP/MySQL-/HTTPS-Basis, Auth/RBAC/CSRF, getrennte Sessions, Audit und Adminbetrieb.
+- Eine generische Modulruntime für Discovery, Installation/Registration, Activate/Deactivate/Re-activate, Permissions/CSRF, Migrationen, Limits, Settings, Kategorien, rollenbezogene Navigation und Backupdeklaration.
+- Profile partial-DDL retry und optionales Capability-Gating; Media korrigierter paketierter Serverentry/Lifecycle-Scaffold.
+- Unlimited bleibt `null` statt `0` in direktem Package, License Package und User Override; numerische Limits behalten ihre Durchsetzung.
+- User Management mit exklusiven List/Create/Edit-States; Apps/User Modules/System Modules und Visibility getrennt von Permissions.
+- User Login mit statischem Password-Control/Eye und gemeinsamem Bindungshelper; Service-Worker-Produktionsstamp verhindert gemischte Assetrevisionen.
+- Optionaler sicherer Modul-Self-Test-Vertrag; GPS ist das deklarierte Referenzbeispiel.
+- Field Notes als unabhängiges owner-scoped CRUD User Module mit eigener retained Tabelle/Migration, ohne Field-Notes-spezifische Core-/Routeränderung.
+- Backup V2 nimmt deklarierte installierte Modultabellen generisch auf.
 
-## Blockierende Livefehler
+## Noch blockierende Abnahme
 
-- Profile registered/inactive; Activate endet `Internal Server Error`.
-- Media discovered/not registered; Install endet `Load failed`.
-- Unlimited-Package wird im Session-/Loginfall als `0` behandelt (`2 of 0`) und blockiert Login.
-- User-Login-Eye fehlt auf Betreiber-iPad normal und privat.
+1. Gesammelter Betreiber-Retest gemäß `CHATGPT.md`: statisches Eye auf iPad/Chrome normal+privat, Profile, Media, Unlimited, mobile User States, Kategorien/Visibility, GPS/Systemmodule und Field Notes.
+2. Field Notes Ownership/Lifecycle/Datenerhalt und Navigation real bedienen; lokaler Codebeweis genügt nicht.
+3. Verbleibende Hostgates: geschützter Backup-Pfad und Key-Readiness, Deploymentrevision/`migrationsReady:true`, relevante License-/Session-/Move-Smokes gemäß Installations- und Sicherheitsvertrag.
+4. Vollständiger Avatar-/Media-Produktzielvertrag bleibt außerhalb des bloßen Lifecycle-Scaffolds teilweise offen und darf nicht als fertig behauptet werden.
 
-## Weitere Freeze-Gates
-
-- Profile wirklich disable-/re-enable-stabil mit Datenerhalt; vollständiger Avatar-/Gender-Vertrag live.
-- Media als belastbarer generischer Upload-/Storagevertrag; Systemmodul-Scaffolds nicht mit fertigen Fachprodukten verwechseln.
-- Rollenbezogene Modul-Visibility/Navigation getrennt von Permissions.
-- Mobile User Management mit getrennten List-/Edit-States.
-- Systemmodule nach Reparaturen erneut live prüfen.
-- Field Notes anschließend als neues unabhängiges Modul ohne fachliche Core-Änderung.
-- Offene Host-/Move-/Operatorgates gemäß Status/Installationsvertrag.
-
-Keine Freeze-Erklärung. Kein Produktions-Restore als Abnahmetest.
-
-## 2026-09-11 repair checkpoint
-
-The four live-failure paths plus mobile User states and role/category presentation now have local code fixes and regression coverage. Readiness remains blocked pending operator retest. Field Notes remains the later independent freeze proof; Referral/Rewards is not a freeze gate.
+Referral/Rewards und automatische Setup-Routine sind spätere Arbeit und kein aktuelles Freeze-Gate. Kein Production Restore als Test. Core Freeze wird erst nach dokumentierter Abnahme separat entschieden und nicht automatisch erklärt.

@@ -503,3 +503,10 @@ After the native-placeholder correction, production classification advanced back
 - Hardened the shared password toggle against incomplete dynamic DOM enrichment and CSS invisibility.
 - Separated User list/create/edit states and added declarative User/System module grouping plus audited role navigation visibility independent from permissions.
 - Added browser-like and contract regression coverage. Referral/Rewards and Field Notes were not implemented; operator retest remains required.
+
+## 2026-09-11 — Pre-freeze implementation completion
+
+- User Login now renders password input and Eye toggle together; the shared helper binds existing markup without duplicate buttons and retains dynamic fallback behavior.
+- Added strict optional module Self-Test entry validation and clarified its limited evidence boundary; GPS remains the declared reference.
+- Added Field Notes as an independent owner-scoped CRUD User Module using only existing generic extension contracts, with retained declared storage and no Core-specific integration.
+- Updated pre-freeze contracts/status while keeping all production UX/lifecycle items operator-retest required. Referral/Rewards, automatic setup and Core Freeze were not implemented or declared.

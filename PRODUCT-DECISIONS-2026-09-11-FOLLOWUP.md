@@ -118,4 +118,4 @@ Der Betreiber führt die übrigen Live-Retests bewusst erst gesammelt nach Absch
 
 Bis dahin bleiben insbesondere Profile Lifecycle, Media Lifecycle, Unlimited Devices, User Management List/Create/Edit, Module Visibility/Klassifikation sowie Lifecycle-/GPS-Regression als `OPERATOR RETEST REQUIRED` dokumentiert. Keine dieser lokalen Reparaturen darf vor dem realen Betreibercheck als live bestanden markiert werden.
 
-Field Notes bleibt anschließend der separate no-Core-change Freeze-Proof.
+Historischer Planstand: Field Notes sollte anschließend der separate no-Core-change Freeze-Proof werden. Code-/testseitig wurde dieser Beweis am 2026-09-11 umgesetzt; die Betreiber-Liveabnahme steht aus.

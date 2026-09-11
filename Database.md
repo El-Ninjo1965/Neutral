@@ -155,3 +155,7 @@ Concrete optional modules own their declared tables and migrations. Generic back
 Profile owns retained `user_profiles` data, including `gender` (`male`, `female`, `unspecified`) and the bounded processed `avatar_data`. Its additive module migration is applied by module installation; deactivation never drops data.
 
 Role navigation visibility is stored as namespaced JSON in `settings.setting_key = core.module.visibility`; no second module table/runtime is introduced. The module migration runner now treats only MySQL/MariaDB duplicate-column code 1060 for a validated additive `ALTER TABLE ... ADD COLUMN` retry as already applied, preserving the original migration checksum while allowing recovery after partial non-transactional DDL.
+
+## Field Notes declared module table (2026-09-11)
+
+`field_notes_items` is module-owned and declared through the generic module database contract: `id`, `owner_user_id`, `title` (max 160), `body`, `created_at`, `updated_at`, with an owner/update index and `users.id` foreign key. Deactivation and ordinary uninstall retain data (`destroyOnUninstall:false`, `dataPolicy:retain`). Backup V2 discovers it from the installed module manifest; no Core table list or Field-Notes backup branch is added.

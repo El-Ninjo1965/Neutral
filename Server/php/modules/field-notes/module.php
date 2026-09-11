@@ -64,7 +64,7 @@ return [
                     $payload = is_array($context['payload'] ?? null) ? $context['payload'] : [];
                     $title = trim((string) ($payload['title'] ?? ''));
                     $body = trim((string) ($payload['body'] ?? ''));
-                    if ($title === '' || mb_strlen($title) > 160 || mb_strlen($body) > 10000) throw new InvalidArgumentException('Invalid note content.');
+                    if (preg_match('/^.{1,160}$/us', $title) !== 1 || preg_match('/^.{0,10000}$/us', $body) !== 1) throw new InvalidArgumentException('Invalid note content.');
                     return [$title, $body];
                 }
 

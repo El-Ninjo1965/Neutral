@@ -2,7 +2,7 @@
 
 ## Standabgrenzung 2026-09-11
 
-Lokale Tests und Manifestaudits können Codeverträge belegen, überschreiben aber keine Betreiber-Livefehler. Insbesondere gelten Profile-Aktivierung, Media-Installation, Unlimited-Login und User-Login-Eye trotz grüner lokaler Tests als offen. Node.js bleibt Entwicklungswerkzeug; PHP 8.1+/MySQL/HTTPS bilden die Produktionsbasis.
+Lokale Tests und Manifestaudits können Codeverträge belegen, überschreiben aber keine Betreiber-Livefehler. Insbesondere bleiben Profile-Aktivierung, Media-Installation, Unlimited-Login, das statisch ersetzte User-Login-Eye und Field Notes trotz grüner lokaler Tests operator-live offen. Node.js bleibt Entwicklungswerkzeug; PHP 8.1+/MySQL/HTTPS bilden die Produktionsbasis.
 
 ---
 

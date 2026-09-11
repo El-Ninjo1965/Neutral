@@ -106,3 +106,7 @@ V1 bleibt lesbar und stellt seinen historischen 21-Tabellen-Teilumfang wieder he
 **Klassifikation des aktuellen V2-Vertrags: BACKUP CONTRACT COMPLETE (code-/isoliert verifiziert).** Der Core-1.0-Freeze bleibt dennoch von realem Automatic-Backup/Cron und weiteren Host-/Move-Gates abhängig; kein Produktions-Restore wurde ausgeführt.
 
 Profile's retained `user_profiles` rows, including bounded processed avatar data, are covered by the portable database table payload; no original upload is retained.
+
+## Field Notes verification note (2026-09-11)
+
+The `field_notes_items` table participates only through the existing V2 installed-module table discovery based on the manifest `database.tables` declaration. There is no hard-coded Field Notes table or media rule in the backup service. Restore remains isolated-test-only; no Production Restore is permitted as verification.

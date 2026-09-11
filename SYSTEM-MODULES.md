@@ -5,7 +5,7 @@
 
 ## Gemeinsame Grenze
 
-Core besitzt nur generische Mechanismen. Alle hier beschriebenen Module sind optional, können ohne User-Menü aktiv sein und dürfen unabhängige Module nicht hart koppeln. Permissions autorisieren Aktionen; Visibility/Navigation entscheidet getrennt über sichtbare Einstiege und darf keine Rechte verleihen. Die rollenbezogene Visibility-Matrix ist **GEPLANT/FEHLT**.
+Core besitzt nur generische Mechanismen. Alle hier beschriebenen Module sind optional, können ohne User-Menü aktiv sein und dürfen unabhängige Module nicht hart koppeln. Permissions autorisieren Aktionen; Visibility/Navigation entscheidet getrennt über sichtbare Einstiege und darf keine Rechte verleihen. Die rollenbezogene Visibility-Matrix ist code-seitig namespaced vorhanden; ihre Betreiber-Liveabnahme steht aus.
 
 ## Administrative Modulklassifikation
 
@@ -23,11 +23,11 @@ Alle Module verwenden weiterhin denselben:
 
 Die Klassifikation darf Sichtbarkeit nicht ersetzen. Ein Systemmodul kann sichtbare User-Funktionen anbieten; ein User-Modul kann für einzelne Rollen oder vollständig aus der Navigation ausgeblendet werden.
 
-Beispiele für **User Modules**: `gps`, `profile`, `postbox`, später `field-notes`.
+Beispiele für **User Modules**: `gps`, `profile`, `postbox`, `field-notes`.
 
 Beispiele für **System Modules**: `media`, `sharing`, `notifications`, `moderation`; später `referral`/`referral-rewards`.
 
-Die konkrete Manifest-/Metadatenform (`category`, `moduleClass` oder äquivalent) wird bei Implementierung gegen den vorhandenen Validator/Runtimevertrag entschieden. Keine parallele Runtime oder Sonderregistry einführen.
+Die konkrete Manifestform ist `category: user|system` mit backward-kompatiblem Default `user`. Keine parallele Runtime oder Sonderregistry einführen.
 
 | Modul | Verbindliches Ziel | Aktueller Code-/Live-Stand |
 |---|---|---|
@@ -60,13 +60,13 @@ User wählt ein Bild, schneidet quadratisch zu, gespeichert wird nur eine optimi
 
 ## Abhängigkeiten
 
-Die vorhandenen sechs Manifeste haben keine Pflichtabhängigkeit. Profile nennt Media/Sharing und Postbox Media/Notifications nur optional. Fehlt ein Enhancement, bleibt die Hauptfunktion kontrolliert nutzbar. Field Notes bleibt das spätere separate Freeze-Gate und wurde nicht implementiert.
+Die optionalen Systemmodule haben keine Pflichtabhängigkeit. Profile nennt Media/Sharing und Postbox Media/Notifications nur optional. Fehlt ein Enhancement, bleibt die Hauptfunktion kontrolliert nutzbar. Field Notes ist als unabhängiges User Module ohne Pflicht- oder optionale Modulabhängigkeit implementiert.
 
 ## Compatibility bridge and freeze proof
 
 The remaining Core-owned `user_profiles` baseline and legacy Core media tables are a **compatibility bridge**, not the desired final ownership boundary. The next implementation rounds must remove ambiguity non-destructively rather than claim the bridge complete.
 
-`field-notes` remains the later independent freeze proof and must be implemented **without edits to existing Core files** for product-specific integration. It is not part of the present codebase.
+`field-notes` is the code-/test-verified independent freeze proof. Its product implementation consists only of new module files and uses generic Core contracts; operator-live acceptance remains open.
 
 ## Classification implementation
 

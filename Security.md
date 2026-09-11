@@ -184,3 +184,7 @@ Optional-module absence fails as capability absence, never as authorization bypa
 Profile avatar data accepts only verified image data URLs, is capped at 256 KiB and square dimensions no larger than 256 px, and is protected by module authentication, permission and CSRF enforcement. Executable uploads and filesystem paths are not accepted.
 
 Role navigation visibility is presentation-only: writes require `role.write` plus CSRF, are audited, and never modify `role_permissions`. Unlimited package JSON null remains nullable through SQL resolution rather than being cast to numeric zero.
+
+## Field Notes ownership and Self-Test boundary (2026-09-11)
+
+Field Notes derives ownership only from the authenticated server identity. Every SELECT/UPDATE/DELETE includes `owner_user_id`; client-provided ownership is ignored. Mutations require the namespaced use permission and session CSRF through the generic module kernel. The optional module Self-Test entry is restricted to a safe module-local HTML path and grants no route, permission, session or secret access; its prerequisite flags are disclosure metadata, not authorization bypasses.

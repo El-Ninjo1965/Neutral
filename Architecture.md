@@ -309,3 +309,7 @@ Profile reads and mutations travel through `/api/modules/profile/profile`; Core 
 ## 2026-09-11 repair contract
 
 Module manifests now normalize `category: user|system` with backward-compatible `user`; this is Admin grouping metadata only. Role-specific navigation visibility is persisted under `core.module.visibility`, projected separately from permissions, and consumed only by client navigation. All categories retain one registry, HTTP kernel and lifecycle. Profile migration execution is retry-safe because prior non-transactional partial DDL could leave `gender` present while its migration record was absent.
+
+## Pre-freeze extension proof (2026-09-11)
+
+The optional module Self-Test is normalized metadata, not a second lifecycle or privileged execution engine. A safe module-local HTML entry may be linked by Admin; absent entries produce no action. Field Notes uses the existing single registry/runtime, generic module HTTP kernel, namespaced permissions, CSRF, module migration/limit contracts, role navigation visibility and declared-table Backup V2 discovery. No Field-Notes branch exists in Core or the central API router. This is the code-side no-Core-change proof; operator acceptance and Core Freeze remain separate gates.

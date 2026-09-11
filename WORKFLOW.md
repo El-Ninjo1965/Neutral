@@ -193,3 +193,7 @@ Before Core freeze, a new Field Notes module must add its route, permissions, st
 ## 2026-09-11 — Live repair implementation (Codex)
 
 Audited the reported Profile, Media, Unlimited, Eye, User Management and Module Admin paths. Root fixes: retry-safe additive migration execution after possible partial MySQL/MariaDB DDL application; JSON-null-aware device SQL; self-healing password DOM plus fail-safe own CSS; exclusive User view states; normalized module category; namespaced audited role navigation settings separate from RBAC. Added browser-like regression coverage. No Referral/Rewards, Field Notes, destructive production action or restore.
+
+## 2026-09-11 — Pre-freeze code completion (Codex)
+
+Replaced the repeatedly live-failing dynamic User Login Eye dependency with a password control whose input and single toggle are rendered together; the shared helper now binds existing controls and remains a dynamic fallback. Standardized the optional safe module-local HTML Self-Test contract and retained GPS as the only bundled declaration. Added Field Notes exclusively through new module/test files using generic lifecycle, API, ownership, CSRF, migration, limit, navigation and backup contracts; no Field-Notes Core/router branch was introduced. Local and CI/deployment evidence is recorded separately from the still-required collected operator acceptance. Referral/Rewards and automatic setup remain deferred; Core Freeze was not declared and no Production Restore/destructive production action was performed.

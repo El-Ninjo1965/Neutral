@@ -6,7 +6,7 @@
 
 **Nur deklaratives Scaffolding, keine fertige Funktion:** Media Upload/Resize/Replace/Delete, generische Sharing-Engine, Notificationzustellung/-präferenzen, generische Moderationsqueue und Postbox Messaging/Empfänger/Audit. `contracts` in Manifesten werden nicht automatisch ausgeführt.
 
-**FEHLT/FEHLER:** Profile-/Media-Lifecycle live, vollständige Avatar-UX, rollenbezogene Modulnavigation, korrekte Unlimited-Auflösung und live sichtbares User-Login-Eye.
+**VORHANDEN (Code/Test), OPERATOR RETEST REQUIRED:** Profile-/Media-Lifecycle-Reparaturen, rollenbezogene Modulnavigation, Unlimited-Auflösung, statisches User-Login-Eye und Field Notes CRUD. **FEHLT:** vollständige Media-/Avatar-Produktfunktion; Referral/Rewards und automatische Setup-Routine bleiben geplant.
 
 ---
 
@@ -216,3 +216,7 @@ default home instead of leaving an empty view.
 - `Phase7ModuleRuntime::visibilityFor()` and `updateVisibility()` resolve/persist role-specific navigation independently from permission authorization.
 - Module `category` is normalized across PHP/browser contracts and groups the single Admin module inventory.
 - Password enhancement now validates its actual wrapper/button DOM and self-heals an incomplete enhancement.
+
+### Field Notes and module Self-Test
+
+Field Notes provides owner-scoped list/create/edit/delete via the generic active-module API, retained module migration, declared limit and responsive module UI. The optional `standalone` contract accepts a safe module-local HTML entry; Admin renders it only when declared. Neither mechanism is a replacement for lifecycle, permission, integration or operator-live acceptance.

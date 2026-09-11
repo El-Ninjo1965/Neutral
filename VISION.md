@@ -2,7 +2,7 @@
 
 ## Verbindliche Modularitätsentscheidung (2026-09-11)
 
-Neutral Core enthält ausschließlich zwingende technische Mechanismen. Profile, Media/Upload, Sharing/Visibility, Notifications, Moderation, Postbox, Community und Fachfunktionen sind optionale Module. Ein fehlendes optionales Modul darf unabhängige Funktionen nicht blockieren; Zusatzfunktionen werden ausgeblendet oder fallen kontrolliert zurück. Aktive unsichtbare System-/Capability-Module ohne User-Navigation sind ausdrücklich Teil des Zielbilds. Field Notes bleibt der spätere unabhängige Nachweis, dass ein neues Fachmodul ohne produktspezifische Core-Änderung entstehen kann.
+Neutral Core enthält ausschließlich zwingende technische Mechanismen. Profile, Media/Upload, Sharing/Visibility, Notifications, Moderation, Postbox, Community und Fachfunktionen sind optionale Module. Ein fehlendes optionales Modul darf unabhängige Funktionen nicht blockieren; Zusatzfunktionen werden ausgeblendet oder fallen kontrolliert zurück. Aktive unsichtbare System-/Capability-Module ohne User-Navigation sind ausdrücklich Teil des Zielbilds. Field Notes ist der implementierte code-seitige Nachweis, dass ein neues Fachmodul ohne produktspezifische Core-Änderung entstehen kann; seine Betreiber-Liveabnahme und der Core Freeze stehen noch aus.
 
 ---
 

@@ -167,3 +167,7 @@ Module catalog payloads include normalized `presentation` (`userNavigation`, `ad
 ## Module visibility endpoint
 
 `PUT /api/v1/admin/modules/{id}/visibility` requires `role.write`, Admin-session CSRF, accepts booleans for Admin/Developer/User/Viewer, persists presentation-only state and audits the change. `GET /api/v1/admin/modules/{id}` includes the resolved visibility map. This state never grants module API permissions.
+
+## Field Notes module routes (code-present, operator retest pending)
+
+The generic `/api/v1/modules/<module-id>/<route>` kernel exposes Field Notes only while the module is installed and active. `GET /api/v1/modules/field-notes/items` requires `field-notes.view`; `POST`, `PUT` and `DELETE` on the same path require `field-notes.use`, authenticated ownership and CSRF for browser-session mutations. POST accepts `title`/`body`; PUT additionally accepts `id`; DELETE accepts `id`. All reads and mutations bind `owner_user_id` to the authenticated server identity. These are declarative module routes, not central-router special cases.

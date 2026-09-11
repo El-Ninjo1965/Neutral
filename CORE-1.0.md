@@ -2,7 +2,7 @@
 
 ## Freeze-Klarstellung 2026-09-11
 
-Core 1.0 ist **nicht eingefroren**. Vor einem Freeze müssen mindestens die offenen Profile- und Media-Lifecyclefehler, die Unlimited-Device-Auflösung, das live fehlende User-Login-Eye, rollenbezogene Modul-Visibility sowie die mobile User-Edit-Navigation behoben und erneut live geprüft werden. Anschließend muss Field Notes als separates neues Modul ohne fachliche Core-Änderung den Erweiterungsvertrag beweisen. Optionale Systemmodule gehören nicht als vollständige Fachprodukte zum Core-Umfang; Core schuldet nur ihre generischen Lifecycle-, Sicherheits-, API-, Storage-, UI- und Backup-Verträge.
+Core 1.0 ist **nicht eingefroren**. Vor einem Freeze müssen mindestens die offenen Profile- und Media-Lifecyclefehler, die Unlimited-Device-Auflösung, das live fehlende User-Login-Eye, rollenbezogene Modul-Visibility sowie die mobile User-Edit-Navigation behoben und erneut live geprüft werden. Field Notes beweist code- und testseitig als separates neues Modul ohne fachliche Core-Änderung den Erweiterungsvertrag; Betreiber-Liveabnahme und die separate Freeze-Entscheidung stehen noch aus. Optionale Systemmodule gehören nicht als vollständige Fachprodukte zum Core-Umfang; Core schuldet nur ihre generischen Lifecycle-, Sicherheits-, API-, Storage-, UI- und Backup-Verträge.
 
 ---
 

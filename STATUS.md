@@ -1,39 +1,28 @@
-# NEUTRAL – nachgewiesener Stand
+# Neutral status — pre-freeze code completion
 
 **Stand:** 2026-09-11
-**Status:** CORE FREEZE BLOCKIERT
+**Code status:** VORHANDEN and locally tested
+**Operator status:** RETEST REQUIRED
+**Core Freeze:** NOT declared
 
-## VORHANDEN (Code/Test)
+## Code-/test-verified
 
-- PHP/MySQL-Produktionsbasis, getrennte User-/Admin-Sessions, RBAC/CSRF, Module Discovery/Registration/Activation, generischer Modul-HTTP-Kernel, Modulmigrationen und Admin-Lifecycle.
-- Manifestpräsentation für User-/Admin-Navigation und Systemmodule sowie nicht blockierende `optionalDependencies`-Metadaten.
-- Packages/Licenses, direkte User-Packages, License-Priorität/Fallback, numerische/default/unlimited Modellierung, Sessions/Installation-ID, Audit, Backup-V2 und konfigurierbarer Backup-Pfad.
-- Profile-Manifest, Permissions, generische GET/PUT-Route, Gender-/Avatar-Schemaabsicht und capability-gated User-Settings.
-- Systemmodul-Manifeste und Status-Services für Media, Sharing, Notifications, Moderation und Postbox.
-- GPS als aktives Referenzmodul mit deklariertem Standalone-Test.
+- Profile partial-DDL migration recovery, optional capability gating and data-retaining deactivate/reactivate contract.
+- Media server entry/package presence and generic lifecycle scaffold; this is not a complete Media product.
+- Unlimited device limits preserve SQL/JSON `null` across direct Package, License and User override resolution instead of displaying/enforcing zero.
+- User Management has exclusive list/create/edit states with controlled Save/Cancel return.
+- Module Admin separates Apps, User Modules and System Modules and stores role navigation visibility independently of permissions.
+- User Login now renders its password field and exactly one Eye button together in static login markup. The shared helper binds state and remains a fallback for other dynamic forms.
+- Optional module `standalone` is a validated, module-local HTML Self-Test entry. GPS remains the only bundled module declaring one.
+- Field Notes is present as an independent User Module with its own manifest, PHP service, retained table migration, permissions, limit, responsive UI and owner-scoped CRUD. Its implementation introduced no Field-Notes reference into Core/shared routing.
+- Backup V2 discovers the Field Notes table through the existing module database declaration; no backup special case was added.
 
-## LIVE BESTANDEN (Betreibergerät, nach Commit `4dae2b5`, 2026-09-11)
+## Operator-live status
 
-- Moderation, Notifications, Postbox und Sharing: Install → Activate → Deactivate → Activate. Danach wieder deaktiviert.
-- Dieser Nachweis betrifft ausschließlich Lifecycle, nicht vollständige Fachfunktion oder UI.
-- GPS blieb aktiv.
+The earlier iPad finding remains authoritative: the dynamic User Login Eye was not visible in normal or private Chrome. The new static-markup replacement has not yet been operator-retested. Profile, Media, Unlimited, User Management, module grouping/visibility and Field Notes likewise require one collected live acceptance round. Moderation, Notifications, Postbox and Sharing previously passed lifecycle checks but require regression confirmation; GPS remains the active reference.
 
-## TEILWEISE / LIVE NICHT BESTANDEN
+## Deliberately not implemented
 
-1. **Profile:** registered/inactive; Activate → `Activation failed: Internal Server Error`. Profile/Privacy deshalb nicht live verfügbar, obwohl `profile.view`/`profile.update` vorhanden waren.
-2. **Media:** discovered/not registered; Install → `Install failed: Load failed`.
-3. **Unlimited Devices:** zweiter Session-/Loginfall wurde trotz wirksamem Unlimited-Package blockiert; UI sinngemäß `2 of 0 sessions`. Nullable-Unlimited-Auflösung ist End-to-End fehlerhaft.
-4. **User Login Eye:** auf Betreiber-iPad im normalen und privaten Browsermodus nicht sichtbar, obwohl Shared Helper, SVG und Precache code-seitig vorhanden sind.
-5. **Profile Avatar:** Service akzeptiert bereits quadratische Data-URLs ≤256 px/256 KiB; Auswahl/Crop/Optimierung/Replace/Delete/runde Anzeige/Gender-Defaults/Cache und Liveprüfung fehlen.
-6. **Systemmodule:** Sharing/Notifications/Moderation/Postbox sind Scaffolding mit Statusroute, keine fertigen Fachprodukte; Media ist ebenfalls kein vollständiger Modulservice.
-7. **Module Visibility:** globale Manifestpräsentation und Permissionfilter vorhanden; getrennte rollenbezogene Visibility-/Navigation-Verwaltung fehlt.
-8. **User Management mobil:** Liste und Edit/Create sind noch nicht als getrennte mobile States umgesetzt.
-9. **Setup:** aktuelle Paket-/Preflight-/Setupwege vorhanden; weitgehend automatische Selbsterkennung ist erst Post-Freeze geplant.
-
-## Freeze-Gates
-
-Core Freeze bleibt blockiert bis die vier Livefehler repariert und erneut live geprüft, die beiden UX-/Administrationslücken geschlossen, Profile/Media/Systemmodule korrekt eingeordnet und Field Notes später ohne fachliche Core-Änderung umgesetzt wurde. Kein Produktions-Restore wurde als Test durchgeführt.
-
-## Code repairs 2026-09-11 — operator retest required
-
-Profile partial-DDL retry, Media packaged entry verification, Unlimited JSON-null handling, User Login DOM self-healing/visibility CSS, exclusive User list/edit states, role navigation visibility and User/System grouping are implemented and locally tested. None supersedes the previous live failure until operator retest. Referral/Rewards and Field Notes remain unimplemented.
+- Referral/Rewards remains a later optional System Module.
+- The automatic setup/installation routine remains post-freeze work.
+- No production restore or destructive production action is an acceptance test.

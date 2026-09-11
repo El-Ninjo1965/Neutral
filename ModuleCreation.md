@@ -8,13 +8,13 @@ Ein Fachmodul ändert keine Coredatei nur zu seiner eigenen Anbindung. Es nutzt 
 
 ### Tatsächlich validierte Manifestbereiche
 
-`ModuleContract` validiert `id`, semantische `version`, `permissions`, `compatibility`, `server.entry/services/routes`, mutierende CSRF-Routen, optionale Routenlimits, `database.tables/migrations`, `limits` und `uninstall.dataPolicy`. Zusätzlich werden `presentation` (`userNavigation`, `adminNavigation`, `system`) und `optionalDependencies` normalisiert. `capabilities`, `access`, `admin`, `standalone` und weitere beschreibende Metadaten werden transportiert beziehungsweise von ihren jeweiligen Consumern ausgewertet; freie `contracts`-Objekte sind derzeit deklaratives Scaffolding und kein automatisch ausgeführter Fachvertrag.
+`ModuleContract` validiert `id`, semantische `version`, `permissions`, `compatibility`, `server.entry/services/routes`, mutierende CSRF-Routen, optionale Routenlimits, `database.tables/migrations`, `limits` und `uninstall.dataPolicy`. Zusätzlich werden `presentation` (`userNavigation`, `adminNavigation`, `system`), `category`, `optionalDependencies` und der optionale sichere `standalone`-Self-Test-Eintrag normalisiert. `capabilities`, `access`, `admin` und weitere beschreibende Metadaten werden transportiert beziehungsweise von ihren jeweiligen Consumern ausgewertet; freie `contracts`-Objekte sind derzeit deklaratives Scaffolding und kein automatisch ausgeführter Fachvertrag.
 
 Pflichtabhängigkeiten stehen in `dependencies` und dürfen nur verwendet werden, wenn das Modul ohne sie nicht funktionieren kann. `optionalDependencies` blockieren Installation/Aktivierung nicht und müssen per Capability Detection mit sauberem Fallback genutzt werden. Abhängigkeiten verleihen keine Permission.
 
 ### Lifecycle und Präsentation
 
-Discovery bedeutet nur gefunden. Installation registriert Manifest, Permissiondefinitionen und Migrationen und endet inaktiv. Aktivierung ist ein eigener Schritt. Deaktivierung behält bei `retain` Daten. Uninstall folgt dem validierten Datenvertrag. `presentation.userNavigation=false` erlaubt aktive unsichtbare Systemmodule; `adminNavigation` steuert nur die deklarierte Präsentation. **FEHLT:** eine eigene rollenbezogene Visibility-/Navigation-Konfiguration getrennt von Permissions. Permissions bleiben alleinige serverseitige Autorisierung.
+Discovery bedeutet nur gefunden. Installation registriert Manifest, Permissiondefinitionen und Migrationen und endet inaktiv. Aktivierung ist ein eigener Schritt. Deaktivierung behält bei `retain` Daten. Uninstall folgt dem validierten Datenvertrag. `presentation.userNavigation=false` erlaubt aktive unsichtbare Systemmodule; `adminNavigation` steuert nur die deklarierte Präsentation. Eine namespacete rollenbezogene Visibility-/Navigation-Konfiguration ist getrennt von Permissions vorhanden. Permissions bleiben alleinige serverseitige Autorisierung.
 
 ### Server, Daten, Backup und Sicherheit
 
@@ -28,9 +28,9 @@ Module verwenden zentrale responsive Komponenten/Tokens, stabile I18N-Keys und `
 
 Ein `standalone`-Entry ist sinnvoll, wenn eine isolierbare Browser-/Gerätefunktion ohne Auth, DB oder produktiven Serverzustand geprüft werden kann. Er muss Voraussetzungen und Grenzen deklarieren. GPS ist das einzige live bestätigte Referenzbeispiel. Ein Standalone-Test ersetzt niemals Manifest-, Lifecycle-, Permission-, CSRF-, DB-, Backup-, Offline- oder Produktionsprüfung und ist für reine Server-/Systemmodule nicht automatisch Pflicht.
 
-### Systemmodule und nächster Beweistest
+### Systemmodule und Beweismodul
 
-Profile, Media, Sharing, Notifications, Moderation und Postbox sind optionale Systemmodule. Ihre vollständigen Zielverträge stehen in `SYSTEM-MODULES.md`; ihr aktueller Implementierungsgrad steht in `STATUS.md`. Field Notes wird **nicht** in diesem Dokumentationslauf gebaut. Es ist später als neues Modul mit eigener Navigation, Permission, Tabelle/Migration, CRUD, Settings, I18N, Theme, Offline- und Backupnachweis ohne fachliche Core-Änderung umzusetzen.
+Profile, Media, Sharing, Notifications, Moderation und Postbox sind optionale Module mit dem in `SYSTEM-MODULES.md` beschriebenen Zielgrad. Field Notes ist als unabhängiges User Module mit eigener Navigation, Permissions, Tabelle/Migration, CRUD, I18N und Theme über bestehende generische Verträge implementiert. Es beansprucht keine Offline-Synchronisation; Datenoperationen benötigen den Server. Code-/Testnachweis ersetzt nicht die offene Betreiber-Liveabnahme.
 
 ---
 
@@ -305,3 +305,9 @@ Modules use the published permission/API contracts for media and the GPS module'
 ## Module category and role navigation
 
 `category` accepts `user` or `system` and defaults to `user`; it does not alter lifecycle, permissions, visibility, activation or dependencies. Admin groups modules by this declaration. Per-role navigation visibility is a separate persisted presentation decision for Admin, Developer, User and Viewer. It may hide/show a navigation entry but never authorizes a route. `presentation.userNavigation` remains the default until a role override is stored.
+
+## Pre-freeze clarification: optional module Self-Test and Field Notes proof (2026-09-11)
+
+`standalone` is an optional object. When present, `entry` must be a relative, module-local `.html` path without absolute paths, traversal, backslashes or duplicate separators. `label` and `description` are display metadata; `requires.server`, `requires.database` and `requires.auth` truthfully disclose prerequisites. Invalid declarations fail manifest validation. Admin displays the action only for a valid declared entry. The page remains module-owned, may not bypass permissions, expose secrets or perform destructive production work, and proves only that isolated page—not lifecycle, API, database, permission, integration, backup or live operation. GPS is the current bundled example; modules without a meaningful isolated browser path declare no Self-Test.
+
+`field-notes` is now the no-Core-change proof module. It declares category `user`, no dependencies, `field-notes.view`/`field-notes.use`, owner-scoped generic module routes, a retained `field_notes_items` table/migration and an item limit. Its implementation required only new files below `Web-App/app/modules/field-notes/` and `Server/php/modules/field-notes/`; discovery, loading, navigation/visibility, authorization/CSRF, migrations and Backup V2 use existing generic contracts. Its production/operator lifecycle and UI remain `OPERATOR RETEST REQUIRED`; this code proof does not itself declare Core Freeze.
