@@ -177,7 +177,7 @@ class AdminModulesView {
       ? module.standalone
       : null;
     if (!standalone || !standalone.entry || !module.modulePath) {
-      return '<p class="small-muted">No standalone test entry declared.</p>';
+      return '<p class="small-muted">No module self-test declared.</p>';
     }
 
     const requires = standalone.requires && typeof standalone.requires === 'object' ? standalone.requires : {};
@@ -248,7 +248,7 @@ class AdminModulesView {
           ${this.renderVisibilityEditor(module)}
         </div>
         <div class="card">
-          <div class="card-header"><h4 class="card-title">Standalone test</h4></div>
+          <div class="card-header"><h4 class="card-title">Module self-test</h4></div>
           ${this.formatStandaloneLink(module)}
         </div>
         <div class="card">

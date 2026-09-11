@@ -47,6 +47,7 @@ final class ModuleContract
         $server = $this->normalizeServer($manifest['server'] ?? null, $moduleId, $permissionKeys, array_column($limits, 'key'));
         $database = $this->normalizeDatabase($manifest['database'] ?? null);
         $uninstall = $this->normalizeUninstall($manifest['uninstall'] ?? null);
+        $standalone = $this->normalizeStandalone($manifest['standalone'] ?? null);
         $presentation = is_array($manifest['presentation'] ?? null) ? $manifest['presentation'] : [];
         $category = strtolower(trim((string) ($manifest['category'] ?? 'user')));
         if (!in_array($category, ['user', 'system'], true)) {
@@ -61,6 +62,7 @@ final class ModuleContract
         $normalized['database'] = $database;
         $normalized['limits'] = $limits;
         $normalized['uninstall'] = $uninstall;
+        $normalized['standalone'] = $standalone;
         $normalized['optionalDependencies'] = array_values(array_filter(array_map('strval', is_array($manifest['optionalDependencies'] ?? null) ? $manifest['optionalDependencies'] : [])));
         $normalized['presentation'] = [
             'userNavigation' => ($presentation['userNavigation'] ?? true) !== false,
@@ -69,6 +71,36 @@ final class ModuleContract
         ];
         $normalized['category'] = $category;
         return $normalized;
+    }
+
+    /** @param mixed $value @return array<string,mixed>|null */
+    private function normalizeStandalone($value): ?array
+    {
+        if ($value === null) return null;
+        if (!is_array($value)) throw new \RuntimeException('Module self-test declaration must be an object.');
+        $entry = trim((string) ($value['entry'] ?? ''));
+        if (
+            $entry === ''
+            || str_contains($entry, '..')
+            || str_contains($entry, '\\')
+            || str_starts_with($entry, '/')
+            || str_contains($entry, '//')
+            || preg_match('#^[a-zA-Z0-9][a-zA-Z0-9._/-]*\.html$#', $entry) !== 1
+        ) {
+            throw new \RuntimeException('Unsafe module self-test entry.');
+        }
+        $requires = $value['requires'] ?? [];
+        if (!is_array($requires)) throw new \RuntimeException('Module self-test requirements must be an object.');
+        return [
+            'entry' => $entry,
+            'label' => trim((string) ($value['label'] ?? '')) ?: 'Module self-test',
+            'description' => trim((string) ($value['description'] ?? '')),
+            'requires' => [
+                'server' => ($requires['server'] ?? false) === true,
+                'database' => ($requires['database'] ?? false) === true,
+                'auth' => ($requires['auth'] ?? false) === true,
+            ],
+        ];
     }
 
     /** @param array<string,mixed> $contract */

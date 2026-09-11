@@ -725,20 +725,18 @@ final class Phase7ModuleRuntime
      */
     private function normalizeStandalone($standalone): ?array
     {
-        if (!is_array($standalone)) {
+        if ($standalone === null) {
             return null;
         }
-
+        if (!is_array($standalone)) throw new \RuntimeException('Module self-test declaration must be an object.');
         $entry = trim((string) ($standalone['entry'] ?? ''));
-        if ($entry === '') {
-            return null;
-        }
+        if ($entry === '' || str_contains($entry, '..') || str_contains($entry, '\\') || str_starts_with($entry, '/') || str_contains($entry, '//') || preg_match('#^[a-zA-Z0-9][a-zA-Z0-9._/-]*\.html$#', $entry) !== 1) throw new \RuntimeException('Unsafe module self-test entry.');
 
         $requires = is_array($standalone['requires'] ?? null) ? $standalone['requires'] : [];
 
         return [
             'entry' => $entry,
-            'label' => trim((string) ($standalone['label'] ?? '')) !== '' ? trim((string) $standalone['label']) : 'Standalone module test',
+            'label' => trim((string) ($standalone['label'] ?? '')) !== '' ? trim((string) $standalone['label']) : 'Module self-test',
             'description' => (string) ($standalone['description'] ?? ''),
             'requires' => [
                 'server' => (($requires['server'] ?? false) === true),

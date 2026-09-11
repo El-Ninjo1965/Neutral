@@ -86,9 +86,10 @@
     };
 
     const normalizeClientAccess = (value) => {
-        if (!value || typeof value !== 'object') {
+        if (value == null) {
             return null;
         }
+        if (typeof value !== 'object') throw new Error('Module self-test declaration must be an object.');
         if (!['anonymous', 'authenticated'].includes(value.mode)) {
             return null;
         }
@@ -111,15 +112,13 @@
             ? value.entry.trim()
             : null;
 
-        if (!entry) {
-            return null;
-        }
+        if (!entry || entry.includes('..') || entry.includes('\\') || entry.startsWith('/') || entry.includes('//') || !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*\.html$/.test(entry)) throw new Error('Unsafe module self-test entry.');
 
         const requires = value.requires && typeof value.requires === 'object' ? value.requires : {};
 
         return {
             entry,
-            label: typeof value.label === 'string' && value.label.trim() ? value.label.trim() : 'Standalone module test',
+            label: typeof value.label === 'string' && value.label.trim() ? value.label.trim() : 'Module self-test',
             description: typeof value.description === 'string' ? value.description : '',
             requires: {
                 server: requires.server === true,

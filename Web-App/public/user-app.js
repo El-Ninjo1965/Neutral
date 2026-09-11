@@ -610,7 +610,10 @@
           </div>
           <div class="form-field">
             <label for="userLoginPassword">Password</label>
-            <input id="userLoginPassword" type="password" autocomplete="current-password" />
+            <span class="password-input-wrap" data-password-control="user-login">
+              <input id="userLoginPassword" type="password" autocomplete="current-password" />
+              <button type="button" class="password-visibility-toggle" data-neutral-password-toggle="true" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3 21 21M10.6 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16.6 16.6 0 0 1-2.3 3M6.2 6.2C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.4 0 2.7-.3 3.8-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"/></svg></button>
+            </span>
           </div>
           <div class="user-login-actions">
             <button type="submit" id="userLoginSubmit" class="ui-button ui-button--primary primary">Login</button>
@@ -621,7 +624,6 @@
     `;
 
     window.NeutralUiFeedback?.enhancePasswordFields(content);
-    (window.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => window.NeutralUiFeedback?.enhancePasswordFields(content));
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
