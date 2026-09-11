@@ -338,3 +338,7 @@ Das statische User-Eye liegt im selben `password-input-wrap` wie das Passwortfel
 ## User Login – sichtbarer Passwort-Fallback (2026-09-11)
 
 Für den User Login gilt der abschließende Betreiberentscheid: genau ein Eingabefeld mit `type="text"`, dauerhaft sichtbare Eingabe, kein Eye und kein Hold-/Toggle-Helper. Dies betrifft nur die Darstellung; Serverauthentifizierung, Hashing und HTTPS bleiben unverändert. Admin-Passwortfelder behalten ihren bisherigen Vertrag.
+
+## User Login – abschließender Click-Eye-Vertrag (2026-09-11)
+
+Der neueste Betreiberauftrag ersetzt den sichtbaren Fallback: User Login verwendet ein browser-autofillfähiges `type="password"` mit genau einem statischen Eye im Control. Ein Klick schaltet denselben unveränderten Wert auf `text`, der nächste zurück auf `password`. Keine externe Helper-Abhängigkeit, kein Hold und kein Observer; Admin bleibt unverändert.

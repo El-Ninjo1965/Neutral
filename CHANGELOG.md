@@ -561,3 +561,9 @@ After the native-placeholder correction, production classification advanced back
 - User-Login-Passwortfeld dauerhaft sichtbar gemacht und Eye/Hold-Binding entfernt.
 - Nicht mehr benötigtes User-Hold-Asset aus Shell und Offline-Cache entfernt.
 - Login-Submit, Admin-Login sowie Auth-/Sessioncode unverändert gelassen.
+
+## 2026-09-11 — User Login Click-Eye
+
+- Sichtbaren Fallback gemäß neuestem Betreiberauftrag durch ein normales browser-autofillfähiges Passwortfeld ersetzt.
+- Genau einen statischen, lokal gebundenen Click-Eye-Button ergänzt; Wert bleibt beim Anzeigen/Verbergen unverändert.
+- Keine Auth-, Session-, Backend- oder Admin-Änderung.

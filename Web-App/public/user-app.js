@@ -606,11 +606,16 @@
         <form id="userLoginForm" class="user-login-form">
           <div class="form-field">
             <label for="userLoginUsername">Username</label>
-            <input id="userLoginUsername" type="text" autocomplete="username" />
+            <input id="userLoginUsername" name="username" type="text" autocomplete="username" />
           </div>
           <div class="form-field">
             <label for="userLoginPassword">Password</label>
-            <input id="userLoginPassword" type="text" autocomplete="current-password" />
+            <span class="password-input-wrap">
+              <input id="userLoginPassword" name="password" type="password" autocomplete="current-password" />
+              <button type="button" id="userLoginPasswordReveal" class="password-visibility-toggle" aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/></svg>
+              </button>
+            </span>
           </div>
           <div class="user-login-actions">
             <button type="submit" id="userLoginSubmit" class="ui-button ui-button--primary primary">Login</button>
@@ -619,6 +624,16 @@
         </form>
       </section>
     `;
+
+    const passwordInput = document.getElementById('userLoginPassword');
+    const passwordReveal = document.getElementById('userLoginPasswordReveal');
+    passwordReveal.addEventListener('click', () => {
+      const visible = passwordInput.type === 'text';
+      passwordInput.type = visible ? 'password' : 'text';
+      passwordReveal.setAttribute('aria-pressed', visible ? 'false' : 'true');
+      passwordReveal.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+      passwordInput.focus();
+    });
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');

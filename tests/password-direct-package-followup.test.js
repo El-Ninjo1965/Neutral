@@ -8,11 +8,13 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('User Login renders one permanently visible password field without an Eye', () => {
+test('User Login has one autofill password field and one local click Eye', () => {
   const user = read('Web-App/public/user-app.js');
   assert.equal((user.match(/id="userLoginPassword"/g) || []).length, 1);
-  assert.match(user, /id="userLoginPassword" type="text" autocomplete="current-password"/);
-  assert.doesNotMatch(user, /userLoginPasswordReveal|NeutralPasswordHoldReveal|enhancePasswordFields\(content\)/);
+  assert.equal((user.match(/id="userLoginPasswordReveal"/g) || []).length, 1);
+  assert.match(user, /name="password" type="password" autocomplete="current-password"/);
+  assert.match(user, /passwordReveal\.addEventListener\('click'/);
+  assert.doesNotMatch(user, /NeutralPasswordHoldReveal|enhancePasswordFields\(content\)|pointerdown/);
 });
 
 test('shared password helper toggles the actual input type on a dispatched click', () => {

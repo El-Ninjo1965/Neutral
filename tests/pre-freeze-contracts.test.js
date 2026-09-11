@@ -27,10 +27,11 @@ class Element {
   click() { this.listeners.click?.({}); }
 }
 
-test('User Login uses the approved visible password fallback without an Eye', () => {
+test('User Login uses one local click Eye without dynamic enhancement', () => {
   const source = read('Web-App/public/user-app.js');
-  assert.match(source, /id="userLoginPassword" type="text"/);
-  assert.doesNotMatch(source, /userLoginPasswordReveal|NeutralPasswordHoldReveal/);
+  assert.match(source, /id="userLoginPassword" name="password" type="password" autocomplete="current-password"/);
+  assert.match(source, /id="userLoginPasswordReveal"/);
+  assert.doesNotMatch(source, /NeutralPasswordHoldReveal|pointerdown/);
   assert.doesNotMatch(source, /enhancePasswordFields\(content\)/);
   assert.match(read('Web-App/public/style.css'), /\.password-visibility-toggle \{[^}]*display:flex !important;[^}]*visibility:visible !important;[^}]*opacity:1 !important;/);
 });
