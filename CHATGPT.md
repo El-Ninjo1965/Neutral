@@ -1,7 +1,7 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** TECHNISCHE REPARATUR IMPLEMENTIERT / DEPLOYMENT-VERIFIKATION AUSSTEHEND
+**Status:** TECHNISCH ABGESCHLOSSEN / OPERATOR RETEST REQUIRED
 **Core Freeze:** NICHT erklärt
 
 ## Technisches Ergebnis
@@ -13,7 +13,12 @@
 - Logout zeigt ausschließlich `Logout`.
 - Fokussierte Tests, vollständige Suite (536/536), JS-Syntax, PHP-Lint, Diff-Check und Production Package sind lokal erfolgreich.
 
-Commit, CodeQL, FTPS und read-only Production Smoke werden nach terminaler Prüfung ergänzt.
+## Deployment-Evidenz
+
+- Reparaturcommit `c625c8e4eba4fb71d845ab283ef0904d54edc70e` wurde nach `origin/main` gepusht.
+- CodeQL `34577789205` war terminal erfolgreich.
+- FTPS Deploy `34577789937` bestand vollständige Tests, Production Package, FTPS-Client, Upload und read-only Production Smoke terminal.
+- Kein Production Restore und keine destruktive Produktionsaktion wurden ausgeführt.
 
 ## Verbindliche nächste Operator-Abnahme
 

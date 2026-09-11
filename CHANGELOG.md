@@ -537,3 +537,4 @@ After the native-placeholder correction, production classification advanced back
 - Completed Profile's reversible migration definition, closing the generic migration-contract exception behind the live install 500 while retaining retry-safe failed-install state.
 - Added safe correlated module-install failure reporting with internal server-side cause logging.
 - Prevented horizontal Admin-sidebar overflow/overscroll and reduced the logout label to `Logout`; operator retest remains required and no Core Freeze was declared.
+- Commit `c625c8e` passed CodeQL `34577789205` and FTPS deployment `34577789937`, including its complete test/package gate, upload and read-only Production Smoke.

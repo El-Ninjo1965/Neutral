@@ -1,7 +1,7 @@
 # Neutral status — operator-retest repairs
 
 **Stand:** 2026-09-11
-**Code status:** aktueller Live-Root-Cause-Batch lokal mit 536/536 Tests und verifiziertem Production Package bestanden; Deployment-Verifikation ausstehend
+**Code status:** Live-Root-Cause-Batch `c625c8e` lokal mit 536/536 Tests sowie CodeQL `34577789205` und FTPS/read-only Smoke `34577789937` bestanden
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 

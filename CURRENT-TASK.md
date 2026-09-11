@@ -1,6 +1,6 @@
 # CURRENT TASK – LIVE ROOT-CAUSE REPAIR
 
-**Status:** TECHNISCH IMPLEMENTIERT / DEPLOYMENT-VERIFIKATION AUSSTEHEND
+**Status:** TECHNISCH ABGESCHLOSSEN / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 
@@ -15,9 +15,9 @@ Kein Core Freeze, kein Production Restore, keine neuen Features und keine unnöt
 - [x] Fokussierte Regressionstests ausgeführt.
 - [x] Vollständige Testsuite, JS-Syntax, PHP-Lint und `git diff --check` ausgeführt.
 - [x] Production Package und Modul-Migrations-/Lifecycleverträge geprüft.
-- [ ] Commit/Push nach `main`; erforderliche CI/CodeQL/FTPS bis terminal abwarten.
-- [ ] Read-only Production Smoke terminal prüfen.
-- [ ] `CHATGPT.md` mit finalem Commit und tatsächlichem CI-/Deploymentergebnis abschließen.
+- [x] Commit `c625c8e` nach `main` gepusht; CodeQL `34577789205` und FTPS `34577789937` terminal erfolgreich.
+- [x] Read-only Production Smoke im FTPS-Lauf terminal erfolgreich.
+- [x] `CHATGPT.md` mit Commit und tatsächlichem CI-/Deploymentergebnis abgeschlossen.
 
 ## Operator-Retest nach technischer Fertigstellung
 
