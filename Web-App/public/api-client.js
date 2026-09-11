@@ -430,6 +430,10 @@ class ApiClient {
     return this.put(`/api/admin/modules/${moduleId}/permissions`, { roleAssignments });
   }
 
+  async updateAdminModuleVisibility(moduleId, roles) {
+    return this.put(`/api/admin/modules/${moduleId}/visibility`, { roles });
+  }
+
   // Setup endpoints
   async getSetupStatus() {
     return this.get('/api/setup/status');

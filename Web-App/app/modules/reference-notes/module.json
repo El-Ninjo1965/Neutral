@@ -11,26 +11,49 @@
     {
       "key": "reference-notes.view",
       "description": "Allows a user to view reference notes.",
-      "defaultRoles": ["admin", "developer", "user"]
+      "defaultRoles": [
+        "admin",
+        "developer",
+        "user"
+      ]
     },
     {
       "key": "reference-notes.use",
       "description": "Allows a user to create and delete own reference notes.",
-      "defaultRoles": ["admin", "developer", "user"]
+      "defaultRoles": [
+        "admin",
+        "developer",
+        "user"
+      ]
     },
     {
       "key": "reference-notes.admin",
       "description": "Allows a user to administer the reference module.",
-      "defaultRoles": ["admin", "developer"]
+      "defaultRoles": [
+        "admin",
+        "developer"
+      ]
     }
   ],
   "access": {
-    "visibilityPermissions": ["reference-notes.view"],
-    "usagePermissions": ["reference-notes.use"],
-    "managementPermissions": ["reference-notes.admin"],
-    "adminPermissions": ["reference-notes.admin"]
+    "visibilityPermissions": [
+      "reference-notes.view"
+    ],
+    "usagePermissions": [
+      "reference-notes.use"
+    ],
+    "managementPermissions": [
+      "reference-notes.admin"
+    ],
+    "adminPermissions": [
+      "reference-notes.admin"
+    ]
   },
-  "capabilities": ["notes", "server-storage", "reference-contract"],
+  "capabilities": [
+    "notes",
+    "server-storage",
+    "reference-contract"
+  ],
   "dependencies": [],
   "compatibility": {
     "core": ">=1.0.0 <2.0.0",
@@ -39,7 +62,9 @@
   },
   "server": {
     "entry": "Server/php/modules/reference-notes/module.php",
-    "services": ["module.reference-notes.notes"],
+    "services": [
+      "module.reference-notes.notes"
+    ],
     "routes": [
       {
         "method": "GET",
@@ -102,5 +127,6 @@
   "uninstall": {
     "dataPolicy": "retain"
   },
-  "appId": null
+  "appId": null,
+  "category": "user"
 }

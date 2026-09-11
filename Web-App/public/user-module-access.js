@@ -39,8 +39,9 @@
   };
 
   const isNavigable = (module, currentUser) => isVisible(module, currentUser)
-    && module.presentation?.userNavigation !== false
-    && module.manifest?.presentation?.userNavigation !== false;
+    && (typeof module.clientAccess?.navigationVisible === 'boolean'
+      ? module.clientAccess.navigationVisible
+      : module.presentation?.userNavigation !== false && module.manifest?.presentation?.userNavigation !== false);
 
   const visibleModules = (modules, options = {}) => {
     const list = Array.isArray(modules) ? modules : [];

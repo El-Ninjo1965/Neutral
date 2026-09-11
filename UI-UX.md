@@ -316,3 +316,7 @@ Profile renders `Share with my organization` only when the server profile capabi
 Active system modules may intentionally have no User navigation button. Hidden presentation never means disabled capability or permission. The User Login password eye uses the same shared helper and is included in the offline shell cache so stale warm starts do not omit it.
 
 Profile and Privacy tabs are capability-gated and disappear cleanly while the optional Profile module is inactive. Login and technical account navigation remain available.
+
+## 2026-09-11 implemented repair UX
+
+User Management uses exclusive list/create/edit states on all widths. Module tables are grouped as User/System without changing permissions. Role Visibility controls only navigation presentation. The shared password helper repairs incomplete/stale wrappers, rechecks the dynamically rendered login on the next animation frame, and its own CSS forces a visible 44×44 toggle above the input; iPad normal/private remains an operator retest.

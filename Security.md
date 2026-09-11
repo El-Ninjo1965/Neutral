@@ -182,3 +182,5 @@ The shared password toggle uses inline Core-owned SVG paths, changes only input 
 Optional-module absence fails as capability absence, never as authorization bypass. Sharing remains private by default and server-authorized; Media owns safe upload policy above minimal protected-storage primitives. System-module navigation metadata does not grant activation, access, or permissions.
 
 Profile avatar data accepts only verified image data URLs, is capped at 256 KiB and square dimensions no larger than 256 px, and is protected by module authentication, permission and CSRF enforcement. Executable uploads and filesystem paths are not accepted.
+
+Role navigation visibility is presentation-only: writes require `role.write` plus CSRF, are audited, and never modify `role_permissions`. Unlimited package JSON null remains nullable through SQL resolution rather than being cast to numeric zero.

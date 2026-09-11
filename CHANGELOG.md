@@ -495,3 +495,11 @@ After the native-placeholder correction, production classification advanced back
 - Distinguished system-module manifests/status services from complete Media, Sharing, Notification, Moderation and Postbox products.
 - Moved role Visibility, mobile User list/edit, avatar and post-freeze setup decisions into their authoritative contracts; retained the source decision file as historical evidence.
 - Replaced task/readiness/status handoffs with one ordered implementation queue. No runtime feature, Field Notes, freeze or production action was performed.
+
+## 2026-09-11 — Live repair and module administration classification
+
+- Made additive Profile migration execution retry-safe after partial non-transactional DDL, preserved retained data, and verified Media's declared server entry.
+- Preserved JSON `null` as Unlimited in Package/License/User session resolution instead of casting it to zero.
+- Hardened the shared password toggle against incomplete dynamic DOM enrichment and CSS invisibility.
+- Separated User list/create/edit states and added declarative User/System module grouping plus audited role navigation visibility independent from permissions.
+- Added browser-like and contract regression coverage. Referral/Rewards and Field Notes were not implemented; operator retest remains required.

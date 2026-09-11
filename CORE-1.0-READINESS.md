@@ -29,3 +29,7 @@
 - Offene Host-/Move-/Operatorgates gemäß Status/Installationsvertrag.
 
 Keine Freeze-Erklärung. Kein Produktions-Restore als Abnahmetest.
+
+## 2026-09-11 repair checkpoint
+
+The four live-failure paths plus mobile User states and role/category presentation now have local code fixes and regression coverage. Readiness remains blocked pending operator retest. Field Notes remains the later independent freeze proof; Referral/Rewards is not a freeze gate.

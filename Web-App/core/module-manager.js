@@ -65,6 +65,9 @@
             if (!module.presentation || typeof module.presentation !== 'object') {
                 module.presentation = module.manifest?.presentation || { userNavigation: true, adminNavigation: true, system: false };
             }
+            module.category = ['user', 'system'].includes(String(module.category || module.manifest?.category || '').toLowerCase())
+                ? String(module.category || module.manifest.category).toLowerCase()
+                : 'user';
 
             if (!Array.isArray(module.permissions)) {
                 module.permissions = [];

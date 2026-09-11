@@ -907,7 +907,17 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)$#', $route, $matches) === 1 && $me
     if ($module === null) {
         JsonResponse::error('Module not found.', 404, ['moduleId' => $matches[1]]);
     }
+    $module['visibility'] = $moduleRuntime->visibilityFor($matches[1]);
     JsonResponse::success(['module' => $module]);
+}
+
+if (preg_match('#^admin/modules/([a-z0-9\-]+)/visibility$#', $route, $matches) === 1 && $method === 'PUT') {
+    require_permission_or_fail($identity, $authManager, 'role.write', true, $headers);
+    $payload = parse_json_body();
+    try { $visibility = $moduleRuntime->updateVisibility($matches[1], is_array($payload['roles'] ?? null) ? $payload['roles'] : [], actor_user_id($identity)); }
+    catch (RuntimeException $exception) { if ($exception->getMessage()==='Module not found.') JsonResponse::error('Module not found.',404); throw $exception; }
+    $auditService->log('module.visibility.update', 'module', $matches[1], actor_user_id($identity), ['roles'=>$visibility]);
+    JsonResponse::success(['visibility'=>$visibility]);
 }
 
 if (preg_match('#^admin/modules/([a-z0-9\-]+)/permissions$#', $route, $matches) === 1) {

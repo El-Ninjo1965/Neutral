@@ -63,7 +63,13 @@ class AdminModulesView {
       return;
     }
 
-    host.innerHTML = `
+    const groups = [
+      ['User Modules', this.modules.filter((module) => (module.category || 'user') === 'user')],
+      ['System Modules', this.modules.filter((module) => module.category === 'system')]
+    ];
+    host.innerHTML = groups.map(([label, modules]) => `
+      <section class="module-category" data-module-category="${label.startsWith('System') ? 'system' : 'user'}">
+      <h3>${label}</h3>
       <table class="admin-table">
         <thead>
           <tr>
@@ -75,10 +81,10 @@ class AdminModulesView {
           </tr>
         </thead>
         <tbody>
-          ${this.modules.map((module) => this.renderRow(module)).join('')}
+          ${modules.length ? modules.map((module) => this.renderRow(module)).join('') : '<tr><td colspan="5" class="empty-state">No modules in this category.</td></tr>'}
         </tbody>
-      </table>
-    `;
+      </table></section>
+    `).join('');
   }
 
   renderRow(module) {
@@ -161,6 +167,11 @@ class AdminModulesView {
     `;
   }
 
+  renderVisibilityEditor(module) {
+    const visibility = module.visibility || {};
+    return `<form id="module-visibility-form" class="admin-form"><p class="small-muted">Navigation visibility is presentation only and never grants permissions.</p><div class="permissions-checklist">${['admin','developer','user','viewer'].map((role) => `<label class="permission-checkbox"><input type="checkbox" data-module-visibility="${role}" ${visibility[role] ? 'checked' : ''}><span>${role}</span></label>`).join('')}</div><div class="form-actions"><button class="btn btn-primary" type="submit">Save visibility</button></div></form>`;
+  }
+
   formatStandaloneLink(module) {
     const standalone = module && module.standalone && typeof module.standalone === 'object'
       ? module.standalone
@@ -233,6 +244,10 @@ class AdminModulesView {
           </div>
         </div>
         <div class="card">
+          <div class="card-header"><h4 class="card-title">Visibility / Navigation</h4></div>
+          ${this.renderVisibilityEditor(module)}
+        </div>
+        <div class="card">
           <div class="card-header"><h4 class="card-title">Standalone test</h4></div>
           ${this.formatStandaloneLink(module)}
         </div>
@@ -250,6 +265,15 @@ class AdminModulesView {
         await this.savePermissions(module.id);
       });
     }
+    detailHost.querySelector('#module-visibility-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const roles = {};
+      detailHost.querySelectorAll('[data-module-visibility]').forEach((input) => { roles[input.dataset.moduleVisibility] = input.checked; });
+      const result = await this.api.updateAdminModuleVisibility(module.id, roles);
+      if (!result.ok) { AdminCommon.showAlert(`Failed to update module visibility: ${result.error || 'Unknown error'}`, 'error'); return; }
+      AdminCommon.showAlert(`Module visibility for ${module.id} updated`, 'success');
+      await this.showDetails(module.id);
+    });
   }
 
   collectRoleAssignments(moduleId) {

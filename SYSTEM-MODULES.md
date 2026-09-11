@@ -67,3 +67,7 @@ Die vorhandenen sechs Manifeste haben keine Pflichtabhängigkeit. Profile nennt 
 The remaining Core-owned `user_profiles` baseline and legacy Core media tables are a **compatibility bridge**, not the desired final ownership boundary. The next implementation rounds must remove ambiguity non-destructively rather than claim the bridge complete.
 
 `field-notes` remains the later independent freeze proof and must be implemented **without edits to existing Core files** for product-specific integration. It is not part of the present codebase.
+
+## Classification implementation
+
+User Modules: GPS, Profile, Postbox and reference modules. System Modules: Media, Moderation, Notifications and Sharing. This classification is declarative; it creates no second runtime and does not imply User visibility. Profile's migration is retry-safe and Media's packaged PHP status entry is verified locally, but both lifecycle fixes remain `OPERATOR RETEST REQUIRED`.

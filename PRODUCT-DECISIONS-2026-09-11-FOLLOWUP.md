@@ -1,9 +1,9 @@
 # NEUTRAL – Betreiberentscheidungen Follow-up 2026-09-11
 
-**Status:** VERBINDLICHER NEUER PRODUKTINPUT – NACH DEM DOKUMENTATIONS-KONSISTENZLAUF ENTSTANDEN  
+**Status:** HISTORISCHER PRODUKTINPUT – IN VERTRÄGE UND IMPLEMENTIERUNG ÜBERFÜHRT; OPERATOR-RETEST OFFEN
 **Zweck:** Neue Entscheidungen festhalten, die nach Commit `d950e894f9e99aaac5c395a8a5addad81fdc1f12` im Sprachchat getroffen wurden und daher noch nicht im vorherigen Konsistenzlauf enthalten waren.
 
-Diese Datei ist Input für die autoritativen Verträge gemäß `DOCUMENTATION.md`. Nach Überführung bleibt sie nur als datierter Herkunftsnachweis bestehen.
+Diese Datei bleibt als datierter Herkunftsnachweis bestehen. Die autoritativen Verträge und der aktuelle Reteststatus stehen in den gemäß `DOCUMENTATION.md` zuständigen Dateien.
 
 ## 1. Module Administration: Apps / User Modules / System Modules
 

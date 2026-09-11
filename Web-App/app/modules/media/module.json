@@ -91,5 +91,6 @@
   "limits": [],
   "uninstall": {
     "dataPolicy": "retain"
-  }
+  },
+  "category": "system"
 }

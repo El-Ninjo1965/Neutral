@@ -2079,7 +2079,10 @@ html[data-user-theme="dark"] .user-settings-select { background: #17263d; border
 .neutral-success-icon { width:3rem; height:3rem; margin:auto; border-radius:50%; display:grid; place-items:center; background:#16794a; color:#fff; font-size:1.5rem; font-weight:700; }
 .password-input-wrap { position:relative; display:block; width:100%; }
 .password-input-wrap > input { width:100%; padding-right:3rem !important; }
-.password-visibility-toggle { position:absolute; top:50%; right:.125rem; width:2.75rem; height:2.75rem; min-width:44px; min-height:44px; padding:.625rem; transform:translateY(-50%); border:0; border-radius:.5rem; background:transparent; color:inherit; cursor:pointer; }
+.password-visibility-toggle { position:absolute !important; display:flex !important; visibility:visible !important; opacity:1 !important; z-index:2; align-items:center; justify-content:center; top:50%; right:.125rem; width:2.75rem !important; height:2.75rem !important; min-width:44px; min-height:44px; padding:.625rem; transform:translateY(-50%); border:0; border-radius:.5rem; background:var(--surface, #fff); color:var(--text, #172033); cursor:pointer; }
 .password-visibility-toggle svg { display:block; width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .password-visibility-toggle:hover, .password-visibility-toggle:focus-visible { background:rgb(127 127 127 / .14); outline:2px solid var(--focus-ring, #2563eb); }
 .admin-users-view .create-form-container:not([style*="display:none"]):not([style*="display: none"]) { margin-top:var(--space-6, 1.5rem); }
+.module-category + .module-category { margin-top:var(--space-8, 2rem); }
+.module-category > .admin-table { width:100%; }
+.admin-users-view [hidden] { display:none !important; }

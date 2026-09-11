@@ -212,6 +212,7 @@
                     adminNavigation: manifest.presentation?.adminNavigation !== false,
                     system: manifest.presentation?.system === true
                 },
+                category: ['user', 'system'].includes(String(manifest.category || '').toLowerCase()) ? String(manifest.category).toLowerCase() : 'user',
                 source: typeof manifest.source === 'string' ? manifest.source : null,
                 entry: typeof manifest.entry === 'string' ? manifest.entry : null,
                 main: typeof manifest.main === 'string' ? manifest.main : null,
@@ -263,6 +264,7 @@
                 capabilities: [...manifest.capabilities],
                 optionalDependencies: [...manifest.optionalDependencies],
                 presentation: { ...manifest.presentation },
+                category: manifest.category,
                 access: manifest.access,
                 clientAccess: manifest.clientAccess,
                 standalone: manifest.standalone,

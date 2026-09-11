@@ -305,3 +305,7 @@ Module lifecycle and presentation are orthogonal. `presentation.userNavigation=f
 ## Optional profile boundary
 
 Profile reads and mutations travel through `/api/modules/profile/profile`; Core authentication has no Profile route. The settings shell discovers the active module before exposing profile UI. Bundled default activation runs only for an unregistered module, so persisted Admin lifecycle state always wins afterward.
+
+## 2026-09-11 repair contract
+
+Module manifests now normalize `category: user|system` with backward-compatible `user`; this is Admin grouping metadata only. Role-specific navigation visibility is persisted under `core.module.visibility`, projected separately from permissions, and consumed only by client navigation. All categories retain one registry, HTTP kernel and lifecycle. Profile migration execution is retry-safe because prior non-transactional partial DDL could leave `gender` present while its migration record was absent.

@@ -48,6 +48,10 @@ final class ModuleContract
         $database = $this->normalizeDatabase($manifest['database'] ?? null);
         $uninstall = $this->normalizeUninstall($manifest['uninstall'] ?? null);
         $presentation = is_array($manifest['presentation'] ?? null) ? $manifest['presentation'] : [];
+        $category = strtolower(trim((string) ($manifest['category'] ?? 'user')));
+        if (!in_array($category, ['user', 'system'], true)) {
+            throw new \RuntimeException('Invalid module category.');
+        }
 
         $normalized = $manifest;
         $normalized['id'] = $moduleId;
@@ -63,6 +67,7 @@ final class ModuleContract
             'adminNavigation' => ($presentation['adminNavigation'] ?? true) !== false,
             'system' => ($presentation['system'] ?? false) === true,
         ];
+        $normalized['category'] = $category;
         return $normalized;
     }
 

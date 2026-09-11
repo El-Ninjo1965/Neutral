@@ -33,3 +33,7 @@
 ## Freeze-Gates
 
 Core Freeze bleibt blockiert bis die vier Livefehler repariert und erneut live geprüft, die beiden UX-/Administrationslücken geschlossen, Profile/Media/Systemmodule korrekt eingeordnet und Field Notes später ohne fachliche Core-Änderung umgesetzt wurde. Kein Produktions-Restore wurde als Test durchgeführt.
+
+## Code repairs 2026-09-11 — operator retest required
+
+Profile partial-DDL retry, Media packaged entry verification, Unlimited JSON-null handling, User Login DOM self-healing/visibility CSS, exclusive User list/edit states, role navigation visibility and User/System grouping are implemented and locally tested. None supersedes the previous live failure until operator retest. Referral/Rewards and Field Notes remain unimplemented.

@@ -189,3 +189,7 @@ Before Core freeze, a new Field Notes module must add its route, permissions, st
 - Recorded the four operator-live failures and four lifecycle-only passes without upgrading local evidence to live evidence.
 - Marked the product-decision input historical after transfer, kept Core Freeze blocked and deferred Field Notes.
 - Documentation-only run: no runtime code change, deployment feature claim, destructive production action or restore.
+
+## 2026-09-11 — Live repair implementation (Codex)
+
+Audited the reported Profile, Media, Unlimited, Eye, User Management and Module Admin paths. Root fixes: retry-safe additive migration execution after possible partial MySQL/MariaDB DDL application; JSON-null-aware device SQL; self-healing password DOM plus fail-safe own CSS; exclusive User view states; normalized module category; namespaced audited role navigation settings separate from RBAC. Added browser-like regression coverage. No Referral/Rewards, Field Notes, destructive production action or restore.

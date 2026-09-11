@@ -301,3 +301,7 @@ A module may receive a server-authoritative entitlement projection of `available
 ## Media and location reuse
 
 Modules use the published permission/API contracts for media and the GPS module's coordinate output. They must not bypass controlled media delivery, infer organization scope client-side, or duplicate the Web-Mercator projection with swapped latitude/longitude.
+
+## Module category and role navigation
+
+`category` accepts `user` or `system` and defaults to `user`; it does not alter lifecycle, permissions, visibility, activation or dependencies. Admin groups modules by this declaration. Per-role navigation visibility is a separate persisted presentation decision for Admin, Developer, User and Viewer. It may hide/show a navigation entry but never authorizes a route. `presentation.userNavigation` remains the default until a role override is stored.

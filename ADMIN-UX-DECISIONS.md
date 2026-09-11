@@ -153,3 +153,7 @@ Activation does not imply a User navigation item. Admin may activate capability/
 ## 15. Optional Profile lifecycle
 
 Profile is a default-active invisible system module. Admin deactivation hides Profile/Privacy without deleting data; reactivation restores it. Core Login and administration remain independent.
+
+## Implemented follow-up, operator retest pending
+
+Apps remain their own Admin destination. Module Administration groups User Modules and System Modules from manifest `category` and provides role-specific Visibility/Navigation independently from the permission editor. User Management now shows list or create/edit as exclusive states and returns to the list on Save/Cancel. These are code-/test-verified, not yet operator-live accepted.

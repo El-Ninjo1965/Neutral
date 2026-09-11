@@ -621,6 +621,7 @@
     `;
 
     window.NeutralUiFeedback?.enhancePasswordFields(content);
+    (window.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => window.NeutralUiFeedback?.enhancePasswordFields(content));
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');

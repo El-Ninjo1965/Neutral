@@ -16,6 +16,7 @@ class AdminUsersView {
     this.packages = [];
     this.editingUserId = null;
     this.filters = { q: '', status: '', role: '' };
+    this.viewState = 'list';
   }
 
   async init(container) {
@@ -46,7 +47,7 @@ class AdminUsersView {
 
   render() {
     this.container.innerHTML = `
-      <div class="admin-users-view">
+      <div class="admin-users-view" data-user-view="${this.viewState}">
         <div class="section-header">
           <h2>User Management</h2>
           <button class="btn btn-primary" onclick="adminUsers.showCreateForm()">+ New User</button>
@@ -287,6 +288,11 @@ class AdminUsersView {
     formDiv.innerHTML = '';
     formDiv.appendChild(form);
     formDiv.style.display = 'block';
+    this.viewState = this.editingUserId ? 'edit' : 'create';
+    this.container.querySelector('.admin-users-view')?.setAttribute('data-user-view', this.viewState);
+    this.container.querySelector('.users-table-container')?.setAttribute('hidden', '');
+    this.container.querySelector('#users-filter-form')?.setAttribute('hidden', '');
+    this.container.querySelector('.section-header > .btn-primary')?.setAttribute('hidden', '');
     window.NeutralUiFeedback?.enhancePasswordFields(form);
   }
 
@@ -334,6 +340,11 @@ class AdminUsersView {
       formDiv.style.display = 'none';
     }
     this.editingUserId = null;
+    this.viewState = 'list';
+    this.container?.querySelector('.admin-users-view')?.setAttribute('data-user-view', 'list');
+    this.container?.querySelector('.users-table-container')?.removeAttribute('hidden');
+    this.container?.querySelector('#users-filter-form')?.removeAttribute('hidden');
+    this.container?.querySelector('.section-header > .btn-primary')?.removeAttribute('hidden');
   }
 }
 

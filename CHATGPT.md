@@ -1,19 +1,25 @@
-# Neutral handoff — documentation-consistent state
+# Neutral handoff — live repair implementation
 
-**Stand 2026-09-11:** Documentation has been reconciled with code and the operator report. Core Freeze is blocked.
+**Code state 2026-09-11:** The Profile migration execution is retry-safe, system module entries are packaged/resolvable, Unlimited package JSON null is no longer cast to zero, User Login password toggles self-heal after dynamic renders and have fail-safe visible CSS, User Management uses exclusive list/create/edit states, and Module Administration separates Apps, User Modules and System Modules while persisting role-specific navigation visibility independently from permissions.
 
-## Truth that the next agent must preserve
+## Important truth boundaries
 
-- Profile is code-side an optional invisible module with a generic GET/PUT route, but live activation fails with `Internal Server Error`; do not claim it operational.
-- Media install fails live with `Load failed`. Media, Sharing, Notifications, Moderation and Postbox manifests mostly provide contract/status scaffolding, not complete products.
-- Moderation, Notifications, Postbox and Sharing completed lifecycle operations live and were disabled afterward; this proves lifecycle only. GPS remains active.
-- Unlimited device semantics fail live (`2 of 0`, login blocked).
-- User Login Eye remains absent on the operator iPad normal/private despite code-side helper/precache.
-- Role-specific module Visibility/Navigation and mobile-separated User list/edit are missing.
-- Avatar target is not complete: the server only accepts an already-square bounded Data URL; crop/optimization/UI/defaults/cache/live proof are open.
-- Field Notes has not been built. It follows repairs/retests as the separate no-Core-change freeze proof.
-- Automatic environment-detecting setup is planned for immediately after freeze, not implemented today.
+- These repairs are locally tested and deployed only after the workflow recorded below succeeds; they are **not operator-live passed** until the listed iPad/Admin retest.
+- Media remains lifecycle/status scaffolding, not a complete upload product.
+- Profile remains optional; Media and Sharing are optional enhancements.
+- Module `category` is presentation metadata only. One runtime/registry/lifecycle serves all modules.
+- Role navigation visibility never grants API permissions.
+- Referral/Rewards and Field Notes were not implemented.
+- No production restore or destructive production action was performed.
 
-## Next order
+## Operator retest required
 
-Profile activation → Media install → Unlimited devices → User Login Eye → mobile User list/edit → role Visibility/Navigation → live lifecycle/Profile/avatar retest → Field Notes. Never use a production restore as a test.
+1. Profile activate/deactivate/reactivate and retained profile data.
+2. Media install/activate/deactivate/reactivate.
+3. Unlimited direct and License Package login with multiple installations; never `0`.
+4. User Login eye on iPad/Chrome normal and private.
+5. User list/create/edit/back on a small screen.
+6. Per-role module Visibility and Apps/User Modules/System Modules grouping.
+7. Moderation/Notifications/Postbox/Sharing lifecycle and GPS regression.
+
+Field Notes is the next separate freeze proof only after these checks pass.

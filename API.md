@@ -163,3 +163,7 @@ Module catalog payloads include normalized `presentation` (`userNavigation`, `ad
 ### Optional Profile module
 
 `GET /api/v1/modules/profile/profile` and `PUT /api/v1/modules/profile/profile` are authenticated permission-checked module routes. When Profile is inactive, the generic module kernel returns a controlled unavailable/not-found response; Core continues without a compatibility account-profile endpoint.
+
+## Module visibility endpoint
+
+`PUT /api/v1/admin/modules/{id}/visibility` requires `role.write`, Admin-session CSRF, accepts booleans for Admin/Developer/User/Viewer, persists presentation-only state and audits the change. `GET /api/v1/admin/modules/{id}` includes the resolved visibility map. This state never grants module API permissions.

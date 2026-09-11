@@ -227,7 +227,8 @@
                 access: module.access || module.manifest?.access || null,
                 clientAccess: module.clientAccess || module.manifest?.clientAccess || null,
                 standalone: module.standalone || module.manifest?.standalone || null,
-                database: module.database || module.manifest?.database || null
+                database: module.database || module.manifest?.database || null,
+                category: module.category || module.manifest?.category || 'user'
             }))];
 
             combinedCatalog.forEach((entry) => {
@@ -278,6 +279,7 @@
                         ? [...implementation.optionalDependencies]
                         : [...manifest.optionalDependencies],
                     presentation: implementation.presentation || manifest.presentation,
+                    category: implementation.category || manifest.category || 'user',
                     access: implementation.access || manifest.access || null,
                     clientAccess: manifest.clientAccess || implementation.clientAccess || null,
                     standalone: implementation.standalone || manifest.standalone || null,

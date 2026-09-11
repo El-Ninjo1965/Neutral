@@ -212,3 +212,7 @@ default home instead of leaving an empty view.
 
 - Optional Profile module route, retained schema, gender/privacy validation, and bounded avatar asset.
 - Independent generic system contracts for Media, Sharing, Notifications, Moderation, and Postbox with no mandatory cross-module dependencies.
+
+- `Phase7ModuleRuntime::visibilityFor()` and `updateVisibility()` resolve/persist role-specific navigation independently from permission authorization.
+- Module `category` is normalized across PHP/browser contracts and groups the single Admin module inventory.
+- Password enhancement now validates its actual wrapper/button DOM and self-heals an incomplete enhancement.

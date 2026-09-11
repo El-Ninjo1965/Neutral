@@ -12,6 +12,8 @@ final class Phase7ModuleRuntime
     private ModuleServerRegistry $serverRegistry;
     private ModuleMigrationRunner $migrationRunner;
     private ModuleContract $moduleContract;
+    /** @var array<string,array<string,bool>>|null */
+    private ?array $visibilityConfig = null;
 
     public function __construct(Database $database, string $projectRoot)
     {
@@ -107,6 +109,7 @@ final class Phase7ModuleRuntime
 
         return array_map(function (array $module) use ($identity): array {
             $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
+            $module['visibility'] = $this->visibilityFor((string) ($module['id'] ?? ''));
             $clientAccess = $this->resolveClientAccess($module, $identity);
 
             return [
@@ -122,6 +125,7 @@ final class Phase7ModuleRuntime
                 'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
                 'optionalDependencies' => is_array($module['optionalDependencies'] ?? null) ? $module['optionalDependencies'] : [],
                 'presentation' => is_array($module['presentation'] ?? null) ? $module['presentation'] : ['userNavigation' => true, 'adminNavigation' => true, 'system' => false],
+                'category' => (string) ($module['category'] ?? 'user'),
                 'access' => $this->sanitizeClientAccessDefinition($module),
                 'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
                 'modulePath' => $module['modulePath'] ?? null,
@@ -238,6 +242,41 @@ final class Phase7ModuleRuntime
         return $this->changeState($moduleId, 'inactive', 0, $actorUserId);
     }
 
+    /** @return array<string,bool> */
+    public function visibilityFor(string $moduleId): array
+    {
+        $module = $this->getForAdmin($moduleId);
+        if ($module === null) throw new \RuntimeException('Module not found.');
+        $default = (($module['presentation']['userNavigation'] ?? true) !== false);
+        $stored = $this->loadVisibilityConfig()[$moduleId] ?? [];
+        $result = [];
+        foreach (['admin', 'developer', 'user', 'viewer'] as $role) $result[$role] = array_key_exists($role, $stored) ? $stored[$role] : $default;
+        return $result;
+    }
+
+    /** @param array<string,mixed> $values @return array<string,bool> */
+    public function updateVisibility(string $moduleId, array $values, ?int $actorUserId = null): array
+    {
+        $this->getForAdmin($moduleId) ?? throw new \RuntimeException('Module not found.');
+        $normalized = [];
+        foreach (['admin', 'developer', 'user', 'viewer'] as $role) $normalized[$role] = ($values[$role] ?? false) === true;
+        $all = $this->loadVisibilityConfig(); $all[$moduleId] = $normalized;
+        $json = json_encode($all, JSON_THROW_ON_ERROR);
+        $statement = $this->database->connect()->prepare("INSERT INTO settings(setting_key,setting_value_json,updated_by,updated_at) VALUES('core.module.visibility',:value,:actor,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE setting_value_json=VALUES(setting_value_json),updated_by=VALUES(updated_by),updated_at=CURRENT_TIMESTAMP");
+        $statement->execute([':value'=>$json, ':actor'=>$actorUserId]);
+        $this->visibilityConfig = $all;
+        return $normalized;
+    }
+
+    /** @return array<string,array<string,bool>> */
+    private function loadVisibilityConfig(): array
+    {
+        if ($this->visibilityConfig !== null) return $this->visibilityConfig;
+        $statement = $this->database->connect()->prepare("SELECT setting_value_json FROM settings WHERE setting_key='core.module.visibility' LIMIT 1");
+        $statement->execute(); $decoded = json_decode((string)($statement->fetchColumn() ?: '{}'), true);
+        return $this->visibilityConfig = is_array($decoded) ? $decoded : [];
+    }
+
     /**
      * @return array<string,mixed>
      */
@@ -345,6 +384,13 @@ final class Phase7ModuleRuntime
                 throw new \RuntimeException('Module not registered.');
             }
             $this->removeModuleSettings($pdo, $normalizedId, $actorUserId);
+            $visibility = $this->loadVisibilityConfig();
+            if (array_key_exists($normalizedId, $visibility)) {
+                unset($visibility[$normalizedId]);
+                $visibilityStatement = $pdo->prepare("UPDATE settings SET setting_value_json=:value,updated_by=:actor,updated_at=CURRENT_TIMESTAMP WHERE setting_key='core.module.visibility'");
+                $visibilityStatement->execute([':value'=>json_encode($visibility, JSON_THROW_ON_ERROR), ':actor'=>$actorUserId]);
+                $this->visibilityConfig = $visibility;
+            }
             $this->deleteModulePermissions($pdo, $normalizedId);
 
             if ($dataPolicy === 'destroy') {
@@ -543,6 +589,7 @@ final class Phase7ModuleRuntime
             'dependencies' => is_array($manifest['dependencies'] ?? null) ? array_values(array_filter(array_map('strval', $manifest['dependencies']))) : [],
             'optionalDependencies' => $manifest['optionalDependencies'],
             'presentation' => $manifest['presentation'],
+            'category' => (string) $manifest['category'],
             'compatibility' => $manifest['compatibility'],
             'server' => $manifest['server'],
             'limits' => $manifest['limits'],
@@ -835,6 +882,9 @@ final class Phase7ModuleRuntime
             'permissionDefinitions' => is_array($module['permissionDefinitions'] ?? null) ? $module['permissionDefinitions'] : [],
             'capabilities' => is_array($module['capabilities'] ?? null) ? $module['capabilities'] : [],
             'dependencies' => is_array($module['dependencies'] ?? null) ? $module['dependencies'] : [],
+            'optionalDependencies' => is_array($module['optionalDependencies'] ?? null) ? $module['optionalDependencies'] : [],
+            'presentation' => is_array($module['presentation'] ?? null) ? $module['presentation'] : ['userNavigation' => true, 'adminNavigation' => true, 'system' => false],
+            'category' => (string) ($module['category'] ?? 'user'),
             'compatibility' => is_array($module['compatibility'] ?? null) ? $module['compatibility'] : [],
             'server' => is_array($module['server'] ?? null) ? $module['server'] : [],
             'limits' => is_array($module['limits'] ?? null) ? $module['limits'] : [],
@@ -1227,6 +1277,10 @@ final class Phase7ModuleRuntime
             || in_array(strtolower((string) ($module['status'] ?? '')), ['active', 'enabled'], true)
             || strtoupper((string) ($module['lifecycleState'] ?? '')) === 'ACTIVE';
         $permissions = is_array($identity['permissions'] ?? null) ? $identity['permissions'] : [];
+        $roles = $mode === 'anonymous' ? ['viewer'] : (is_array($identity['roles'] ?? null) ? array_map('strtolower', array_map('strval', $identity['roles'])) : []);
+        $defaultNavigation = (($module['presentation']['userNavigation'] ?? true) !== false);
+        $visibility = is_array($module['visibility'] ?? null) ? $module['visibility'] : array_fill_keys(['admin','developer','user','viewer'], $defaultNavigation);
+        $navigationVisible = count(array_filter($roles, static fn (string $role): bool => ($visibility[$role] ?? false) === true)) > 0;
         $hasPermission = static fn (string $permission): bool => in_array($permission, $permissions, true)
             || ($mode === 'authenticated' && in_array('admin.write', $permissions, true));
         $canView = $active
@@ -1235,11 +1289,13 @@ final class Phase7ModuleRuntime
         $canUse = $canView
             && ($usagePermissions === [] || count(array_filter($usagePermissions, $hasPermission)) > 0);
 
-        return [
+        $result = [
             'mode' => $mode,
             'canView' => $canView,
             'canUse' => $canUse,
         ];
+        if (is_array($module['visibility'] ?? null)) $result['navigationVisible'] = $navigationVisible;
+        return $result;
     }
 
     /**

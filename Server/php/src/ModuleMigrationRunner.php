@@ -89,7 +89,7 @@ final class ModuleMigrationRunner
                 static fn (string $key): ?string => $existing[$key] ?? null,
                 static function (array $migration) use ($pdo): void {
                     foreach ($migration['up'] as $statement) {
-                        $pdo->exec($statement);
+                        self::executeAdditiveStatement($pdo, $statement);
                     }
                 },
                 static function (array $migration, string $checksum) use ($pdo, $moduleId): void {
@@ -117,6 +117,18 @@ final class ModuleMigrationRunner
             throw $exception;
         } finally {
             $this->releaseLock($pdo, $lockName);
+        }
+    }
+
+    /** Retry-safe for MySQL/MariaDB DDL that committed before a migration record could be written. */
+    private static function executeAdditiveStatement(PDO $pdo, string $statement): void
+    {
+        try {
+            $pdo->exec($statement);
+        } catch (\PDOException $exception) {
+            $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+            $isAddColumn = preg_match('/^\s*ALTER\s+TABLE\s+`?[a-z][a-z0-9_]*`?\s+ADD\s+COLUMN\s+`?[a-z][a-z0-9_]*`?/i', $statement) === 1;
+            if (!$isAddColumn || $driverCode !== 1060) throw $exception;
         }
     }
 

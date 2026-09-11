@@ -30,12 +30,16 @@ const NeutralUiFeedback = (() => {
     closeButton.focus();
   };
   const enhancePasswordField = (input) => {
-    if (!input || input.dataset.passwordToggleReady === 'true') return;
-    input.dataset.passwordToggleReady = 'true';
-    const wrapper = document.createElement('span'); wrapper.className = 'password-input-wrap';
-    input.parentNode.insertBefore(wrapper, input); wrapper.appendChild(input);
+    if (!input || !input.parentNode) return null;
+    const existing = input.closest?.('.password-input-wrap');
+    const existingButton = existing?.querySelector?.('.password-visibility-toggle');
+    if (input.dataset.passwordToggleReady === 'true' && existingButton) return existingButton;
+    input.dataset.passwordToggleReady = 'false';
+    const wrapper = existing || document.createElement('span'); wrapper.className = 'password-input-wrap';
+    if (!existing) { input.parentNode.insertBefore(wrapper, input); wrapper.appendChild(input); }
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'password-visibility-toggle';
+    button.dataset.neutralPasswordToggle = 'true';
     button.setAttribute('aria-label', 'Show password'); button.setAttribute('aria-pressed', 'false');
     const eyeOpen = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
     const eyeClosed = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3 21 21M10.6 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16.6 16.6 0 0 1-2.3 3M6.2 6.2C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.4 0 2.7-.3 3.8-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"/></svg>';
@@ -47,10 +51,12 @@ const NeutralUiFeedback = (() => {
       button.innerHTML = visible ? eyeClosed : eyeOpen;
     });
     wrapper.appendChild(button);
+    input.dataset.passwordToggleReady = 'true';
+    return button;
   };
   const enhancePasswordFields = (root = document) => {
     if (!root || typeof root.querySelectorAll !== 'function') return;
-    root.querySelectorAll('input[type="password"]:not([data-password-toggle-ready])').forEach(enhancePasswordField);
+    root.querySelectorAll('input[type="password"], input[data-password-toggle-ready="true"]').forEach(enhancePasswordField);
   };
   const start = () => {
     enhancePasswordFields(document);
