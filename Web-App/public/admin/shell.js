@@ -22,8 +22,8 @@ class AdminShell {
 
   static render({ groups = [], userLabel = 'Administrator' } = {}) {
     const navigation = groups.map((group) => `
-      <section class="admin-cms-nav-group" aria-labelledby="admin-group-${AdminShell.escapeHtml(group.id)}">
-        <h2 id="admin-group-${AdminShell.escapeHtml(group.id)}">${AdminShell.escapeHtml(group.label)}</h2>
+      <section class="admin-cms-nav-group" ${group.label ? `aria-labelledby="admin-group-${AdminShell.escapeHtml(group.id)}"` : ''}>
+        ${group.label ? `<h2 id="admin-group-${AdminShell.escapeHtml(group.id)}">${AdminShell.escapeHtml(group.label)}</h2>` : ''}
         <ul>${group.items.map((item) => {
           const active = item.id === 'dashboard';
           return `<li><button type="button" class="admin-cms-nav-button${active ? ' active' : ''}" data-admin-view="${AdminShell.escapeHtml(item.id)}"${active ? ' aria-current="page"' : ''}>${AdminShell.escapeHtml(item.label)}</button></li>`;
@@ -34,16 +34,16 @@ class AdminShell {
     return `
       <div class="admin-cms-layout">
         <aside id="admin-cms-sidebar" class="admin-cms-sidebar" aria-label="Administration">
-          <div class="admin-cms-brand"><span aria-hidden="true">N</span><div><strong>Neutral</strong><small>Administration</small></div></div>
+          <div class="admin-cms-brand"><span aria-hidden="true">N</span><div><strong>Neutral Administration</strong><small>Core 1.0</small></div></div>
+          <button type="button" class="admin-cms-nav-button admin-sidebar-theme" data-admin-theme aria-label="Switch to dark mode">Dark theme</button>
           <nav aria-label="Administration">${navigation}</nav>
+          <button type="button" class="admin-cms-nav-button admin-sidebar-logout" data-admin-logout>Logout · ${AdminShell.escapeHtml(userLabel)}</button>
         </aside>
         <button type="button" class="admin-cms-backdrop" data-admin-close aria-label="Close administration menu" hidden></button>
         <section class="admin-cms-content">
-          <header class="admin-cms-header">
+          <div class="admin-mobile-toolbar">
             <button id="admin-menu-toggle" class="admin-menu-toggle" type="button" aria-controls="admin-cms-sidebar" aria-expanded="false">Menu</button>
-            <div class="admin-cms-heading"><span id="admin-breadcrumb">Overview</span><h1 id="admin-page-title" tabindex="-1">Dashboard</h1></div>
-            <div class="admin-cms-tools"><span class="admin-user-info">${AdminShell.escapeHtml(userLabel)}</span><button type="button" class="btn btn-sm btn-secondary" data-admin-theme aria-label="Switch to dark mode">Dark</button><button type="button" class="btn btn-sm btn-secondary" data-admin-logout>Logout</button></div>
-          </header>
+          </div>
           <div id="admin-view-status" class="sr-only" role="status" aria-live="polite"></div>
           <main class="admin-main" id="admin-main"></main>
         </section>
@@ -87,7 +87,7 @@ class AdminShell {
     document.body.setAttribute('data-theme', nextTheme);
     const button = this.container.querySelector('[data-admin-theme]');
     if (button) {
-      button.textContent = nextTheme === 'dark' ? 'Light' : 'Dark';
+      button.textContent = nextTheme === 'dark' ? 'Light theme' : 'Dark theme';
       button.setAttribute('aria-label', nextTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
     }
     try { window.localStorage.setItem('neutral-admin-theme', nextTheme); } catch { /* Storage can be unavailable. */ }
@@ -131,14 +131,16 @@ class AdminShell {
   }
 
   setTitle(title) {
-    const titleElement = this.container.querySelector('#admin-page-title');
     const statusElement = this.container.querySelector('#admin-view-status');
-    if (titleElement) titleElement.textContent = title;
     if (statusElement) statusElement.textContent = `${title} loaded`;
   }
 
   focusTitle() {
-    this.container.querySelector('#admin-page-title')?.focus();
+    const main = this.container.querySelector('#admin-main');
+    if (main) main.scrollTop = 0;
+    window.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
+    const title = main?.querySelector('h1, h2');
+    if (title) { title.setAttribute('tabindex', '-1'); title.focus({ preventScroll: true }); }
   }
 
   destroy() {

@@ -17,6 +17,7 @@ class AdminUsersView {
     this.editingUserId = null;
     this.filters = { q: '', status: '', role: '' };
     this.viewState = 'list';
+    this.sort = { key: 'id', direction: 'asc' };
   }
 
   async init(container) {
@@ -103,52 +104,59 @@ class AdminUsersView {
 
   renderTable() {
     const tableDiv = document.getElementById('users-table');
-    if (!tableDiv) {
-      return;
-    }
-
+    if (!tableDiv) return;
     if (this.users.length === 0) {
       tableDiv.innerHTML = '<p class="empty-state">No matching users found.</p>';
       return;
     }
-
+    const valueFor = (user, key) => {
+      if (key === 'user') return `${String(user.id || '').padStart(12, '0')} ${user.username || ''}`;
+      if (key === 'roles') return (user.roles || []).join(',');
+      if (key === 'devices') return Number(user.usedDevices || 0);
+      if (key === 'package') return `${user.packageName || ''} ${user.licenseId || ''}`;
+      return user[key] || '';
+    };
+    const direction = this.sort.direction === 'desc' ? -1 : 1;
+    const users = this.users.map((user, index) => ({ user, index })).sort((a, b) => {
+      const left = valueFor(a.user, this.sort.key);
+      const right = valueFor(b.user, this.sort.key);
+      const compared = typeof left === 'number' && typeof right === 'number'
+        ? left - right
+        : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
+      return compared === 0 ? a.index - b.index : compared * direction;
+    }).map(({ user }) => user);
+    const heading = (label, key) => `<button type="button" class="table-sort" data-user-sort="${key}" aria-label="Sort by ${label}">${label}${this.sort.key === key ? (this.sort.direction === 'asc' ? ' ↑' : ' ↓') : ''}</button>`;
+    const sourceLabel = (user) => {
+      if (user.deviceLimitSource === 'user_override') return 'User override';
+      if (user.deviceLimitSource === 'license_default') return 'License default';
+      if (user.deviceLimitSource === 'package_default') return `Package ${user.packageName || 'default'}`;
+      return 'System default';
+    };
     tableDiv.innerHTML = `
       <table class="admin-table">
-        <thead>
+        <thead><tr>
+          <th>${heading('User / ID', 'user')}</th><th>${heading('Role', 'roles')}</th><th>${heading('Status', 'status')}</th>
+          <th>${heading('Created', 'createdAt')}</th><th>${heading('Last Activity', 'lastActivityAt')}</th><th>${heading('Devices', 'devices')}</th>
+          <th>${heading('License / Package', 'package')}</th><th>${heading('Organization', 'organizationName')}</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${users.map((user) => `
           <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Roles</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Last Activity</th>
-            <th>Devices</th>
-            <th>License / Package</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${this.users.map((user) => `
-            <tr>
-              <td>${escapeHtmlUsers(user.id)}</td>
-              <td><strong>${escapeHtmlUsers(user.username)}</strong></td>
-              <td>${escapeHtmlUsers(user.email || '—')}</td>
-              <td>${Array.isArray(user.roles) && user.roles.length ? user.roles.map((r) => `<span class="chip">${escapeHtmlUsers(r)}</span>`).join(' ') : '—'}</td>
-              <td><span class="badge badge-${escapeHtmlUsers(user.status || 'active')}">${escapeHtmlUsers(user.status || 'active')}</span></td>
-              <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
-              <td>${user.lastActivityAt ? new Date(user.lastActivityAt.replace(' ', 'T') + 'Z').toLocaleString() : 'Inactive'}</td>
-              <td><button type="button" class="btn btn-sm btn-secondary" onclick="adminRouter.showView('sessions')">${Number(user.usedDevices || 0)} / ${user.allowedDevices == null ? 'Unlimited' : Number(user.allowedDevices)}</button></td>
-              <td>${escapeHtmlUsers(user.packageName||'Unassigned')}<br><small>${user.packageSource === 'license' ? 'From license / organization' : (user.packageSource === 'direct' ? 'Direct package' : 'Unassigned')} · ${escapeHtmlUsers(user.deviceLimitSource||'system_default')}</small></td>
-              <td class="action-buttons">
-                <button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+            <td><strong>${escapeHtmlUsers(user.username)}</strong><br><small>#${escapeHtmlUsers(user.id)}</small></td>
+            <td>${Array.isArray(user.roles) && user.roles.length ? user.roles.map((role) => `<span class="chip">${escapeHtmlUsers(role)}</span>`).join(' ') : '—'}</td>
+            <td><span class="badge badge-${escapeHtmlUsers(user.status || 'active')}">${escapeHtmlUsers(user.status || 'active')}</span></td>
+            <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
+            <td>${user.lastActivityAt ? new Date(user.lastActivityAt.replace(' ', 'T') + 'Z').toLocaleString() : 'Inactive'}</td>
+            <td><button type="button" class="btn btn-sm btn-secondary" onclick="adminRouter.showView('sessions')">${Number(user.usedDevices || 0)} / ${user.allowedDevices == null ? 'Unlimited' : Number(user.allowedDevices)}</button><br><small>${escapeHtmlUsers(sourceLabel(user))}</small></td>
+            <td>${user.licenseId ? `License #${escapeHtmlUsers(user.licenseId)}<br>` : ''}${escapeHtmlUsers(user.packageName || 'Unassigned')}<br><small>${user.packageSource === 'direct' ? 'Direct package' : (user.packageSource === 'license' ? 'From license' : 'System policy')}</small></td>
+            <td>${escapeHtmlUsers(user.organizationName || '—')}</td>
+            <td class="action-buttons"><button class="btn btn-sm btn-info" onclick="adminUsers.showEditForm('${escapeHtmlUsers(user.id)}')">Edit</button><button class="btn btn-sm btn-danger" onclick="adminUsers.deleteUser('${escapeHtmlUsers(user.id)}')">Delete</button></td>
+          </tr>`).join('')}</tbody>
+      </table>`;
+    tableDiv.querySelectorAll('[data-user-sort]').forEach((button) => button.addEventListener('click', () => {
+      const key = button.dataset.userSort;
+      this.sort = { key, direction: this.sort.key === key && this.sort.direction === 'asc' ? 'desc' : 'asc' };
+      this.renderTable();
+    }));
   }
 
   showCreateForm() {
@@ -341,6 +349,7 @@ class AdminUsersView {
     }
     this.editingUserId = null;
     this.viewState = 'list';
+    this.sort = { key: 'id', direction: 'asc' };
     this.container?.querySelector('.admin-users-view')?.setAttribute('data-user-view', 'list');
     this.container?.querySelector('.users-table-container')?.removeAttribute('hidden');
     this.container?.querySelector('#users-filter-form')?.removeAttribute('hidden');

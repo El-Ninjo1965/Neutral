@@ -623,7 +623,10 @@
       </section>
     `;
 
-    window.NeutralUiFeedback?.enhancePasswordFields(content);
+    window.NeutralUiFeedback?.bindPasswordToggle(
+      document.getElementById('userLoginPassword'),
+      content.querySelector('[data-neutral-password-toggle="true"]')
+    );
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
@@ -721,7 +724,7 @@
             <h1>Settings</h1>
           </div>
         </div>
-        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','App Areas'],['navigation','Navigation'],...(currentUser && profileAvailable ? [['privacy','Privacy & Sharing'],['profile','Profile']] : [])].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
+        <nav class="user-settings-subnav" aria-label="Settings sections">${[['areas','Apps'],['navigation','Navigation'],...(currentUser && profileAvailable ? [['privacy','Privacy & Sharing'],['profile','Profile']] : [])].map(([id,label]) => `<button type="button" class="ui-button ui-button--navigation ${section === id ? 'active' : ''}" data-settings-section="${id}" ${section === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}</nav>
         <div class="user-content-grid user-settings-grid"><div class="user-settings-card" ${section === 'areas' ? '' : 'hidden'}>
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
@@ -801,7 +804,14 @@
       if (input) input.value = '';
     }));
     document.getElementById('resetAllNavigationLabels')?.addEventListener('click', () => {
-      document.querySelectorAll('[data-navigation-label]').forEach((input) => { input.value = ''; });
+      const restored = saveUserPreferences({ ...preferences, navigation: { ...preferences.navigation, labels: {} } });
+      if (!restored.persisted) {
+        const status = document.getElementById('userSettingsStatus');
+        if (status) { status.textContent = 'Default names could not be restored because local storage is unavailable.'; status.className = 'user-settings-status error'; }
+        return;
+      }
+      window.NeutralUiFeedback?.showSuccess('Default navigation names restored.');
+      renderApp();
     });
     if (saveButton) {
       saveButton.addEventListener('click', async () => {
@@ -853,7 +863,7 @@
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
           }
-          if (nextPreferences.persisted) return;
+          if (nextPreferences.persisted) { renderApp(); return; }
         }
 
       });

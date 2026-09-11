@@ -193,7 +193,7 @@ function admin_user_payload(array $user): array
         'updatedAt' => $user['updatedAt'],
         'lastActivityAt' => $user['lastActivityAt'] ?? '',
         'usedDevices' => $user['usedDevices'] ?? 0,
-        'allowedDevices' => $user['allowedDevices'] ?? 5,
+        'allowedDevices' => array_key_exists('allowedDevices', $user) ? $user['allowedDevices'] : 1,
         'licenseId' => $user['licenseId'] ?? '',
         'directPackageId' => $user['directPackageId'] ?? '',
         'effectivePackageId' => $user['effectivePackageId'] ?? '',
@@ -1236,6 +1236,7 @@ if ($route === 'admin/database' && $method === 'GET') {
         $ok = false;
         $message = $exception->getMessage();
     }
+    $savedSettings = $settingsService->getAll();
     JsonResponse::success([
         'database' => [
             'ok' => $ok,
@@ -1246,8 +1247,22 @@ if ($route === 'admin/database' && $method === 'GET') {
             'port' => $database['port'],
             'name' => $database['name'],
             'user' => $database['user'],
+            'lastTest' => $savedSettings['settings']['lastDatabaseTest'] ?? null,
         ],
     ]);
+}
+
+if ($route === 'admin/database/test' && $method === 'POST') {
+    require_admin_session_permission_or_fail($identity, $authManager, 'settings.write', $headers);
+    try { $ok = $runtime->database()->ping(); } catch (Throwable $exception) { $ok = false; }
+    $test = ['testedAt' => gmdate(DATE_ATOM), 'status' => $ok ? 'successful' : 'failed'];
+    $current = $settingsService->getAll();
+    $options = is_array($current['settings'] ?? null) ? $current['settings'] : [];
+    $options['lastDatabaseTest'] = $test;
+    $settingsService->update(['settings' => $options], actor_user_id($identity));
+    $auditService->log('database.connection.test', 'database', null, actor_user_id($identity), ['status' => $test['status']]);
+    if (!$ok) JsonResponse::error('Database connection test failed.', 503, ['lastTest' => $test]);
+    JsonResponse::success(['databaseTest' => $test]);
 }
 
 if ($route === 'database/status' && $method === 'GET') {
@@ -1339,8 +1354,9 @@ if ($route === 'admin/connections' && $method === 'GET') {
 
 if ($route === 'admin/backups/path/test' && $method === 'POST') {
     require_admin_session_permission_or_fail($identity,$authManager,'backups.manage',$headers);
-    try{$path=(string)(parse_json_body()['path']??'');$result=DatabaseBackupService::testDirectory($path,$runtime->projectRoot(),(string)($_SERVER['DOCUMENT_ROOT']??''));JsonResponse::success(['pathTest'=>$result]);}
-    catch(RuntimeException $exception){JsonResponse::error('Backup storage path must be an absolute safe server path.',422);}
+    $path=(string)(parse_json_body()['path']??'');
+    try{$result=DatabaseBackupService::testDirectory($path,$runtime->projectRoot(),(string)($_SERVER['DOCUMENT_ROOT']??''));$test=['testedAt'=>gmdate(DATE_ATOM),'status'=>(string)$result['status']];$current=$settingsService->getAll();$options=is_array($current['settings']??null)?$current['settings']:[];$options['lastBackupPathTest']=$test;$settingsService->update(['settings'=>$options],actor_user_id($identity));$auditService->log('backup.storage.test','backup-storage',null,actor_user_id($identity),['status'=>$test['status']]);JsonResponse::success(['pathTest'=>array_merge($result,$test)]);}
+    catch(RuntimeException $exception){$test=['testedAt'=>gmdate(DATE_ATOM),'status'=>'failed'];$current=$settingsService->getAll();$options=is_array($current['settings']??null)?$current['settings']:[];$options['lastBackupPathTest']=$test;$settingsService->update(['settings'=>$options],actor_user_id($identity));$auditService->log('backup.storage.test','backup-storage',null,actor_user_id($identity),['status'=>'failed']);JsonResponse::error('Backup storage path must be an absolute safe server path.',422,['lastTest'=>$test]);}
 }
 
 if ($route === 'admin/backups/path' && $method === 'POST') {
@@ -1407,6 +1423,8 @@ if ($route === 'admin/backups/readiness' && $method === 'GET') {
     if($configuredPath===null){$backupDir=$runtime->projectRoot().'/Server/runtime/backups';$parent=dirname($backupDir);$checks['storageReady']=(is_dir($backupDir)&&is_writable($backupDir))||(!is_dir($backupDir)&&is_dir($parent)&&is_writable($parent));$checks['storageStatus']=$checks['storageReady']?'protected_default':'not_writable';}
     else{try{$pathTest=DatabaseBackupService::testDirectory($configuredPath,$runtime->projectRoot(),(string)($_SERVER['DOCUMENT_ROOT']??''));$checks['storageReady']=$pathTest['status']==='ready';$checks['storageStatus']=$pathTest['status'];}catch(Throwable $exception){$checks['storageStatus']='invalid';}}
     $checks['storagePath']=$configuredPath??'';
+    $savedSettings=$settingsService->getAll();
+    $checks['lastPathTest']=$savedSettings['settings']['lastBackupPathTest']??null;
     JsonResponse::success(['readiness'=>$checks]);
 }
 

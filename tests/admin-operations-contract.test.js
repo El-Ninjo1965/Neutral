@@ -45,7 +45,7 @@ test('admin operations UX exposes catalog filters, device sessions, backup delet
   const audit = read('Web-App/public/admin/audit-view.js');
   assert.match(admin, /All areas/);
   assert.match(admin, /All sources/);
-  assert.match(admin, /Current session/);
+  assert.match(admin, /session\.current \? ' · Current'/);
   assert.match(admin, /data-backup-delete/);
   assert.match(audit, /Delete entries older than/);
   assert.match(audit, /<details>/);

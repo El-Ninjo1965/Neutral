@@ -15,8 +15,28 @@ test('shared password helper renders recognizable open and crossed eye SVGs and 
   assert.match(helper, /eyeOpen[\s\S]*<svg/);
   assert.match(helper, /eyeClosed[\s\S]*M3 3 21 21/);
   assert.doesNotMatch(helper, />◉</);
-  assert.match(user, /userLoginPassword[\s\S]*NeutralUiFeedback\?\.enhancePasswordFields\(content\)/);
+  assert.match(user, /bindPasswordToggle\([\s\S]*userLoginPassword/);
   assert.match(css, /password-visibility-toggle[^}]*min-width:44px[^}]*min-height:44px/);
+});
+
+test('shared password helper toggles the actual input type on a dispatched click', () => {
+  const helper = require('../Web-App/public/ui-feedback.js');
+  const listeners = {};
+  const input = { type: 'password', dataset: {}, focus() { this.focused = true; } };
+  const button = {
+    dataset: {}, attributes: {}, classList: { add() {} }, innerHTML: '',
+    addEventListener(type, listener) { listeners[type] = listener; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    dispatchEvent(event) { listeners[event.type]?.(event); }
+  };
+  helper.bindPasswordToggle(input, button);
+  button.dispatchEvent({ type: 'click' });
+  assert.equal(input.type, 'text');
+  assert.equal(button.attributes['aria-pressed'], 'true');
+  assert.equal(input.focused, true);
+  button.dispatchEvent({ type: 'click' });
+  assert.equal(input.type, 'password');
+  assert.equal(button.attributes['aria-pressed'], 'false');
 });
 
 test('direct package survives license precedence and becomes fallback after license removal', () => {

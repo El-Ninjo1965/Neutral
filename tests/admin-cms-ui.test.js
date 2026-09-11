@@ -53,7 +53,7 @@ test('admin navigation groups every supported management destination exactly onc
   ]);
   const ids = AdminNavigation.flatten().map((item) => item.id);
   assert.deepEqual(ids, [
-    'dashboard', 'modules', 'settings', 'theme', 'users', 'packages', 'licenses', 'sessions',
+    'dashboard', 'app-modules', 'system-modules', 'settings', 'theme', 'users', 'licenses', 'packages', 'sessions',
     'roles', 'permissions', 'connections', 'server', 'database', 'backups', 'updates',
     'diagnostics', 'audit'
   ]);
@@ -70,7 +70,7 @@ test('admin shell renders a semantic sidebar, drawer controls and content target
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /data-admin-view="backups"/);
   assert.match(html, /id="admin-main"/);
-  assert.match(html, />Developer</);
+  assert.match(html, />Logout · Developer</);
 });
 
 test('admin router delegates layout and navigation to AdminShell', () => {
@@ -273,7 +273,7 @@ test('admin CMS CSS provides desktop sidebar and iPad drawer behavior', () => {
 test('every navigation destination has a router view', () => {
   const source = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/index.js'), 'utf8');
   for (const id of require('../Web-App/public/admin/navigation.js').flatten().map((item) => item.id)) {
-    assert.match(source, new RegExp(`\\b${id}:`), `missing router view: ${id}`);
+    assert.match(source, new RegExp(`(?:\\b${id}:|['\"]${id}['\"]\\s*:)`), `missing router view: ${id}`);
   }
 });
 

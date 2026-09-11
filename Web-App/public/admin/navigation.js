@@ -1,16 +1,17 @@
 'use strict';
 
 const groups = [
-  { id: 'overview', label: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard' }] },
+  { id: 'overview', label: '', items: [{ id: 'dashboard', label: 'Dashboard' }] },
   { id: 'platform', label: 'Platform', items: [
-    { id: 'modules', label: 'Apps & Modules' },
+    { id: 'app-modules', label: 'App Modules' },
+    { id: 'system-modules', label: 'System Modules' },
     { id: 'settings', label: 'Settings' },
     { id: 'theme', label: 'Appearance' }
   ] },
   { id: 'access', label: 'Access', items: [
     { id: 'users', label: 'Users' },
-    { id: 'packages', label: 'Packages / Entitlements' },
     { id: 'licenses', label: 'Licenses / Organizations' },
+    { id: 'packages', label: 'Packages / Entitlements' },
     { id: 'sessions', label: 'Sessions' },
     { id: 'roles', label: 'Roles & Permissions' },
     { id: 'permissions', label: 'Permission Catalog' }

@@ -8,8 +8,9 @@ const escapeHtmlModules = (value) => String(value ?? '')
   .replace(/'/g, '&#039;');
 
 class AdminModulesView {
-  constructor(apiClient) {
+  constructor(apiClient, category = null) {
     this.api = apiClient;
+    this.category = category;
     this.modules = [];
     this.activeModuleId = null;
   }
@@ -28,7 +29,7 @@ class AdminModulesView {
       AdminCommon.showAlert(`Failed to load modules: ${result.error || 'Unknown error'}`, 'error');
       return;
     }
-    this.modules = modules;
+    this.modules = this.category ? modules.filter((module) => (module.category || 'user') === this.category) : modules;
   }
 
   getModule(moduleId) {
@@ -39,7 +40,7 @@ class AdminModulesView {
     this.container.innerHTML = `
       <div class="admin-modules-view">
         <div class="section-header">
-          <h2>Module Administration</h2>
+          <h2>${this.category === 'system' ? 'System Modules' : (this.category === 'user' ? 'App Modules' : 'Module Administration')}</h2>
           <button class="btn btn-secondary" onclick="adminModules.reload()">Reload</button>
         </div>
         <div id="modules-table"></div>
@@ -63,10 +64,9 @@ class AdminModulesView {
       return;
     }
 
-    const groups = [
-      ['User Modules', this.modules.filter((module) => (module.category || 'user') === 'user')],
-      ['System Modules', this.modules.filter((module) => module.category === 'system')]
-    ];
+    const groups = this.category
+      ? [[this.category === 'system' ? 'System Modules' : 'App Modules', this.modules]]
+      : [['App Modules', this.modules.filter((module) => (module.category || 'user') === 'user')], ['System Modules', this.modules.filter((module) => module.category === 'system')]];
     host.innerHTML = groups.map(([label, modules]) => `
       <section class="module-category" data-module-category="${label.startsWith('System') ? 'system' : 'user'}">
       <h3>${label}</h3>

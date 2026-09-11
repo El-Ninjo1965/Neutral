@@ -72,7 +72,7 @@ class AdminSessionsView {
     container.innerHTML = `
       <div class="admin-sessions-view">
         <div class="section-header">
-          <h2>Device Sessions</h2><p class="form-help">The persistent Installation / Device ID is the unique identity used for device limits. Device class, operating system and browser are support information only and may be Unknown.</p>
+          <h2>Sessions</h2><p class="form-help">Technical installation identifiers remain available to protected support tooling but are intentionally omitted from this responsive overview.</p>
         </div>
         ${sessions.length
           ? `
@@ -81,14 +81,9 @@ class AdminSessionsView {
                 <tr>
                   <th>User</th>
                   <th>Roles</th>
-                  <th>Installation / Device ID</th>
-                  <th>Device class</th>
-                  <th>Operating system</th>
-                  <th>Browser</th>
                   <th>Status</th>
                   <th>Registered</th>
                   <th>Last activity</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -96,11 +91,9 @@ class AdminSessionsView {
                   <tr>
                     <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}${session.userId ? ` <span class="small-muted">· #${session.userId}</span>` : ''}</td>
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
-                    <td><code>${session.deviceId || 'Unknown'}</code>${session.current ? ' <strong class="status-badge">Current session</strong>' : ''}</td>
-                    <td>${session.deviceClass || 'Unknown'}</td><td>${session.operatingSystem || 'Unknown'}</td><td>${session.browser || 'Browser'}</td><td>${session.status || 'active'}</td>
+                    <td>${session.status || 'active'}${session.current ? ' · Current' : ''}</td>
                     <td><time datetime="${session.issuedAt || ''}">${formatLocalAdminDate(session.issuedAt)}</time></td>
                     <td><time datetime="${session.lastSeenAt || ''}">${formatLocalAdminDate(session.lastSeenAt)}</time></td>
-                    <td>${session.current ? '<span class="small-muted">Use Logout</span>' : `<button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">Revoke device</button>`}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -215,31 +208,14 @@ class AdminDashboardView {
             </div>
           `).join('')}
         </div>
-        <div class="summary-grid">
-          <div class="card-grid">
+        <div class="summary-grid"><div class="card-grid">
             <div class="card panel-box">
               <div class="card-header"><h3>Summary</h3></div>
               <dl class="detail-list">
                 ${details.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
               </dl>
             </div>
-            <div class="card panel-box">
-              <div class="card-header"><h3>Module status</h3></div>
-              <div class="chip-list">
-                ${modules.length
-                  ? modules.slice(0, 8).map((module) => `<span class="chip">${module.displayName || module.name || module.id}</span>`).join('')
-                  : '<span class="empty-state inline-empty">No modules discovered.</span>'}
-              </div>
-            </div>
-          </div>
-          <div class="card panel-box">
-            <div class="card-header"><h3>Session overview</h3><span class="small-muted">Showing ${Math.min(sessions.length, 8)} of ${sessions.length}</span></div>
-            ${sessions.length
-              ? `<ul class="mini-list">${sessions.slice(0, 8).map((session) => `<li><span><code>${session.deviceId || 'Unknown'}</code> · ${session.deviceClass || 'Unknown'} · ${session.operatingSystem || 'Unknown'}${session.current ? ' (current)' : ''}</span><span>${session.username ? `@${session.username}` : 'User'}${session.userId ? ` · #${session.userId}` : ''}</span></li>`).join('')}</ul>`
-              : '<p class="empty-state">No active sessions recorded.</p>'}
-            ${sessions.length > 8 ? '<button type="button" class="btn btn-secondary" data-dashboard-all-sessions>View all device sessions</button>' : ''}
-          </div>
-        </div>
+          </div></div>
       </div>
     `;
     this.container.querySelector('[data-dashboard-all-sessions]')?.addEventListener('click', () => window.adminRouter?.showView('sessions'));
@@ -518,6 +494,7 @@ class AdminInfrastructureView {
               <div><dt>Host</dt><dd>${database.host || dbConfig.host || '—'}</dd></div>
               <div><dt>Name</dt><dd>${database.name || dbConfig.name || '—'}</dd></div>
               ${(database.username || dbConfig.username) ? `<div><dt>Username</dt><dd>${this.escape(database.username || dbConfig.username)}</dd></div>` : ''}
+              <div><dt>Last database test</dt><dd>${database.lastTest ? `${this.escape(database.lastTest.status)} · ${this.escape(this.formatTimestamp(database.lastTest.testedAt))}` : 'Not tested'}</dd></div>
             </dl>
           </div>
         </div>
@@ -537,12 +514,13 @@ class AdminInfrastructureView {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const result = await this.api.get('/api/admin/database');
+        const result = await this.api.post('/api/admin/database/test', {});
         if (result.ok) {
-          this.notify('Database test passed successfully', 'success');
+          this.notify('Database test passed successfully.', 'success');
           await this.init(this.container);
         } else {
           this.notify(`Database configuration failed: ${result.error || 'Unknown error'}`, 'error');
+          await this.init(this.container);
         }
       });
     }
@@ -613,7 +591,7 @@ class AdminInfrastructureView {
           <p class="form-help">Backups contain managed platform data. Restoring replaces the current managed data and signs you out.</p>
           <p class="form-help">Automatic scheduler: ${this.escape(automation.scheduler || 'external-cron-required')}. Last success: ${this.escape(automation.lastSuccess ? new Date(Number(automation.lastSuccess) * 1000).toISOString() : 'No scheduled backup recorded')}. ${automation.lastError ? `Last error: ${this.escape(automation.lastError)}` : ''}</p>
           <dl class="detail-list"><div><dt>Encryption key</dt><dd>${readiness.keyConfigured ? 'Ready' : 'Host configuration required'}</dd></div><div><dt>Crypto</dt><dd>${readiness.cryptoAvailable ? 'Ready' : 'Unavailable'}</dd></div><div><dt>Database/schema</dt><dd>${readiness.databaseReady && readiness.managedTablesReady ? 'Ready' : 'Host check required'}</dd></div><div><dt>Protected storage</dt><dd>${readiness.storageReady ? 'Ready' : 'Host check required'}</dd></div></dl>
-          <form id="backup-path-form" class="admin-form compact-form"><label>Backup storage path<input name="path" value="${this.escape(readiness.storagePath || '')}" placeholder="Absolute protected server path" autocomplete="off" /></label><p class="form-help">Use an existing writable directory outside public web roots. The encryption key remains host-only and is never shown here.</p><div class="form-actions"><button type="button" class="btn btn-secondary" id="backup-path-test">Test path</button><button type="submit" class="btn btn-primary">Save</button></div><p id="backup-path-status" class="form-help" aria-live="polite">${this.escape(readiness.storageStatus || 'Not tested')}</p></form>
+          <form id="backup-path-form" class="admin-form compact-form"><label>Backup storage path<input name="path" value="${this.escape(readiness.storagePath || '')}" placeholder="Absolute protected server path" autocomplete="off" /></label><p class="form-help">Use an existing writable directory outside public web roots. The encryption key remains host-only and is never shown here.</p><div class="form-actions"><button type="button" class="btn btn-secondary" id="backup-path-test">Test path</button><button type="submit" class="btn btn-primary">Save</button></div><p id="backup-path-status" class="form-help" aria-live="polite">${readiness.lastPathTest ? `Last path test: ${this.escape(readiness.lastPathTest.status)} · ${this.escape(this.formatTimestamp(readiness.lastPathTest.testedAt))}` : 'Last path test: Not tested'}</p></form>
           ${backupReady ? '' : '<p class="admin-state admin-state-warning" id="backup-readiness-help">Host encryption key must be configured before manual or automatic encrypted backups can run.</p>'}
           ${backups.length ? `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>Created</th><th>Size</th><th>Backup ID</th><th>Actions</th></tr></thead><tbody>${backups.map((backup) => `<tr><td>${this.escape(backup.createdAt || '—')}</td><td>${this.escape(this.formatBytes(backup.size))}</td><td><code>${this.escape(backup.backupId || '')}</code></td><td class="action-buttons"><button class="btn btn-sm btn-secondary" data-backup-download="${this.escape(backup.backupId)}">Download</button><button class="btn btn-sm btn-danger" data-backup-restore="${this.escape(backup.backupId)}">Restore</button><button class="btn btn-sm btn-danger" data-backup-delete="${this.escape(backup.backupId)}">Delete</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state">No backups available yet.</p>'}
           <form id="backup-form" class="admin-form compact-form"><div class="form-actions"><button type="submit" class="btn btn-primary" ${backupReady ? '' : 'disabled aria-disabled="true" aria-describedby="backup-readiness-help"'}>Create backup</button><label class="btn btn-secondary">Upload encrypted backup<input id="backup-upload" type="file" accept=".neutral-backup,application/octet-stream" class="sr-only" /></label></div></form>
@@ -622,7 +600,7 @@ class AdminInfrastructureView {
 
     const pathForm=this.container.querySelector('#backup-path-form');
     const pathStatus=this.container.querySelector('#backup-path-status');
-    this.container.querySelector('#backup-path-test')?.addEventListener('click',async()=>{const path=pathForm?.elements?.path?.value||'';const result=await this.api.post('/api/admin/backups/path/test',{path});const tested=result.ok?AdminCommon.unwrapData(result,'pathTest',{}):null;if(pathStatus)pathStatus.textContent=tested?(`Path status: ${tested.status}`):(result.error||'Path test failed.');});
+    this.container.querySelector('#backup-path-test')?.addEventListener('click',async()=>{const path=pathForm?.elements?.path?.value||'';const result=await this.api.post('/api/admin/backups/path/test',{path});const tested=result.ok?AdminCommon.unwrapData(result,'pathTest',{}):null;if(tested){if(pathStatus)pathStatus.textContent=`Last path test: ${tested.status} · ${this.formatTimestamp(tested.testedAt)}`;this.notify('Backup storage path test passed.','success');}else{this.notify(result.error||'Backup storage path test failed.','error');await this.init(this.container);}});
     pathForm?.addEventListener('submit',async(event)=>{event.preventDefault();const path=pathForm.elements.path.value||'';const result=await this.api.post('/api/admin/backups/path',{path});if(result.ok){this.notify('Backup storage path saved. Test it before creating a backup.','success');await this.init(this.container);}else this.notify(result.error||'Backup storage path could not be saved.','error');});
 
     const backupForm = this.container.querySelector('#backup-form');
@@ -681,6 +659,11 @@ class AdminInfrastructureView {
     if (!bytes) return '0 B';
     if (bytes < 1024) return `${bytes} B`;
     return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  formatTimestamp(value) {
+    const date = new Date(value || '');
+    return Number.isNaN(date.getTime()) ? 'Not recorded' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
   }
 
   notify(message, type = 'info') {
@@ -779,7 +762,8 @@ class AdminRouter {
       settings: new AdminSettingsView(apiClient),
       theme: new AdminAppearanceView(apiClient),
       audit: new AdminAuditView(apiClient),
-      modules: new AdminModulesView(apiClient),
+      'app-modules': new AdminModulesView(apiClient, 'user'),
+      'system-modules': new AdminModulesView(apiClient, 'system'),
       dashboard: new AdminDashboardView(apiClient),
       updates: new AdminInfrastructureView(apiClient, 'updates'),
       backups: new AdminInfrastructureView(apiClient, 'backups'),
@@ -822,6 +806,8 @@ class AdminRouter {
     this.shell.setTitle(title);
     this.currentView = viewName;
     mainContainer.replaceChildren(viewContainer);
+    mainContainer.scrollTop = 0;
+    if (typeof window !== 'undefined') window.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
     try {
       await view.init(viewContainer);
       if (revision === this.navigationRevision) this.shell.focusTitle();
@@ -842,7 +828,8 @@ class AdminRouter {
       settings: 'System Settings',
       theme: 'Appearance',
       dashboard: 'Dashboard',
-      modules: 'Module Administration',
+      'app-modules': 'App Modules',
+      'system-modules': 'System Modules',
       updates: 'Updates',
       backups: 'Backups & Restore',
       infrastructure: 'Backup / Infrastructure',

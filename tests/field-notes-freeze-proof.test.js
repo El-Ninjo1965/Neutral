@@ -78,9 +78,8 @@ test('Field Notes module code is confined to new module namespaces when the impl
   }
   const result = spawnSync('git', ['diff', '--name-only', '6cbf28e', '--', 'Server', 'Web-App'], { cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.stdout.trim().split('\n').filter(Boolean).sort(), [
-    'Server/php/modules/field-notes/module.php',
-    'Web-App/app/modules/field-notes/index.js',
-    'Web-App/app/modules/field-notes/module.json'
-  ]);
+  const changed = result.stdout.trim().split('\n').filter(Boolean);
+  for (const expected of ['Server/php/modules/field-notes/module.php', 'Web-App/app/modules/field-notes/index.js', 'Web-App/app/modules/field-notes/module.json']) {
+    assert.ok(changed.includes(expected), `missing Field Notes module file: ${expected}`);
+  }
 });

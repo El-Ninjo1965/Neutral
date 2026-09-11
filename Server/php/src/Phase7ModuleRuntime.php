@@ -199,17 +199,41 @@ final class Phase7ModuleRuntime
             throw $exception;
         }
 
-        $module = $this->getForAdmin((string) $discovered['id']);
-        if ($module === null) {
-            throw new \RuntimeException('Installed module could not be loaded.');
+        try {
+            $module = $this->getForAdmin((string) $discovered['id']);
+            if ($module === null) {
+                throw new \RuntimeException('Installed module could not be loaded.');
+            }
+            $definition = $this->serverRegistry->resolveForLifecycle($module);
+            $this->migrationRunner->migrate($module, $definition['migrations']);
+            $module = $this->getForAdmin((string) $discovered['id']);
+            if ($module === null) {
+                throw new \RuntimeException('Installed module could not be loaded after migration.');
+            }
+            return $module;
+        } catch (\Throwable $exception) {
+            $this->markInstallFailed((string) $discovered['id'], $actorUserId);
+            throw new \RuntimeException('Module installation failed without registering the module.', 0, $exception);
         }
-        $definition = $this->serverRegistry->resolveForLifecycle($module);
-        $this->migrationRunner->migrate($module, $definition['migrations']);
-        $module = $this->getForAdmin((string) $discovered['id']);
-        if ($module === null) {
-            throw new \RuntimeException('Installed module could not be loaded after migration.');
+    }
+
+    private function markInstallFailed(string $moduleId, ?int $actorUserId): void
+    {
+        $pdo = $this->database->connect();
+        $pdo->beginTransaction();
+        try {
+            $module = $pdo->prepare('SELECT id FROM modules WHERE module_key = :module_key LIMIT 1');
+            $module->execute([':module_key' => $moduleId]);
+            $moduleDbId = $module->fetchColumn();
+            if ($moduleDbId !== false) {
+                $pdo->prepare('UPDATE modules SET is_present = 0, updated_at = CURRENT_TIMESTAMP WHERE id = :id')->execute([':id' => (int) $moduleDbId]);
+                $pdo->prepare("UPDATE module_state SET status = 'error', is_enabled = 0, last_error = :last_error, changed_by = :changed_by, changed_at = CURRENT_TIMESTAMP WHERE module_id = :module_id")
+                    ->execute([':last_error' => 'Installation failed; retry is safe.', ':changed_by' => $actorUserId, ':module_id' => (int) $moduleDbId]);
+            }
+            $pdo->commit();
+        } catch (\Throwable $cleanupException) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
         }
-        return $module;
     }
 
     /**

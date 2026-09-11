@@ -165,6 +165,8 @@ class AdminRolesView {
     formDiv.innerHTML = '';
     formDiv.appendChild(form);
     formDiv.style.display = 'block';
+    this.container.querySelector('.section-header').hidden = true;
+    this.container.querySelector('.roles-table-container').hidden = true;
   }
 
   async createRole(data) {
@@ -210,6 +212,8 @@ class AdminRolesView {
     if (formDiv) {
       formDiv.style.display = 'none';
     }
+    this.container?.querySelector('.section-header')?.removeAttribute('hidden');
+    this.container?.querySelector('.roles-table-container')?.removeAttribute('hidden');
     this.editingRoleId = null;
   }
 }

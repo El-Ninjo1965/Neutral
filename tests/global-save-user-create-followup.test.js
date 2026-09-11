@@ -50,6 +50,6 @@ test('user create route is atomic and maps invalid and duplicate requests to con
 test('ACCESS navigation keeps operational areas first and permission definitions last', () => {
   const nav = require('../Web-App/public/admin/navigation.js');
   const access = nav.groups.find((group) => group.id === 'access');
-  assert.deepEqual(access.items.map((item) => item.id), ['users', 'packages', 'licenses', 'sessions', 'roles', 'permissions']);
+  assert.deepEqual(access.items.map((item) => item.id), ['users', 'licenses', 'packages', 'sessions', 'roles', 'permissions']);
   assert.match(read('Web-App/public/style.css'), /admin-users-view \.create-form-container[\s\S]*margin-top/);
 });
