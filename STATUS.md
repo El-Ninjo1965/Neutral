@@ -1,7 +1,7 @@
 # Neutral status — operator-retest repairs
 
 **Stand:** 2026-09-11
-**Code status:** repariert; vollständige Endtests/Deploymentnachweis dieses Laufs werden nach CI ergänzt
+**Code status:** repariert, 528/528 lokal sowie CodeQL/FTPS/read-only Smoke erfolgreich für `4038a62`
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 
