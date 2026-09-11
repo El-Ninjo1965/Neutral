@@ -1,6 +1,6 @@
 # CURRENT TASK – USER LOGIN PASSWORD EYE
 
-**Status:** IMPLEMENTED / DEPLOYMENT PENDING
+**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-11
 **Quelle:** neuester Betreiberauftrag
 
@@ -12,6 +12,6 @@
 - [x] Browser-Autofillattribute, genau ein Eye und Toggle-Verhalten testen; Admin regressionsfrei halten.
 - [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
 - [x] `CHATGPT.md`, `CURRENT-TASK.md`, `UI-UX.md` und Change-Historie wahrheitsgemäß aktualisieren.
-- [ ] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal prüfen.
+- [x] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal prüfen.
 
 Operator-Retest: Browserpasswort wird eingesetzt; Eye-Klick zeigt/versteckt denselben Wert; Login normal und Inkognito. Kein Core Freeze.
