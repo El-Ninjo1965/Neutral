@@ -74,48 +74,48 @@ Arbeitsname/Modul-Key: `referral` oder `referral-rewards` – endgültigen Key b
 
 - Eine reine Registrierung genügt nicht.
 - Der geworbene Free-User muss definierte Aktivitätskriterien erfüllen, bevor der Werber Punkte erhält.
-- Aktivitätskriterien sind administrativ konfigurierbar, z. B.:
-  - Mindestanzahl aktiver Tage;
-  - Mindestanzahl qualifizierter Einträge/Uploads/Aktionen;
-  - weitere appseitig registrierte qualifizierende Events.
+- Aktivitätskriterien sind administrativ konfigurierbar, z. B. Mindestanzahl aktiver Tage, qualifizierter Einträge/Uploads/Aktionen oder weitere appseitig registrierte qualifizierende Events.
 - Das Referral-Modul kennt die fachlichen Details dieser Events nicht; Fachmodule liefern nur standardisierte qualifizierende Ereignisse/Counts über einen generischen Vertrag.
 
 ### Punkte und Einlösung
 
 - Für qualifizierte Free-Referrals werden Punkte gutgeschrieben.
 - Punkte können gegen Premium-Zeit oder andere generische Rewards eingelöst werden.
-- Beispielhafte, aber vollständig administrativ konfigurierbare Rewards:
-  - 3 Tage Premium
-  - 7 Tage Premium
-  - 1 Monat Premium
+- Beispielhafte, administrativ konfigurierbare Rewards: 3 Tage, 7 Tage oder 1 Monat Premium.
 - Punktwerte, Schwellen, Reward-Katalog und Umtauschraten werden im Admin konfiguriert.
 - Keine feste CatchTrack-Logik in das Modul einbauen.
 
 ### Missbrauchsschutz
 
-Bei späterer Implementierung mindestens berücksichtigen:
-
-- Reward erst nach serverseitig verifiziertem Qualifying Event;
-- keine Belohnung für Selbstwerbung oder offensichtliche Duplikate;
-- idempotente Reward-Vergabe;
-- nachvollziehbarer Audit-Trail;
-- konfigurierbare Limits/Cooldowns, falls erforderlich;
-- Payment-Reward erst nach bestätigter Zahlung, bei Rückerstattung/Chargeback muss eine klare Policy existieren.
+Bei späterer Implementierung mindestens berücksichtigen: serverseitig verifiziertes Qualifying Event, keine Selbstwerbung/offensichtliche Duplikate, idempotente Reward-Vergabe, Audit-Trail, konfigurierbare Limits/Cooldowns und klare Refund-/Chargeback-Policy.
 
 ## 3. Priorität
 
-Diese Entscheidungen ändern nicht die aktuelle Freeze-Reparaturreihenfolge.
+Referral/Rewards bleibt ein späteres optionales Systemmodul und blockiert den Core-Freeze nicht.
 
-Vor Referral-Implementierung bleiben die bekannten Core-/Lifecycle-Gates vorrangig:
+## 4. Neuer Betreiberbefund: User-Login-Eye erneut live fehlgeschlagen
 
-1. Profile Activation 500
-2. Media Install `Load failed`
-3. Unlimited Devices / `2 of 0`
-4. User Login Eye
-5. mobile User List/Edit
-6. Module Visibility/Navigation pro Rolle
-7. Apps/User Modules/System Modules Admin-Klassifikation
-8. Live-Retest
-9. Field Notes als no-Core-change Freeze-Proof
+Nach dem Reparatur-/Deploymentlauf bis Commit `a9bccf807e7f0bd736e01c88404db613737cd82f` wurde der User-Login erneut real auf dem Betreiber-iPad mit Chrome geprüft.
 
-Referral/Rewards ist als späteres optionales Systemmodul dokumentiert und soll den Core-Freeze nicht unnötig blockieren.
+**Livebefund:** Das Eye ist weiterhin weder im normalen Browserbetrieb noch im privaten/Inkognito-Betrieb sichtbar. Damit ist der bisherige Fix ausdrücklich **NICHT LIVE BESTANDEN**.
+
+Der aktuelle Code versucht den Eye-Button nach dem dynamischen Login-Render über `NeutralUiFeedback.enhancePasswordFields(content)` in den DOM einzusetzen und enthält zusätzliche Self-Heal-/CSS-Absicherungen. Dieser Ansatz hat trotz lokaler Tests und erfolgreichem Deployment den realen Betreibercheck wiederholt nicht bestanden.
+
+### Neue verbindliche UX-/Implementierungsentscheidung
+
+Für den normalen User-Login wird der Eye-Toggle künftig **direkt als fester Bestandteil des gerenderten Login-Markups** erzeugt, analog zum zuverlässig funktionierenden Admin-Login-Muster.
+
+- Passwortfeld und Eye-Button werden gemeinsam gerendert; die Existenz des Buttons darf nicht von nachträglicher DOM-Anreicherung, MutationObserver oder Timing abhängen.
+- Der bestehende gemeinsame Password-Visibility-Vertrag/Helper darf und soll weiterhin die Interaktion steuern: `password` ↔ `text`, open/crossed-eye SVG, `aria-label`, `aria-pressed`, Fokus und Touchziel.
+- Kein zweiter fachlicher Password-Helper und keine divergierende User-/Admin-Semantik.
+- Die generische dynamische Enhancement-Funktion kann für tatsächlich dynamische Formulare als Fallback erhalten bleiben, darf aber für die bloße Existenz des User-Login-Eyes nicht mehr erforderlich sein.
+- Nach Umsetzung browsernah testen, dass der Button bereits unmittelbar mit dem Login-Control vorhanden ist und funktioniert.
+- Auch dieser neue Fix bleibt bis zum erneuten Betreibercheck auf iPad/Chrome normal + privat `OPERATOR RETEST REQUIRED`.
+
+## 5. Gesammelte Live-Abnahme erst nach den nächsten Änderungen
+
+Der Betreiber führt die übrigen Live-Retests bewusst erst gesammelt nach Abschluss der unmittelbar folgenden Änderungen durch, um wiederholte Tests während weiterer Deployments zu vermeiden.
+
+Bis dahin bleiben insbesondere Profile Lifecycle, Media Lifecycle, Unlimited Devices, User Management List/Create/Edit, Module Visibility/Klassifikation sowie Lifecycle-/GPS-Regression als `OPERATOR RETEST REQUIRED` dokumentiert. Keine dieser lokalen Reparaturen darf vor dem realen Betreibercheck als live bestanden markiert werden.
+
+Field Notes bleibt anschließend der separate no-Core-change Freeze-Proof.
