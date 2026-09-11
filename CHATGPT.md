@@ -2,6 +2,12 @@
 
 **Code state 2026-09-11:** The User Login password control now contains its Eye button directly in rendered markup; the shared helper binds it without adding a duplicate. The optional module Self-Test entry is validated as a safe module-local HTML path, and Admin shows a test action only for modules that declare one. Field Notes is implemented solely in new module/test files, using the generic lifecycle, route, permission, migration, limit, navigation and backup contracts.
 
+## Deployment evidence
+
+- Code payload through `4974e57` was pushed to `main`. CodeQL run `34550129103` succeeded. FTPS run `34550129504` completed tests, package build, upload and the bounded read-only production smoke successfully.
+- The production smoke reported root/rewrite/module catalog reachable, protected Admin/Core boundaries enforced, `migrationsReady:true` and deployment revision matched.
+- A supplemental direct `curl` from this workspace was blocked by its outbound CONNECT proxy; this does not replace or contradict the successful CI-hosted smoke.
+
 ## Truth boundaries
 
 - Code, focused tests and the complete regression suite are not an operator-live pass.

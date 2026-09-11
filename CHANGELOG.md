@@ -510,3 +510,9 @@ After the native-placeholder correction, production classification advanced back
 - Added strict optional module Self-Test entry validation and clarified its limited evidence boundary; GPS remains the declared reference.
 - Added Field Notes as an independent owner-scoped CRUD User Module using only existing generic extension contracts, with retained declared storage and no Core-specific integration.
 - Updated pre-freeze contracts/status while keeping all production UX/lifecycle items operator-retest required. Referral/Rewards, automatic setup and Core Freeze were not implemented or declared.
+
+
+## 2026-09-11 — Pre-freeze deployment verification
+
+- Made the supplemental Field Notes baseline-diff assertion shallow-checkout aware while retaining the checkout-independent Core-reference scan.
+- CodeQL and FTPS deployment completed successfully; the read-only production smoke confirmed the deployed revision and `migrationsReady:true`. No Production Restore or destructive production action was performed.

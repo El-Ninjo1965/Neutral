@@ -197,3 +197,8 @@ Audited the reported Profile, Media, Unlimited, Eye, User Management and Module 
 ## 2026-09-11 — Pre-freeze code completion (Codex)
 
 Replaced the repeatedly live-failing dynamic User Login Eye dependency with a password control whose input and single toggle are rendered together; the shared helper now binds existing controls and remains a dynamic fallback. Standardized the optional safe module-local HTML Self-Test contract and retained GPS as the only bundled declaration. Added Field Notes exclusively through new module/test files using generic lifecycle, API, ownership, CSRF, migration, limit, navigation and backup contracts; no Field-Notes Core/router branch was introduced. Local and CI/deployment evidence is recorded separately from the still-required collected operator acceptance. Referral/Rewards and automatic setup remain deferred; Core Freeze was not declared and no Production Restore/destructive production action was performed.
+
+
+## 2026-09-11 — Deployment evidence for pre-freeze batch (Codex)
+
+CodeQL run `34550129103` passed. FTPS run `34550129504` passed its complete test gate, verified production package, upload and bounded read-only production smoke; the smoke returned `migrationsReady:true` and a matching deployment revision while keeping protected endpoints protected. An earlier FTPS attempt exposed a shallow-checkout-only history assertion and stopped before packaging/upload; the test now keeps the always-applicable Core-content scan authoritative and conditionally skips only the supplemental historical diff when its baseline commit is unavailable. Direct workspace curl remained blocked by the outbound CONNECT proxy. No Production Restore or destructive production action occurred.
