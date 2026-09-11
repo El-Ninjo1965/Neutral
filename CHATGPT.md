@@ -1,6 +1,6 @@
 # Neutral handoff — gesammelte Operator-Abnahme
 
-**Code- und Deploymentstand:** Code-/Dokumentationspayload `4038a62c3853b02dbc68cb0250d5e5a996e37c81` wurde nach `origin/main` gepusht. CodeQL `34558527567` war erfolgreich; FTPS `34558527653` absolvierte vollständige Tests, Paketbau, Upload und read-only Production-Smoke. Der Smoke bestätigte Deploymentrevision und `migrationsReady:true`.
+**Code- und Deploymentstand:** Frontend-Hotfix und Dokumentation bis `e21f7fe4b37a868ffd414a10fbfc482c7d8b5df0` wurden nach `origin/main` gepusht. CodeQL `34561122536` war erfolgreich; FTPS `34561121940` absolvierte vollständige Tests, Paketbau, Upload und read-only Production-Smoke. Der Smoke bestätigte Deploymentrevision und `migrationsReady:true`.
 **Operatorstatus:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt.
 
