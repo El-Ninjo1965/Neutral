@@ -1,0 +1,42 @@
+{
+  "id": "field-notes",
+  "name": "Field Notes",
+  "displayName": "Field Notes",
+  "version": "1.0.0",
+  "type": "module",
+  "category": "user",
+  "description": "Private personal notes owned by the authenticated user.",
+  "entry": "index.js",
+  "globalName": "NeutralFieldNotesModule",
+  "permissions": [
+    { "key": "field-notes.view", "description": "View the Field Notes module.", "defaultRoles": ["admin", "developer", "user"] },
+    { "key": "field-notes.use", "description": "Create, edit and delete own field notes.", "defaultRoles": ["admin", "developer", "user"] }
+  ],
+  "access": {
+    "visibilityPermissions": ["field-notes.view"],
+    "usagePermissions": ["field-notes.use"],
+    "managementPermissions": [],
+    "adminPermissions": []
+  },
+  "capabilities": ["personal-notes", "server-storage"],
+  "dependencies": [],
+  "optionalDependencies": [],
+  "presentation": { "userNavigation": true, "adminNavigation": true, "system": false },
+  "compatibility": { "core": ">=1.0.0 <2.0.0", "api": 1, "php": ">=8.1.0" },
+  "server": {
+    "entry": "Server/php/modules/field-notes/module.php",
+    "services": ["module.field-notes.notes"],
+    "routes": [
+      { "method": "GET", "path": "items", "service": "module.field-notes.notes", "action": "list", "permission": "field-notes.view", "csrf": false },
+      { "method": "POST", "path": "items", "service": "module.field-notes.notes", "action": "create", "permission": "field-notes.use", "csrf": true, "limit": { "key": "field-notes.items", "cost": 1, "usageAction": "count" } },
+      { "method": "PUT", "path": "items", "service": "module.field-notes.notes", "action": "update", "permission": "field-notes.use", "csrf": true },
+      { "method": "DELETE", "path": "items", "service": "module.field-notes.notes", "action": "delete", "permission": "field-notes.use", "csrf": true }
+    ]
+  },
+  "database": {
+    "tables": [{ "name": "field_notes_items", "destroyOnUninstall": false, "description": "Private Field Notes records keyed to their owning user." }],
+    "migrations": [{ "key": "2026_09_11_0001_create_field_notes", "version": "1.0.0" }]
+  },
+  "limits": [{ "key": "field-notes.items", "default": 0, "roles": { "viewer": 0, "user": 500, "developer": 2000, "admin": null } }],
+  "uninstall": { "dataPolicy": "retain" }
+}
