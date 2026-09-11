@@ -1,30 +1,17 @@
-# CURRENT TASK – CRITICAL AUTH / SESSION RECOVERY
+# CURRENT TASK – USER LOGIN BRANCH VERIFY / MERGE
 
-**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
+**Status:** IMPLEMENTED / DEPLOYMENT PENDING
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 
-Kein Core Freeze, kein Production Restore, keine Secrets und keine UI-Fallbacks, die Authfehler verdecken.
+- [x] Branch `chatgpt/user-login-fix` geprüft: ausschließlich `Web-App/public/index.html` und neuer Test.
+- [x] Root Cause bestätigt: fehlender Helper wirft vor der Submit-Listener-Registrierung.
+- [x] Branch-Fix bewertet: wirksam, aber wegen duplizierter Hold-Implementierung nicht unverändert übernommen.
+- [x] Minimal angepasst: optionaler Helper-Bind im bestehenden Login; bei Fehlen Eye ausblenden, Submit immer binden.
+- [x] Verhaltenstest mit und ohne Helper ergänzt; regulären Hold-Helper regressionsfrei geprüft.
+- [x] Relevante User-Login-, Eye-, Frontend-, Auth-/Session- und Admin-Tests vollständig erfolgreich.
+- [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package erfolgreich.
+- [x] Nur `CHATGPT.md` und `CURRENT-TASK.md` als notwendige Dokumentation aktualisiert.
+- [ ] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal erfolgreich.
 
-## Root Cause / Reparatur
-
-- [x] User Login Request, Cookie, PHP-Session, DB-Session, nullable Expiry und `/auth/me` end-to-end prüfen.
-- [x] Admin Login, eigener Cookie/Scope und repräsentative Adminendpoints end-to-end prüfen.
-- [x] Verlust/GC der PHP-Sessiondatei darf eine weiterhin gültige DB-Session nicht als `Not authenticated` behandeln.
-- [x] User/Admin-Scope serverseitig dauerhaft trennen; keine Cross-Scope-Wiederherstellung.
-- [x] User-Persistenz, Logout/Revoke, Device-Limit und Login-Throttling erhalten.
-- [x] Anonyme explizit freigegebene Module dürfen nicht auf Session-Recovery warten.
-- [x] User Eye lokal im Passwort-Control positionieren und Pointer-Hold-Verhalten layoutnah prüfen.
-
-## Verifikation / Abschluss
-
-- [x] Integrationsnahe User Login → Cookie → `/auth/me` → Logout Tests.
-- [x] Integrationsnahe Admin Login → Cookie → mehrere Adminendpoints Tests.
-- [x] Getrennte User-/Admin-Session gegenseitig regressionsfrei testen.
-- [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check` und Production Package.
-- [x] Read-only Production Smoke um sichere Auth-Basics erweitern.
-- [x] Geforderte Dokumentation wahrheitsgemäß synchronisieren.
-- [x] Commit/Push `main`, CodeQL/FTPS terminal, read-only Production Smoke.
-- [x] `CHATGPT.md` auf einen aktuellen Abschlussstand und genau die drei priorisierten Blocker-Retests reduzieren.
-
-Bis zur realen Betreiberbestätigung: **OPERATOR RETEST REQUIRED**. Kein Core Freeze.
+Operator-Retest ausschließlich: User Login normal, User Login Inkognito, Eye Hold-to-reveal. Kein Core Freeze.

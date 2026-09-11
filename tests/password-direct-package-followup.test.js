@@ -12,7 +12,7 @@ test('User Login has one static hold-to-reveal control and no enhancer fallback'
   const user = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
   assert.equal((user.match(/id="userLoginPasswordReveal"/g) || []).length, 1);
-  assert.match(user, /NeutralPasswordHoldReveal\.bind\(password, reveal\)/);
+  assert.match(user, /const revealBinder = window\.NeutralPasswordHoldReveal\?\.bind;[\s\S]*revealBinder\(password, reveal\)/);
   assert.doesNotMatch(user, /enhancePasswordFields\(content\)/);
   assert.match(css, /password-visibility-toggle[^}]*min-width:44px[^}]*min-height:44px/);
 });

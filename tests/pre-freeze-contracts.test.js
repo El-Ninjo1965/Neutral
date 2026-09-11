@@ -30,7 +30,7 @@ class Element {
 test('User Login uses its static hold control without dynamic enhancement', () => {
   const source = read('Web-App/public/user-app.js');
   assert.match(source, /id="userLoginPassword" type="password"/);
-  assert.match(source, /NeutralPasswordHoldReveal\.bind/);
+  assert.match(source, /const revealBinder = window\.NeutralPasswordHoldReveal\?\.bind/);
   assert.doesNotMatch(source, /enhancePasswordFields\(content\)/);
   assert.match(read('Web-App/public/style.css'), /\.password-visibility-toggle \{[^}]*display:flex !important;[^}]*visibility:visible !important;[^}]*opacity:1 !important;/);
 });

@@ -627,7 +627,14 @@
 
     const password = document.getElementById('userLoginPassword');
     const reveal = document.getElementById('userLoginPasswordReveal');
-    window.NeutralPasswordHoldReveal.bind(password, reveal);
+    const revealBinder = window.NeutralPasswordHoldReveal?.bind;
+    if (typeof revealBinder === 'function') {
+      revealBinder(password, reveal);
+    } else {
+      // Password visibility is optional; login submission must remain usable if
+      // the independently cached helper asset is unavailable or stale.
+      reveal.hidden = true;
+    }
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
