@@ -1,7 +1,7 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** USER-LOGIN BOOTSTRAP-FIX IMPLEMENTIERT / DEPLOYMENT PENDING
+**Status:** USER-LOGIN BOOTSTRAP-FIX DEPLOYED / OPERATOR RETEST REQUIRED
 **Core Freeze:** NICHT erklärt
 
 ## Ergebnis
@@ -11,6 +11,8 @@ Root-Cause-Hypothese technisch bestätigt: `password-hold-reveal.js` ist im regu
 Der vorbereitete Branch `chatgpt/user-login-fix` änderte exakt die angekündigten zwei Dateien. Sein Inline-Fallback hätte den Abbruch verhindert, duplizierte aber die komplette Hold-Implementierung im HTML. Er wurde deshalb nicht unverändert übernommen. Stattdessen behandelt der bestehende User-Login den Eye-Helper als optionale Abhängigkeit: vorhanden → genau einmal binden; nicht vorhanden → Eye ausblenden und anschließend immer den echten Submit-Handler registrieren. Regulärer Helper, Admin-Login, Auth-/Sessioncode und Backend bleiben unverändert.
 
 Lokal bestanden 541/541 Tests sowie JavaScript-Syntax, PHP-Lint, Diff-Check und das Production Package mit 135 Dateien. Der neue Verhaltenstest führt den tatsächlichen `showLoginForm`-Bootstrap einmal ohne und einmal mit Helper aus. Ohne Helper bleibt der Submit-Listener gebunden; mit Helper erfolgt genau ein Bind und das Eye bleibt sichtbar.
+
+Commit `7e821c05972df4e379eb6ccebb86458a1958a4d4` ist auf `main`. CodeQL `34595212361` und FTPS Deploy `34595212457` waren terminal erfolgreich. Tests, 135-Datei-Produktionspaket, FTPS-Client, Upload von 137 Dateien und read-only Production Smoke bestanden; Deploymentrevision und `migrationsReady:true` wurden bestätigt.
 
 ## Operator-Retest nach Deployment
 

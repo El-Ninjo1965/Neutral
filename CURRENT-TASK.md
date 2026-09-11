@@ -1,6 +1,6 @@
 # CURRENT TASK – USER LOGIN BRANCH VERIFY / MERGE
 
-**Status:** IMPLEMENTED / DEPLOYMENT PENDING
+**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 
@@ -12,6 +12,6 @@
 - [x] Relevante User-Login-, Eye-, Frontend-, Auth-/Session- und Admin-Tests vollständig erfolgreich.
 - [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package erfolgreich.
 - [x] Nur `CHATGPT.md` und `CURRENT-TASK.md` als notwendige Dokumentation aktualisiert.
-- [ ] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal erfolgreich.
+- [x] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal erfolgreich.
 
 Operator-Retest ausschließlich: User Login normal, User Login Inkognito, Eye Hold-to-reveal. Kein Core Freeze.
