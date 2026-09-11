@@ -835,6 +835,9 @@ test('discovers runtime setup defaults from the real environment and config', ()
   const originalEnv = { ...process.env };
 
   try {
+    delete process.env.SERVER_URL;
+    delete process.env.PUBLIC_URL;
+    delete process.env.BASE_URL;
     process.env.DEFAULT_APP_ID = 'fleet-app';
     process.env.APP_NAME = 'Fleet Control';
     process.env.HOST = '0.0.0.0';
