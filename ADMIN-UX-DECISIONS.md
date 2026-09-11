@@ -93,3 +93,8 @@ Neuer Livebefund nach dem Reparaturbatch: Das User-Login-Eye blieb trotz Fokus o
 ## Live-Root-Cause-Nachtrag (2026-09-11)
 
 User Login verwendet denselben gemeinsamen Password-Enhancer wie Admin Login. Die Admin Sidebar verhindert horizontales Scrollen/Overscroll bei erhaltenem vertikalem Scrollen; Logout zeigt ausschließlich `Logout`. Profile besitzt nun einen vollständigen reversiblen Migrationvertrag. Alle vier Punkte bleiben bis zum Betreiber-iPad-/Lifecycle-Retest **OPERATOR RETEST REQUIRED**; kein Core Freeze.
+
+## 2026-09-11 — Exclusive commercial editor states and user identity
+
+- Package and License list states are mutually exclusive with Create/Edit: opening an editor replaces the list; Save or Cancel returns to the list and the editor starts at the content top.
+- Edit User shows read-only User ID and Username first, followed by editable Display Name and E-mail. Account identity is not presentation data.

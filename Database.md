@@ -163,3 +163,7 @@ Role navigation visibility is stored as namespaced JSON in `settings.setting_key
 ## Operations test history and device fallback (2026-09-11)
 
 `core.ui.settings` now retains `lastDatabaseTest` and `lastBackupPathTest`, each limited to result and UTC timestamp. Audit retains the corresponding test event; neither record is a current-health guarantee and neither contains path, connection data or secrets. Unassigned users resolve to the explicit one-device System default unless host policy `AUTH_MAX_DEVICES_PER_USER` supplies another positive value. License/User overrides and Package Unlimited continue to use SQL `NULL`, never numeric zero.
+
+## Schema `2026_09_11_0009`
+
+Migration `2026_09_11_0009_persistent_user_sessions` makes `sessions.expires_at` nullable. `NULL` represents an active User session without normal time expiry; timestamps remain available for finite Admin sessions and revoked/replaced rows. Active nullable sessions are retained by cleanup and counted for device limits.

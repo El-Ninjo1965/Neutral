@@ -224,3 +224,10 @@ Field Notes provides owner-scoped list/create/edit/delete via the generic active
 ## Operator-retest repair batch (2026-09-11)
 
 Implemented: deterministic static Login-Eye binding; compensating/retry-safe module install failure state; immediate User Settings save/default restore feedback and rerender; split App/System Module Admin routes; compact Dashboard/Sessions; exclusive Package/License/Role editors; sortable organization-aware User list; traceable Device source with one-device System default; persistent audited database/path test results. All are `OPERATOR RETEST REQUIRED` after deployment.
+
+## 2026-09-11 runtime contracts
+
+- `Security::ensureSessionStarted(..., persistent)` separates renewable User cookies from finite Admin cookies.
+- `Phase4AuthManager` writes `expiresAt = null` only for User scope and transparently migrates valid legacy User sessions on activity.
+- `Phase4SessionRegistry` treats nullable expiry as active, while Logout/revoke status remains decisive.
+- `bindPasswordHoldReveal` provides the User Login's direct pointer hold/release behavior without the dynamic field enhancer.

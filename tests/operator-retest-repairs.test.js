@@ -28,10 +28,11 @@ test('admin sidebar permits vertical pan without horizontal overflow or intrinsi
   assert.doesNotMatch(css, /\.admin-cms-nav-button\s*\{[^}]*overflow-x:\s*auto/s);
 });
 
-test('packages, licenses and roles hide their list while editing and restore it on cancel', () => {
+test('packages, licenses and roles render exclusive editing states and restore on cancel', () => {
   const commerce = read('Web-App/public/admin/commercial-view.js');
   const roles = read('Web-App/public/admin/roles-view.js');
-  assert.ok((commerce.match(/\.card-grid'\)\.hidden = true/g) || []).length >= 2);
+  assert.doesNotMatch(commerce, /packageEditor|licenseEditor/);
+  assert.ok((commerce.match(/const host = this\.container/g) || []).length >= 2);
   assert.ok((commerce.match(/data-cancel-editor/g) || []).length >= 4);
   assert.match(roles, /roles-table-container'\)\.hidden = true/);
   assert.match(roles, /roles-table-container'\)\?\.removeAttribute\('hidden'/);

@@ -14,3 +14,7 @@ Der aktuelle Live-Root-Cause-Batch ist lokal vollständig verifiziert: User Logi
 3. Erst danach separat über Core Freeze entscheiden.
 
 Bereits beobachtete PASS-Befunde bleiben erhalten, ersetzen aber keine Regression. Referral/Rewards und automatische Setup-Routine sind nicht implementiert.
+
+## 2026-09-11 operator-repair gate
+
+Profile lifecycle is operator-live PASS. Persistent User sessions, User Login hold-to-reveal, Profile/Privacy projection, Organization list projection, exclusive License/Package editor states, and Edit User identity remain OPERATOR RETEST REQUIRED after deployment. Core Freeze readiness is therefore **NO** until those checks pass.

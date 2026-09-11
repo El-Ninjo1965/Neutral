@@ -20,3 +20,10 @@ User Login nutzt jetzt den funktionierenden gemeinsamen Admin-Password-Enhancer.
 ## Frontend-Binding-Hotfix
 
 Code-IST: Password-Toggle wird im Capture-Pfad am aktuell sichtbaren Feld aufgelöst und gegen doppeltes Umschalten markiert. App-/System-Module besitzen instanzlokale Lifecycle-Listener; der tote globale Kompatibilitätseintrag wurde entfernt. Live-Status für beide: **OPERATOR RETEST REQUIRED**. Alle früher bestätigten PASS-Befunde bleiben unverändert.
+
+## 2026-09-11 — Operator repair batch implemented locally
+
+- Profile lifecycle remains operator-live PASS.
+- User Login now uses one static pointer hold-to-reveal control; user sessions have no server-side normal expiry; Profile Settings require the active module plus both Profile permissions.
+- License/package editors now replace their lists, and Edit User exposes immutable account identity before editable presentation data.
+- These repairs remain **OPERATOR RETEST REQUIRED** until the production deployment is verified. No Core Freeze has been declared.

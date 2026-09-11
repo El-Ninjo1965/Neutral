@@ -538,3 +538,11 @@ After the native-placeholder correction, production classification advanced back
 - Added safe correlated module-install failure reporting with internal server-side cause logging.
 - Prevented horizontal Admin-sidebar overflow/overscroll and reduced the logout label to `Logout`; operator retest remains required and no Core Freeze was declared.
 - Commit `c625c8e` passed CodeQL `34577789205` and FTPS deployment `34577789937`, including its complete test/package gate, upload and read-only Production Smoke.
+
+## 2026-09-11 — Pre-freeze operator repair batch
+
+- Added a static pointer hold-to-reveal Eye to User Login without the dynamic enhancer cascade.
+- Split User and Admin session lifetime contracts: User sessions persist until explicit invalidation, while Admin sessions remain finite; added nullable session-expiry migration.
+- Gated Profile/Privacy Settings on active Profile capability and effective Profile permissions.
+- Made Package/License Create and Edit mutually exclusive with their list views and added immutable identity fields to Edit User.
+- Preserved separate Organization and Package user projections and added behavioral regression coverage.

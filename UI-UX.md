@@ -326,3 +326,7 @@ User Management uses exclusive list/create/edit states on all widths. App Module
 The global Admin header is removed. Sidebar order is brand/version, Theme, navigation and bottom Logout; route changes reset the controlled content scroll before focusing the page title. PLATFORM has independent **App Modules** and **System Modules** destinations. Dashboard is Summary-only. Packages, Licenses/Organizations and Roles hide their list while Create/Edit is open and restore it on Save/Cancel.
 
 User Management removes E-mail from the table, adds Organization, keeps Package/License separate and uses stable sortable headers. Device cells include their authoritative source. Sessions is deliberately limited to User, Roles, Status, Registered and Last Activity. User Settings uses **Apps**, opens the shared success dialog, persists Restore Defaults and rerenders immediately. Database/path tests show and retain their timestamped historical outcome. Every repaired live interaction remains `OPERATOR RETEST REQUIRED`.
+
+## User Login password reveal (2026-09-11)
+
+The User Login renders exactly one static Eye beside the password input. Passwords are hidden by default and visible only while the control is held. Pointer release, cancellation, leaving the control, lost capture, or blur conceals immediately. This path does not use the dynamic Admin password enhancer.

@@ -406,3 +406,9 @@ An individual user may retain a nullable direct `package_id` without a License/O
 ## Device-source and organization projection (2026-09-11)
 
 The Admin User list projects human `organizationName` only from an active License membership and displays it separately from the effective Package. Device resolution order is User membership/direct override → active License policy/Package → active direct Package → explicit System fallback. The fallback is one device unless `AUTH_MAX_DEVICES_PER_USER` explicitly configures another positive host policy. Lowering a limit may leave used sessions above the limit; it blocks a new installation but never silently revokes an existing session.
+
+## Persistent User sessions (2026-09-11)
+
+Normal User-scope sessions remain active until Logout, administrative revoke/replacement, account/security invalidation, or another explicit lifecycle action. `last_seen_at` is activity metadata, not expiry. Active rows use nullable `expires_at`; Admin-scope sessions retain their finite security lifetime. Device limits continue counting active persistent sessions.
+
+The User list projects Organization and Package separately from the same active License membership. Edit User exposes immutable User ID and Username before Display Name and E-mail.

@@ -177,3 +177,7 @@ The generic `/api/v1/modules/<module-id>/<route>` kernel exposes Field Notes onl
 `POST /api/v1/admin/database/test` requires an Admin session, CSRF and `settings.write`; it performs a bounded ping, stores only `{testedAt,status}` as `lastDatabaseTest`, writes `database.connection.test` to Audit and never returns credentials. `GET /api/v1/admin/database` projects that historical result as `lastTest`; it is not a health guarantee.
 
 `POST /api/v1/admin/backups/path/test` likewise stores only timestamp/status as `lastBackupPathTest` and audits `backup.storage.test`, including controlled failures. `GET /api/v1/admin/backups/readiness` projects it as `lastPathTest`; the key remains host-only. A failed generic module installation is returned as controlled failure after the runtime marks the module not present/inactive so retry/reload cannot claim `Registered: Yes`.
+
+## Authentication projection (2026-09-11)
+
+`POST /api/v1/auth/login` returns `expiresAt: null` for persistent User-scope sessions. Admin-scope login continues returning a finite timestamp. `/auth/me`, Logout, revocation, device-limit enforcement and CSRF remain unchanged in authority. Client module discovery continues projecting only active modules permitted to the current identity; Profile Settings additionally requires `profile.view` and `profile.update`.

@@ -8,16 +8,30 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('User Login reuses the shared password enhancement used by the Admin login', () => {
-  const helper = read('Web-App/public/ui-feedback.js');
+test('User Login has one static hold-to-reveal control and no enhancer fallback', () => {
   const user = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
-  assert.match(helper, /eyeOpen[\s\S]*<svg/);
-  assert.match(helper, /eyeClosed[\s\S]*M3 3 21 21/);
-  assert.doesNotMatch(helper, />◉</);
-  assert.match(user, /id="userLoginPassword" type="password"[\s\S]*enhancePasswordFields\(content\)/);
-  assert.doesNotMatch(user, /data-password-control="user-login"/);
+  assert.equal((user.match(/id="userLoginPasswordReveal"/g) || []).length, 1);
+  assert.match(user, /NeutralPasswordHoldReveal\.bind\(password, reveal\)/);
+  assert.doesNotMatch(user, /enhancePasswordFields\(content\)/);
   assert.match(css, /password-visibility-toggle[^}]*min-width:44px[^}]*min-height:44px/);
+});
+
+test('User hold-to-reveal responds to pointer release, cancellation and leave', () => {
+  const { bindPasswordHoldReveal } = require('../Web-App/public/password-hold-reveal.js');
+  const listeners = {};
+  const input = { type: 'password' };
+  const button = { attrs: {}, addEventListener(name, fn) { listeners[name] = fn; }, setAttribute(name, value) { this.attrs[name] = value; }, setPointerCapture(id) { this.captured = id; } };
+  bindPasswordHoldReveal(input, button);
+  for (const endEvent of ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture', 'blur']) {
+    listeners.pointerdown({ preventDefault() {}, pointerId: 7 });
+    assert.equal(input.type, 'text');
+    assert.equal(button.attrs['aria-pressed'], 'true');
+    listeners[endEvent]({});
+    assert.equal(input.type, 'password');
+    assert.equal(button.attrs['aria-pressed'], 'false');
+  }
+  assert.equal(button.captured, 7);
 });
 
 test('shared password helper toggles the actual input type on a dispatched click', () => {

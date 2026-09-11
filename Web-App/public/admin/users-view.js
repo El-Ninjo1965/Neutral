@@ -196,14 +196,17 @@ class AdminUsersView {
           <label for="username">Username *</label>
           <input type="text" id="username" name="username" required minlength="3" value="">
         </div>
-      ` : ''}
-      <div class="form-group">
-        <label for="email">Email (optional)</label>
-        <input type="email" id="email" name="email" value="${escapeHtmlUsers(user?.email || '')}">
-      </div>
+      ` : `
+        <div class="form-group"><label for="userId">User ID</label><input type="text" id="userId" value="${escapeHtmlUsers(user?.id || '')}" readonly></div>
+        <div class="form-group"><label for="editUsername">Username</label><input type="text" id="editUsername" value="${escapeHtmlUsers(user?.username || '')}" readonly></div>
+      `}
       <div class="form-group">
         <label for="displayName">Display Name</label>
         <input type="text" id="displayName" name="displayName" value="${escapeHtmlUsers(user?.displayName || '')}">
+      </div>
+      <div class="form-group">
+        <label for="email">Email (optional)</label>
+        <input type="email" id="email" name="email" value="${escapeHtmlUsers(user?.email || '')}">
       </div>
       <div class="form-group">
         <label for="packageId">Package</label>

@@ -27,30 +27,11 @@ class Element {
   click() { this.listeners.click?.({}); }
 }
 
-test('User Login delegates its plain password field to the shared Admin-style enhancer', () => {
+test('User Login uses its static hold control without dynamic enhancement', () => {
   const source = read('Web-App/public/user-app.js');
   assert.match(source, /id="userLoginPassword" type="password"/);
-  assert.match(source, /enhancePasswordFields\(content\)/);
-  assert.doesNotMatch(source, /data-password-control="user-login"/);
-
-  const wrapper = new Element('span', 'password-input-wrap');
-  const input = wrapper.appendChild(new Element('input')); input.type = 'password';
-  const button = wrapper.appendChild(new Element('button', 'password-visibility-toggle'));
-  const document = { readyState: 'loading', createElement: (tag) => new Element(tag), addEventListener() {}, querySelectorAll() { return []; }, body: new Element('body') };
-  const sandbox = { document, module: { exports: {} }, window: {}, MutationObserver: class { observe() {} } };
-  vm.runInNewContext(read('Web-App/public/ui-feedback.js'), sandbox);
-  sandbox.module.exports.enhancePasswordFields(wrapper);
-  assert.equal(wrapper.walk().filter((node) => node.className.includes('password-visibility-toggle')).length, 1);
-  assert.equal(button.getAttribute('aria-label'), 'Show password');
-  button.click();
-  assert.equal(input.type, 'text');
-  assert.equal(button.getAttribute('aria-label'), 'Hide password');
-  assert.equal(button.getAttribute('aria-pressed'), 'true');
-  assert.match(button.innerHTML, /<circle/);
-  button.click();
-  assert.equal(input.type, 'password');
-  assert.equal(button.getAttribute('aria-pressed'), 'false');
-  assert.doesNotMatch(button.innerHTML, /<circle/);
+  assert.match(source, /NeutralPasswordHoldReveal\.bind/);
+  assert.doesNotMatch(source, /enhancePasswordFields\(content\)/);
   assert.match(read('Web-App/public/style.css'), /\.password-visibility-toggle \{[^}]*display:flex !important;[^}]*visibility:visible !important;[^}]*opacity:1 !important;/);
 });
 

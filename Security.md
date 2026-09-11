@@ -192,3 +192,7 @@ Field Notes derives ownership only from the authenticated server identity. Every
 ## Test-result and lifecycle safety (2026-09-11)
 
 Database/path test history persists only status and UTC timestamp; Audit metadata contains status but no database credentials, backup path or encryption key. Module migration failure is compensated to not-present/disabled rather than exposing a usable partial registration. Compensation retains declared module data and never performs destructive Production recovery.
+
+## Session lifetime split (2026-09-11)
+
+User-scope sessions have no application-side calendar or idle expiry. A nullable `sessions.expires_at` denotes this persistent contract; Logout, revoke/replacement, inactive accounts and security invalidation remain authoritative. Cleanup never removes an active session. Admin-scope sessions retain finite expiry. Browser persistence uses a renewable secure, HTTP-only, SameSite cookie (400-day browser compatibility window); the server session is renewed on requests without changing its explicit-revocation validity contract.

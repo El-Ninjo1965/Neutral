@@ -454,7 +454,7 @@ if (($route === 'auth/login' || $route === 'admin/auth/login') && $method === 'P
         $authManager->csrfCookieNameForScope($sessionScope),
         (string) $result['csrfToken'],
         [
-            'expires' => strtotime((string) $result['expiresAt']) ?: 0,
+            'expires' => $sessionScope === 'user' ? time() + (400 * 86400) : (strtotime((string) $result['expiresAt']) ?: 0),
             'path' => '/',
             'secure' => Security::isHttpsRequest(),
             'httponly' => false,

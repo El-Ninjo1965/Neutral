@@ -652,7 +652,7 @@ final class Phase4UserService
                 u.created_at,
                 u.updated_at,
                 (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id=u.id) AS last_activity_at,
-                (SELECT COUNT(DISTINCT s.device_id) FROM sessions s WHERE s.user_id=u.id AND s.device_id<>'' AND s.status='active' AND s.expires_at>CURRENT_TIMESTAMP) AS used_devices,
+                (SELECT COUNT(DISTINCT s.device_id) FROM sessions s WHERE s.user_id=u.id AND s.device_id<>'' AND s.status='active' AND (s.expires_at IS NULL OR s.expires_at>CURRENT_TIMESTAMP)) AS used_devices,
                 CASE WHEN EXISTS(SELECT 1 FROM license_users lux JOIN licenses lx ON lx.id=lux.license_id WHERE lux.user_id=u.id AND lux.membership_status='active' AND lx.status='active') THEN (SELECT CASE WHEN lu.device_limit_mode='unlimited' THEN NULL WHEN lu.device_limit_mode='override' THEN lu.device_limit WHEN l.device_limit_mode='unlimited' THEN NULL WHEN l.device_limit_mode='override' THEN l.device_limit ELSE CASE WHEN JSON_EXTRACT(p.limits_json,'$.allowedDevices') IS NULL OR JSON_TYPE(JSON_EXTRACT(p.limits_json,'$.allowedDevices'))='NULL' THEN NULL ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.limits_json,'$.allowedDevices')) AS UNSIGNED) END END FROM license_users lu JOIN licenses l ON l.id=lu.license_id JOIN packages p ON p.id=l.package_id WHERE lu.user_id=u.id AND lu.membership_status='active' AND l.status='active' LIMIT 1) ELSE CASE WHEN u.device_limit_mode='unlimited' THEN NULL WHEN u.device_limit_mode='override' THEN u.device_limit WHEN u.package_id IS NULL THEN 1 ELSE (SELECT CASE WHEN JSON_EXTRACT(dp.limits_json,'$.allowedDevices') IS NULL OR JSON_TYPE(JSON_EXTRACT(dp.limits_json,'$.allowedDevices'))='NULL' THEN NULL ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(dp.limits_json,'$.allowedDevices')) AS UNSIGNED) END FROM packages dp WHERE dp.id=u.package_id AND dp.status='active') END END AS allowed_devices,
                 (SELECT lu.license_id FROM license_users lu WHERE lu.user_id=u.id AND lu.membership_status='active' LIMIT 1) AS license_id,
                 u.package_id AS direct_package_id,
@@ -1270,7 +1270,7 @@ final class Phase4SessionRegistry
         $csrfToken = isset($_SESSION['_csrf_token']) && is_string($_SESSION['_csrf_token']) ? $_SESSION['_csrf_token'] : null;
         $issuedAt = (string) ($identity['issuedAt'] ?? gmdate('c'));
         $lastSeenAt = (string) ($identity['lastSeenAt'] ?? gmdate('c'));
-        $expiresAt = (string) ($identity['expiresAt'] ?? gmdate('c'));
+        $expiresAt = isset($identity['expiresAt']) && $identity['expiresAt'] !== '' ? (string) $identity['expiresAt'] : null;
         $statement = $pdo->prepare('
             INSERT INTO sessions (session_id, user_id, csrf_token, issued_at, last_seen_at, expires_at, status, ip, user_agent, device_id, device_label)
             VALUES (:session_id, :user_id, :csrf_token, :issued_at, :last_seen_at, :expires_at, :status, NULL, :user_agent, :device_id, :device_label)
@@ -1291,7 +1291,7 @@ final class Phase4SessionRegistry
             ':csrf_token' => $csrfToken,
             ':issued_at' => $this->toMysqlDateTime($issuedAt),
             ':last_seen_at' => $this->toMysqlDateTime($lastSeenAt),
-            ':expires_at' => $this->toMysqlDateTime($expiresAt),
+            ':expires_at' => $expiresAt === null ? null : $this->toMysqlDateTime($expiresAt),
             ':status' => (string) ($identity['status'] ?? 'active'),
             ':user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
             ':device_id' => (string) ($identity['deviceId'] ?? ''),
@@ -1312,7 +1312,7 @@ final class Phase4SessionRegistry
     public function isActive(string $sessionId): bool
     {
         if ($sessionId === '') return false;
-        $statement = $this->requireDatabase()->connect()->prepare("SELECT COUNT(*) FROM sessions WHERE session_id = :session_id AND status = 'active' AND expires_at > CURRENT_TIMESTAMP");
+        $statement = $this->requireDatabase()->connect()->prepare("SELECT COUNT(*) FROM sessions WHERE session_id = :session_id AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)");
         $statement->execute([':session_id' => $sessionId]);
         return (int) $statement->fetchColumn() === 1;
     }
@@ -1331,7 +1331,7 @@ final class Phase4SessionRegistry
         LEFT JOIN users u ON u.id = s.user_id
         LEFT JOIN user_roles ur ON ur.user_id = s.user_id
         LEFT JOIN roles r ON r.id = ur.role_id
-        WHERE s.status = 'active' AND s.expires_at > CURRENT_TIMESTAMP AND s.device_id <> ''
+        WHERE s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > CURRENT_TIMESTAMP) AND s.device_id <> ''
         GROUP BY s.session_id, s.user_id, u.username, u.display_name, s.status, s.issued_at, s.last_seen_at, s.expires_at, s.device_id, s.device_label, s.user_agent
         ORDER BY s.last_seen_at DESC
         LIMIT 500
@@ -1371,7 +1371,7 @@ final class Phase4SessionRegistry
     public function activeDeviceCount(int $userId, string $exceptDeviceId = ''): int
     {
         $pdo = $this->requireDatabase()->connect();
-        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND device_id <> '' AND status = 'active' AND expires_at > CURRENT_TIMESTAMP";
+        $sql = "SELECT COUNT(DISTINCT device_id) FROM sessions WHERE user_id = :user_id AND device_id <> '' AND status = 'active' AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";
         $params = [':user_id' => $userId];
         if ($exceptDeviceId !== '') {
             $sql .= ' AND device_id <> :device_id';
@@ -1422,7 +1422,7 @@ final class Phase4SessionRegistry
 
     public function cleanup(int $retentionDays = 30): void
     {
-        $statement = $this->requireDatabase()->connect()->prepare("DELETE FROM sessions WHERE (status <> 'active' OR expires_at <= CURRENT_TIMESTAMP) AND last_seen_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)");
+        $statement = $this->requireDatabase()->connect()->prepare("DELETE FROM sessions WHERE status <> 'active' AND last_seen_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)");
         $statement->bindValue(':days', max(1, $retentionDays), \PDO::PARAM_INT);
         $statement->execute();
     }
@@ -1494,7 +1494,7 @@ final class Phase4AuthManager
     public function startSession(?string $scope = null): void
     {
         $cookieName = $this->sessionCookieNameForScope($scope);
-        Security::ensureSessionStarted($cookieName);
+        Security::ensureSessionStarted($cookieName, $this->normalizeSessionScope($scope) === 'user');
     }
 
     public function sessionScopeFromHeaders(array $headers, ?string $fallback = null): string
@@ -1577,7 +1577,7 @@ final class Phase4AuthManager
         if ($ttlMs <= 0) {
             $ttlMs = 1000 * 60 * 60 * 24 * 30;
         }
-        $expiresAt = time() + (int) floor($ttlMs / 1000);
+        $expiresAt = $scope === 'user' ? null : time() + (int) floor($ttlMs / 1000);
         try {
             $permissions = $this->users->effectivePermissions($user);
         } catch (\Throwable $exception) {
@@ -1591,7 +1591,8 @@ final class Phase4AuthManager
             'permissions' => $permissions,
             'issuedAt' => gmdate('c'),
             'lastSeenAt' => gmdate('c'),
-            'expiresAt' => gmdate('c', $expiresAt),
+            'expiresAt' => $expiresAt === null ? null : gmdate('c', $expiresAt),
+            'sessionScope' => $scope,
             'status' => 'active',
             'deviceId' => $deviceId,
             'deviceLabel' => preg_match('/^(iPadOS|iOS|Android|Windows|macOS|Linux|Device)\s*·\s*(Chrome|Safari|Firefox|Edge|Browser)$/', trim($deviceLabel)) === 1
@@ -1613,7 +1614,7 @@ final class Phase4AuthManager
             'roles' => $roles,
             'permissions' => $permissions,
             'csrfToken' => $csrf,
-            'expiresAt' => gmdate('c', $expiresAt),
+            'expiresAt' => $expiresAt === null ? null : gmdate('c', $expiresAt),
         ];
     }
 
@@ -1633,8 +1634,9 @@ final class Phase4AuthManager
             return null;
         }
 
+        $userSession = $this->normalizeSessionScope($scope) === 'user';
         $expiresAt = strtotime((string) ($identity['expiresAt'] ?? ''));
-        if ($expiresAt !== false && $expiresAt > 0 && $expiresAt < time()) {
+        if (!$userSession && $expiresAt !== false && $expiresAt > 0 && $expiresAt < time()) {
             $this->logout($scope);
             return null;
         }
@@ -1650,7 +1652,10 @@ final class Phase4AuthManager
 
         // Transparently move valid legacy 12-hour sessions onto the renewable
         // device-session contract. Renewal never creates a client-side secret.
-        if ($expiresAt === false || $expiresAt < time() + (7 * 86400)) {
+        if ($userSession) {
+            $identity['expiresAt'] = null;
+            $identity['sessionScope'] = 'user';
+        } elseif ($expiresAt === false || $expiresAt < time() + (7 * 86400)) {
             $identity['expiresAt'] = gmdate('c', time() + (30 * 86400));
         }
         if (preg_match('/^[a-f0-9]{32}$/', (string) ($identity['deviceId'] ?? '')) !== 1) {

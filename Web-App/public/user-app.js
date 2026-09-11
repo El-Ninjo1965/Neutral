@@ -610,7 +610,12 @@
           </div>
           <div class="form-field">
             <label for="userLoginPassword">Password</label>
-            <input id="userLoginPassword" type="password" autocomplete="current-password" />
+            <span class="password-field-wrap">
+              <input id="userLoginPassword" type="password" autocomplete="current-password" />
+              <button type="button" id="userLoginPasswordReveal" class="password-visibility-toggle" aria-label="Hold to show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/></svg>
+              </button>
+            </span>
           </div>
           <div class="user-login-actions">
             <button type="submit" id="userLoginSubmit" class="ui-button ui-button--primary primary">Login</button>
@@ -620,7 +625,9 @@
       </section>
     `;
 
-    window.NeutralUiFeedback?.enhancePasswordFields(content);
+    const password = document.getElementById('userLoginPassword');
+    const reveal = document.getElementById('userLoginPasswordReveal');
+    window.NeutralPasswordHoldReveal.bind(password, reveal);
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
@@ -684,7 +691,9 @@
   const renderUserSettings = () => {
     const currentUser = getCurrentUser();
     const modules = getAvailableModulesForUser();
-    const profileAvailable = getModules().some((module) => module.id === 'profile');
+    const permissions = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
+    const profileModule = getModules().find((module) => module.id === 'profile');
+    const profileAvailable = Boolean(profileModule?.active && permissions.includes('profile.view') && permissions.includes('profile.update'));
     const preferences = readUserPreferences();
     const hasExplicitVisibility = Array.isArray(preferences.visibleModuleIds);
     const moduleVisibility = hasExplicitVisibility

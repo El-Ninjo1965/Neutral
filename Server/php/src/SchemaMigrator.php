@@ -7,7 +7,7 @@ use PDO;
 
 final class SchemaMigrator
 {
-    public const SCHEMA_VERSION = '2026_09_10_0007';
+    public const SCHEMA_VERSION = '2026_09_11_0009';
     private const MIGRATION_TABLE = 'schema_migrations';
     private const CORE_TABLES = [
         'roles',
@@ -106,7 +106,7 @@ final class SchemaMigrator
                 csrf_token VARCHAR(128) NOT NULL,
                 issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                expires_at TIMESTAMP NOT NULL,
+                expires_at TIMESTAMP NULL,
                 status VARCHAR(32) NOT NULL DEFAULT 'active',
                 ip VARCHAR(45) NULL,
                 user_agent VARCHAR(255) NULL,
@@ -271,6 +271,9 @@ final class SchemaMigrator
             "ALTER TABLE users ADD CONSTRAINT fk_users_package FOREIGN KEY(package_id) REFERENCES packages(id) ON DELETE SET NULL",
             "CREATE INDEX ix_users_package ON users(package_id)",
         ];
+        $persistentUserSessionStatements = [
+            "ALTER TABLE sessions MODIFY COLUMN expires_at TIMESTAMP NULL",
+        ];
 
         return [
             [
@@ -312,6 +315,11 @@ final class SchemaMigrator
                 'key' => '2026_09_11_0008_direct_user_packages',
                 'checksum' => sha1(implode("\n", $directUserPackageStatements)),
                 'statements' => $directUserPackageStatements,
+            ],
+            [
+                'key' => '2026_09_11_0009_persistent_user_sessions',
+                'checksum' => sha1(implode("\n", $persistentUserSessionStatements)),
+                'statements' => $persistentUserSessionStatements,
             ],
         ];
     }

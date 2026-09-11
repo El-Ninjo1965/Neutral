@@ -5,7 +5,7 @@ namespace Neutral\Core;
 
 final class Security
 {
-    public static function ensureSessionStarted(string $cookieName = 'neutral_session'): void
+    public static function ensureSessionStarted(string $cookieName = 'neutral_session', bool $persistent = false): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
@@ -19,7 +19,10 @@ final class Security
             session_id($providedSessionId);
         }
         session_set_cookie_params([
-            'lifetime' => 60 * 60 * 24 * 30,
+            // Browsers require a finite cookie date. User sessions therefore use
+            // the maximum broadly supported 400-day window and renew on requests;
+            // server-side validity itself has no calendar/idle expiry.
+            'lifetime' => $persistent ? 60 * 60 * 24 * 400 : 60 * 60 * 24 * 30,
             'path' => '/',
             'secure' => self::isHttpsRequest(),
             'httponly' => true,
