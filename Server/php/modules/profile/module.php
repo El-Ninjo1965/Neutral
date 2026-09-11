@@ -41,6 +41,6 @@ return [
     'migrations' => [[
         'key' => '2026_09_11_0001_profile_gender', 'version' => '1.0.0',
         'up' => ["ALTER TABLE user_profiles ADD COLUMN gender VARCHAR(32) NOT NULL DEFAULT 'unspecified' AFTER birthday", "ALTER TABLE user_profiles ADD COLUMN avatar_data MEDIUMTEXT NULL AFTER gender"],
-        'down' => [],
+        'down' => ['ALTER TABLE user_profiles DROP COLUMN avatar_data', 'ALTER TABLE user_profiles DROP COLUMN gender'],
     ]],
 ];

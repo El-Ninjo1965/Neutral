@@ -1,7 +1,7 @@
 # Neutral status — operator-retest repairs
 
 **Stand:** 2026-09-11
-**Code status:** Frontend-Hotfix repariert, 533/533 lokal sowie CodeQL/FTPS/read-only Smoke erfolgreich für `e21f7fe`
+**Code status:** aktueller Live-Root-Cause-Batch lokal mit 536/536 Tests und verifiziertem Production Package bestanden; Deployment-Verifikation ausstehend
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 
@@ -12,6 +12,10 @@ Der aktive CODEX-Batch ist implementiert: Login-Eye, Profile-Install-Kompensatio
 ## Live-Wahrheit
 
 Weiterhin als datierter Operator-PASS erhalten: GPS Produktfunktion; Media, Postbox und Sharing & Visibility Lifecycle; Audit Delete All; Maintenance State. Alle in diesem Lauf reparierten Punkte sind bis zur gesammelten Bedienabnahme **OPERATOR RETEST REQUIRED**. Kein Production Restore, keine destruktive Produktionsaktion, kein Referral/Rewards, keine automatische Setup-Routine und kein Core Freeze.
+
+## Aktueller Live-Root-Cause-Batch
+
+User Login nutzt jetzt den funktionierenden gemeinsamen Admin-Password-Enhancer. Profile-Install scheiterte am leeren Down-Pfad seiner ansonsten additiven Migration; der generische reversible Vertrag ist nun vollständig. Sidebar und Logout erfüllen die aktuellen mobilen UX-Vorgaben. Alle vier Bedienpunkte bleiben **OPERATOR RETEST REQUIRED**.
 
 ## Frontend-Binding-Hotfix
 

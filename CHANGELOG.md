@@ -530,3 +530,10 @@ After the native-placeholder correction, production classification advanced back
 - Replaced dead global `adminModules` inline handlers with instance-owned delegated lifecycle actions for both App Modules and System Modules.
 - Made password visibility resilient to dynamic User Login rendering through capture delegation, idempotent direct fallback and attribute/property synchronization.
 - Added interaction tests for production script order, stable visible input identity, double-click toggle, both module categories and every lifecycle action; operator retest remains required.
+
+## 2026-09-11 — Live Eye, Profile install, Sidebar and Logout root-cause repair
+
+- Reused the working shared Admin password enhancer for the User Login instead of maintaining separate static Eye markup.
+- Completed Profile's reversible migration definition, closing the generic migration-contract exception behind the live install 500 while retaining retry-safe failed-install state.
+- Added safe correlated module-install failure reporting with internal server-side cause logging.
+- Prevented horizontal Admin-sidebar overflow/overscroll and reduced the logout label to `Logout`; operator retest remains required and no Core Freeze was declared.

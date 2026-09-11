@@ -1278,7 +1278,13 @@ body[data-page="admin"] .gps-message {
   position: sticky;
   top: 0;
   height: 100vh;
+  min-width: 0;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   padding: 22px 16px;
   background: var(--panel);
   border-right: 1px solid var(--line);
@@ -1343,6 +1349,8 @@ body[data-page="admin"] .gps-message {
 
 .admin-cms-nav-button {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid transparent;
@@ -1351,6 +1359,9 @@ body[data-page="admin"] .gps-message {
   color: var(--text);
   text-align: left;
   font-weight: 600;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .admin-cms-nav-button:hover,

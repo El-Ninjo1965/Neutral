@@ -27,12 +27,11 @@ class Element {
   click() { this.listeners.click?.({}); }
 }
 
-test('User Login renders one static password toggle and shared binding controls it', () => {
+test('User Login delegates its plain password field to the shared Admin-style enhancer', () => {
   const source = read('Web-App/public/user-app.js');
-  const control = source.match(/<span class="password-input-wrap" data-password-control="user-login">([\s\S]*?)<\/span>/)?.[0] || '';
-  assert.match(control, /id="userLoginPassword" type="password"/);
-  assert.equal((control.match(/password-visibility-toggle/g) || []).length, 1);
-  assert.match(control, /type="button"/);
+  assert.match(source, /id="userLoginPassword" type="password"/);
+  assert.match(source, /enhancePasswordFields\(content\)/);
+  assert.doesNotMatch(source, /data-password-control="user-login"/);
 
   const wrapper = new Element('span', 'password-input-wrap');
   const input = wrapper.appendChild(new Element('input')); input.type = 'password';

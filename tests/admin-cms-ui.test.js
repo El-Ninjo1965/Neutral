@@ -70,7 +70,8 @@ test('admin shell renders a semantic sidebar, drawer controls and content target
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /data-admin-view="backups"/);
   assert.match(html, /id="admin-main"/);
-  assert.match(html, />Logout · Developer</);
+  assert.match(html, />Logout<\/button>/);
+  assert.doesNotMatch(html, /Developer/);
 });
 
 test('admin router delegates layout and navigation to AdminShell', () => {

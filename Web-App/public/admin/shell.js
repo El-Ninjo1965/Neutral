@@ -37,7 +37,7 @@ class AdminShell {
           <div class="admin-cms-brand"><span aria-hidden="true">N</span><div><strong>Neutral Administration</strong><small>Core 1.0</small></div></div>
           <button type="button" class="admin-cms-nav-button admin-sidebar-theme" data-admin-theme aria-label="Switch to dark mode">Dark theme</button>
           <nav aria-label="Administration">${navigation}</nav>
-          <button type="button" class="admin-cms-nav-button admin-sidebar-logout" data-admin-logout>Logout · ${AdminShell.escapeHtml(userLabel)}</button>
+          <button type="button" class="admin-cms-nav-button admin-sidebar-logout" data-admin-logout>Logout</button>
         </aside>
         <button type="button" class="admin-cms-backdrop" data-admin-close aria-label="Close administration menu" hidden></button>
         <section class="admin-cms-content">

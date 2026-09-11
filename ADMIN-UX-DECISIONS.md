@@ -88,3 +88,8 @@ Alle Punkte 1–20 wurden im Code des anschließenden Reparaturbatches umgesetzt
 ## Frontend-Binding-Hotfix (2026-09-11)
 
 Neuer Livebefund nach dem Reparaturbatch: Das User-Login-Eye blieb trotz Fokus ohne Umschaltung; außerdem waren die Lifecyclebuttons der getrennten App-/System-Module sichtbar, aber durch die veraltete globale `adminModules`-Inlinebindung ohne Funktion. Der Hotfix verwendet für Passwortbuttons einen dokumentweiten Capture-Handler mit aktuellem DOM-Feld und genau einem abgesicherten Direktfallback. Jede `AdminModulesView` bindet ihre Lifecycleaktionen nun selbst über `data-module-action` und einen lokalen Listener; die globale `adminModules`-Abhängigkeit entfällt. Beide Punkte bleiben **OPERATOR RETEST REQUIRED**.
+
+
+## Live-Root-Cause-Nachtrag (2026-09-11)
+
+User Login verwendet denselben gemeinsamen Password-Enhancer wie Admin Login. Die Admin Sidebar verhindert horizontales Scrollen/Overscroll bei erhaltenem vertikalem Scrollen; Logout zeigt ausschließlich `Logout`. Profile besitzt nun einen vollständigen reversiblen Migrationvertrag. Alle vier Punkte bleiben bis zum Betreiber-iPad-/Lifecycle-Retest **OPERATOR RETEST REQUIRED**; kein Core Freeze.

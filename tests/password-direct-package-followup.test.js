@@ -8,14 +8,15 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('shared password helper renders recognizable open and crossed eye SVGs and explicitly enhances User Login', () => {
+test('User Login reuses the shared password enhancement used by the Admin login', () => {
   const helper = read('Web-App/public/ui-feedback.js');
   const user = read('Web-App/public/user-app.js');
   const css = read('Web-App/public/style.css');
   assert.match(helper, /eyeOpen[\s\S]*<svg/);
   assert.match(helper, /eyeClosed[\s\S]*M3 3 21 21/);
   assert.doesNotMatch(helper, />◉</);
-  assert.match(user, /bindPasswordToggle\([\s\S]*userLoginPassword/);
+  assert.match(user, /id="userLoginPassword" type="password"[\s\S]*enhancePasswordFields\(content\)/);
+  assert.doesNotMatch(user, /data-password-control="user-login"/);
   assert.match(css, /password-visibility-toggle[^}]*min-width:44px[^}]*min-height:44px/);
 });
 

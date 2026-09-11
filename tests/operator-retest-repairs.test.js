@@ -14,9 +14,18 @@ test('operator admin shell, navigation, dashboard and sessions follow the compac
   assert.deepEqual(nav.groups.find((group) => group.id === 'platform').items.slice(0, 2).map((item) => item.id), ['app-modules', 'system-modules']);
   assert.doesNotMatch(shell, /admin-cms-header|admin-view-title/);
   assert.match(shell, /admin-sidebar-theme[\s\S]*<nav[\s\S]*admin-sidebar-logout/);
+  assert.match(shell, /data-admin-logout>Logout<\/button>/);
+  assert.doesNotMatch(shell, /Logout ·/);
   assert.match(shell, /main\.scrollTop = 0/);
   assert.doesNotMatch(admin, /<h3>Module Status<\/h3>|<h3>Session Overview<\/h3>/);
   assert.doesNotMatch(admin, /<th>Installation \/ Device ID<\/th>|<th>Operating system<\/th>/);
+});
+
+test('admin sidebar permits vertical pan without horizontal overflow or intrinsic widening', () => {
+  const css = read('Web-App/public/style.css');
+  assert.match(css, /\.admin-cms-sidebar\s*\{[^}]*overflow-x:\s*hidden[^}]*overflow-y:\s*auto[^}]*overscroll-behavior-x:\s*none[^}]*touch-action:\s*pan-y/s);
+  assert.match(css, /\.admin-cms-nav-button\s*\{[^}]*min-width:\s*0[^}]*max-width:\s*100%[^}]*overflow-x:\s*hidden[^}]*overflow-wrap:\s*anywhere/s);
+  assert.doesNotMatch(css, /\.admin-cms-nav-button\s*\{[^}]*overflow-x:\s*auto/s);
 });
 
 test('packages, licenses and roles hide their list while editing and restore it on cancel', () => {

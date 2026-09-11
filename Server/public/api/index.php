@@ -991,6 +991,22 @@ if (preg_match('#^admin/modules/([a-z0-9\-]+)/install$#', $route, $matches) === 
         if ($exception->getMessage() === 'Module is already registered; use update.') {
             JsonResponse::error($exception->getMessage(), 409, ['moduleId' => $matches[1]]);
         }
+        if ($exception->getMessage() === 'Module installation failed without registering the module.') {
+            $correlationId = bin2hex(random_bytes(8));
+            $cause = $exception->getPrevious() ?? $exception;
+            $runtime->logger()->error('Module installation failed.', [
+                'code' => 'MODULE_INSTALL_FAILED',
+                'correlationId' => $correlationId,
+                'moduleId' => $matches[1],
+                'exception' => get_class($cause),
+                'message' => $cause->getMessage(),
+            ]);
+            $details = ['code' => 'MODULE_INSTALL_FAILED', 'correlationId' => $correlationId];
+            if ($config->isDebug()) {
+                $details['cause'] = $cause->getMessage();
+            }
+            JsonResponse::error('Module installation failed.', 500, $details);
+        }
         throw $exception;
     }
     $auditService->log('module.install', 'module', (string) ($module['id'] ?? $matches[1]), actor_user_id($identity), [

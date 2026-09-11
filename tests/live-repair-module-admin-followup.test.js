@@ -7,6 +7,21 @@ test('Profile migration is retry-safe and Media server entry resolves as declare
  assert.match(media,/'moduleId'\s*=>\s*'media'/);assert.match(media,/'module\.media\.capability'/);
 });
 
+test('Profile lifecycle migration satisfies the generic reversible migration contract',()=>{
+ const php=String.raw`require '${root}/Server/php/bootstrap.php';$manifest=json_decode(file_get_contents('${root}/Web-App/app/modules/profile/module.json'),true,512,JSON_THROW_ON_ERROR);$registry=new Neutral\Core\ModuleServerRegistry('${root}',new Neutral\Core\ModuleContract());$resolved=$registry->resolveForLifecycle(['id'=>'profile','manifest'=>$manifest,'registered'=>true,'active'=>false]);echo json_encode(['up'=>count($resolved['migrations'][0]['up']),'down'=>count($resolved['migrations'][0]['down'])]);`;
+ const result=require('node:child_process').spawnSync('php',['-r',php],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr||result.stdout);
+ assert.deepEqual(JSON.parse(result.stdout),{up:2,down:2});
+});
+
+test('module install API preserves a safe client error and logs the internal cause with correlation',()=>{
+ const api=read('Server/public/api/index.php');
+ assert.match(api,/MODULE_INSTALL_FAILED/);
+ assert.match(api,/\$exception->getPrevious\(\)/);
+ assert.match(api,/\$runtime->logger\(\)->error\('Module installation failed\.'/);
+ assert.match(api,/\$config->isDebug\(\)/);
+});
+
 test('unlimited package JSON is distinguished from numeric zero in both projections',()=>{
  const auth=read('Server/php/src/Phase4AuthRbac.php');
  assert.ok((auth.match(/JSON_TYPE\(JSON_EXTRACT\([^)]*limits_json,'\$\.allowedDevices'\)\)='NULL'/g)||[]).length>=3);
