@@ -1,367 +1,292 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** AKTIVER IMPLEMENTIERUNGSAUFTRAG – LIVEFEHLER BEHEBEN + MODULE ADMINISTRATION KLASSIFIZIEREN  
+**Status:** AKTIVER GROSSER PRE-FREEZE-ABSCHLUSSAUFTRAG – ALLES CODESEITIG BIS ZUR GESAMMELTEN OPERATOR-LIVEABNAHME  
 **Datum:** 2026-09-11
 
 # Ziel
 
-Vor dem Field-Notes-Freeze-Proof müssen die aktuell real festgestellten Livefehler behoben und die Module Administration um die neue, rein deklarative Trennung in User Modules und System Modules ergänzt werden.
+Arbeite in diesem Lauf **so viel wie technisch verantwortbar bis unmittelbar vor den finalen Betreiber-Livechecks und dem Core Freeze ab**. Der Betreiber möchte nicht nach jeder kleinen Änderung erneut testen. Nach diesem Lauf soll möglichst nur noch eine zusammenhängende Live-Abnahmerunde nötig sein.
 
-Verbindlich bleibt:
+Der Reparaturlauf bis `a9bccf807e7f0bd736e01c88404db613737cd82f` hat Profile, Media, Unlimited Devices, User Management, Module Visibility und User/System-Klassifikation code-/testseitig bearbeitet. Diese Punkte sind noch nicht gesammelt operator-live abgenommen. Ein Punkt wurde bereits erneut getestet und ist weiterhin fehlgeschlagen: **User Login Eye**.
 
-> **Core = nur zwingend notwendige technische Mechanismen. Konkrete Funktionen = Module.**
+Verbindlich:
 
-Keine unnötigen Modulabhängigkeiten erzeugen. Keine zweite Modul-Runtime einführen. User Modules und System Modules verwenden denselben technischen Modulvertrag.
+> Core enthält nur zwingend notwendige technische Mechanismen. Konkrete Funktionen sind Module. Keine Fachmodul-Sonderlogik in Core.
 
-Der neue Betreiberinput steht zusätzlich in `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` und ist vollständig zu lesen.
+> Lokale Tests und Deployment sind kein Betreiber-Live-Pass. Alles, was reale Bedienung/Produktionszustand benötigt, bleibt bis zur späteren Sammelabnahme `OPERATOR RETEST REQUIRED`.
 
-Referral/Rewards ist dort als zukünftiges optionales Systemmodul dokumentiert, wird in diesem Lauf **nicht implementiert** und darf den Freeze-Pfad nicht aufblähen.
-
----
-
-# 1. Pflicht-Preflight
-
-1. Mit `origin/main` synchronisieren.
-2. Vollständig lesen: sämtliche Markdown-Dateien, insbesondere `DOCUMENTATION.md`, `CHATGPT.md`, `CURRENT-TASK.md`, `CODEX.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `Architecture.md`, `ModuleCreation.md`, `SYSTEM-MODULES.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `WORKFLOW.md`, `BACKUP-CONTRACT.md`, `PRODUCT-DECISIONS-2026-09-11.md`, `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md`.
-3. Relevanten Code lesen, bevor Änderungen begonnen werden: Module Runtime/Registry/Manager, Module Admin UI, Profile, Media, User/Login, Device-Limit-Auflösung, User Management, Package/License Resolution, Offline/Precache.
-4. Keine CatchTrack-spezifische Fachlogik in Core/Systemmodule.
-5. Keine Secrets/PII ausgeben oder committen.
-6. Keine destruktiven Produktionsaktionen, keinen Production-Restore.
+Referral/Rewards bleibt Zukunftsmodul und wird in diesem Lauf nicht implementiert. Die automatische Setup-/Installationsroutine bleibt Post-Freeze und wird ebenfalls nicht vorgezogen.
 
 ---
 
-# 2. Profile Activation – Livefehler beheben
+# 1. Pflicht-Preflight und Arbeitsweise
 
-Realer Betreiberbefund:
+1. Mit `origin/main` synchronisieren und sauberen Ausgangszustand bestätigen.
+2. **Alle Markdown-Dateien vollständig lesen**, insbesondere `DOCUMENTATION.md`, `VISION.md`, `CORE-1.0.md`, `CORE-1.0-READINESS.md`, `Architecture.md`, `ModuleCreation.md`, `SYSTEM-MODULES.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md`, `USER-ACCOUNT-LICENSE-MODEL.md`, `Security.md`, `API.md`, `Database.md`, `Functions.md`, `BACKUP-CONTRACT.md`, `STATUS.md`, `TODO.md`, `ToDoNow.md`, `ROADMAP.md`, `WORKFLOW.md`, `CHATGPT.md`, `CURRENT-TASK.md`, `CHANGELOG.md`, `PRODUCT-DECISIONS-2026-09-11.md`, `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` und diese Datei.
+3. Aktuellen Code und die Commits `526291410a4d88c916c62e288613fbaacbd9182a` sowie `a9bccf807e7f0bd736e01c88404db613737cd82f` gegenlesen. Bereits implementierte Reparaturen nicht neu erfinden.
+4. Arbeite testgetrieben und in logisch getrennten Commits. Nach jedem Teilbereich Regressionen prüfen.
+5. Keine Secrets/PII committen. Keine destruktiven Produktionsaktionen. Kein Production-Restore.
+6. Keine automatische Freeze-Erklärung: Der endgültige Freeze erfolgt erst nach der späteren Betreiber-Liveabnahme.
 
-- `profile` ist registriert/inaktiv;
-- `profile.view` und `profile.update` sind vorhanden;
-- Aktivierung über Module Administration endet mit `Activation failed: Internal Server Error`;
-- Profile/Privacy sind dadurch im User-UI nicht verfügbar.
+---
 
-Aufgabe:
+# 2. User Login Eye – bisherigen Ansatz ersetzen, nicht weiter flicken
 
-- Root Cause vollständig ermitteln;
-- serverseitigen 500 beseitigen, nicht nur UI-Fehler kaschieren;
-- Lifecycle Install/Register/Activate/Deactivate/Re-activate gegen tatsächlichen Runtimevertrag verifizieren;
+## Verbindlicher neuer Livebefund
+
+Nach Deployment bis `a9bccf807e7f0bd736e01c88404db613737cd82f` wurde der User Login real auf Betreiber-iPad/Chrome geprüft:
+
+- normal: Eye **nicht sichtbar**;
+- privat/Inkognito: Eye **nicht sichtbar**.
+
+Der bisherige dynamische Ansatz über `NeutralUiFeedback.enhancePasswordFields(content)`, Wiederholungsrender/Self-Heal und verschärftes CSS hat damit erneut live versagt.
+
+## Neue verbindliche Umsetzung
+
+Orientiere dich am zuverlässig funktionierenden Admin-Login-Muster. Beim User Login müssen Passwortfeld und Eye-Button **gemeinsam direkt im gerenderten Login-Markup** vorhanden sein.
+
+- `button.password-visibility-toggle` direkt im standardisierten Password-Control;
+- `type="button"`;
+- echtes open/crossed-eye SVG;
+- ca. 44×44 Touchziel;
+- `aria-label` + `aria-pressed`;
+- Klick: `password` ↔ `text`, Icon/ARIA aktualisieren, Fokus sinnvoll erhalten;
+- Light/Dark/Theme sichtbar;
+- Existenz darf nicht von MutationObserver, `requestAnimationFrame` oder nachträglicher DOM-Anreicherung abhängen;
+- gemeinsamen Password-Visibility-Vertrag weiterverwenden;
+- falls nötig den gemeinsamen Helper minimal so erweitern, dass er **bereits vorhandene Markup-Toggles bindet**, statt einen zweiten Button zu erzeugen;
+- `enhancePasswordFields()` für andere tatsächlich dynamische Formulare als Fallback erhalten, sofern benötigt;
+- keine divergierende User-/Admin-Semantik.
+
+Tests müssen DOM-nah beweisen: Control wird mit Button gerendert; genau ein Toggle; Klick ändert Input-Type; Icon/ARIA stimmen; eigenes CSS verbirgt ihn nicht. Reine Regex-Existenztests genügen nicht.
+
+Nach Deployment weiterhin `OPERATOR RETEST REQUIRED`.
+
+---
+
+# 3. Bereits implementierte Reparaturen vollständig gegen Verträge prüfen und härten
+
+Nicht blind neu implementieren. Prüfe den aktuellen Code gegen die Verträge und ergänze nur echte Lücken/Regressionen.
+
+## Profile
+
+- retry-safe Migration nach partieller MySQL-DDL;
+- Activate/Deactivate/Re-activate lokal/integrationstestbar;
 - Daten bei Deaktivierung erhalten;
-- Profile ohne harte Abhängigkeit zu Media/Sharing betreibbar halten;
-- fehlende optionale Enhancements sauber degradieren;
-- keine Core-Pfade so umbauen, dass Profile wieder Pflicht wird.
+- Profile bleibt optional; keine harte Media-/Sharing-Abhängigkeit;
+- kontrollierte Fehler statt 500;
+- Profile/Privacy User-UI nur bei aktiver Capability.
 
-Abnahme:
+## Media & Upload
 
-- Profile lässt sich aktivieren;
-- deaktivieren;
-- erneut aktivieren;
-- User-Settings zeigt Profile/Privacy nur bei aktiver Capability;
-- keine 500/JS-Fehler;
-- vorhandene Profildaten bleiben erhalten.
+- `Load failed`-Ursache und korrigierter Serverentry müssen im tatsächlichen Produktionspaket enthalten sein;
+- Install/Register/Activate/Deactivate/Re-activate lokal/integrationstestbar;
+- keine vollständige Media-Fachfunktion behaupten, solange nur Lifecycle/Capability-Scaffolding existiert.
 
----
+## Unlimited Devices
 
-# 3. Media & Upload – Install `Load failed` beheben
+- JSON/DB `null` = Unlimited darf nirgends zu `0` werden;
+- direct Package, License Package, User Override und License→Direct-Fallback prüfen;
+- numerische Limits weiterhin erzwingen;
+- UI niemals `0` für Unlimited.
 
-Realer Betreiberbefund:
+## User Management
 
-- `media` startet als Discovered / Not registered;
-- `Install` endet mit `Install failed: Load failed`.
+- List/Create/Edit als exklusive States;
+- Save/Cancel/Back zurück zur Liste;
+- Package/License/Roles/Device-Limits/Success-Dialog nicht regressieren;
+- mobile/touchfreundlich.
 
-Aufgabe:
+## Module Administration
 
-- Loader-/Manifest-/Serverentry-/Runtime-Ursache ermitteln;
-- Install/Register sauber ermöglichen;
-- anschließend Activate/Deactivate/Re-activate verifizieren;
-- keine neue harte Abhängigkeit zu Profile oder anderen Modulen erzeugen;
-- vorhandene generische Upload-/Backup-Primitives nur über saubere Modulgrenzen nutzen.
-
-Noch keine vollständige Media-Produkt-UI erfinden, falls der derzeitige Vertrag nur Lifecycle/Service-Scaffolding vorsieht. Ziel dieses Schritts ist ein belastbarer Modul-Lifecycle ohne falschen Funktionsclaim.
-
----
-
-# 4. Unlimited Devices – `2 of 0` und Loginblock beheben
-
-Realer Betreiberbefund:
-
-- User hatte wirksam direkt Package `Admin`;
-- Package `Default devices per user` = Unlimited;
-- bei zwei aktiven Sessions wurde Login wegen überschrittenem Device-Limit blockiert;
-- UI zeigte sinngemäß `2 of 0 sessions`.
-
-Aufgabe:
-
-- Root Cause in Entitlement-/Package-/License-/User-Limit-Auflösung finden;
-- `unlimited` darf niemals semantisch in `0 allowed` umgewandelt werden;
-- API, DB-Modell, Resolver, Sessionprüfung und UI müssen dieselbe Semantik verwenden;
-- direkte User-Package-Zuordnung, License-Package-Priorität und Fallback nach License-Entfernung nicht regressieren;
-- bestehende numerische Limits weiter korrekt erzwingen.
-
-Tests mindestens:
-
-- numeric limit 1/2/n;
-- unlimited direct package;
-- unlimited license package;
-- explicit user override unlimited, sofern Vertrag unterstützt;
-- fallback direct package nach License removal;
-- UI darf bei unlimited nicht `0` anzeigen.
+- Apps bleiben eigener Bereich;
+- User Modules/System Modules aus deklarativer `category`;
+- **eine** Registry/Runtime/Lifecycle;
+- Kategorie beeinflusst weder Permission noch Visibility;
+- rollenbezogene Visibility/Navigation getrennt von Permissions;
+- Visibility erteilt niemals API-Rechte;
+- Details/Lifecycleaktionen erhalten;
+- Mobile-First.
 
 ---
 
-# 5. User Login Eye – reale Ursache finden und sichtbar beheben
+# 4. Standalone-/Self-Test-System jetzt sauber abschließen
 
-Realer Betreiberbefund nach mehreren Deployments:
+GPS besitzt derzeit als einziges reales Modul einen deklarierten Standalone-Test. Dieser Punkt soll vor Freeze nicht nur dokumentiert, sondern technisch sauber entschieden und soweit sinnvoll standardisiert werden.
 
-- Admin-Login und andere Passwortfelder zeigen korrektes Eye;
-- normaler User-Login zeigt auf iPad/Chrome weder normal noch privat einen Eye-Toggle.
+## Ziel
 
-Wichtiger Code-Iststand, der vor einer Änderung ausdrücklich zu beachten ist:
+Ein Modul darf optional einen **Self-Test/Standalone-Test-Entry** deklarieren. Der Core/Admin stellt nur den generischen Mechanismus bereit; fachliche Tests gehören dem Modul.
 
-- `Web-App/public/user-app.js` rendert `#userLoginPassword` als `type="password"`.
-- Direkt nach dem dynamischen Login-Render wird bereits `window.NeutralUiFeedback?.enhancePasswordFields(content)` aufgerufen.
-- `Web-App/public/ui-feedback.js` besitzt bereits den zentralen Helper, erzeugt einen `button.password-visibility-toggle` und verwendet echte open/crossed-eye SVGs.
-- `Web-App/public/style.css` enthält bereits Regeln für `.password-input-wrap` und `.password-visibility-toggle` inklusive 44×44 Touchziel.
-- `Web-App/public/index.html` lädt `ui-feedback.js` vor `user-app.js`.
-- `service-worker.js` enthält `ui-feedback.js`, `user-app.js` und `style.css` im öffentlichen Shell-/Precache-Vertrag.
-- vorhandene Tests beweisen bislang im Wesentlichen nur, dass Sourcecode, Helper-Aufruf und CSS-Regeln vorhanden sind. Sie beweisen **nicht**, dass der Toggle im tatsächlich gerenderten User-Login-DOM sichtbar und bedienbar ist.
+## Auftrag
 
-Daraus folgt: **Nicht erneut nur „Auge hinzufügen“ oder einen weiteren Regex-/Source-Test schreiben.** Der Codepfad existiert bereits, aber der reale Browserbefund widerspricht ihm.
+1. Bestehenden GPS-Mechanismus vollständig analysieren: Manifestfeld, Validator, Registry, Admin Details, Loader, Security/Permissions.
+2. In `ModuleCreation.md` und Code eindeutig definieren, ob/wie ein Modul einen Self-Test deklariert.
+3. Wenn der aktuelle GPS-Weg bereits generisch ist, **nicht neu erfinden**; nur Lücken schließen und Vertrag festschreiben.
+4. Wenn derzeit GPS-Sonderlogik existiert, diese minimal in einen neutralen generischen Modulvertrag überführen, ohne fachliche GPS-Logik in Core zu verschieben.
+5. Self-Test bleibt optional. Systemmodule ohne sinnvollen Standalone-Test müssen keinen künstlichen Button erhalten.
+6. Admin zeigt Testaktion nur, wenn das Modul gültig einen Testentry deklariert.
+7. Ein Self-Test darf keine Berechtigungen umgehen, keine Secrets zeigen und keine destruktiven Produktionsaktionen ausführen.
+8. Dokumentieren: Self-Test beweist nur den deklarierten isolierten Modulpfad; er ersetzt **nicht** Lifecycle-, API-, DB-, Permission-, Integration- oder Betreiber-Livetests.
+9. Tests für Manifestvalidierung, Modul mit/ohne Self-Test und GPS-Regression ergänzen.
 
-Aufgabe:
-
-1. Root Cause entlang des tatsächlichen Produktions-/Browserpfads ermitteln.
-2. Nach dynamischem Login-Render im realen DOM prüfen:
-   - existiert `button.password-visibility-toggle` tatsächlich?
-   - befindet er sich innerhalb der erwarteten `.password-input-wrap`?
-   - wird er nach einem späteren Render wieder entfernt/überschrieben?
-   - verhindert ein Timing-/MutationObserver-/Renderproblem die dauerhafte Anreicherung?
-3. CSS/Computed-Style-Ursachen prüfen:
-   - `display`, `visibility`, `opacity`, `z-index`, `overflow`, Positionierung, Größe und Farbe;
-   - mögliche Überschreibung durch User-UI-Design/Custom CSS/Theme;
-   - Button darf nicht hinter/außerhalb des Input oder unsichtbar transparent liegen.
-4. Script-/Deployment-/Cache-Ursache prüfen:
-   - tatsächlich ausgelieferte Produktionsrevision von `ui-feedback.js`, `user-app.js`, `style.css`;
-   - Service-Worker-/Precache-Versionierung und Updatepfad;
-   - normaler und privater Browser dürfen keinen alten Shell-Stand behalten;
-   - bei Bedarf Cache-Busting/Revisionierung sauber lösen, nicht nur manuelles Cache-Leeren voraussetzen.
-5. Den zentralen Password-Visibility-Helper beibehalten; keinen separaten User-Login-Sonderhelper einführen.
-6. Toggle muss echtes open/crossed-eye SVG, ausreichend große Touchfläche, `aria-label` und `aria-pressed` behalten.
-7. Einen realen DOM-/Browser-nahen Regressionstest ergänzen, der mindestens beweist:
-   - Login wird gerendert;
-   - Toggle-Button wird als DOM-Element erzeugt;
-   - Button ist nicht durch die eigenen CSS-Regeln verborgen;
-   - Klick wechselt `password` ↔ `text` und Icon/ARIA-Zustand.
-
-Abnahme:
-
-- Code-seitig ist die konkrete Root Cause dokumentiert;
-- Produktionsartefakt enthält nachweislich den Fix;
-- der Test prüft nicht nur Sourcecode-Vorkommen;
-- nach Deployment bleibt dieser Punkt ausdrücklich `OPERATOR RETEST REQUIRED`, bis der Betreiber das Auge auf iPad/Chrome normal + privat tatsächlich sieht und bedienen kann.
+Ziel ist ein neutraler Vertrag, den zukünftige Module nutzen können, ohne Core-Sonderänderungen.
 
 ---
 
-# 6. User Management – List/Edit/Create auf Mobile trennen
+# 5. Field Notes jetzt als finalen code-seitigen No-Core-Change-Freeze-Proof bauen
 
-Verbindliche UX-Entscheidung:
+Der Betreiber möchte nach diesem Agentenlauf möglichst nahe am Freeze sein. Daher soll **Field Notes in diesem Lauf als Referenz-/Beweismodul umgesetzt werden**, sofern der Preflight keine fundamentale offene Architekturblockade findet.
 
-- Userliste und Edit/Create nicht gleichzeitig als lange gestapelte Blöcke zeigen;
-- Klick auf `Edit` öffnet eine eigene Edit-Ansicht/State;
-- Klick auf `Create new user` öffnet eigene Create-Ansicht/State;
-- nach erfolgreichem Save zurück zur Userliste;
-- Cancel/Back ebenfalls kontrolliert zurück;
-- keine unnötige lange Scrollstrecke auf kleinen Screens;
-- Desktop darf ebenfalls von der klareren Trennung profitieren;
-- bestehende Create/Edit-Funktionalität, Package/License-Auswahl, Rollen, Device-Limits und Success-Modal nicht regressieren.
+## Harte Regel
 
----
+> Field Notes muss als neues unabhängiges User Module implementiert werden, **ohne bestehende Core-Dateien nur für seine fachliche Integration zu ändern**.
 
-# 7. Module Visibility/Navigation pro Rolle – getrennt von Permissions
+Vor Beginn den Git-Diff-Baselinepunkt festhalten. Nach Umsetzung explizit beweisen, welche Dateien geändert wurden.
 
-Verbindliche Architektur-/UX-Entscheidung:
+## Zweck
 
-- Permissions = technische Autorisierung;
-- Visibility/Navigation = sichtbarer UI-/Navigationseinstieg;
-- Klassifikation User/System = administrative Gruppierung;
-- diese drei Ebenen nicht vermischen.
+Field Notes ist bewusst ein kleines neutrales Referenzmodul, kein CatchTrack-Modul. Es soll beweisen, dass ein Entwickler anhand von `ModuleCreation.md` ein neues User Module erstellen, installieren, aktivieren, nutzen, deaktivieren und wieder aktivieren kann, ohne Core-Sonderintegration.
 
-Aufgabe:
+## Minimaler Funktionsumfang
 
-- in Module Administration/Details einen klaren Bereich `Visibility` / `Navigation` oder äquivalent einführen;
-- mindestens rollenbezogene Steuerung für Admin, Developer, User, Viewer, soweit jeweilige Oberfläche relevant;
-- ein Modul kann active sein und für einzelne Rollen keinen Navigationseintrag besitzen;
-- unsichtbare Systemmodule müssen möglich bleiben;
-- Visibility darf keinerlei Serverpermission erteilen;
-- serverseitige Permissionprüfung unverändert autoritativ;
-- bestehendes globales `presentation.userNavigation=false` oder äquivalent als Default/Fallback respektieren;
-- persistente Konfiguration sauber namespacen/migrieren.
+- Kategorie: `user`;
+- eigene Namespace-/Modul-ID `field-notes` oder gemäß bestehender Naming-Regel;
+- einfache persönliche Notizen des angemeldeten Users;
+- mindestens Liste + neue Notiz + Bearbeiten + Löschen, sofern der bestehende Modulvertrag/DB-Migrationsweg dies ohne Coreänderung trägt;
+- Notiz mindestens `title`, `body`, Zeitstempel, Owner/User-Zuordnung;
+- serverseitige Ownership-/Permission-Prüfung; User darf niemals fremde Notes lesen/ändern/löschen;
+- eigene Modulmigration/Tabelle gemäß bestehendem Modulvertrag;
+- i18n/Theme/responsive UI gemäß Neutral-Vertrag;
+- Backup/Restore nur über bereits vorhandenen generischen deklarierten Moduldatenvertrag; **keinen Core-Sonderfall für Field Notes hinzufügen**;
+- Visibility/Navigation über bestehende generische Mechanismen;
+- kein Media/Sharing/Profile als Pflichtabhängigkeit;
+- optionaler Self-Test nur wenn er nach dem in Abschnitt 4 festgelegten Vertrag sinnvoll ist. Nicht künstlich erzwingen.
 
-Nicht einfach `view`-Permission als Visibility missbrauchen.
+## Freeze-Proof-Kriterium
+
+Wenn Field Notes für seine normale Integration eine Änderung an bestehenden Core-Dateien benötigt, **nicht einfach die Core-Datei ändern**. Stoppe diesen Teil, dokumentiere präzise den fehlenden generischen Extension Point als Freeze-Blocker und implementiere nur dann einen Core-Fix, wenn er nachweislich universell/generisch ist und nicht Field-Notes-spezifisch. Danach muss der Beweistest erneut von sauberer Basis erfolgen.
+
+Tests: Modulmanifest, Install/Register/Activate/Deactivate/Re-activate, API/Ownership, Migration, User UI/Navigation, Backup-Discovery soweit relevant, keine Pflichtabhängigkeiten und automatischer Check, dass keine Field-Notes-spezifische Referenz in Core-Dateien eingeführt wurde.
 
 ---
 
-# 8. Apps & Modules – User Modules / System Modules administrativ trennen
+# 6. Vollständiger Pre-Freeze-Audit nach Implementierung
 
-Neue verbindliche Betreiberentscheidung:
+Nach Eye + Self-Test-Vertrag + Field Notes und den bestehenden Reparaturen einen **kompletten technischen Pre-Freeze-Audit** durchführen.
 
-Unter `Apps & Modules` soll der Admin klar unterscheiden können zwischen:
+Prüfe mindestens:
 
-1. **Apps**
-2. **User Modules**
-3. **System Modules**
+- Core↔Module-Grenzen;
+- keine CatchTrack-/Field-Notes-Fachlogik in Core;
+- Module Discovery/Manifest/Registry/Lifecycle;
+- User/System category;
+- Visibility vs Permissions;
+- optional dependencies;
+- Profile/Media/Systemmodule;
+- Auth/User/Admin Login;
+- Password controls;
+- Packages/Licenses/Unlimited/Session limits;
+- User Management;
+- API/DB/Migrationen;
+- Security/CSRF/Ownership;
+- Backup contract;
+- i18n/theme/mobile;
+- Offline/Service Worker/production asset revisioning;
+- Module Self-Test contract;
+- Field Notes no-Core-change proof;
+- Setup-Routine weiterhin nur Post-Freeze-Plan;
+- Referral/Rewards weiterhin Zukunftsmodul.
 
-Wichtig:
-
-- dies ist **nur eine deklarative Klassifikation/Präsentation**;
-- keine zweite Modul-Registry;
-- keine zweite Lifecycle-Engine;
-- keine unterschiedlichen Install-/Activate-Mechanismen;
-- alle Module bleiben technisch gleichwertige Module.
-
-Beispielklassifikation:
-
-### User Modules
-- GPS
-- Profile
-- Postbox
-- später Field Notes
-
-### System Modules
-- Media & Upload
-- Moderation
-- Notifications
-- Sharing & Visibility
-- später Referral/Rewards
-
-Aufgabe:
-
-- saubersten Manifest-/Metadatenvertrag gegen bestehenden Validator bestimmen, z. B. `category: user|system` oder äquivalent;
-- backward-compatible Default für bestehende Module definieren;
-- Admin-UI entsprechend gruppieren/tabs/filtern;
-- Mobile-First;
-- Kategorie darf Navigation/Visibility nicht automatisch bestimmen;
-- Kategorie darf Permissions nicht beeinflussen;
-- bestehende Moduldetails/Lifecycleaktionen vollständig erhalten.
-
-Dokumentation in `ModuleCreation.md`, `Architecture.md`, `SYSTEM-MODULES.md`, `ADMIN-UX-DECISIONS.md`, `UI-UX.md` und Statusdateien aktualisieren.
+Keine unnötigen Refactorings. Nur echte Freeze-Blocker beheben.
 
 ---
 
-# 9. Standalone-/Self-Test-Vertrag prüfen
+# 7. Dokumentation vollständig synchronisieren
 
-GPS ist derzeit das einzige Modul mit deklariertem Standalone-Test.
+Nach dem tatsächlichen Code-Endstand **alle Markdown-Dateien gegen Code und Tests synchronisieren**, nicht nur einzelne Statusdateien.
 
-Aufgabe:
+Mindestens ausdrücklich prüfen/aktualisieren:
 
-- bestehenden Mechanismus gegen `ModuleCreation.md` prüfen;
-- keine künstlichen Standalone-Tests erzwingen, wenn ein Systemmodul ohne Server/DB fachlich nicht sinnvoll testbar ist;
-- dort, wo sinnvoll, standardisierten Testentry ermöglichen;
-- klar dokumentieren, was ein Standalone-Test beweist und was nicht;
-- Standalone-Test ersetzt keine Lifecycle-, API-, DB-, Permission- oder Liveprüfung.
-
-Kein unnötiger Umbau der Modularchitektur nur für Testbuttons.
-
----
-
-# 10. Referral / Rewards – nur dokumentiert lassen, nicht implementieren
-
-`PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md`, `SYSTEM-MODULES.md` und `ROADMAP.md` enthalten den neuen Referral-/Rewards-Zielvertrag.
-
-In diesem Lauf:
-
-- nicht implementieren;
-- keinen Core-Hook nur für Referral einbauen;
-- keine Payment-Engine erfinden;
-- nur sicherstellen, dass aktuelle Architekturentscheidungen eine spätere modulare Umsetzung nicht offensichtlich verhindern.
-
-Falls ein tatsächlich universeller Extension Point fehlt, nur dokumentieren und begründen; nicht vorschnell Core aufblasen.
-
----
-
-# 11. Bestehende erfolgreiche Lifecycle-Befunde nicht regressieren
-
-Folgende Module bestanden real Install → Activate → Deactivate → Activate:
-
-- Moderation
-- Notifications
-- Postbox
-- Sharing & Visibility
-
-Sie wurden anschließend wieder deaktiviert.
-
-Nach Änderungen erneut lokal/regressiv prüfen. Produktions-Livebefund erst nach Betreiber-Retest aktualisieren.
-
-GPS bleibt bestehendes aktives Referenzmodul und darf nicht regressieren.
-
----
-
-# 12. Field Notes noch nicht bauen
-
-Field Notes bleibt der **nächste separate Freeze-Proof nach diesem Reparaturlauf**.
-
-Harte spätere Regel:
-
-> Field Notes muss ohne Änderung bestehender Core-Dateien implementierbar sein.
-
-Daher in diesem Lauf keine Field-Notes-Implementierung. Architektur nur so reparieren, dass der anschließende Beweistest sinnvoll durchgeführt werden kann.
-
----
-
-# 13. Dokumentation aktualisieren
-
-Nach tatsächlicher Implementierung alle betroffenen Dokumente synchronisieren, mindestens:
-
-- `CHATGPT.md`
-- `STATUS.md`
-- `TODO.md`
-- `ToDoNow.md`
+- `DOCUMENTATION.md`
+- `VISION.md`
+- `CORE-1.0.md`
 - `CORE-1.0-READINESS.md`
 - `Architecture.md`
 - `ModuleCreation.md`
 - `SYSTEM-MODULES.md`
 - `ADMIN-UX-DECISIONS.md`
 - `UI-UX.md`
+- `USER-ACCOUNT-LICENSE-MODEL.md`
 - `API.md`
 - `Database.md`
 - `Security.md`
 - `Functions.md`
-- `CHANGELOG.md`
+- `BACKUP-CONTRACT.md`
+- `Install-README-Server.md`
+- `Install-README-Web-App.md`
+- `DEVELOPMENT.md`
+- `STATUS.md`
+- `TODO.md`
+- `ToDoNow.md`
+- `ROADMAP.md`
 - `WORKFLOW.md`
+- `CURRENT-TASK.md`
+- `CHATGPT.md`
+- `CHANGELOG.md` nur append-only/historisch korrekt
+- `PRODUCT-DECISIONS-2026-09-11.md`
+- `PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` als Herkunftsnachweis, nicht konkurrierende Autorität.
 
-Keine Livefehler als bestanden markieren, bevor Betreiber-Retest erfolgt ist.
+Dokumentationsregeln:
 
-`PRODUCT-DECISIONS-2026-09-11-FOLLOWUP.md` bleibt als datierter Herkunftsnachweis erhalten, nachdem seine Inhalte in die autoritativen Dokumente überführt wurden.
+- Code-/Teststatus und Betreiber-Livestatus strikt trennen.
+- Das erneut fehlgeschlagene Eye niemals als live bestanden markieren, bis der Betreiber es bestätigt.
+- Profile/Media/Unlimited/User Management/Visibility/Kategorien/Field Notes bleiben nach Deployment `OPERATOR RETEST REQUIRED`, soweit reale Produktion/Bedienung nötig ist.
+- Self-Test-Vertrag klar als begrenzten Test definieren.
+- Referral/Rewards nicht als implementiert darstellen.
+- automatische Setup-Routine nicht als implementiert darstellen.
+- Core Freeze noch **nicht** erklären.
 
 ---
 
-# 14. Verifikation / Deployment
+# 8. Verifikation und Deployment
 
-Gemäß `WORKFLOW.md`:
+Vor Abschluss:
 
-1. vollständige relevante Tests;
-2. PHP-Lint;
-3. JS-Syntax;
-4. `git diff --check`;
-5. Production package;
-6. commit/push `main`;
-7. CI/CodeQL/FTPS terminal abwarten;
-8. `HEAD == origin/main`, sauberer Tree;
-9. Deploymentrevision + `migrationsReady:true` prüfen;
-10. Production-Smokes nur read-only;
-11. keine destruktiven Produktionsaktionen;
-12. `CHATGPT.md` mit kurzem tatsächlichem Endstand und Betreiber-Retestliste aktualisieren.
+1. relevante fokussierte Tests während jeder Aufgabe;
+2. vollständige Testsuite;
+3. PHP-Lint;
+4. JS-Syntax;
+5. Security-/Ownership-/Permission-Regressionen;
+6. `git diff --check`;
+7. Production Package bauen und dessen Inhalt prüfen;
+8. insbesondere beweisen, dass das User-Login-Markup den Eye-Button enthält und die ausgelieferten Assets die neue Revision tragen;
+9. commit/push `main` gemäß `WORKFLOW.md`;
+10. CI/CodeQL/FTPS terminal abwarten;
+11. `HEAD == origin/main`, sauberer Tree;
+12. Deploymentrevision und `migrationsReady:true` prüfen;
+13. nur nicht-destruktive Production-Smokes;
+14. keinen Production-Restore;
+15. `CHATGPT.md` zuletzt mit präzisem Endstand und einer **einzigen gesammelten Betreiber-Retestliste** aktualisieren.
 
-## Betreiber-Retestliste danach
+---
 
-1. Profile Install/Activate/Deactivate/Re-activate + Daten erhalten.
-2. Media Install/Activate/Deactivate/Re-activate.
-3. Unlimited Package/User Login mit mehreren Sessions.
-4. User-Login-Eye auf iPad/Chrome normal + privat.
-5. User Management List/Edit/Create auf kleinem Screen.
-6. Module Visibility pro Rolle.
-7. Apps / User Modules / System Modules Darstellung.
-8. Moderation/Notifications/Postbox/Sharing Lifecycle Regression.
-9. GPS Regression.
-10. Danach Field Notes als separater Auftrag.
+# 9. Gesammelte Betreiber-Retestliste vorbereiten – nicht selbst als bestanden markieren
 
-Keine automatische Core-Freeze-Erklärung in diesem Lauf.
+Nach diesem Lauf soll `CHATGPT.md` eine kompakte Reihenfolge enthalten, damit der Betreiber alles möglichst einmal testet:
+
+1. User Login Eye – iPad/Chrome normal + privat, Show/Hide tatsächlich bedienen.
+2. Profile – Activate/Deactivate/Re-activate, Profile/Privacy sichtbar, Daten erhalten.
+3. Media – Install/Register/Activate/Deactivate/Re-activate ohne `Load failed`.
+4. Unlimited – Direct Package + mehrere Sessions; soweit praktisch License Package; niemals `0`.
+5. User Management – List/Create/Edit/Save/Cancel/Back auf kleinem Screen.
+6. Apps / User Modules / System Modules – Gruppierung korrekt.
+7. Module Visibility/Navigation – Rollensteuerung getrennt von Permissions.
+8. Self-Test – GPS Test sichtbar/funktional; Module ohne Test zeigen keinen falschen Testbutton.
+9. Field Notes – Install/Activate, CRUD als User, Deactivate/Re-activate, Daten erhalten; Navigation/Visibility.
+10. Moderation/Notifications/Postbox/Sharing – Lifecycle Regression.
+11. GPS – normale Produktfunktion Regression.
+12. falls laut bestehender Readiness noch offen: relevante Host/Backup/License/Session-Operatorgates in denselben Abnahmelauf aufnehmen.
+
+Erst **nach** diesem Betreiber
