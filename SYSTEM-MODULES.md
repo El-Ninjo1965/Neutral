@@ -66,7 +66,7 @@ Die optionalen Systemmodule haben keine Pflichtabhängigkeit. Profile nennt Medi
 
 The remaining Core-owned `user_profiles` baseline and legacy Core media tables are a **compatibility bridge**, not the desired final ownership boundary. The next implementation rounds must remove ambiguity non-destructively rather than claim the bridge complete.
 
-`field-notes` is the code-/test-verified independent freeze proof. Its product implementation consists only of new module files and uses generic Core contracts; operator-live acceptance remains open.
+`field-notes` is the code-/test-verified independent freeze proof. It was implemented without edits to existing Core files for product-specific integration; its product implementation consists only of new module files and uses generic Core contracts; operator-live acceptance remains open.
 
 ## Classification implementation
 
