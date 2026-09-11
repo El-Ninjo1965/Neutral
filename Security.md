@@ -188,3 +188,7 @@ Role navigation visibility is presentation-only: writes require `role.write` plu
 ## Field Notes ownership and Self-Test boundary (2026-09-11)
 
 Field Notes derives ownership only from the authenticated server identity. Every SELECT/UPDATE/DELETE includes `owner_user_id`; client-provided ownership is ignored. Mutations require the namespaced use permission and session CSRF through the generic module kernel. The optional module Self-Test entry is restricted to a safe module-local HTML path and grants no route, permission, session or secret access; its prerequisite flags are disclosure metadata, not authorization bypasses.
+
+## Test-result and lifecycle safety (2026-09-11)
+
+Database/path test history persists only status and UTC timestamp; Audit metadata contains status but no database credentials, backup path or encryption key. Module migration failure is compensated to not-present/disabled rather than exposing a usable partial registration. Compensation retains declared module data and never performs destructive Production recovery.

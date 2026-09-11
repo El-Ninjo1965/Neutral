@@ -136,3 +136,7 @@ Beispielhafte Rewards wie 3 Tage, 7 Tage oder 1 Monat Premium sind Konfiguration
 ## Kompatibilitätsregel
 
 Professionellere Infrastruktur ersetzt Adapter, nicht die Produktverträge. Client und Module dürfen nicht unnötig von PHP, Node, cPanel oder einem bestimmten Drittanbieter abhängen.
+
+## Immediate gate after operator-retest repair
+
+Only the consolidated non-destructive operator acceptance in `CHATGPT.md` remains the next execution step. Referral/Rewards and automatic setup remain later; no Core Freeze is implied by code/CI completion.

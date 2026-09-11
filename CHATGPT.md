@@ -1,36 +1,37 @@
-# Neutral handoff — one collected operator acceptance round
+# Neutral handoff — gesammelte Operator-Abnahme
 
-**Code state 2026-09-11:** The User Login password control now contains its Eye button directly in rendered markup; the shared helper binds it without adding a duplicate. The optional module Self-Test entry is validated as a safe module-local HTML path, and Admin shows a test action only for modules that declare one. Field Notes is implemented solely in new module/test files, using the generic lifecycle, route, permission, migration, limit, navigation and backup contracts.
+**Code- und Deploymentstand:** wird nach Abschluss dieses Reparaturlaufs mit der tatsächlich deployten Revision ergänzt.
+**Operatorstatus:** **RETEST REQUIRED**
+**Core Freeze:** nicht erklärt.
 
-## Deployment evidence
+## In diesem Lauf reparierter Code-IST
 
-- Code payload through `4974e57` was pushed to `main`. CodeQL run `34550129103` succeeded. FTPS run `34550129504` completed tests, package build, upload and the bounded read-only production smoke successfully.
-- The production smoke reported root/rewrite/module catalog reachable, protected Admin/Core boundaries enforced, `migrationsReady:true` and deployment revision matched.
-- A supplemental direct `curl` from this workspace was blocked by its outbound CONNECT proxy; this does not replace or contradict the successful CI-hosted smoke.
+- Das statische Login-Eye wird direkt an sein konkretes Passwortfeld gebunden; ein echter Click schaltet `password ↔ text`, synchronisiert ARIA/SVG und hält den Fokus.
+- Ein fehlgeschlagener Modul-Install markiert den Registry-Eintrag wieder als `is_present=0`, deaktiviert den Lifecycle und hinterlässt eine retry-sichere Fehlermeldung. Profile bleibt optional und ohne harte Media-/Sharing-Abhängigkeit.
+- User Settings heißt `Apps`; Save und Restore Defaults zeigen den gemeinsamen Success-Dialog und rendern Navigation/UI unmittelbar aus dem persistierten Zustand neu.
+- Admin besitzt keinen redundanten globalen Header. Theme steht unter Brand/Version, Logout unten; jede Route setzt den Content-Scroll kontrolliert auf den Anfang.
+- App Modules und System Modules sind getrennte Admin-Ziele derselben Registry/Lifecycle-Engine. Dashboard enthält nur Summary.
+- Packages, Licenses/Organizations und Roles verwenden exklusive List- bzw. Create/Edit-Zustände. ACCESS ist Users → Licenses → Packages → Sessions → Roles → Permission Catalog.
+- User Management zeigt keine E-Mail in der Liste, trennt Organization von License/Package, zeigt die Device-Limit-Quelle und bietet stabile sortierbare Spalten.
+- Die unzugeordnete Systempolicy ist `1` Gerät, sofern `AUTH_MAX_DEVICES_PER_USER` sie nicht ausdrücklich überschreibt; `null` bleibt Unlimited. Bestehende Sessions werden beim Senken eines Limits nicht gelöscht.
+- Die Sessions-Standardtabelle enthält nur User, Roles, Status, Registered und Last Activity; technische/geratene Gerätedaten bleiben aus der Übersicht.
+- Database Test und Backup Path Test speichern Zeitpunkt/Ergebnis in namespaced Settings, auditieren den Test und zeigen unmittelbares Feedback sowie den letzten Teststand.
 
-## Truth boundaries
+## Wahrheitsgrenze
 
-- Code, focused tests and the complete regression suite are not an operator-live pass.
-- The previous dynamic Eye implementation failed on operator iPad/Chrome normal and private. The replacement remains **OPERATOR RETEST REQUIRED**.
-- Profile, Media, Unlimited, User Management, module visibility/grouping and Field Notes remain **OPERATOR RETEST REQUIRED**.
-- Media remains lifecycle/capability scaffolding, not a complete upload product.
-- A module Self-Test proves only its declared isolated path; it does not prove lifecycle, API, DB, permissions, integration or production behavior.
-- Referral/Rewards and automatic setup were not implemented. Core Freeze was not declared.
-- No Production Restore or destructive production action was performed.
+Lokale Tests, CI, Deployment und read-only Smokes sind kein Operator-Live-Pass. Kein Production Restore und keine destruktive Produktionsaktion wurden ausgeführt. Referral/Rewards und automatische Setup-Routine wurden nicht implementiert. Field Notes erhielt keine neue Fachfunktion. Ein Core Freeze wurde nicht erklärt.
 
-## Single collected operator retest
+## Einzige priorisierte Operator-Retestliste
 
-1. User Login Eye — iPad/Chrome normal and private: Eye is visible immediately; operate Show/Hide and confirm focus/touch behavior.
-2. Profile — Install/Activate/Deactivate/Re-activate; Profile/Privacy visibility and retained data.
-3. Media — Install/Register/Activate/Deactivate/Re-activate without `Load failed`.
-4. Unlimited — direct Package with multiple sessions and, where practical, License Package/User override; never display or enforce `0`; confirm numeric limits still block correctly.
-5. User Management — List/Create/Edit/Save/Cancel/Back on a small screen, including Package/License/roles/device limits and success dialog.
-6. Apps / User Modules / System Modules — grouping and lifecycle details remain complete.
-7. Module Visibility/Navigation — test Admin/Developer/User/Viewer independently and confirm hidden navigation does not grant or remove API permission.
-8. Self-Test — GPS action visible and functional; Profile, Media and Field Notes show no false test action.
-9. Field Notes — Install/Activate; create/list/edit/delete own notes; confirm another user cannot access them; Deactivate/Re-activate retains data and navigation follows visibility.
-10. Moderation/Notifications/Postbox/Sharing — lifecycle regression.
-11. GPS — normal product-function regression.
-12. Complete remaining host gates from `CORE-1.0-READINESS.md`, including protected backup-path/key/read-only checks; never restore Production as a test.
-
-Only after every required result is recorded may the operator start a separate Core-Freeze decision.
+1. User Login Eye auf iPad/Chrome normal und privat: zweimal klicken, tatsächliche Sichtbarkeit, ARIA/Fokus und keine Duplikate prüfen.
+2. Profile: Install → Activate → Deactivate → Re-activate sowie absichtlich wiederholten Install/Reload prüfen; danach Profile/Privacy und Permission Catalog/Role Management verifizieren.
+3. User Settings: Apps/Navigation ändern, Save und Restore Defaults prüfen; Success-Dialog und sofortige Navigation ohne Reload bestätigen.
+4. Admin Shell auf Desktop/iPad: Headerfreiheit, Theme-/Logout-Position, jede Route/Reload am Contentanfang, Deep-Link/Back für App Modules und System Modules.
+5. Dashboard, Packages, Licenses und Roles: kompakte Summary sowie exklusive List/Create/Edit-, Save-/Cancel-/Back-Flows prüfen.
+6. User Management: Sortierung aller geforderten Spalten, Organization getrennt von License/Package, E-Mail nur im Editor, Device-Quelle verständlich.
+7. Device Limits: User Override → License → direct Package → Systempolicy; numerisch und Unlimited mit mehreren Sessions, keine `0`, keine automatische Sessionlöschung.
+8. Package/License Delete: User-/Manager-/Package-Zuordnungen getrennt prüfen; Sessions dürfen nicht als License-Zuordnung fehlbeschriftet werden.
+9. Sessions: responsive Fünf-Spalten-Tabelle ohne technische ID/UA-Raten; bestehende Support-/Audit-Identität intern erhalten.
+10. Database Test und Backup Path Test: Dialog, persistenter Timestamp/Status nach Reload und Audit; keinen Restore ausführen.
+11. Regression der bereits live bestandenen Befunde: GPS Produktfunktion, Media Lifecycle, Postbox Lifecycle, Sharing & Visibility Lifecycle, Audit Delete All und Maintenance State.
+12. Field Notes unverändert operator-live prüfen und verbleibende Host-Gates aus `CORE-1.0-READINESS.md` abschließen.

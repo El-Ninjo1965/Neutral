@@ -134,7 +134,7 @@ Freigabe an eine Organisation bedeutet nicht öffentliche Freigabe.
 
 Mindestens:
 
-- `App Areas`
+- `Apps`
 - `Navigation`
 - `Privacy & Sharing`
 - `Profile`
@@ -402,3 +402,7 @@ Profile privacy values describe sharing with the user's assigned organization. T
 ## Direct package versus License package
 
 An individual user may retain a nullable direct `package_id` without a License/Organization. When an active License membership exists, its Package is the sole effective Package; the direct Package is retained only as an explicit fallback and becomes effective again after membership removal. The User API exposes `directPackageId`, `effectivePackageId`, and `packageSource` (`direct`, `license`, or `unassigned`) so clients never infer precedence. User-level device overrides remain highest priority; otherwise the effective License or direct Package supplies the default.
+
+## Device-source and organization projection (2026-09-11)
+
+The Admin User list projects human `organizationName` only from an active License membership and displays it separately from the effective Package. Device resolution order is User membership/direct override → active License policy/Package → active direct Package → explicit System fallback. The fallback is one device unless `AUTH_MAX_DEVICES_PER_USER` explicitly configures another positive host policy. Lowering a limit may leave used sessions above the limit; it blocks a new installation but never silently revokes an existing session.

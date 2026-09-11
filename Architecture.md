@@ -313,3 +313,7 @@ Module manifests now normalize `category: user|system` with backward-compatible 
 ## Pre-freeze extension proof (2026-09-11)
 
 The optional module Self-Test is normalized metadata, not a second lifecycle or privileged execution engine. A safe module-local HTML entry may be linked by Admin; absent entries produce no action. Field Notes uses the existing single registry/runtime, generic module HTTP kernel, namespaced permissions, CSRF, module migration/limit contracts, role navigation visibility and declared-table Backup V2 discovery. No Field-Notes branch exists in Core or the central API router. This is the code-side no-Core-change proof; operator acceptance and Core Freeze remain separate gates.
+
+## Operator-retest repair boundary (2026-09-11)
+
+App Modules and System Modules are two route-stable filtered Admin projections of one registry, contract, permission catalog and lifecycle engine. No second runtime was introduced. Installation DDL remains retry-safe; if post-registration resolution/migration fails, the lifecycle compensates the registry to `is_present=0`, disabled/error. Retained module data is not dropped, so a later install can retry additive migrations without a false registered state.

@@ -159,3 +159,7 @@ Role navigation visibility is stored as namespaced JSON in `settings.setting_key
 ## Field Notes declared module table (2026-09-11)
 
 `field_notes_items` is module-owned and declared through the generic module database contract: `id`, `owner_user_id`, `title` (max 160), `body`, `created_at`, `updated_at`, with an owner/update index and `users.id` foreign key. Deactivation and ordinary uninstall retain data (`destroyOnUninstall:false`, `dataPolicy:retain`). Backup V2 discovers it from the installed module manifest; no Core table list or Field-Notes backup branch is added.
+
+## Operations test history and device fallback (2026-09-11)
+
+`core.ui.settings` now retains `lastDatabaseTest` and `lastBackupPathTest`, each limited to result and UTC timestamp. Audit retains the corresponding test event; neither record is a current-health guarantee and neither contains path, connection data or secrets. Unassigned users resolve to the explicit one-device System default unless host policy `AUTH_MAX_DEVICES_PER_USER` supplies another positive value. License/User overrides and Package Unlimited continue to use SQL `NULL`, never numeric zero.

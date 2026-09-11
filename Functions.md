@@ -220,3 +220,7 @@ default home instead of leaving an empty view.
 ### Field Notes and module Self-Test
 
 Field Notes provides owner-scoped list/create/edit/delete via the generic active-module API, retained module migration, declared limit and responsive module UI. The optional `standalone` contract accepts a safe module-local HTML entry; Admin renders it only when declared. Neither mechanism is a replacement for lifecycle, permission, integration or operator-live acceptance.
+
+## Operator-retest repair batch (2026-09-11)
+
+Implemented: deterministic static Login-Eye binding; compensating/retry-safe module install failure state; immediate User Settings save/default restore feedback and rerender; split App/System Module Admin routes; compact Dashboard/Sessions; exclusive Package/License/Role editors; sortable organization-aware User list; traceable Device source with one-device System default; persistent audited database/path test results. All are `OPERATOR RETEST REQUIRED` after deployment.

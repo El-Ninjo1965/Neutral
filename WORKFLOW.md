@@ -202,3 +202,7 @@ Replaced the repeatedly live-failing dynamic User Login Eye dependency with a pa
 ## 2026-09-11 — Deployment evidence for pre-freeze batch (Codex)
 
 CodeQL run `34550129103` passed. FTPS run `34550129504` passed its complete test gate, verified production package, upload and bounded read-only production smoke; the smoke returned `migrationsReady:true` and a matching deployment revision while keeping protected endpoints protected. An earlier FTPS attempt exposed a shallow-checkout-only history assertion and stopped before packaging/upload; the test now keeps the always-applicable Core-content scan authoritative and conditionally skips only the supplemental historical diff when its baseline commit is unavailable. Direct workspace curl remained blocked by the outbound CONNECT proxy. No Production Restore or destructive production action occurred.
+
+## 2026-09-11 operator-retest repair run
+
+Repaired the concrete failed interaction/lifecycle paths, added focused DOM/source/integration regressions, then runs the complete suite, production package, push, CI/CodeQL, FTPS and bounded read-only smoke. The next human step is the single list in `CHATGPT.md`; local/CI evidence never converts those items into live PASS and no freeze follows automatically.

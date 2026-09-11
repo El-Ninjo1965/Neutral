@@ -110,3 +110,7 @@ Profile's retained `user_profiles` rows, including bounded processed avatar data
 ## Field Notes verification note (2026-09-11)
 
 The `field_notes_items` table participates only through the existing V2 installed-module table discovery based on the manifest `database.tables` declaration. There is no hard-coded Field Notes table or media rule in the backup service. Restore remains isolated-test-only; no Production Restore is permitted as verification.
+
+## Path-test evidence
+
+A path probe remains non-destructive. Its last status/timestamp may be stored in installation settings and Audit, but is not part of a backup artifact, does not disclose the tested path or key in Audit, and is not proof that the directory remains writable. Production Restore remains prohibited as a smoke test.

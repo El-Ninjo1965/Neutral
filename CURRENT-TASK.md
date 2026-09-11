@@ -1,3 +1,3 @@
-# Current Task — collected operator pre-freeze acceptance
+# Current Task — collected operator acceptance
 
-The pre-freeze implementation batch, including the static User Login Eye, generic optional Self-Test contract and Field Notes no-Core-change proof, is code-/test-complete. Next execute the single non-destructive operator retest sequence in `CHATGPT.md`; Referral/Rewards and automatic setup remain later work, and Core Freeze requires a separate explicit decision.
+After CI/deployment evidence for the operator-retest repair batch is recorded, execute only the prioritized non-destructive live acceptance list in `CHATGPT.md`. Do not restore Production, implement Referral/Rewards/setup, or declare Core Freeze automatically.

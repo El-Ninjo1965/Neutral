@@ -80,3 +80,7 @@
 - Password visibility verwendet ein gemeinsames Verhalten/ARIA/Icon-Schema.
 - Aktivierung eines Moduls impliziert keine User-Navigation.
 - Apps/App Modules/System Modules sind Präsentations-/Administrationsgruppierung; eine gemeinsame Runtime bleibt verbindlich.
+
+## Implementierungsstand des Nachtrags (2026-09-11)
+
+Alle Punkte 1–20 wurden im Code des anschließenden Reparaturbatches umgesetzt und automatisiert geprüft; die in Punkten 21/27 beschriebenen Profile-/Device-Ursachen besitzen nun kompensierende bzw. nachvollziehbare Verträge. Das ändert die Livebewertung nicht: sämtliche reparierten Bedienpunkte bleiben bis zur Liste in `CHATGPT.md` **OPERATOR RETEST REQUIRED**. Die bestätigten PASS-Befunde 22–25 sowie Audit/Maintenance bleiben als reale Beobachtungen erhalten. Kein Production Restore und kein Core Freeze.

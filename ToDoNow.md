@@ -1,3 +1,3 @@
 # To do now
 
-Execute the collected operator retest in `CHATGPT.md`. Do not perform a Production Restore, do not treat local/CI success as operator acceptance, and do not declare Core Freeze automatically.
+Complete this batch's CI/FTPS/read-only evidence, then run the single non-destructive operator retest in `CHATGPT.md`; no Production Restore and no automatic Core Freeze.

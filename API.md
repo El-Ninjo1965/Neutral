@@ -171,3 +171,9 @@ Module catalog payloads include normalized `presentation` (`userNavigation`, `ad
 ## Field Notes module routes (code-present, operator retest pending)
 
 The generic `/api/v1/modules/<module-id>/<route>` kernel exposes Field Notes only while the module is installed and active. `GET /api/v1/modules/field-notes/items` requires `field-notes.view`; `POST`, `PUT` and `DELETE` on the same path require `field-notes.use`, authenticated ownership and CSRF for browser-session mutations. POST accepts `title`/`body`; PUT additionally accepts `id`; DELETE accepts `id`. All reads and mutations bind `owner_user_id` to the authenticated server identity. These are declarative module routes, not central-router special cases.
+
+## 2026-09-11 operator-retest repair endpoints
+
+`POST /api/v1/admin/database/test` requires an Admin session, CSRF and `settings.write`; it performs a bounded ping, stores only `{testedAt,status}` as `lastDatabaseTest`, writes `database.connection.test` to Audit and never returns credentials. `GET /api/v1/admin/database` projects that historical result as `lastTest`; it is not a health guarantee.
+
+`POST /api/v1/admin/backups/path/test` likewise stores only timestamp/status as `lastBackupPathTest` and audits `backup.storage.test`, including controlled failures. `GET /api/v1/admin/backups/readiness` projects it as `lastPathTest`; the key remains host-only. A failed generic module installation is returned as controlled failure after the runtime marks the module not present/inactive so retry/reload cannot claim `Registered: Yes`.

@@ -9,7 +9,7 @@ Core besitzt nur generische Mechanismen. Alle hier beschriebenen Module sind opt
 
 ## Administrative Modulklassifikation
 
-Für die Admin-Übersicht wird zwischen **User Modules** und **System Modules** unterschieden. Dies ist ausschließlich eine deklarative Klassifikation/Präsentation und **keine zweite Modularchitektur**.
+Für die Admin-Übersicht wird zwischen **App Modules** und **System Modules** unterschieden. Dies ist ausschließlich eine deklarative Klassifikation/Präsentation und **keine zweite Modularchitektur**.
 
 Alle Module verwenden weiterhin denselben:
 
@@ -23,7 +23,7 @@ Alle Module verwenden weiterhin denselben:
 
 Die Klassifikation darf Sichtbarkeit nicht ersetzen. Ein Systemmodul kann sichtbare User-Funktionen anbieten; ein User-Modul kann für einzelne Rollen oder vollständig aus der Navigation ausgeblendet werden.
 
-Beispiele für **User Modules**: `gps`, `profile`, `postbox`, `field-notes`.
+Beispiele für **App Modules**: `gps`, `profile`, `postbox`, `field-notes`.
 
 Beispiele für **System Modules**: `media`, `sharing`, `notifications`, `moderation`; später `referral`/`referral-rewards`.
 
@@ -70,4 +70,8 @@ The remaining Core-owned `user_profiles` baseline and legacy Core media tables a
 
 ## Classification implementation
 
-User Modules: GPS, Profile, Postbox and reference modules. System Modules: Media, Moderation, Notifications and Sharing. This classification is declarative; it creates no second runtime and does not imply User visibility. Profile's migration is retry-safe and Media's packaged PHP status entry is verified locally, but both lifecycle fixes remain `OPERATOR RETEST REQUIRED`.
+App Modules: GPS, Profile, Postbox and reference modules. System Modules: Media, Moderation, Notifications and Sharing. This classification is declarative; it creates no second runtime and does not imply User visibility. Profile's migration is retry-safe and Media's packaged PHP status entry is verified locally, but both lifecycle fixes remain `OPERATOR RETEST REQUIRED`.
+
+## Admin projection after operator repair
+
+The operator-facing names are **App Modules** and **System Modules**, exposed as separate Admin destinations. They filter the same registry and share lifecycle, details, permissions and visibility. Profile install failure compensation is code-complete but remains `OPERATOR RETEST REQUIRED`; successful registration still synchronizes manifest permissions automatically.

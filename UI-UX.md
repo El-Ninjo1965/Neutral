@@ -285,19 +285,19 @@ An embedded map is interactive content, never wrapped in a navigation link. Exte
 
 ## Settings, profile and navigation completion (2026-09-09)
 
-Settings uses a responsive internal button navigation for App Areas, Navigation, Privacy & Sharing and Profile. Exactly one subview is primary; the global navigation remains separate. Save reports status in place and never redirects to Start. Global Login/Settings states use `aria-current` only for the rendered view. Profile keeps username read-only, makes e-mail and personal fields optional, and exposes default-off organization-sharing switches. Password help is exactly “8–25 characters, no spaces; no other composition rules.” GPS consumes the selected locale consistently and the embedded OSM tile viewport handles zoom and pointer pan directly.
+Settings uses a responsive internal button navigation for Apps, Navigation, Privacy & Sharing and Profile. Exactly one subview is primary; the global navigation remains separate. Save reports status in place and never redirects to Start. Global Login/Settings states use `aria-current` only for the rendered view. Profile keeps username read-only, makes e-mail and personal fields optional, and exposes default-off organization-sharing switches. Password help is exactly “8–25 characters, no spaces; no other composition rules.” GPS consumes the selected locale consistently and the embedded OSM tile viewport handles zoom and pointer pan directly.
 
 ## 2026-09-10 Admin management additions
 
 Packages/Entitlements and Licenses/Organizations use responsive cards/forms and existing buttons/tokens. Visible wording uses `User limit`, `Device limit per user`, `License manager` and `Custom device limit`; internal seat/device column names remain unchanged. Device limits are never restricted to preset choices: Package supports a positive custom value or unlimited, while License and User additionally support inheritance from the Package/License default. The License manager is chosen from active users instead of entering a numeric ID. License status includes the existing safe blocked/revoked state without deleting history. Birthday uses three visibly ordered, touch-sized Day, localized full Month and Year selects and is serialized as an ISO date only when all three are chosen. Audit Delete All is visually separate from retention and requires exactly two confirmation dialogs, with no typed confirmation word.
 
-License cards expose Edit and confirmed Delete. Delete is intentionally refused while any User or Manager remains assigned; `Revoked / blocked` is the non-destructive path. Session Overview shows `Display name · @username · #User-ID`, the full `Installation / Device ID`, and separate Device class, Operating system and Browser support columns. The random installation ID is visually primary; uncertain platform metadata reads `Unknown` rather than asserting a false device.
+License cards expose Edit and confirmed Delete. Delete is intentionally refused while any User or Manager remains assigned; `Revoked / blocked` is the non-destructive path. The responsive Sessions overview shows only User, Role, Status, Registered and Last Activity. Installation IDs and uncertain device/OS/browser metadata remain internal to explicit support contexts and do not appear in the standard table.
 
 Backups & Restore contains `Backup storage path`, `Test path` and `Save` together. Status is explicit (`ready`, missing, not a directory, not writable, or public path); Create remains disabled until key, database/schema and protected storage are ready. The UI never offers an encryption-key input or displays its value.
 
 ## 2026-09-10 Settings/Profile follow-up
 
-Anonymous Settings navigation contains only App Areas and Navigation. Privacy & Sharing and Profile are created only for an authenticated user; an anonymous stale/direct section selection is reset to App Areas. Birthday remains three selects, uses a compact Day/Month/Year row on tablet widths and wraps on small phones. A profile save is successful only after the authoritative returned profile confirms the exact ISO birthday, which is cached for immediate re-opening and invalidated on identity change/logout.
+Anonymous Settings navigation contains only Apps and Navigation. Privacy & Sharing and Profile are created only for an authenticated user; an anonymous stale/direct section selection is reset to Apps. Birthday remains three selects, uses a compact Day/Month/Year row on tablet widths and wraps on small phones. A profile save is successful only after the authoritative returned profile confirms the exact ISO birthday, which is cached for immediate re-opening and invalidated on identity change/logout.
 
 ## Organization context and active navigation
 
@@ -319,4 +319,10 @@ Profile and Privacy tabs are capability-gated and disappear cleanly while the op
 
 ## 2026-09-11 implemented repair UX
 
-User Management uses exclusive list/create/edit states on all widths. Module tables are grouped as User/System without changing permissions. Role Visibility controls only navigation presentation. The shared password helper repairs incomplete/stale wrappers, rechecks the dynamically rendered login on the next animation frame, and its own CSS forces a visible 44×44 toggle above the input; iPad normal/private remains an operator retest.
+User Management uses exclusive list/create/edit states on all widths. App Modules and System Modules are separate Admin destinations backed by the same filtered registry view without changing permissions. Role Visibility controls only navigation presentation. The shared password helper repairs incomplete/stale wrappers, rechecks the dynamically rendered login on the next animation frame, and its own CSS forces a visible 44×44 toggle above the input; iPad normal/private remains an operator retest.
+
+## Operator-retest repair UI (2026-09-11)
+
+The global Admin header is removed. Sidebar order is brand/version, Theme, navigation and bottom Logout; route changes reset the controlled content scroll before focusing the page title. PLATFORM has independent **App Modules** and **System Modules** destinations. Dashboard is Summary-only. Packages, Licenses/Organizations and Roles hide their list while Create/Edit is open and restore it on Save/Cancel.
+
+User Management removes E-mail from the table, adds Organization, keeps Package/License separate and uses stable sortable headers. Device cells include their authoritative source. Sessions is deliberately limited to User, Roles, Status, Registered and Last Activity. User Settings uses **Apps**, opens the shared success dialog, persists Restore Defaults and rerenders immediately. Database/path tests show and retain their timestamped historical outcome. Every repaired live interaction remains `OPERATOR RETEST REQUIRED`.

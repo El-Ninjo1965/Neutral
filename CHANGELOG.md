@@ -516,3 +516,11 @@ After the native-placeholder correction, production classification advanced back
 
 - Made the supplemental Field Notes baseline-diff assertion shallow-checkout aware while retaining the checkout-independent Core-reference scan.
 - CodeQL and FTPS deployment completed successfully; the read-only production smoke confirmed the deployed revision and `migrationsReady:true`. No Production Restore or destructive production action was performed.
+
+## 2026-09-11 — Operator-retest repair batch
+
+- Fixed deterministic Login-Eye binding, immediate persisted Settings feedback/rerender and the `Apps` label.
+- Compensated failed module installs to a retry-safe not-present state without deleting retained data.
+- Simplified Admin shell, Dashboard and Sessions; split App/System Module destinations and added exclusive Package/License/Role editors.
+- Added sortable organization-aware User projection and traceable device-source resolution with an explicit one-device System fallback.
+- Persisted and audited timestamped Database/Backup-path tests without secrets; retained all prior operator PASS findings and left repaired points for retest.
