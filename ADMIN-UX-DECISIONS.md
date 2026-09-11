@@ -1,113 +1,82 @@
 # NEUTRAL – Admin/User UX Decisions
 
-## Aktueller bindender Nachtrag (2026-09-11)
+## Aktueller bindender Nachtrag (2026-09-11, Operator-Retest)
 
-1. Module Administration benötigt eine rollenbezogene `Visibility`/`Navigation`-Steuerung getrennt von Permissions. `presentation.userNavigation=false` bleibt der globale Systemmodul-Fallback; eine Visibility-Einstellung darf keine Berechtigung erteilen.
-2. User Management zeigt auf kleinen Screens Liste und Edit/Create nicht gleichzeitig. Save und Cancel/Back kehren zur Liste zurück.
-3. `Unlimited` bedeutet semantisch unbegrenzt und darf in API oder UI niemals zu `0` werden. Der frühere Livefehler `2 of 0 sessions` besitzt einen Codefix, bleibt bis Betreiber-Retest offen.
-4. Profile bleibt optional. Avatarziel: quadratischer Crop, optimiert ≤256×256, runde Anzeige, Replace/Delete, dynamischer Gender-Default, kein dauerhaftes Original.
-5. User-Login-Eye: Der dynamische Ansatz ist live durchgefallen. Code-seitig werden Eye-Button und Passwortfeld nun gemeinsam im Login-Markup gerendert; der gemeinsame Helper bindet nur Verhalten/Zustand. Bis erneuter iPad/Chrome-Abnahme bleibt der Punkt offen.
-6. `Apps & Modules` wird administrativ in **Apps**, **User Modules** und **System Modules** gegliedert. Diese Gliederung ist reine Klassifikation/Präsentation; alle Module verwenden weiterhin denselben Runtime-/Lifecycle-Vertrag.
-7. Modulklassifikation und Sichtbarkeit sind strikt getrennt. Ein Systemmodul kann sichtbare User-Funktionen besitzen, ein User-Modul kann unsichtbar geschaltet werden. Permissions bleiben wiederum eine dritte, getrennte Ebene.
-8. Die übrigen Reparaturen dieses Durchlaufs werden erst nach Abschluss der unmittelbar folgenden Änderungen gesammelt vom Betreiber live abgenommen; lokale/grüne Tests sind kein Live-Pass.
+### User UI
+
+1. User-Login-Eye ist nun sichtbar, aber der Klick schaltet das Passwort **nicht** auf sichtbar. Der Button erhält lediglich Fokus/Blau-Rahmen. Damit weiterhin FEHLGESCHLAGEN.
+2. Eingeloggte User/Admin sehen in Settings weiterhin nur `App Areas` und `Navigation`; Profile sowie Privacy/Social Sharing fehlen. Profile ist derzeit serverseitig nicht sauber installierbar, siehe Module-Livebefund.
+3. `App Areas` soll im User-UI schlicht **Apps** heißen.
+4. `Save Settings` persistiert Änderungen, zeigt aber keine Success-Bestätigung und aktualisiert die sichtbare Navigation erst nach Reload. Nach Save müssen Success-Dialog und sofortiger Re-Render erfolgen. Restore Defaults ebenso.
+5. GPS wurde erneut live geprüft und funktioniert.
+
+### Admin Shell / Navigation
+
+6. Der globale Admin-Header ist redundant und soll entfallen. Jede Seite besitzt bereits ihren eigenen Titel. Theme-Umschaltung kommt links direkt unter `Neutral Administration`/Version und vor Dashboard; Logout kommt als letzter Menüpunkt unten in die Sidebar.
+7. Menübezeichnung `Overview · Dashboard` wird auf **Dashboard** reduziert.
+8. Der globale Content-/Scrollzustand ist fehlerhaft: Beim Seitenwechsel/Reload liegt der obere Seitenbereich oberhalb des sichtbaren Viewports; Header/Aktionsbuttons wie `New Package` sind erst nach Zurückscrollen sichtbar. Jede Route muss kontrolliert am Seitenanfang starten, ohne den Content unter/über die Navigation zu verschieben.
+9. `Apps & Modules` wird nicht nur innerhalb einer Seite gruppiert, sondern als zwei eigenständige Admin-Ziele unter PLATFORM getrennt: **App Modules** und **System Modules**. Frühere Bezeichnung `User Modules` wird zu `App Modules`. Beide verwenden weiterhin dieselbe Registry/Lifecycle-Architektur.
+
+### Dashboard
+
+10. Dashboard bleibt nur als kompakte operative Summary. Der derzeitige `Module Status`-Block wird entfernt; er ist unvollständig/nicht interaktiv und dupliziert Module Administration. `Session Overview` wird ebenfalls entfernt; Sessions besitzen eine eigene Admin-Seite. Summary-Karten dürfen bleiben, sofern sie echte aktuelle Werte liefern.
+
+### Create/Edit UX
+
+11. Das bereits bei User Management funktionierende Muster wird verbindlich für Packages, Licenses/Organizations und Roles: Liste und Create/Edit sind **exklusive Seiten-/View-States**, niemals ein Formular unterhalb der Liste. Save/Cancel/Back führen kontrolliert zur Liste zurück. Keine versteckten Formulare, zu denen erst gescrollt werden muss.
+12. Die fachliche Menü-Reihenfolge unter ACCESS soll **Users → Licenses/Organizations → Packages → Sessions → Roles → Permission Catalog** sein, weil Organisations-/Lizenzverwaltung vor nachgelagerten Package-/User-Zuordnungen verständlich erreichbar sein soll. Technische Abhängigkeiten dürfen dadurch nicht verfälscht werden.
+
+### Users / Organizations / Packages
+
+13. User Management Übersicht: E-Mail aus der Tabelle entfernen (bleibt in Edit). Stattdessen **Organization** anzeigen, z. B. `Verein Bonn`, getrennt vom Package-Namen `Verein`. Tabellenüberschriften sollen sortierbar sein, mindestens ID/User, Role, Status, Created, Last Activity, Devices, License/Package und Organization.
+14. Default-Device-Anzeige muss aus realen Entitlements stammen. Unassigned User dürfen nicht unerklärlich `5` erhalten. Admin/Developer sollen nur dann Unlimited zeigen, wenn dies tatsächlich aus verbindlicher Policy/Package/User-Override folgt; keine UI-Erfindung. `Package/License default` muss nachvollziehbar auflösen.
+15. Package/License Delete-Abhängigkeiten müssen fachlich korrekt und verständlich gemeldet werden. Sessions dürfen nicht irreführend als aktive License-Zuordnung erscheinen. Falls eine Session tatsächlich das Löschen blockiert, muss der Grund ausdrücklich `active session/device` heißen; ansonsten darf sie keine fachliche Package-/License-Referenz vortäuschen.
+
+### Sessions
+
+16. Sessions-Tabelle darf niemals horizontal durch lange IDs zerstört werden. Für die Standardübersicht genügen: **User, Role, Status, Registered, Last Activity**. `Installation / Device ID` wird aus der sichtbaren Tabelle entfernt; sie bleibt intern/audit-/supportseitig verfügbar.
+17. `Device Class`, `Operating System` und `Browser` werden nur angezeigt, wenn die Werte server-/clientseitig zuverlässig bestimmt werden können. Der aktuelle Livebefund `Desktop · macOS · Chrome` auf einem iPad/Chrome zeigt, dass Device Class/OS derzeit nicht zuverlässig sind. Keine geratenen Werte und keine falsche Gewissheit; unzuverlässige Felder aus der Standardansicht entfernen bzw. `Unknown` nur dort zeigen, wo Supportdetails ausdrücklich benötigt werden.
+
+### Roles / Permissions
+
+18. Create New Role erhält eine eigene View wie Create User. Modul-Permissions müssen nach Installation/Registrierung des Moduls automatisch im Permission Catalog/Role Management verfügbar sein. Keine manuelle doppelte Anlage. Profile-Permissions sind im aktuellen Livezustand nicht nutzbar, solange Profile-Installation fehlschlägt.
+
+### Database / Backup Feedback
+
+19. `Test Database` braucht neben dem unmittelbaren Success-Dialog einen sichtbaren persistenten letzten Prüfstatus, z. B. `Last database test: successful · timestamp`; Test wird auditiert. Keine falsche Behauptung über dauerhafte DB-Gesundheit aus einem alten Test.
+20. Backup `Test path` benötigt deutliches Success/Error-Feedback und einen sichtbaren `Last path test` mit Zeitpunkt/Ergebnis. Das derzeit kaum erkennbare Umschalten von `Ready` zu `Path status: Ready` reicht nicht.
+
+### Module-Livebefund
+
+21. **Profile:** Uninstall → Install endet live mit `Install failed: Internal Server Error`. Nach Reload erscheint teilweise `Registered: Yes`, Lifecycle bleibt `Inactive/Error`. Das ist ein inkonsistenter partieller Installationszustand und muss serverseitig atomar/retry-safe behoben werden. Profile ist NICHT live bestanden.
+22. **Media & Upload:** Install → Activate → Deactivate → Uninstall live erfolgreich.
+23. **Postbox:** Install → Activate → Deactivate → Uninstall live erfolgreich.
+24. **Sharing & Visibility:** Install → Activate → Deactivate → Uninstall live erfolgreich.
+25. GPS bleibt aktives Referenzmodul und live funktionsfähig. Field Notes wurde bewusst noch nicht operator-live getestet.
+
+### Bestehende Verträge bleiben verbindlich
+
+26. Module Visibility/Navigation bleibt getrennt von Permissions und Modulklassifikation.
+27. `Unlimited` darf nie semantisch zu `0` werden. Der aktuelle Live-Test zeigte weiterhin Device-Limit-/Default-Unklarheiten; deshalb nicht bestanden.
+28. Profile bleibt optional; Datenretention bei Deactivate/Re-activate bleibt Ziel.
+29. Audit Delete All wurde erneut als grundsätzlich funktional betrachtet; keine erneute Verschärfung.
+30. Kein Production Restore als Test. Core Freeze bleibt bis Reparatur + gesammelter Retest offen.
 
 ---
 
-**Status:** VERBINDLICHE PRODUKT-/UX-ENTSCHEIDUNGEN FÜR CORE 1.0  
-**Datum:** 2026-09-10
+**Status:** VERBINDLICHE PRODUKT-/UX-ENTSCHEIDUNGEN FÜR CORE 1.0
 
-Dieses Dokument hält Entscheidungen fest, die im Betreiber-Livecheck getroffen wurden und künftig nicht erneut aus Gesprächen rekonstruiert werden sollen. Es ergänzt `VISION.md`, `USER-ACCOUNT-LICENSE-MODEL.md` und `UI-UX.md`.
+## Grundverträge aus früheren Entscheidungen
 
-## 1. Packages / Entitlements
-
-- Package-Key = technische, eindeutige Kennung ohne Leerzeichen; menschenlesbarer Name separat.
-- Package-Name und Beschreibung sind frei konfigurierbar.
-- Package-Status: `active` / `inactive`.
-- Modulzustände: `available`, `locked`, `hidden`.
-- Default Allowed Devices darf **nicht** auf feste Auswahlwerte 1/2/3/5/10 begrenzt sein.
-- Gewünschte UX: freie positive Ganzzahl **oder** `unlimited`.
-- Beispiel: Free Package kann 1 Device erlauben; Vereins-/Businesspakete müssen z. B. 20, 50 oder andere Werte ohne Codeänderung erlauben.
-- Der bestehende Vertrag bleibt eindeutig: `Default Allowed Devices` im Package ist ein **Default pro User**, nicht ein globales Gesamt-Gerätelimit der gesamten Organisation. Die UI soll dies ausdrücklich als `Default devices per user` / `Default device limit per user` kenntlich machen, damit Package-, User- und License-Limits nicht verwechselt werden.
-
-## 2. Licenses / Organizations
-
-- License-Key = technische eindeutige Kennung.
-- Organization = menschenlesbarer Kunden-/Organisationsname.
-- Package wird der Lizenz zugeordnet.
-- `Seats` und `Devices` bleiben fachlich getrennt: Seats = Nutzerplätze; Devices = Installationen pro User.
-- UI-Begriffe bevorzugt `User limit`, `Device limit per user`, `License manager`.
-- License Manager über Benutzer-Auswahlliste, nicht manuelle ID.
-- Lizenz deaktivierbar/widerrufbar; sichere Delete-Aktion nur referenziell kontrolliert und auditiert.
-- Package-/License-Defaults und User-Overrides nachvollziehbar anzeigen.
-
-## 3. User Management / Device Limits
-
-- Allowed Devices: Package/License Default, freie positive Ganzzahl oder `unlimited` als berechtigter Override.
-- Keine festen 1/2/3/5/10-Auswahlwerte als Ziel.
-- `Override` in UI verständlich benennen, z. B. `Custom device limit`.
-- Used Devices read-only.
-- Limit-Senkung löscht bestehende Sessions nicht automatisch.
-
-## 4. Birthday / Profile
-
-- Geburtstag kein Freitext.
-- Drei Auswahlfelder: Tag, lokalisierter Monatsname, Jahr.
-- Server validiert echtes Kalenderdatum; Speicherung `YYYY-MM-DD`; optional/löschbar.
-
-## 5. Audit Delete All
-
-- Separate kritische Adminaktion mit eigener Permission.
-- Zwei Bestätigungsdialoge genügen; kein `DELETE`-Tippen.
-- Nach Löschung genau ein neuer Audit-Nachweiseintrag.
-- Retention 30/90/180/365 separat.
-
-## 6. Sessions / Installationsidentität
-
-- Serververlässliche Identitäten; Useranzeige Name + User-ID.
-- Persistente Installations-ID ist technische Identität.
-- Device class/OS nur soweit zuverlässig; keine falsche Gewissheit.
-- Browser nicht als Identitätsquelle; keine Hardware-Fingerprints.
-
-## 7. Backup & Restore – konfigurierbarer Speicherpfad
-
-- Backup-Speicherpfad nicht hardcodiert, pro Installation konfigurierbar auf `Admin → Backup & Restore`.
-- `Test path` + `Save`; Schutz gegen unsichere Pfade/öffentliche Auslieferung.
-- `NEUTRAL_BACKUP_KEY` bleibt hostlokales Secret und wird nie angezeigt/geloggt.
-
-## 8. Livebefunde 2026-09-10
-
-Positiv bestätigt: User/Admin Login, parallele Sessions, GPS-Basismodul, Audit Delete All, Package/License Create, flexible Device-Limits/Unlimited und License-Manager-Auswahl.
-
-Frühere offene Punkte wurden teilweise code-seitig nachgebessert; deren aktueller Live-Status steht im bindenden Nachtrag und in `CHATGPT.md`/`STATUS.md`.
-
-## 9. Code-seitiger Follow-up-Stand
-
-License Delete mit Referenzsperre/Audit, Session-User-ID und vollständiger Installation-ID, konservative Supportmetadaten sowie Backup Storage Path mit Test/Save wurden implementiert; reale Host-/Device-Abnahme bleibt getrennt.
-
-## 10. Settings/Profile und Backup-V2
-
-Ausgeloggt ausschließlich App Areas und Navigation; Profile/Privacy benötigen bestätigte User-Session und aktive Capability. Birthday Day/Month/Year. Backup V2 umfasst deklarierte Modultabellen und verwaltete Medienbytes. Kein Production-Restore als Test.
-
-## 11. Organization Sharing und Navigation Active-State
-
-Organization Sharing nur bei autoritativ bestätigter User→License/Organization-Zuordnung. Navigation pro Ebene genau ein routenbasierter `aria-current`-Active-State; Farben aus zentralen Tokens.
-
-## 12. Globale Erfolgsbestätigung, Passwörter und ACCESS-Reihenfolge
-
-Save/Create/Update verwenden gemeinsamen zugänglichen Success-Dialog. Password-Visibility nutzt einen gemeinsamen Interaktionsvertrag; statische Kernformulare dürfen ihre Toggle-Control direkt rendern. Unter ACCESS: Users, Packages, Licenses, Sessions vor Roles/Permission Catalog.
-
-## 13. Password eyes and individual-user packages
-
-Password visibility uses the same recognizable open/crossed eye SVG and approximately 44×44 touch target in User Login, Admin Login, profile, and dynamic Admin forms. For the User Login specifically, the toggle control is part of the rendered login markup and is not dependent on post-render DOM enhancement. An individual user can receive a direct Package without an Organization. License Package takes precedence; retained direct Package becomes fallback after License removal.
-
-## 14. Optional and invisible system modules
-
-Activation does not imply User navigation. Admin may activate capability/system modules with `userNavigation=false`. Missing optional modules hide enhancements without breaking Core/independent features.
-
-## 15. Optional Profile lifecycle
-
-Profile is an optional invisible system module. Admin deactivation hides Profile/Privacy without deleting data; reactivation restores it. Core Login/Admin remain independent.
-
-## Implemented follow-up, operator retest pending
-
-Apps remain their own Admin destination. Module Administration groups User Modules/System Modules from manifest `category` and provides role-specific Visibility/Navigation independently from permissions. User Management uses exclusive list/create/edit states. Profile/Media/Unlimited and these UX repairs remain operator-retest pending. The previous User Login Eye repair failed operator retest; its static-markup replacement is implemented and awaits the collected operator retest.
+- Package-Key technische eindeutige Kennung; Package-Name/Beschreibung frei; Status active/inactive; Device Default freie positive Ganzzahl oder unlimited.
+- Seats/User limit und Devices per user bleiben getrennt.
+- License Manager über User-Auswahl; sichere referenzgeprüfte Delete-Aktionen mit Audit.
+- Birthday als Day/Month/Year, kanonisch `YYYY-MM-DD`.
+- Audit Delete All: zwei Bestätigungen, danach ein Audit-Clear-Nachweis.
+- Persistente Installation-ID bleibt technische Identität, aber nicht notwendiger Bestandteil der Standard-Admin-Tabelle.
+- Backup Storage Path konfigurierbar; `NEUTRAL_BACKUP_KEY` bleibt hostlokales Secret.
+- Organization Sharing nur bei autoritativ bestätigter Zuordnung.
+- Success-Dialog ist gemeinsamer Vertrag für erfolgreiche Save/Create/Update-Aktionen.
+- Password visibility verwendet ein gemeinsames Verhalten/ARIA/Icon-Schema.
+- Aktivierung eines Moduls impliziert keine User-Navigation.
+- Apps/App Modules/System Modules sind Präsentations-/Administrationsgruppierung; eine gemeinsame Runtime bleibt verbindlich.
