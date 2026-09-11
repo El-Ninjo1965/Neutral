@@ -1,6 +1,6 @@
 # CURRENT TASK – CRITICAL AUTH / SESSION RECOVERY
 
-**Status:** IMPLEMENTED / DEPLOYMENT PENDING
+**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 
@@ -24,7 +24,7 @@ Kein Core Freeze, kein Production Restore, keine Secrets und keine UI-Fallbacks,
 - [x] Vollständige Suite, PHP-Lint, JS-Syntax, `git diff --check` und Production Package.
 - [x] Read-only Production Smoke um sichere Auth-Basics erweitern.
 - [x] Geforderte Dokumentation wahrheitsgemäß synchronisieren.
-- [ ] Commit/Push `main`, CodeQL/FTPS terminal, read-only Production Smoke.
-- [ ] `CHATGPT.md` auf einen aktuellen Abschlussstand und genau die drei priorisierten Blocker-Retests reduzieren.
+- [x] Commit/Push `main`, CodeQL/FTPS terminal, read-only Production Smoke.
+- [x] `CHATGPT.md` auf einen aktuellen Abschlussstand und genau die drei priorisierten Blocker-Retests reduzieren.
 
 Bis zur realen Betreiberbestätigung: **OPERATOR RETEST REQUIRED**. Kein Core Freeze.
