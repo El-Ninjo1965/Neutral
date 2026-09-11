@@ -1,17 +1,16 @@
-# CURRENT TASK – USER LOGIN BRANCH VERIFY / MERGE
+# CURRENT TASK – USER LOGIN PASSWORD SICHTBAR
 
-**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
+**Status:** IMPLEMENTED / DEPLOYMENT PENDING
 **Datum:** 2026-09-11
 **Quelle:** `CODEX.md`
 
-- [x] Branch `chatgpt/user-login-fix` geprüft: ausschließlich `Web-App/public/index.html` und neuer Test.
-- [x] Root Cause bestätigt: fehlender Helper wirft vor der Submit-Listener-Registrierung.
-- [x] Branch-Fix bewertet: wirksam, aber wegen duplizierter Hold-Implementierung nicht unverändert übernommen.
-- [x] Minimal angepasst: optionaler Helper-Bind im bestehenden Login; bei Fehlen Eye ausblenden, Submit immer binden.
-- [x] Verhaltenstest mit und ohne Helper ergänzt; regulären Hold-Helper regressionsfrei geprüft.
-- [x] Relevante User-Login-, Eye-, Frontend-, Auth-/Session- und Admin-Tests vollständig erfolgreich.
-- [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package erfolgreich.
-- [x] Nur `CHATGPT.md` und `CURRENT-TASK.md` als notwendige Dokumentation aktualisiert.
-- [x] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal erfolgreich.
+- [x] User-Login-Passwortfeld dauerhaft als `type="text"` rendern.
+- [x] User-Eye und sämtliche User-Hold-/Helper-Bindelogik entfernen.
+- [x] Nicht mehr benötigtes User-Hold-Asset aus Shell und Service Worker entfernen; Admin-Helper unverändert lassen.
+- [x] Login-Submit-Flow unverändert und verhaltensnah funktionsfähig prüfen.
+- [x] User Login normal/Inkognito und Admin Login regressionsfrei automatisiert prüfen.
+- [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
+- [x] `CHATGPT.md`, `CURRENT-TASK.md`, `UI-UX.md` und Change-Historie wahrheitsgemäß aktualisieren.
+- [ ] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal prüfen.
 
-Operator-Retest ausschließlich: User Login normal, User Login Inkognito, Eye Hold-to-reveal. Kein Core Freeze.
+Operator-Retest danach ausschließlich: User Login normal, User Login Inkognito, Passwort dauerhaft sichtbar, kein Eye. Kein Core Freeze.

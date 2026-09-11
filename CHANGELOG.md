@@ -555,3 +555,9 @@ After the native-placeholder correction, production classification advanced back
 - User-Device-Limits zählen keine Admin-Sessions.
 - User Login Eye verwendet den korrekten lokalen Passwort-Wrapper und bleibt innerhalb des Feldes.
 - Read-only Production Smoke prüft zusätzlich beide unauthentifizierten Identity-Grenzen; der bestehende sichere Invalid-Credentials-Vertrag bleibt erhalten.
+
+## 2026-09-11 — User Login sichtbarer Passwort-Fallback
+
+- User-Login-Passwortfeld dauerhaft sichtbar gemacht und Eye/Hold-Binding entfernt.
+- Nicht mehr benötigtes User-Hold-Asset aus Shell und Offline-Cache entfernt.
+- Login-Submit, Admin-Login sowie Auth-/Sessioncode unverändert gelassen.

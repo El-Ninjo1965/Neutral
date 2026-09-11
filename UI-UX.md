@@ -334,3 +334,7 @@ The User Login renders exactly one static Eye beside the password input. Passwor
 ## User Login Eye – Layout-Recovery (2026-09-11)
 
 Das statische User-Eye liegt im selben `password-input-wrap` wie das Passwortfeld. Dadurch bleibt das 44-px-Touchziel absolut innerhalb des Controls, ohne den Formularcontainer zu verbreitern. Pointer-Hold zeigt; Release, Cancel, Leave, Captureverlust oder Blur verbirgt. Kein Observer, keine globale Delegation und kein paralleler Fallback.
+
+## User Login – sichtbarer Passwort-Fallback (2026-09-11)
+
+Für den User Login gilt der abschließende Betreiberentscheid: genau ein Eingabefeld mit `type="text"`, dauerhaft sichtbare Eingabe, kein Eye und kein Hold-/Toggle-Helper. Dies betrifft nur die Darstellung; Serverauthentifizierung, Hashing und HTTPS bleiben unverändert. Admin-Passwortfelder behalten ihren bisherigen Vertrag.

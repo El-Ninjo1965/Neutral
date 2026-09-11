@@ -1,23 +1,22 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** USER-LOGIN BOOTSTRAP-FIX DEPLOYED / OPERATOR RETEST REQUIRED
+**Status:** USER-LOGIN SICHTBARES PASSWORT IMPLEMENTIERT / DEPLOYMENT PENDING
 **Core Freeze:** NICHT erklärt
 
 ## Ergebnis
 
-Root-Cause-Hypothese technisch bestätigt: `password-hold-reveal.js` ist im regulären HTML zwar als `defer` vor `user-app.js` angeordnet, aber ein fehlendes/fehlerhaft ausgeliefertes Helper-Asset lässt `window.NeutralPasswordHoldReveal.bind(...)` werfen. Dieser Aufruf lag vor der Registrierung des Login-Submit-Handlers; Eye und Login waren danach beide tot.
+Der Betreiberentscheid aus `CODEX.md` ist minimal umgesetzt: Das User-Login-Passwortfeld ist dauerhaft `type="text"`. Eye-Markup, Hold-Bindelogik, das ausschließlich dafür benötigte `password-hold-reveal.js` sowie dessen Shell-/Service-Worker-Referenzen wurden aus dem User-Pfad entfernt. Der Login-Submit-Flow blieb unverändert. Admin-Login, globale Admin-Passworthelfer sowie Auth-/Sessioncode wurden nicht angefasst.
 
-Der vorbereitete Branch `chatgpt/user-login-fix` änderte exakt die angekündigten zwei Dateien. Sein Inline-Fallback hätte den Abbruch verhindert, duplizierte aber die komplette Hold-Implementierung im HTML. Er wurde deshalb nicht unverändert übernommen. Stattdessen behandelt der bestehende User-Login den Eye-Helper als optionale Abhängigkeit: vorhanden → genau einmal binden; nicht vorhanden → Eye ausblenden und anschließend immer den echten Submit-Handler registrieren. Regulärer Helper, Admin-Login, Auth-/Sessioncode und Backend bleiben unverändert.
+Wichtig zur Einordnung: `type="password"` verschlüsselt das Passwort nicht, sondern maskiert nur die Darstellung im Browser. `type="text"` verändert weder Passwort-Hashing noch Transportverschlüsselung oder Serverauthentifizierung; es macht lediglich die Eingabe sichtbar.
 
-Lokal bestanden 541/541 Tests sowie JavaScript-Syntax, PHP-Lint, Diff-Check und das Production Package mit 135 Dateien. Der neue Verhaltenstest führt den tatsächlichen `showLoginForm`-Bootstrap einmal ohne und einmal mit Helper aus. Ohne Helper bleibt der Submit-Listener gebunden; mit Helper erfolgt genau ein Bind und das Eye bleibt sichtbar.
-
-Commit `7e821c05972df4e379eb6ccebb86458a1958a4d4` ist auf `main`. CodeQL `34595212361` und FTPS Deploy `34595212457` waren terminal erfolgreich. Tests, 135-Datei-Produktionspaket, FTPS-Client, Upload von 137 Dateien und read-only Production Smoke bestanden; Deploymentrevision und `migrationsReady:true` wurden bestätigt.
+Lokal bestanden 539/539 Tests, JavaScript-Syntax, PHP-Lint, Diff-Check und das Production Package mit 134 Dateien. Ein Verhaltenstest führt den echten User-Login-Submit aus und bestätigt, dass Username und Passwort an den API-Client gehen und der erfolgreiche Renderpfad erreicht wird. Weitere Tests bestätigen genau ein sichtbares Eingabefeld und kein User-Eye/Reveal-Binding.
 
 ## Operator-Retest nach Deployment
 
-1. User Login normal.
-2. User Login Inkognito.
-3. Eye Hold-to-reveal.
+1. User Login normal funktioniert.
+2. User Login Inkognito funktioniert.
+3. Passwort ist während der Eingabe dauerhaft sichtbar.
+4. Kein Eye wird angezeigt.
 
-Kein Core Freeze.
+Danach ist das User-Eye-Thema beendet. Kein Core Freeze.

@@ -27,10 +27,10 @@ class Element {
   click() { this.listeners.click?.({}); }
 }
 
-test('User Login uses its static hold control without dynamic enhancement', () => {
+test('User Login uses the approved visible password fallback without an Eye', () => {
   const source = read('Web-App/public/user-app.js');
-  assert.match(source, /id="userLoginPassword" type="password"/);
-  assert.match(source, /const revealBinder = window\.NeutralPasswordHoldReveal\?\.bind/);
+  assert.match(source, /id="userLoginPassword" type="text"/);
+  assert.doesNotMatch(source, /userLoginPasswordReveal|NeutralPasswordHoldReveal/);
   assert.doesNotMatch(source, /enhancePasswordFields\(content\)/);
   assert.match(read('Web-App/public/style.css'), /\.password-visibility-toggle \{[^}]*display:flex !important;[^}]*visibility:visible !important;[^}]*opacity:1 !important;/);
 });

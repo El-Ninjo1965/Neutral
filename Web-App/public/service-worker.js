@@ -45,7 +45,7 @@ const CORE_SCRIPTS = [
 ];
 
 const PUBLIC_SCRIPTS = [
-    'public-path.js', 'user-module-access.js', 'api-client.js', 'ui-feedback.js', 'user-ui-design.js', 'homepage-cache.js', 'homepage-document.js', 'password-hold-reveal.js', 'user-app.js', 'style.css'
+    'public-path.js', 'user-module-access.js', 'api-client.js', 'ui-feedback.js', 'user-ui-design.js', 'homepage-cache.js', 'homepage-document.js', 'user-app.js', 'style.css'
 ];
 
 const shellUrls = (base) => {
