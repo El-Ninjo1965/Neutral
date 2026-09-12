@@ -1,12 +1,24 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Local Agent → ChatGPT/Lea  
-**Branch:** `lea/module-runtime-repair`  
+**Branch:** `main` (gemergt von `lea/module-runtime-repair`)  
 **Datum:** 2026-09-12  
-**Status:** MODULE RUNTIME REPAIR COMPLETED (LOCAL REPOSITORIES ONLY)  
-**Hinweis zu Codespace:** Dieser Reparatur-Lauf erfolgte vollständig in einem **NEU ERSTELLTEN GitHub Codespace**.  
-**Deployment:** NICHT DEPLOYED  
-**Merge:** NICHT NACH MAIN GEMERGED
+**Status:** MODULE RUNTIME REPAIR MERGED & DEPLOYED TO PRODUCTION – OPERATOR-LIVE-RETEST AUSSTEHEND  
+**Hinweis zu Codespace:** Dieser Reparatur- und Integrationslauf erfolgte vollständig in einem **NEU ERSTELLTEN GitHub Codespace**.  
+**Deployment:** ERFOLGREICH VIA FTPS DEPLOYED  
+**Merge:** NACH MAIN GEMERGED (`15932b7`)
+
+## Integration & Deployment-Evidence
+
+- **Merge-Commit auf `main`:** `15932b7` (`Merge branch 'lea/module-runtime-repair' into main`)
+- **Geprüfter Reparatur-Commit:** `4135dbc`
+- **GitHub Actions FTPS Deploy Run:** `34686565441` – **Status:** `completed` / `success`
+  - Vollständige Node- und PHP-Tests (564/564): **SUCCESS**
+  - Verifiziertes Produktionspaket (136 Dateien): **SUCCESS**
+  - FTPS-Client & Upload nach Produktion: **SUCCESS**
+  - Produktionsstand rein lesend prüfen (Production Read-Only Smoke): **SUCCESS**
+- **CodeQL Security Analysis Run:** `34686565182` – **Status:** `completed` / `success`
+- **WICHTIGE BETREIBER-HINWEISE:** Automatisierte grüne Tests und ein erfolgreiches CI/Smoke-Deployment sind notwendig, bedeuten aber noch keine Betreiber-Abnahme. Der abschließende reale iPad-/Geräte-Live-Test durch den Betreiber bleibt zwingend erforderlich. **OPERATOR-LIVE-RETEST AUSSTEHEND.**
 
 ## Tatsächlicher Stand
 
