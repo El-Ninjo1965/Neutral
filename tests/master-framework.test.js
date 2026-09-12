@@ -423,10 +423,10 @@ test('discovers module-declared permissions and standalone metadata from the gps
   const gps = discovered.find((module) => module.id === 'gps');
 
   assert.ok(gps);
-  assert.deepEqual(Array.from(gps.permissions), ['gps.view', 'gps.use', 'gps.manage', 'gps.admin']);
+  assert.deepEqual(Array.from(gps.permissions), ['gps.manage', 'gps.admin']);
   assert.equal(Array.isArray(gps.permissionDefinitions), true);
-  assert.equal(gps.permissionDefinitions.length, 4);
-  assert.deepEqual(Array.from(gps.access.visibilityPermissions), ['gps.view']);
+  assert.equal(gps.permissionDefinitions.length, 2);
+  assert.deepEqual(Array.from(gps.access.visibilityPermissions), []);
   assert.equal(gps.standalone.entry, 'index.html');
 });
 

@@ -150,6 +150,8 @@
                     : null;
             }
 
+            module.publicOffline = module.publicOffline === true || module.manifest?.publicOffline === true;
+
             return module;
         },
 
@@ -173,6 +175,9 @@
             const discoveredIds = new Set(discovered.map((module) => String(module?.id || '')).filter(Boolean));
             for (const existing of window.ModuleRegistry.getAll()) {
                 if (existing?.type === 'module' && !discoveredIds.has(String(existing.id || ''))) {
+                    if (existing.publicOffline === true && existing.active === true) {
+                        continue;
+                    }
                     this.unregister(existing.id);
                 }
             }
@@ -184,14 +189,21 @@
 
                 try {
                     const existing = this.get(registered.id);
-                    const sourceState = existing || registered;
+                    const regStatus = typeof registered?.status === 'string' ? registered.status.trim().toLowerCase() : '';
+                    const regLifecycle = typeof registered?.lifecycleState === 'string' ? registered.lifecycleState.trim().toUpperCase() : '';
+                    const isExplicitlyInactive = registered && (
+                        ['inactive', 'disabled'].includes(regStatus) ||
+                        ['INACTIVE', 'DISABLED'].includes(regLifecycle) ||
+                        (registered.active === false && (regStatus === 'inactive' || regStatus === 'disabled' || regLifecycle === 'INACTIVE'))
+                    );
+                    const sourceState = isExplicitlyInactive ? registered : (existing || registered);
                     const rawStatus = typeof sourceState?.status === 'string'
                         ? sourceState.status.trim().toLowerCase()
                         : '';
                     const lifecycleState = typeof sourceState?.lifecycleState === 'string'
                         ? sourceState.lifecycleState.trim().toUpperCase()
                         : '';
-                    const isActive = !!(
+                    const isActive = !isExplicitlyInactive && !!(
                         sourceState &&
                         (
                             sourceState.active ||
@@ -221,7 +233,8 @@
                         lifecycleState: lifecycleState || (isActive ? 'ACTIVE' : (isRegistered ? 'INACTIVE' : 'DISCOVERED')),
                         registered: isRegistered,
                         active: isActive,
-                        enabled: isActive
+                        enabled: isActive,
+                        publicOffline: registered.publicOffline === true || existing?.publicOffline === true
                     };
 
                     if (existing) {
@@ -248,6 +261,23 @@
                         runtimeModule.registered = true;
                         runtimeModule.active = true;
                         runtimeModule.enabled = true;
+                    } else {
+                        runtimeModule.status = normalizedStatus;
+                        runtimeModule.lifecycleState = normalizedStatus === 'disabled' ? 'INACTIVE' : (isRegistered ? 'INSTALLED' : 'DISCOVERED');
+                        runtimeModule.active = false;
+                        runtimeModule.enabled = false;
+                        if (existing && existing.active === true && typeof runtimeModule.disable === 'function') {
+                            await runtimeModule.disable();
+                        }
+                        if (runtimeModule.publicOffline && isExplicitlyInactive && window.CoreLoader && typeof window.CoreLoader.syncPublicOfflineModule === 'function') {
+                            window.CoreLoader.syncPublicOfflineModule({
+                                ...runtimeModule,
+                                active: false,
+                                enabled: false,
+                                status: 'inactive',
+                                lifecycleState: 'INACTIVE'
+                            });
+                        }
                     }
                 } catch (error) {
                     if (window.CoreErrorHandler) {

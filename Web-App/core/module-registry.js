@@ -240,7 +240,37 @@
                     ? window.ModuleInterface.validateManifest(entry)
                     : null;
 
-                if (!manifest || registry.has(manifest.id)) {
+                if (!manifest) {
+                    return;
+                }
+
+                const isPublicOffline = entry.publicOffline === true || manifest.publicOffline === true;
+                const existing = registry.get(manifest.id);
+                if (existing) {
+                    const rawStatus = typeof (entry.status || manifest.status || existing.status) === 'string'
+                        ? String(entry.status || manifest.status || existing.status).trim().toLowerCase()
+                        : '';
+                    const rawLifecycle = typeof (entry.lifecycleState || manifest.lifecycleState || existing.lifecycleState) === 'string'
+                        ? String(entry.lifecycleState || manifest.lifecycleState || existing.lifecycleState).trim().toUpperCase()
+                        : '';
+                    const nextActive = typeof entry.active === 'boolean'
+                        ? entry.active
+                        : (typeof manifest.active === 'boolean'
+                            ? manifest.active
+                            : (typeof entry.enabled === 'boolean' ? entry.enabled : existing.active));
+                    const updated = {
+                        ...existing,
+                        manifest: { ...existing.manifest, ...manifest },
+                        status: rawStatus || existing.status,
+                        lifecycleState: rawLifecycle || existing.lifecycleState,
+                        active: nextActive,
+                        enabled: nextActive,
+                        publicOffline: isPublicOffline || existing.publicOffline === true,
+                        clientAccess: entry.clientAccess || manifest.clientAccess || existing.clientAccess,
+                        access: entry.access || manifest.access || existing.access
+                    };
+                    registry.set(manifest.id, updated);
+                    discovered.push(updated);
                     return;
                 }
 
@@ -284,9 +314,10 @@
                     clientAccess: manifest.clientAccess || implementation.clientAccess || null,
                     standalone: implementation.standalone || manifest.standalone || null,
                     database: implementation.database || manifest.database || null,
+                    publicOffline: isPublicOffline || implementation.publicOffline === true,
                     status: implementation.status || manifest.status || 'inactive',
-                    active: !!implementation.active,
-                    enabled: !!implementation.enabled
+                    active: !!implementation.active || manifest.active === true,
+                    enabled: !!implementation.enabled || manifest.enabled === true
                 };
 
                 registry.set(module.id, module);

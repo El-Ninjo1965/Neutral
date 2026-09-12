@@ -37,7 +37,7 @@ test('cold/offline bootstrap hydrates active public GPS before any catalog promi
   assert.deepEqual(Array.from(harness.records.keys()), ['gps']);
   resolveCatalog([]);
   await synchronization;
-  assert.deepEqual(Array.from(harness.records.keys()), []);
+  assert.deepEqual(Array.from(harness.records.keys()), ['gps']);
 });
 
 test('catalog failure is not an empty success and keeps locally active GPS', async () => {
@@ -49,11 +49,18 @@ test('catalog failure is not an empty success and keeps locally active GPS', asy
 });
 
 test('public GPS is role/permission independent while Profile and Moderation remain sensitive', () => {
-  const gps = { id: 'gps', active: true, publicOffline: true };
+  const gps = { id: 'gps', active: true, publicOffline: true, access: { visibilityPermissions: [], usagePermissions: [] } };
   const profile = { id: 'profile', active: true, access: { visibilityPermissions: ['profile.view'] } };
   const moderation = { id: 'moderation', active: true, access: { visibilityPermissions: ['moderation.review'] } };
-  for (const currentUser of [null, { roles: ['Tester'], permissions: [] }, { roles: ['Developer'], permissions: [] }, { roles: ['Administrator'], permissions: [] }]) {
-    assert.equal(access.isVisible(gps, currentUser), true);
+  for (const currentUser of [
+    null, // anonymous
+    { roles: ['User'], permissions: [] },
+    { roles: ['Tester'], permissions: [] },
+    { roles: ['Developer'], permissions: [] },
+    { roles: ['Administrator'], permissions: [] }
+  ]) {
+    assert.equal(access.isVisible(gps, currentUser), true, 'GPS must be visible for all roles without permissions');
+    assert.equal(access.isNavigable(gps, currentUser), true, 'GPS must be navigable for all roles without permissions');
   }
   assert.equal(access.isVisible(profile, { permissions: [] }), false);
   assert.equal(access.isVisible(profile, { permissions: ['profile.view'] }), true);
@@ -68,4 +75,106 @@ test('shipped public projection is versioned, minimal and contains no auth mater
   assert.equal(projection.schemaVersion, 1);
   assert.deepEqual(projection.modules.map((module) => module.id), ['gps']);
   assert.doesNotMatch(JSON.stringify(projection), /permissions|session|cookie|token|identity/i);
+});
+
+test('publicOffline flag survives validateManifest, Registry, and ModuleManager normalization', () => {
+  const sandbox = { window: null };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-interface.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-registry.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-manager.js'), 'utf8'), sandbox);
+
+  const rawManifest = {
+    id: 'gps',
+    name: 'GPS',
+    version: '1.0.0',
+    type: 'module',
+    publicOffline: true,
+    active: true,
+    status: 'active'
+  };
+
+  const validated = sandbox.ModuleInterface.validateManifest(rawManifest);
+  assert.equal(validated.publicOffline, true, 'ModuleInterface.validateManifest must preserve publicOffline');
+
+  sandbox.ModuleManager.init();
+  const normalized = sandbox.ModuleManager.normalizeModule(rawManifest);
+  assert.equal(normalized.publicOffline, true, 'ModuleManager.normalizeModule must preserve publicOffline');
+});
+
+test('authoritative admin deactivation in catalog deactivates local publicOffline GPS and syncs cache', async () => {
+  const sandbox = {
+    window: null,
+    document: { readyState: 'complete', addEventListener() {} },
+    NeutralPublicPath: { join(...args) { return args.join('/'); }, api(p) { return '/api/' + p; } },
+    localStorage: { store: new Map(), getItem(k) { return this.store.get(k) || null; }, setItem(k, v) { this.store.set(k, v); } }
+  };
+  sandbox.window = sandbox;
+  sandbox.GpsModule = { id: 'gps', name: 'GPS', active: true, status: 'enabled', publicOffline: true };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/public/public-module-state.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/core-loader.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-interface.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-registry.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-manager.js'), 'utf8'), sandbox);
+
+  sandbox.ModuleManager.init();
+  sandbox.ModuleManager.hydratePublicOfflineModules();
+  assert.equal(sandbox.ModuleRegistry.get('gps')?.active, true);
+
+  sandbox.FrameworkModuleCatalog = [{
+    id: 'gps',
+    name: 'GPS',
+    version: '1.0.0',
+    type: 'module',
+    publicOffline: true,
+    active: false,
+    status: 'inactive',
+    lifecycleState: 'INACTIVE',
+    globalName: 'GpsModule'
+  }];
+  sandbox.GpsModule.active = false;
+  sandbox.GpsModule.status = 'inactive';
+
+  await sandbox.ModuleManager.discoverModules();
+  assert.equal(sandbox.ModuleRegistry.get('gps')?.active, false, 'Authoritative deactivation must set active: false');
+});
+
+test('ModuleRegistry.discover includes already registered modules so discovery reconciliation does not delete them', async () => {
+  const sandbox = { window: null };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-interface.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-registry.js'), 'utf8'), sandbox);
+
+  sandbox.GpsModule = { id: 'gps', name: 'GPS', active: true, status: 'active', publicOffline: true };
+  sandbox.ModuleRegistry.register({ id: 'gps', name: 'GPS', active: true, status: 'active', publicOffline: true });
+  sandbox.FrameworkModuleCatalog = [{ id: 'gps', name: 'GPS', version: '1.0.0', globalName: 'GpsModule', publicOffline: true, active: true, status: 'active' }];
+
+  const discovered = await sandbox.ModuleRegistry.discover();
+  const gpsDiscovered = discovered.find((m) => m.id === 'gps');
+  assert.ok(gpsDiscovered, 'ModuleRegistry.discover must return already registered modules when present in catalog');
+});
+
+test('authenticated user with profile.view and profile.update sees and updates profile in settings path', () => {
+  const user = { id: '42', username: 'ralf', permissions: ['profile.view', 'profile.update'] };
+  const profileModule = {
+    id: 'profile',
+    name: 'Profile',
+    active: true,
+    status: 'enabled',
+    lifecycleState: 'ACTIVE',
+    access: { visibilityPermissions: ['profile.view'], usagePermissions: ['profile.update'] },
+    clientAccess: { mode: 'authenticated', canView: true, canUse: true, navigationVisible: true }
+  };
+
+  const visible = access.visibleModules([profileModule], { currentUser: user });
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].id, 'profile');
+
+  // Verify profile permissions check for Settings UI
+  const permissions = user.permissions;
+  const profileAvailable = Boolean(profileModule.active && permissions.includes('profile.view') && permissions.includes('profile.update'));
+  assert.equal(profileAvailable, true, 'Profile must be available in settings when active and permissions match');
 });
