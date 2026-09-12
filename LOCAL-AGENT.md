@@ -1,216 +1,164 @@
 # NEUTRAL – LOCAL AGENT HANDOFF
 
-**Richtung:** ChatGPT/Lea → lokaler Codespace-Agent  
-**Branch:** `lea/module-runtime-repair`  
-**Datum:** 2026-09-12  
-**Priorität:** P0  
+**Richtung:** Lea → lokaler Codespace-Agent  
+**Branch:** `lea/user-ui-stability`  
+**Priorität:** Test-Harness / User-UI Runtime Proof  
+**Produktionscode:** GESPERRT  
 **Deployment:** VERBOTEN  
 **Merge nach `main`:** VERBOTEN
 
-## Ziel
+## Ausgangslage
 
-Repariere den realen Web-App-Modulpfad testgetrieben. GPS ist ein öffentliches Offline-First-Basismodul und muss nach administrativer Installation/Aktivierung beim ersten stabilen Render sofort vorhanden bleiben. Profile muss nach Login bei Active + effektiven `profile.view`/`profile.update` zuverlässig in User Settings erscheinen. Keine weiteren symptomatischen Race-Patches.
+Der Produktionsfix `fad6b593` darf in diesem Auftrag nicht verändert werden. Die früheren Regex-/Source-String-Tests wurden zu Recht als unzureichend verworfen. Inzwischen existiert ein echter DOM-/Runtime-Harness in `tests/user-ui-stability.test.js`.
 
-## Zuerst vollständig lesen
+Der Agent hat nach der vereinbarten STOP-Regel angehalten.
 
-- `VISION.md`
-- `Architecture.md`
-- `CORE-1.0.md`
-- `CODEX.md`
-- `docs/superpowers/specs/2026-09-12-offline-first-module-start-design.md`
-- relevante aktuelle Tests
+Bisherige belastbare Evidence:
 
-Danach den tatsächlichen Code lesen, insbesondere:
+- Basis 1–4: **4 PASS / 0 FAIL**.
+- Test B `Start button stays stable during background updates`: **PASS**.
+- Test C `Stale settings catalog responses do not overwrite successful state`: **FAIL**.
+- Der aktuelle C-Failure lautet sinngemäß: `retry button is visible while the first catalog request is still pending`.
 
-- `Web-App/public/index.html`
+## Lea Review / verbindliche Entscheidung
+
+Der C-Failure beweist aktuell **keinen Produktionsfehler**.
+
+Die echte App zeigt den Retry-Control nur im Zustand `error`, nicht im Zustand `pending`. Das ist das gewünschte Verhalten:
+
+- `pending` → Discovery läuft; **kein Retry-Button erforderlich/erwartet**.
+- `ready` → Module anzeigen; kein Fehler.
+- `error` → Fehlermeldung + Retry-Control.
+
+Der Harness darf deshalb NICHT verlangen, dass während eines noch laufenden ersten Catalog-Requests bereits ein Retry-Button sichtbar ist.
+
+Die Test-Erwartung ist an den verbindlichen UI-Vertrag anzupassen. Der Produktionscode darf nicht an diese falsche Testannahme angepasst werden.
+
+## Auftrag 1 – Test C korrigieren
+
+Ändere ausschließlich Test-/Harness-Code so, dass C den echten Nutzervertrag prüft.
+
+C muss mit kontrollierbaren Promises/Deferreds mindestens folgendes Verhalten tatsächlich ausführen:
+
+1. Settings ist geöffnet.
+2. Catalog Request 1 startet und bleibt `pending`.
+3. Während `pending` darf KEIN Fehlerzustand verlangt werden; insbesondere darf der Test keinen Retry-Button als Pflicht erwarten.
+4. Ein neuerer Catalog-/Retry-/Discovery-Lauf wird ausgelöst, sobald dies über den realen User-Flow zulässig ist.
+5. Der neuere Lauf liefert erfolgreich sichtbare Module.
+6. Eine ältere/stale Antwort oder ein älterer Fehler trifft anschließend ein.
+7. Beweise im DOM/Runtime-State:
+   - der neuere erfolgreiche Catalog bleibt maßgeblich;
+   - Module bleiben sichtbar;
+   - `discoveryState` bleibt `ready` bzw. die UI bleibt im erfolgreichen Zustand;
+   - die alte Antwort erzeugt nicht nachträglich `Modules could not be loaded`;
+   - ein Retry-Control erscheint nur im tatsächlichen Error-State.
+
+Nutze soweit möglich echte user-visible Aktionen und den realen App-Code. Keine unexponierten Interna nur für den Test öffnen. Keine Regex-/Source-String-Assertions als Verhaltensbeweis.
+
+## Auftrag 2 – Basis und A–D vollständig ausführen
+
+Nach Korrektur von C zuerst ausführen:
+
+- Basis 1
+- Basis 2
+- Basis 3
+- Basis 4
+- A Login + delayed/stale discovery
+- B Start button during background updates
+- C competing/stale Settings catalog
+- D Settings Save + Success Modal
+
+Jeder Test muss als echter Runtime-/DOM-Verhaltenstest laufen.
+
+Verbindliche Erwartungen:
+
+### A
+Nach erfolgreichem Login bleibt Home/Start deterministisch aktiv. Eine ältere Discovery-Antwort darf Login oder eine alte Route nicht wiederherstellen.
+
+### B
+Ein einzelner Klick auf Start öffnet Home auch nach Background-Updates. Kein zweiter Klick erforderlich.
+
+### C
+Neuester erfolgreicher Catalog gewinnt. Stale Antworten/Fehler dürfen ihn nicht überschreiben.
+
+### D
+Nach erfolgreichem Settings-Save:
+- User bleibt in Settings;
+- keine Weiterleitung erforderlich;
+- `Successfully saved.` erscheint als echtes Success-Modal/Popup;
+- Modal bleibt nach dem Render vorhanden;
+- Modal verschwindet erst durch Benutzeraktion/OK.
+
+## STOP-Regel
+
+Wenn der nun validierte Harness bei Basis 1–4 oder A–D gegen den aktuellen Produktionscode reproduzierbar FAIL zeigt:
+
+**STOP.**
+
+- Produktionscode NICHT ändern.
+- Failure mit tatsächlichem Runtime-/DOM-Zustand dokumentieren.
+- Keine weitere Reparatur auf Verdacht.
+- `STOP – REVIEW DURCH LEA ERFORDERLICH` melden.
+
+Wenn Basis 1–4 und A–D vollständig PASS sind, darf mit Auftrag 3 fortgefahren werden.
+
+## Auftrag 3 – vollständige Verifikation
+
+Nur wenn Basis + A–D vollständig PASS:
+
+1. `npm test`
+2. `node --check Web-App/public/user-app.js`
+3. `node --check tests/user-ui-stability.test.js`
+4. `git diff --check`
+5. `node scripts/build-production-package.js`
+
+Keine Produktionsänderung.
+
+## Änderungsgrenzen
+
+Erlaubt:
+- `tests/user-ui-stability.test.js`
+- notwendige reine Test-Harness-Hilfen unter `tests/`, falls wirklich erforderlich
+- `CHATGPT.md`
+
+Nicht erlaubt:
 - `Web-App/public/user-app.js`
-- `Web-App/public/public-module-state.js`
-- `Web-App/public/user-module-access.js`
-- `Web-App/public/service-worker.js`
-- `Web-App/core/core-loader.js`
-- `Web-App/core/module-interface.js`
-- `Web-App/core/module-registry.js`
-- `Web-App/core/module-manager.js`
-- `Web-App/core/core-startup.js`
-- `Web-App/app/modules/gps/*`
-- `Web-App/app/modules/profile/*`
-- serverseitige Module-Catalog-Projektion, soweit für die Root Cause erforderlich.
+- GPS-Code oder GPS-Manifest
+- Profile
+- Moderation
+- Admin
+- Server/Auth
+- Core-Runtime
+- Datenbank
 
-## Aktuelle Operator-Evidence – Production FAIL
+Keine gerätespezifische Optimierung. Die Web-App ist plattformneutral; Tests dürfen keine Annahme erzwingen, dass ein bestimmtes iPad-, Android-, Windows-, macOS-, Safari- oder Chrome-Verhalten die Zielplattform definiert.
 
-Nach dem zuletzt als erfolgreich deployed gemeldeten Batch:
+## Abschlussdokumentation
 
-1. Frischer anonymer Aufruf: GPS ist kurz sichtbar.
-2. `Welcome to Neutral`/Homepage rendert sichtbar mehrfach (etwa zweimaliges Blinken).
-3. Danach verschwindet GPS wieder.
-4. Settings zeigt anschließend `No active modules are available yet.`
-5. Bei Reload ist GPS teilweise kurz sichtbar und verschwindet erneut.
-6. Standalone-GPS funktioniert separat.
-7. Profile bleibt nach Login nicht zuverlässig verfügbar.
+`CHATGPT.md` aktualisieren mit:
 
-Automatisierte grüne Tests sind daher kein Abnahmekriterium, solange sie dieses reale Verhalten nicht korrekt modellieren.
+### HARNESS
+- Basis 1: PASS/FAIL
+- Basis 2: PASS/FAIL
+- Basis 3: PASS/FAIL
+- Basis 4: PASS/FAIL
 
-## Bereits durch Code-Review identifizierte Root-Cause-Kandidaten
+### RUNTIME
+- A: PASS/FAIL
+- B: PASS/FAIL
+- C: PASS/FAIL
+- D: PASS/FAIL
 
-Diese Punkte sind **zu beweisen oder zu widerlegen**, nicht blind vorauszusetzen.
+### VERIFIKATION
+- npm test
+- node --check
+- git diff --check
+- Production Package
 
-### A. PublicOffline GPS wird bei Discovery wieder unregistert
+### PRODUKTIONSCODE
+Ausdrücklich dokumentieren:
+`PRODUKTIONSCODE UNVERÄNDERT`
 
-`ModuleManager.discoverModules()` reconciliiert die Registry gegen `discoveredIds` und entfernt vorhandene Module, die im aktuellen Discovery-Ergebnis fehlen. Ein lokal vor dem First Render hydriertes GPS kann dadurch nach einem späteren leeren/ungeeigneten Server-Catalog wieder gelöscht werden.
+Committe und pushe ausschließlich Test-/Dokumentationsänderungen auf `lea/user-ui-stability`.
 
-Besonders kritisch: Der aktuelle Test `tests/offline-first-public-modules.test.js` erwartet nach lokalem GPS + anschließendem `discover([])` derzeit ausdrücklich eine leere Registry. Das widerspricht dem bestätigten Offline-First-Vertrag.
-
-### B. `publicOffline` kann in Normalisierung/Registry-Projektion verloren gehen
-
-Prüfe `ModuleInterface.validateManifest()`, `ModuleRegistry.discover()` und alle dazwischenliegenden Objektprojektionen. `publicOffline: true` muss durch den gesamten Modulpfad erhalten bleiben. Dasselbe gilt für die notwendigen Lifecycle-/Presentation-Felder.
-
-### C. GPS enthält weiterhin User-RBAC-Gating
-
-Das Basis-GPS enthält weiterhin `gps.view`, `gps.use`, `gps.manage`, `gps.admin`, Access-Definitionen und `canUseModule()`/`INSUFFICIENT_PERMISSIONS`-Prüfungen.
-
-Verbindlicher Vertrag für das **GPS-Basismodul**:
-
-- User-Sichtbarkeit und lokale Basisnutzung benötigen keine User-Rolle und keine User-Permission.
-- Anonymous/User/Tester/Developer/Admin unterscheiden sich dafür nicht.
-- Admin-Lifecycle Install/Activate/Deactivate und Admin-Konfiguration bleiben bestehen.
-- Browser-/OS-Geolocation-Berechtigung bleibt selbstverständlich erforderlich.
-- Serverseitig geschützte Aktionen bleiben serverseitig geschützt.
-
-Entferne keine generischen Core-Security-Mechanismen; entferne nur die nicht mehr gewünschte User-RBAC-Abhängigkeit des GPS-Basismoduls.
-
-### D. Mehrfache Full-Renders erklären Welcome-Flackern
-
-Prüfe insbesondere `loadHomepageConfig()`, Maintenance/Appearance/Session-Startup, `startBackgroundInitialization()`, Startup-Events und `renderApp()`.
-
-Der sichtbare Homepage-/Welcome-Inhalt darf nach dem ersten stabilen Render nicht wegen Catalog-/Session-/Appearance-Hintergrundarbeit komplett neu aufgebaut werden. Gezielte Navigation-/Settings-Aktualisierung ist erlaubt.
-
-### E. Profile hängt am realen Registry-/Discovery-Zustand
-
-`Profile` ist manifestseitig `entitlementRequired:false` und permission-sensitive. User Settings zeigt Profile nur, wenn das Modul real active in der Registry vorhanden ist und der User die effektiven Profile-Rechte besitzt.
-
-Beweise den kompletten Pfad:
-
-`server authenticated catalog -> manifest normalization -> registry -> active state -> effective permissions -> Settings Profile entry -> open -> save`
-
-Keine weitere reine Manifest-/String-Prüfung als Beweis akzeptieren.
-
-## Verbindliche Architektur
-
-### GPS Public/Offline
-
-Wenn administrativ installiert + aktiviert:
-
-- beim ersten stabilen Render sofort sichtbar;
-- kein Serverroundtrip als Voraussetzung;
-- kein User-RBAC/Permission/Entitlement als Voraussetzung;
-- späterer fehlgeschlagener, leerer oder scope-fremder Catalog darf den gültigen lokalen PublicOffline-Zustand nicht zerstören;
-- eine **autoritative administrative Deaktivierung** muss den lokalen Zustand dagegen invalidieren/aktualisieren, sodass GPS bei zukünftigen Starts nicht erscheint.
-
-Wichtig: Nicht einfach `GPS immer behalten`. Ownership der Entfernung sauber modellieren: nur eine autoritative Lifecycle-/PublicOffline-Synchronisierung darf den lokalen PublicOffline-Aktivierungszustand entfernen.
-
-### Authentifizierte Module
-
-Profile/Moderation bleiben permission-sensitive. Authentifizierte Kataloge dürfen den permission-sensitiven Bereich reconciliieren, aber nicht den unabhängigen PublicOffline-Bereich versehentlich zerstören.
-
-### Rendering
-
-Ein stabiler First Render. Background-Aktualisierungen dürfen Navigation/Settings gezielt aktualisieren. Kein sichtbares mehrfaches Neuaufbauen des Homepage-/Welcome-Dokuments.
-
-## TDD – zwingende Reihenfolge
-
-### RED
-
-Vor Produktionscodeänderungen Verhaltenstests schreiben/ändern und tatsächlich ausführen. Mindestens:
-
-1. Lokal hydriertes aktives `publicOffline` GPS existiert vor aufgelöstem Catalog.
-2. Späteres `discover([])`/ungeeigneter Catalog entfernt dieses GPS **nicht**.
-3. Catalog-Fehler entfernt GPS nicht und bleibt retryable.
-4. `publicOffline` überlebt `validateManifest -> Registry -> Manager`.
-5. Anonymous -> Login Ralf/Tester/Developer/Admin: GPS bleibt ohne Reload sichtbar.
-6. GPS-Sichtbarkeit/lokale Basisnutzung ist unabhängig von User-RBAC.
-7. Autoritative Admin-Deaktivierung entfernt/invaldiert PublicOffline-GPS korrekt.
-8. Background Catalog/Session/Homepage-Auflösung verursacht keinen zweiten Full-Render des bereits sichtbaren Homepage-/Welcome-Dokuments.
-9. Profile Active + `profile.view` + `profile.update` erreicht tatsächlich User Settings; fehlende Rechte tun es nicht.
-10. Profile öffnen/speichern über echten User-Pfad.
-
-Die Tests müssen **vor der Reparatur aus dem richtigen Grund FAIL** zeigen. RED-Ausgabe für den Abschlussbericht festhalten.
-
-### GREEN
-
-Danach minimalen Produktionscode ändern. Keine neue parallele Modullaufzeit, kein GPS-Neubau, keine neue Sonderarchitektur.
-
-Nach jedem Fix fokussierte Tests ausführen.
-
-### REFACTOR
-
-Nur wenn nach GREEN nötig. Keine großflächige kosmetische Umstrukturierung.
-
-## Zusätzliche Regressionen
-
-Nicht beschädigen:
-
-- User Login + Passwort-Auge
-- Admin Login
-- Module Details als eigene Seite
-- Module Detail Save -> Erfolgsdialog -> Rückkehr
-- Settings Apps/Navigation Save Feedback
-- Theme-Wechsel
-- App/System Module Tabellenstruktur
-- GPS Standalone
-- GPS Karten-/Positions-UI
-
-## Abschlussprüfungen
-
-Mindestens ausführen:
-
-- alle neuen/fokussierten Verhaltenstests;
-- vollständiges `npm test`;
-- JS-Syntaxchecks für geänderte JS-Dateien;
-- PHP-Lint für geänderte/relevante PHP-Dateien;
-- `git diff --check`;
-- falls ohne Deployment möglich: Production Package Build.
-
-Kein Deployment. Kein Push/Merge nach `main`.
-
-## Git
-
-Arbeite ausschließlich auf `lea/module-runtime-repair`.
-
-Vor Beginn prüfen:
-
-`git branch --show-current`
-
-Falls nicht exakt dieser Branch aktiv ist: wechseln und erst dann arbeiten.
-
-Erstelle nach erfolgreicher GREEN-/Gesamtprüfung einen Commit auf diesem Branch. Nicht mergen.
-
-## Abschlussdokumentation – verpflichtend in `CHATGPT.md`
-
-`CHATGPT.md` am Ende vollständig als Handoff an Lea aktualisieren. Muss enthalten:
-
-1. exakter Branch und Commit-SHA;
-2. bewiesene Root Cause(s), getrennt von widerlegten Annahmen;
-3. warum die vorherigen grünen Tests den Production-Fehler nicht erkannten;
-4. Liste aller geänderten Dateien und Zweck;
-5. RED-Testnachweise: Testname + erwarteter Failure;
-6. GREEN-Testnachweise;
-7. vollständiger Teststatus;
-8. Syntax/PHP/diff/package Status;
-9. ausdrücklich: **nicht deployed, nicht nach main gemergt**;
-10. verbleibende Risiken/ungeprüfte Punkte;
-11. genaue Operator-Retest-Reihenfolge.
-
-Keine Erfolgsaussage ohne tatsächlich ausgeführte Nachweise.
-
-## Operator-Retest nach späterem Merge/Deployment
-
-1. frischer Inkognito-Root: GPS sofort vorhanden und bleibt vorhanden;
-2. kein Welcome-Doppelblinken;
-3. Settings zeigt GPS;
-4. Ralf Login ohne Reload: GPS bleibt, Profile erscheint bei korrekten Rechten;
-5. Tester entsprechend;
-6. Developer/Admin: GPS bleibt;
-7. GPS öffnen und Position lokal nutzen;
-8. Profile öffnen/speichern;
-9. Offline-Start;
-10. Admin-Deaktivierung -> synchronisieren -> zukünftiger Start ohne GPS.
+Nicht deployen. Nicht nach `main` mergen.
