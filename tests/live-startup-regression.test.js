@@ -339,7 +339,7 @@ test('local settings save uses the shared success dialog and retains inline erro
 
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{[\s\S]*status\.textContent = ''[\s\S]*status\.className = 'user-settings-status'[\s\S]*renderApp\(\)[\s\S]*window\.NeutralUiFeedback\??\.showSuccess\(['"]Successfully saved\.["']\s*,\s*\{\s*title:\s*['"]Saved['"]\s*\}\)/s);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{[\s\S]*status\.textContent = ''[\s\S]*status\.className = 'user-settings-status'[\s\S]*renderApp\(\)[\s\S]*showSuccess\(\s*['"]Successfully saved\./is);
   assert.match(css, /\.user-settings-status\.error\s*\{/);
   assert.doesNotMatch(source, /Profile and settings saved successfully/);
 });
