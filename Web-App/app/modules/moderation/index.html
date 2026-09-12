@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Moderation self-test</title></head>
+<body><main><h1>Moderation self-test</h1><p id="result" role="status">Checking protected moderation service…</p></main>
+<script src="../../../public/public-path.js"></script><script src="../../../public/api-client.js"></script><script>
+new ApiClient().get('/api/modules/moderation/status').then(function(result){var available=result&&((result.data&&result.data.data&&result.data.data.available)||(result.data&&result.data.available));document.getElementById('result').textContent=result.ok&&available?'PASS — Moderation service ready.':'FAIL — '+(result.error||'Moderation service unavailable.');}).catch(function(){document.getElementById('result').textContent='FAIL — Moderation service unavailable.';});
+</script></body></html>

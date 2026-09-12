@@ -373,6 +373,19 @@
     if (window.UserModule && typeof window.UserModule === 'object') window.UserModule.currentUser = null;
   };
 
+  const refreshModuleDiscovery = async () => {
+    if (!window.ModuleManager || typeof window.ModuleManager.discoverModules !== 'function') return [];
+    state.discoveryState = 'pending';
+    try {
+      const modules = await window.ModuleManager.discoverModules();
+      state.discoveryState = 'ready';
+      return modules;
+    } catch (error) {
+      state.discoveryState = 'error';
+      throw error;
+    }
+  };
+
   // Restores an existing server session (e.g. after a page reload) via the
   // cookie-backed /api/auth/me endpoint. Never falls back to local storage.
   const restoreServerSession = async () => {
@@ -546,6 +559,7 @@
           await apiClient.logout();
         }
         clearServerUser();
+        await refreshModuleDiscovery().catch(() => []);
         state.activeView = 'home';
         state.activeModuleId = null;
         writeHashRoute('');
@@ -696,6 +710,7 @@
 
       status.className = 'message success';
       status.textContent = 'Signed in successfully.';
+      await refreshModuleDiscovery().catch(() => []);
       state.activeView = 'home';
       writeHashRoute('');
       renderApp();
@@ -875,13 +890,14 @@
           if (nextPreferences.persisted) {
             status.textContent = '';
             status.className = 'user-settings-status';
-            window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });
+            renderApp();
+            window.NeutralUiFeedback.showSuccess('Successfully saved.', { title: 'Saved' });
+            return;
           } else {
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
             window.NeutralUiFeedback?.showError(status.textContent);
           }
-          if (nextPreferences.persisted) { renderApp(); return; }
         }
 
       });
@@ -1076,11 +1092,11 @@
         // IndexedDB startup must not prevent the public homepage projection
         // from being fetched, and a homepage/API failure must not block P1
         // session restoration or module discovery.
+        await restoreServerSession();
         const initializationResults = await Promise.allSettled([
           startCore(),
           loadHomepageConfig(),
           loadUserUiDesign(),
-          restoreServerSession(),
           loadMaintenanceState()
         ]);
         for (const result of initializationResults) {

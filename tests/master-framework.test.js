@@ -1151,13 +1151,13 @@ test('gps renders cached position immediately and refreshes once when permission
   const container = createGpsContainer();
 
   gps.renderUserInterface(container);
-  assert.match(container.innerHTML, /Aktuelle Position ermittelt/);
+  assert.match(container.innerHTML, /1\.25000, 2\.50000/);
   assert.doesNotMatch(container.innerHTML, /<dd>1\.25<\/dd>|<dd>2\.5<\/dd>/);
 
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(geolocationState.currentPositionCalls, 1);
-  assert.match(container.innerHTML, /Aktuelle Position ermittelt/);
+  assert.match(container.innerHTML, /52\.52000, 13\.40500/);
  assert.match(container.innerHTML, /Position automatisch aktualisiert\./);
 });
 

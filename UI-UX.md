@@ -1,5 +1,12 @@
 # NEUTRAL – UI/UX-Zielbild
 
+## Module discovery and details (2026-09-12)
+
+- Permission-gated User modules are projected only after the authenticated identity is restored; successful login refreshes that projection immediately.
+- App/System Module overviews contain only their tables. `Details` replaces the overview with one module detail view and a category-specific Back action.
+- Successful User Settings and module-detail saves use the framework `Successfully saved.` dialog with one `OK` action.
+- Without a configured reverse-geocoding provider, GPS labels `Standort` with precise compact coordinates rather than presenting a status sentence as a location.
+
 ## Verbindliche Nachträge und Livegrenzen (2026-09-11)
 
 - **Module Administration:** Permissions und rollenbezogene Visibility/Navigation sind getrennte Konzepte. Pro relevanter Rolle (Admin, Developer, User, Viewer) muss konfigurierbar werden, ob ein Modul/User-Einstieg sichtbar ist; dies verleiht niemals Serverrechte. Systemmodule dürfen aktiv und User-unsichtbar sein. **IST:** globale Manifestpräsentation plus Permissionfilter; rollenbezogene Visibility-UI fehlt.

@@ -4,6 +4,7 @@
 const NeutralUiFeedback = (() => {
   let dialog = null;
   let returnFocus = null;
+  let afterClose = null;
   const boundInputs = new WeakMap();
   let delegationInstalled = false;
   const closeSuccess = () => {
@@ -11,11 +12,14 @@ const NeutralUiFeedback = (() => {
     dialog.remove(); dialog = null;
     const target = returnFocus; returnFocus = null;
     if (target && target.isConnected && typeof target.focus === 'function') target.focus();
+    const callback = afterClose; afterClose = null;
+    if (typeof callback === 'function') callback();
   };
   const showSuccess = (message, options = {}) => {
     if (typeof document === 'undefined') return;
     closeSuccess();
     returnFocus = options.returnFocus || document.activeElement;
+    afterClose = typeof options.onClose === 'function' ? options.onClose : null;
     dialog = document.createElement('div');
     dialog.className = 'neutral-success-dialog-backdrop';
     dialog.innerHTML = '<section class="neutral-success-dialog" role="dialog" aria-modal="true" aria-labelledby="neutral-success-title" aria-describedby="neutral-success-message"><div class="neutral-success-icon" aria-hidden="true">✓</div><h2 id="neutral-success-title"></h2><p id="neutral-success-message"></p><button type="button" class="ui-button ui-button--primary" data-success-close>OK</button></section>';

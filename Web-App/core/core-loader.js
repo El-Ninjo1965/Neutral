@@ -321,7 +321,11 @@
             return readAnonymousCatalogCache();
         }
 
-        const cached = readAnonymousCatalogCache();
+        const authenticated = !!(
+            window.CoreAuth?.currentUser
+            || window.UserModule?.currentUser
+        );
+        const cached = authenticated ? [] : readAnonymousCatalogCache();
         if (cached.length > 0) {
             // Warmstart: hydrate from the last known good catalog immediately and
             // reconcile against the server in the background without blocking the UI.

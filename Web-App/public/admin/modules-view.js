@@ -44,14 +44,10 @@ class AdminModulesView {
           <button type="button" class="btn btn-secondary" data-module-action="reload">Reload</button>
         </div>
         <div id="modules-table"></div>
-        <div id="module-details" class="card" style="margin-top: 1rem; display: none;"></div>
       </div>
     `;
     this.renderTable();
     this.bindLifecycleActions();
-    if (this.activeModuleId) {
-      this.showDetails(this.activeModuleId);
-    }
   }
 
   renderTable() {
@@ -217,14 +213,18 @@ class AdminModulesView {
 
   async showDetails(moduleId) {
     this.activeModuleId = String(moduleId);
+    const overviewTitle = this.category === 'system' ? 'System Modules' : 'App Modules';
+    this.container.innerHTML = `<div class="admin-modules-view module-detail-view"><div class="section-header"><div><button type="button" class="btn btn-secondary" data-module-back>Back to ${overviewTitle}</button><h2>Module Details</h2></div></div><div id="module-details" class="card"></div></div>`;
+    this.container.querySelector('[data-module-back]')?.addEventListener('click', () => { this.activeModuleId = null; this.render(); });
     const detailHost = this.container.querySelector('#module-details');
     if (!detailHost) {
       return;
     }
 
-    const [moduleResult, permissionsResult] = await Promise.all([
+    const [moduleResult, permissionsResult, settingsResult] = await Promise.all([
       this.api.getAdminModule(moduleId),
-      this.api.getAdminModulePermissions(moduleId)
+      this.api.getAdminModulePermissions(moduleId),
+      this.api.getSettings()
     ]);
 
     const module = AdminCommon.unwrapData(moduleResult, 'module', null);
@@ -237,6 +237,7 @@ class AdminModulesView {
       ? AdminCommon.unwrapData(permissionsResult, 'modulePermissions', null)
       : null;
     const permissionDefinitions = Array.isArray(module.permissionDefinitions) ? module.permissionDefinitions : [];
+    const settings = settingsResult.ok ? AdminCommon.unwrapData(settingsResult, 'settings', {}) : {};
 
     detailHost.style.display = 'block';
     detailHost.innerHTML = `
@@ -264,6 +265,12 @@ class AdminModulesView {
             <span>${permissionDefinitions.length}</span>
           </div>
         </div>
+        <div class="form-actions module-detail-lifecycle">
+          <button type="button" class="btn btn-primary" data-detail-lifecycle="install" ${module.registered ? 'disabled' : ''}>Install</button>
+          <button type="button" class="btn btn-info" data-detail-lifecycle="activate" ${module.registered && !module.active ? '' : 'disabled'}>Activate</button>
+          <button type="button" class="btn btn-warning" data-detail-lifecycle="deactivate" ${module.active ? '' : 'disabled'}>Deactivate</button>
+          <button type="button" class="btn btn-danger" data-detail-lifecycle="uninstall" ${module.registered && !module.active ? '' : 'disabled'}>Uninstall</button>
+        </div>
         <div class="card">
           <div class="card-header"><h4 class="card-title">Visibility / Navigation</h4></div>
           ${this.renderVisibilityEditor(module)}
@@ -276,6 +283,7 @@ class AdminModulesView {
           <div class="card-header"><h4 class="card-title">Permissions</h4></div>
           ${this.renderPermissionEditor(module, modulePermissions)}
         </div>
+        ${this.renderModuleSettings(module, settings)}
       </div>
     `;
 
@@ -286,15 +294,51 @@ class AdminModulesView {
         await this.savePermissions(module.id);
       });
     }
+    detailHost.querySelectorAll('[data-detail-lifecycle]').forEach((button) => button.addEventListener('click', () => {
+      const handler = { install: 'install', activate: 'activate', deactivate: 'deactivate', uninstall: 'uninstall' }[button.dataset.detailLifecycle];
+      if (handler && !button.disabled) void this[handler](module.id);
+    }));
     detailHost.querySelector('#module-visibility-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();
       const roles = {};
       detailHost.querySelectorAll('[data-module-visibility]').forEach((input) => { roles[input.dataset.moduleVisibility] = input.checked; });
       const result = await this.api.updateAdminModuleVisibility(module.id, roles);
       if (!result.ok) { AdminCommon.showAlert(`Failed to update module visibility: ${result.error || 'Unknown error'}`, 'error'); return; }
-      AdminCommon.showAlert(`Module visibility for ${module.id} updated`, 'success');
-      await this.showDetails(module.id);
+      AdminCommon.showAlert('Successfully saved.', 'success', { onClose: () => { this.activeModuleId = null; this.render(); } });
     });
+    detailHost.querySelector('#module-admin-settings-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      await this.saveModuleSettings(module, settings, event.currentTarget);
+    });
+  }
+
+  renderModuleSettings(module, settings) {
+    const definitions = Array.isArray(module.admin?.settings) ? module.admin.settings : [];
+    if (!definitions.length) return '';
+    const readPath = (path) => String(path || '').split('.').filter(Boolean).reduce((value, segment) => value && typeof value === 'object' ? value[segment] : undefined, settings);
+    const controls = definitions.map((definition) => {
+      const value = readPath(definition.path);
+      const key = escapeHtmlModules(definition.key);
+      const label = escapeHtmlModules(definition.label || definition.key);
+      if (definition.type === 'boolean') return `<label class="checkbox-label"><input type="checkbox" name="${key}" ${value ?? definition.defaultValue ? 'checked' : ''}> ${label}</label>`;
+      const secret = definition.secret === true;
+      return `<label>${label}<input name="${key}" type="${secret ? 'password' : (definition.type === 'number' ? 'number' : 'text')}" ${definition.min != null ? `min="${Number(definition.min)}"` : ''} ${definition.step != null ? `step="${Number(definition.step)}"` : ''} value="${secret ? '' : escapeHtmlModules(value ?? definition.defaultValue ?? '')}" ${secret ? 'autocomplete="new-password" placeholder="Leave empty to keep the stored value"' : ''}></label>`;
+    }).join('');
+    return `<div class="card"><div class="card-header"><h4 class="card-title">${escapeHtmlModules(module.admin.title || 'Module settings')}</h4></div><p class="small-muted">${escapeHtmlModules(module.admin.description || '')}</p><form id="module-admin-settings-form" class="admin-form compact-form">${controls}<div class="form-actions"><button type="submit" class="btn btn-primary">Save settings</button></div></form></div>`;
+  }
+
+  async saveModuleSettings(module, settings, form) {
+    const next = JSON.parse(JSON.stringify(settings));
+    const writePath = (path, value) => { const parts = String(path).split('.').filter(Boolean); let target = next; parts.slice(0, -1).forEach((part) => { if (!target[part] || typeof target[part] !== 'object') target[part] = {}; target = target[part]; }); target[parts.at(-1)] = value; };
+    for (const definition of module.admin.settings) {
+      const input = form.elements.namedItem(definition.key);
+      const value = definition.type === 'boolean' ? input.checked : definition.type === 'number' ? Number(input.value) : input.value;
+      if (definition.secret === true && value === '') continue;
+      writePath(definition.path, value);
+    }
+    const result = await this.api.updateSettings(next);
+    if (!result.ok) { AdminCommon.showAlert(`Failed to save module settings: ${result.error || 'Unknown error'}`, 'error'); return; }
+    AdminCommon.showAlert('Successfully saved.', 'success', { onClose: () => { this.activeModuleId = null; this.render(); } });
   }
 
   collectRoleAssignments(moduleId) {
@@ -327,9 +371,7 @@ class AdminModulesView {
       AdminCommon.showAlert(`Failed to update module permissions: ${result.error || 'Unknown error'}`, 'error');
       return;
     }
-    AdminCommon.showAlert(`Module permissions for ${moduleId} updated`, 'success');
-    await this.reload();
-    await this.showDetails(moduleId);
+    AdminCommon.showAlert('Successfully saved.', 'success', { onClose: () => { this.activeModuleId = null; this.render(); } });
   }
 
   async install(moduleId) {

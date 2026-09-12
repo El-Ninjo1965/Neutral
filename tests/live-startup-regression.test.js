@@ -298,7 +298,7 @@ test('user startup loads central homepage config and renders trusted HTML withou
   assert.match(source, /homepageDocument\.apply\(frame, homepage\.content, readUserTheme\(\)\)/);
   assert.match(source, /frame\.setAttribute\('sandbox', 'allow-scripts allow-forms allow-popups'\)/);
   assert.doesNotMatch(source, /getSafeHomepageContent/);
-  assert.match(source, /Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*loadUserUiDesign\(\),\s*restoreServerSession\(\)/s);
+  assert.match(source, /await restoreServerSession\(\);\s*const initializationResults = await Promise\.allSettled\(\[\s*startCore\(\),\s*loadHomepageConfig\(\),\s*loadUserUiDesign\(\)/s);
   assert.doesNotMatch(source, /await window\.CoreStartup\.startBackground\(\);\s*}\s*await loadHomepageConfig\(\)/s);
 });
 
@@ -339,7 +339,7 @@ test('local settings save uses the shared success dialog and retains inline erro
 
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = '';\s*status\.className = 'user-settings-status';\s*window\.NeutralUiFeedback\?\.showSuccess\('Successfully saved\.'/s);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = '';\s*status\.className = 'user-settings-status';\s*renderApp\(\);\s*window\.NeutralUiFeedback\.showSuccess\('Successfully saved\.'/s);
   assert.match(css, /\.user-settings-status\.error\s*\{/);
   assert.doesNotMatch(source, /Profile and settings saved successfully/);
 });

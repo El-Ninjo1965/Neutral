@@ -1,4 +1,12 @@
-# Neutral status — operator UX / module repair
+# Neutral status — focused Profile / Moderation repair
+
+**Stand:** 2026-09-12
+**Code status:** Implemented; deployment verification pending
+**Operator status:** **RETEST REQUIRED**
+
+- Root cause: User bootstrap discovered modules concurrently with session restoration and could consume an anonymous cache that excludes permission-gated Profile/Moderation modules.
+- Authenticated discovery, stale-registry reconciliation, Moderation reachability/self-test, dedicated Admin detail views, generic module settings, Settings confirmation timing, and honest GPS location fallback are implemented and behavior-tested.
+- Core Freeze remains **not declared** pending production deployment and operator retest.
 
 **Stand:** 2026-09-12
 **Code status:** `b737e2c` auf `main`; lokal 546/546, CodeQL `34667988356` und FTPS/read-only Smoke `34667988682` bestanden

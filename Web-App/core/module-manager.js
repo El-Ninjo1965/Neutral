@@ -152,6 +152,13 @@
 
             const discovered = await window.ModuleRegistry.discover();
 
+            const discoveredIds = new Set(discovered.map((module) => String(module?.id || '')).filter(Boolean));
+            for (const existing of window.ModuleRegistry.getAll()) {
+                if (existing?.type === 'module' && !discoveredIds.has(String(existing.id || ''))) {
+                    this.unregister(existing.id);
+                }
+            }
+
             for (const registered of discovered) {
                 if (!registered || !registered.id) {
                     continue;

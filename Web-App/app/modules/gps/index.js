@@ -912,7 +912,8 @@
                 return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
             };
             const links = position ? GpsModule.locationLinks(position) : null;
-            const positionHtml = position ? `<div><dt>Standort</dt><dd>Aktuelle Position ermittelt</dd></div><div><dt>${gpsText('accuracy')}</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>${gpsText('time')}</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : `<div><dt>${gpsText('position')}</dt><dd>${gpsText('unavailable')}</dd></div>`;
+            const positionLabel = position ? `${Number(position.latitude ?? position.lat).toFixed(5)}, ${Number(position.longitude ?? position.lng).toFixed(5)}` : '';
+            const positionHtml = position ? `<div><dt>Standort</dt><dd>${positionLabel}</dd></div><div><dt>${gpsText('accuracy')}</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>${gpsText('time')}</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : `<div><dt>${gpsText('position')}</dt><dd>Address unavailable</dd></div>`;
             const shareDisabled = !position || !allowedToUse || !active;
             const browserDeniedMessage = gpsText('denied');
             const infoMessage = message || (state.permissionState === 'denied'

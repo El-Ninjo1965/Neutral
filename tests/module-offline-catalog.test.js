@@ -232,6 +232,39 @@ test('authenticated catalog is usable online but never persisted as anonymous fa
   assert.deepEqual(JSON.parse(JSON.stringify(await offline.CoreLoader.discoverExternalModules())), []);
 });
 
+test('authenticated discovery bypasses a stale anonymous warm-start catalog', async () => {
+  const storage = createStorage();
+  const anonymous = loadContext({
+    storage,
+    catalogResponse: { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } }
+  });
+  await anonymous.CoreLoader.discoverExternalModules();
+
+  const profile = {
+    ...moduleEntry,
+    id: 'profile',
+    name: 'Profile',
+    entry: 'index.js',
+    modulePath: '/Web-App/app/modules/profile',
+    globalName: 'NeutralProfileModule',
+    clientAccess: { mode: 'authenticated', canView: true, canUse: true }
+  };
+  const authenticated = loadContext({
+    storage,
+    catalogResponse: { ok: true, data: { modules: [profile], accessContext: { mode: 'authenticated' } } }
+  });
+  authenticated.CoreAuth = { currentUser: { id: '7', permissions: ['profile.view', 'profile.update'] } };
+  authenticated.fetch = async (url) => {
+    if (String(url).includes('/api/v1/modules')) return { ok: true, async json() { return { ok: true, data: { modules: [profile], accessContext: { mode: 'authenticated' } } }; } };
+    if (String(url).endsWith('/Web-App/app/modules/profile/index.js')) return { ok: true, async text() { return 'window.NeutralProfileModule = { id: "profile", name: "Profile", status: "available", active: false, presentation: { userNavigation: true } };'; } };
+    return { ok: false, async text() { return ''; } };
+  };
+
+  const modules = await authenticated.CoreLoader.discoverExternalModules();
+  assert.deepEqual(Array.from(modules, (module) => module.id), ['profile']);
+  assert.equal(modules[0].clientAccess.mode, 'authenticated');
+});
+
 test('malformed anonymous access entries are not cached or loaded', async () => {
   const storage = createStorage();
   const context = loadContext({

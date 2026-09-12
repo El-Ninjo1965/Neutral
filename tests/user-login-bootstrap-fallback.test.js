@@ -30,6 +30,7 @@ function runLoginForm() {
   const sandbox = {
     document: { getElementById(id) { return elements[id]; } }, content: { innerHTML: '' },
     state: {}, sessionRevision: 0, writeHashRoute() {}, renderApp() { calls.push('render'); },
+    async refreshModuleDiscovery() { calls.push('discover'); },
     getServerApiClient() { return { async login(username, value) { calls.push([username, value]); return { ok: true }; } }; },
     extractServerAuthData() { return { user: { id: '7' } }; }, applyServerUser() { return { id: '7' }; },
   };
@@ -56,5 +57,6 @@ test('User Login submits the browser-filled password while revealed', async () =
   runtime.eyeListeners.click();
   await runtime.formListeners.submit({ preventDefault() {} });
   assert.deepEqual(runtime.calls[0], ['browser-user', 'browser-password']);
-  assert.equal(runtime.calls[1], 'render');
+  assert.equal(runtime.calls[1], 'discover');
+  assert.equal(runtime.calls[2], 'render');
 });

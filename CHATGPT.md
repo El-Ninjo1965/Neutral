@@ -1,5 +1,9 @@
 # NEUTRAL – CHATGPT HANDOFF
 
+## 2026-09-12 focused repair handoff
+
+The authenticated module-catalog race has been repaired: session restoration now precedes startup discovery, login refreshes discovery, and omitted modules are removed from the browser registry. Profile and Moderation use the same permission-driven visibility path; Moderation now has a real User workspace and protected service self-test. Module details are separate views and consume optional manifest-owned Admin settings generically. Production/operator retest is still required; do not declare Core Freeze yet.
+
 **Richtung:** Codex → ChatGPT/Lea
 **Status:** OPERATOR UX / MODULE REPAIR DEPLOYED / OPERATOR RETEST REQUIRED
 **Core Freeze:** NICHT erklärt

@@ -9,7 +9,7 @@
   "globalName": "NeutralModerationModule",
   "defaultActivation": "inactive",
   "presentation": {
-    "userNavigation": false,
+    "userNavigation": true,
     "adminNavigation": true,
     "system": true
   },
@@ -45,7 +45,8 @@
       "description": "Moderation: review.",
       "defaultRoles": [
         "admin",
-        "developer"
+        "developer",
+        "moderator"
       ]
     },
     {
@@ -92,6 +93,12 @@
         "csrf": false
       }
     ]
+  },
+  "standalone": {
+    "entry": "index.html",
+    "label": "Moderation self-test",
+    "description": "Verifies the moderation module entry and protected status projection.",
+    "requires": { "server": true, "database": true, "auth": true }
   },
   "database": {
     "tables": [],

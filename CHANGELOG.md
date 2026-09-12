@@ -1,3 +1,11 @@
+## 2026-09-12 – Authenticated module discovery repair
+
+- Fixed the User bootstrap race that allowed the anonymous warm-start module catalog to win before session restoration. Authenticated starts and successful logins now perform authoritative discovery before projecting User modules.
+- Reconciled the client registry against each authoritative catalog so deactivated modules disappear instead of surviving as stale entries.
+- Added a permission-gated Moderation User entry and standalone service self-test, and retained module-owned Admin settings metadata through the server projection.
+- Moved App/System Module details out of the overview, added generic manifest-driven settings controls with masked secrets, and return to the overview after the save confirmation closes.
+- User Settings confirmations now open after the saved DOM has rendered; GPS reports compact coordinates when no address provider is configured and separates location content from the map.
+
 ## 2026-09-09 – Appearance UX V2 and local navigation personalization
 
 - Appearance color controls retain the native picker but now expose a touch-sized framed swatch and synchronized uppercase Hex value; token groups use progressive disclosure and Advanced Custom CSS is collapsed by default.
