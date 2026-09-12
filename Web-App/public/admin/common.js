@@ -14,9 +14,9 @@ const escapeHtmlCommon = (value) => String(value ?? '')
   .replace(/'/g, '&#039;');
 
 const AdminCommon = {
-  confirmAction(message) {
-    return typeof window !== 'undefined' && typeof window.confirm === 'function'
-      ? window.confirm(message)
+  async confirmAction(message) {
+    return typeof window !== 'undefined' && window.NeutralUiFeedback?.confirmAction
+      ? window.NeutralUiFeedback.confirmAction(message)
       : false;
   },
 
@@ -173,8 +173,8 @@ const AdminCommon = {
 
   // Create an alert/notification
   showAlert(message, type = 'info', options = {}) {
-    if (type === 'success' && typeof window !== 'undefined' && window.NeutralUiFeedback) {
-      window.NeutralUiFeedback.showSuccess(message, options);
+    if ((type === 'success' || type === 'error') && typeof window !== 'undefined' && window.NeutralUiFeedback) {
+      (type === 'success' ? window.NeutralUiFeedback.showSuccess : window.NeutralUiFeedback.showError)(message, options);
       return;
     }
     const alert = document.createElement('div');

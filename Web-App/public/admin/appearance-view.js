@@ -80,8 +80,8 @@ class AdminAppearanceView {
       <div class="admin-appearance-view">
         <div class="section-header"><h2>Appearance</h2></div>
         <form id="appearanceForm" class="admin-form settings-form">
-          <fieldset>
-            <legend>Global Start Page</legend>
+          <section class="appearance-section" aria-labelledby="appearance-homepage-title">
+            <h3 id="appearance-homepage-title">Global Start Page</h3>
             <div class="form-group">
               <label for="homepageMode">Mode</label>
               <select id="homepageMode" name="homepageMode">
@@ -106,11 +106,12 @@ class AdminAppearanceView {
               <label>Preview</label>
               <iframe id="homepagePreview" title="Start page preview" sandbox="allow-scripts allow-forms allow-popups"></iframe>
             </div>
-          </fieldset>
-          <fieldset>
-            <legend>User UI Design</legend>
+          </section>
+          <section class="appearance-section" aria-labelledby="appearance-design-title">
+            <h3 id="appearance-design-title">User UI Design</h3>
             <p>Defines how the User-App looks. Each user's Light/Dark selection remains independent.</p>
-            <div class="appearance-design-grid"><section><h3>Light</h3>${palette('light')}</section><section><h3>Dark</h3>${palette('dark')}</section></div>
+            <section class="appearance-palette" aria-labelledby="appearance-light-title"><h4 id="appearance-light-title">Light</h4>${palette('light')}</section>
+            <section class="appearance-palette" aria-labelledby="appearance-dark-title"><h4 id="appearance-dark-title">Dark</h4>${palette('dark')}</section>
             <details class="appearance-token-group"><summary>Geometry &amp; Typography</summary><div class="appearance-design-grid">
               <div class="form-group"><label for="design-control-radius">Button / control radius (px)</label><input type="number" min="0" max="32" id="design-control-radius" name="design.geometry.controlRadius" value="${design.geometry.controlRadius}"></div>
               <div class="form-group"><label for="design-surface-radius">Card / surface radius (px)</label><input type="number" min="0" max="48" id="design-surface-radius" name="design.geometry.surfaceRadius" value="${design.geometry.surfaceRadius}"></div>
@@ -118,9 +119,9 @@ class AdminAppearanceView {
               <div class="form-group"><label for="design-font-size">Base font size (px)</label><input type="number" min="12" max="24" id="design-font-size" name="design.typography.baseFontSize" value="${design.typography.baseFontSize}"></div>
             </div></details>
             <div class="form-actions"><button type="button" class="btn btn-secondary" data-design-reset>Reset to Defaults</button></div>
-            <div class="form-group"><label for="designPreviewMode">Preview theme</label><select id="designPreviewMode"><option value="light">Light</option><option value="dark">Dark</option></select></div>
-            <div id="userUiDesignPreview" class="user-ui-design-preview" aria-label="User UI design preview"><header>App header <button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Header action</button></header><nav><button type="button" class="preview-nav-active"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Active</button><button type="button" class="preview-nav-inactive"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Inactive</button></nav><article><h3>Example card</h3><p>Primary text</p><small>Muted supporting text</small><label>Input <input value="Normal input"></label><label>Focus sample <input class="preview-input-focus" value="Focused input"></label><div><button type="button" class="preview-primary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Primary</button><button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Secondary</button></div></article></div>
-          </fieldset>
+            <section class="appearance-preview" aria-labelledby="appearance-preview-title"><h4 id="appearance-preview-title">Preview Theme</h4><div class="form-group"><label for="designPreviewMode">Theme</label><select id="designPreviewMode"><option value="light">Light</option><option value="dark">Dark</option></select></div>
+            <div id="userUiDesignPreview" class="user-ui-design-preview" aria-label="User UI design preview"><header>App header <button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Header action</button></header><nav><button type="button" class="preview-nav-active"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Active</button><button type="button" class="preview-nav-inactive"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Inactive</button></nav><article><h3>Example card</h3><p>Primary text</p><small>Muted supporting text</small><label>Input <input value="Normal input"></label><label>Focus sample <input class="preview-input-focus" value="Focused input"></label><div><button type="button" class="preview-primary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Primary</button><button type="button" class="preview-secondary"><span class="preview-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Secondary</button></div></article></div></section>
+          </section>
           <details class="appearance-advanced"><summary>Advanced Custom CSS <span>Expert</span></summary>
             <p>Use this optional expert override only when the structured design options are not sufficient.</p>
             <details><summary>Technical limits</summary><p>Applies only to the User-App. Maximum ${userUiDesignContract.MAX_CUSTOM_CSS} characters; HTML, JavaScript and remote imports are rejected.</p></details>
@@ -170,8 +171,8 @@ class AdminAppearanceView {
       if (output) output.textContent = input.value.toUpperCase();
     }));
     previewMode.addEventListener('change', refreshDesign);
-    this.container.querySelector('[data-design-reset]').addEventListener('click', () => {
-      if (!AdminCommon.confirmAction('Reset structured User UI Design values to framework defaults?')) return;
+    this.container.querySelector('[data-design-reset]').addEventListener('click', async () => {
+      if (!await AdminCommon.confirmAction('Reset structured User UI Design values to framework defaults?')) return;
       const defaults = userUiDesignContract.defaults();
       for (const mode of ['light', 'dark']) for (const [key, value] of Object.entries(defaults[mode])) form.elements.namedItem(`design.${mode}.${key}`).value = value;
       for (const [key, value] of Object.entries(defaults.geometry)) form.elements.namedItem(`design.geometry.${key}`).value = value;

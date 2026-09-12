@@ -588,6 +588,14 @@
     nav.querySelectorAll('[data-user-nav]').forEach((button) => {
       button.addEventListener('click', () => {
         const nextView = button.dataset.userNav;
+        if (nextView === 'module:profile') {
+          state.activeView = 'settings';
+          state.activeModuleId = null;
+          state.settingsSection = 'profile';
+          writeHashRoute('settings/profile');
+          renderApp();
+          return;
+        }
         state.activeView = nextView;
         state.activeModuleId = nextView.startsWith('module:') ? nextView.slice('module:'.length) : null;
         writeHashRoute(nextView === 'home' ? '' : `module/${state.activeModuleId}`);
@@ -846,13 +854,13 @@
           const day = document.getElementById('profileBirthdayDay')?.value || '';
           const month = document.getElementById('profileBirthdayMonth')?.value || '';
           const year = document.getElementById('profileBirthdayYear')?.value || '';
-          if ([day, month, year].some(Boolean) && ![day, month, year].every(Boolean)) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Choose day, month and year, or leave all birthday fields empty.'; status.className = 'user-settings-status error'; } return; }
+          if ([day, month, year].some(Boolean) && ![day, month, year].every(Boolean)) { const message = 'Choose day, month and year, or leave all birthday fields empty.'; const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = message; status.className = 'user-settings-status error'; } window.NeutralUiFeedback?.showError(message); return; }
           const profile = { email: document.getElementById('profileEmail')?.value || '', displayName: document.getElementById('profileDisplayName')?.value || '', publicNickname: document.getElementById('profileNickname')?.value || '', phone: document.getElementById('profilePhone')?.value || '', address: document.getElementById('profileAddress')?.value || '', gender: document.getElementById('profileGender')?.value || 'unspecified', birthday: year ? `${year}-${month}-${day}` : '' };
           if (state.accountProfile?.organizationSharingAvailable) { profile.privacy = {};document.querySelectorAll('[data-profile-privacy]').forEach((input) => { profile.privacy[input.dataset.profilePrivacy] = input.checked; }); }
           const result = client ? await client.updateProfile(profile) : { ok: false, error: 'Server unavailable' };
-          if (!result.ok) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = result.error || 'Profile could not be saved.'; status.className = 'user-settings-status error'; } return; }
+          if (!result.ok) { const message = result.error || 'Profile could not be saved.'; const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = message; status.className = 'user-settings-status error'; } window.NeutralUiFeedback?.showError(message); return; }
           const savedProfile = result?.data?.data?.profile || result?.data?.profile;
-          if (!savedProfile || savedProfile.birthday !== profile.birthday) { const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = 'Profile could not be verified after saving.'; status.className = 'user-settings-status error'; } return; }
+          if (!savedProfile || savedProfile.birthday !== profile.birthday) { const message = 'Profile could not be verified after saving.'; const status = document.getElementById('userSettingsStatus'); if (status) { status.textContent = message; status.className = 'user-settings-status error'; } window.NeutralUiFeedback?.showError(message); return; }
           state.accountProfile = savedProfile;
         }
         if (Object.keys(nextPreferences.privacy).some((key) => nextPreferences.privacy[key])) {
@@ -867,10 +875,11 @@
           if (nextPreferences.persisted) {
             status.textContent = '';
             status.className = 'user-settings-status';
-            window.NeutralUiFeedback?.showSuccess('Profile and settings saved successfully.');
+            window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });
           } else {
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
             status.className = 'user-settings-status error';
+            window.NeutralUiFeedback?.showError(status.textContent);
           }
           if (nextPreferences.persisted) { renderApp(); return; }
         }

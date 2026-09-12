@@ -198,6 +198,7 @@ function admin_user_payload(array $user): array
         'directPackageId' => $user['directPackageId'] ?? '',
         'effectivePackageId' => $user['effectivePackageId'] ?? '',
         'packageName' => $user['packageName'] ?? '',
+        'organizationName' => $user['organizationName'] ?? '',
         'packageSource' => $user['packageSource'] ?? 'unassigned',
         'deviceLimitSource' => $user['deviceLimitSource'] ?? 'system_default',
     ];

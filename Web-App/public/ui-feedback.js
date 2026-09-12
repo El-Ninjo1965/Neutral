@@ -31,6 +31,25 @@ const NeutralUiFeedback = (() => {
     document.body.appendChild(dialog);
     closeButton.focus();
   };
+  const showError = (message, options = {}) => showSuccess(message, { ...options, title: options.title || 'Error' });
+  const confirmAction = (message, options = {}) => new Promise((resolve) => {
+    if (typeof document === 'undefined') { resolve(false); return; }
+    closeSuccess();
+    returnFocus = options.returnFocus || document.activeElement;
+    dialog = document.createElement('div');
+    dialog.className = 'neutral-success-dialog-backdrop';
+    dialog.innerHTML = '<section class="neutral-success-dialog" role="dialog" aria-modal="true" aria-labelledby="neutral-confirm-title" aria-describedby="neutral-confirm-message"><h2 id="neutral-confirm-title"></h2><p id="neutral-confirm-message"></p><div class="form-actions"><button type="button" class="ui-button ui-button--primary" data-confirm-accept>Confirm</button><button type="button" class="ui-button ui-button--secondary" data-confirm-cancel>Cancel</button></div></section>';
+    dialog.querySelector('#neutral-confirm-title').textContent = options.title || 'Please confirm';
+    dialog.querySelector('#neutral-confirm-message').textContent = String(message || 'Continue?');
+    const accept = dialog.querySelector('[data-confirm-accept]');
+    const cancel = dialog.querySelector('[data-confirm-cancel]');
+    const finish = (answer) => { closeSuccess(); resolve(answer); };
+    accept.addEventListener('click', () => finish(true));
+    cancel.addEventListener('click', () => finish(false));
+    dialog.addEventListener('keydown', (event) => { if (event.key === 'Escape') finish(false); });
+    document.body.appendChild(dialog);
+    cancel.focus();
+  });
   const eyeOpen = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
   const eyeClosed = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3 21 21M10.6 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16.6 16.6 0 0 1-2.3 3M6.2 6.2C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.4 0 2.7-.3 3.8-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"/></svg>';
   const syncPasswordToggle = (input, button) => {
@@ -107,7 +126,7 @@ const NeutralUiFeedback = (() => {
     installPasswordDelegation();
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start, { once: true }) : start();
   }
-  return { showSuccess, closeSuccess, enhancePasswordFields, bindPasswordToggle, togglePassword };
+  return { showSuccess, showError, confirmAction, closeSuccess, enhancePasswordFields, bindPasswordToggle, togglePassword };
 })();
 
 if (typeof window !== 'undefined') window.NeutralUiFeedback = NeutralUiFeedback;

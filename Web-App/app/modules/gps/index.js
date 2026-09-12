@@ -781,7 +781,7 @@
                 return Promise.resolve({ ok: false, code: 'NO_POSITION_AVAILABLE' });
             }
             const mapUrl = provider === 'google' ? links.googleMaps : links.openStreetMap;
-            if (provider === 'openstreetmap' && typeof window !== 'undefined' && typeof window.open === 'function') {
+            if (typeof window !== 'undefined' && typeof window.open === 'function') {
                 const opened = window.open(mapUrl, '_blank', 'noopener,noreferrer');
                 if (opened) opened.opener = null;
                 return Promise.resolve({ ok: true, method: provider, position, mapUrl });
@@ -806,8 +806,8 @@
             const latitude = Number(position.latitude ?? position.lat ?? 0);
             const longitude = Number(position.longitude ?? position.lng ?? 0);
             const links = this.locationLinks(position);
-            const mapUrl = links.openStreetMap;
-            const text = `Standort: ${latitude}, ${longitude}`;
+            const mapUrl = links.googleMaps;
+            const text = 'Aktuelle Position in Google Maps';
             const payload = {
                 title: 'Standort',
                 text: `${text}\n${mapUrl}`,
@@ -912,7 +912,7 @@
                 return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
             };
             const links = position ? GpsModule.locationLinks(position) : null;
-            const positionHtml = position ? `<div><dt>${gpsText('latitude')}</dt><dd>${position.latitude ?? position.lat ?? '—'}</dd></div><div><dt>${gpsText('longitude')}</dt><dd>${position.longitude ?? position.lng ?? '—'}</dd></div><div><dt>${gpsText('accuracy')}</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>${gpsText('time')}</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : `<div><dt>${gpsText('position')}</dt><dd>${gpsText('unavailable')}</dd></div>`;
+            const positionHtml = position ? `<div><dt>Standort</dt><dd>Aktuelle Position ermittelt</dd></div><div><dt>${gpsText('accuracy')}</dt><dd>${formatAccuracy(position.accuracy)}</dd></div><div><dt>${gpsText('time')}</dt><dd>${formatTimestamp(position.timestamp)}</dd></div>` : `<div><dt>${gpsText('position')}</dt><dd>${gpsText('unavailable')}</dd></div>`;
             const shareDisabled = !position || !allowedToUse || !active;
             const browserDeniedMessage = gpsText('denied');
             const infoMessage = message || (state.permissionState === 'denied'
@@ -926,7 +926,7 @@
                 ? `<div class="gps-confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="gps-confirmation-title" tabindex="-1"><div class="gps-confirmation"><h2 id="gps-confirmation-title">${gpsText('ask')}</h2><div class="gps-actions gps-confirmation-actions"><button type="button" data-gps-confirm="yes">${gpsText('yes')}</button><button type="button" data-gps-confirm="no">${gpsText('no')}</button></div></div></div>`
                 : '';
             const mapMarkup = links ? '<div class="gps-map-frame gps-interactive-map" data-gps-map></div>' : '';
-            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="user-content-grid gps-content-grid"><div class="gps-location-card"><h2>${gpsText('position')}</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> ${gpsText('auto')}</label></div>${mapMarkup}</div>${modalMarkup}<div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>${gpsText('update')}</button><button type="button" data-gps-open="google" ${shareDisabled ? 'disabled' : ''}>${gpsText('google')}</button><button type="button" data-gps-open="openstreetmap" ${shareDisabled ? 'disabled' : ''}>${gpsText('osm')}</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>${gpsText('share')}</button></div><p class="form-help">${gpsText('privacy')}</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
+            container.innerHTML = `<div class="gps-user-module"><h1>GPS</h1><div class="gps-location-card"><h2>${gpsText('position')}</h2><dl id="gpsPosition" class="gps-position">${positionHtml}</dl><label class="gps-toggle"><input type="checkbox" data-gps-setting="autoRequestOnOpen" ${autoRequestOnOpen ? 'checked' : ''}> ${gpsText('auto')}</label><div class="gps-actions"><button type="button" class="gps-primary-action" data-gps-action="current" ${(allowedToUse && active) ? '' : 'disabled'}>${gpsText('update')}</button><button type="button" data-gps-open="google" ${shareDisabled ? 'disabled' : ''}>${gpsText('google')}</button><button type="button" data-gps-share="system" ${shareDisabled ? 'disabled' : ''}>${gpsText('share')}</button></div></div>${mapMarkup}${modalMarkup}<p class="form-help">${gpsText('privacy')}</p><p id="gpsUserMessage" class="gps-message">${infoMessage}</p></div>`;
             const mapHost = position ? container.querySelector('[data-gps-map]') : null;
             if (mapHost && typeof mapHost.querySelector === 'function') GpsModule.mountInteractiveMap(mapHost, position);
 

@@ -66,12 +66,12 @@ class AdminModulesView {
     }
 
     const groups = this.category
-      ? [[this.category === 'system' ? 'System Modules' : 'App Modules', this.modules]]
+      ? [['', this.modules]]
       : [['App Modules', this.modules.filter((module) => (module.category || 'user') === 'user')], ['System Modules', this.modules.filter((module) => module.category === 'system')]];
     host.innerHTML = groups.map(([label, modules]) => `
       <section class="module-category" data-module-category="${label.startsWith('System') ? 'system' : 'user'}">
-      <h3>${label}</h3>
-      <table class="admin-table">
+      ${label ? `<h3>${label}</h3>` : ''}
+      <div class="admin-table-container"><table class="admin-table">
         <thead>
           <tr>
             <th>Module</th>
@@ -84,7 +84,7 @@ class AdminModulesView {
         <tbody>
           ${modules.length ? modules.map((module) => this.renderRow(module)).join('') : '<tr><td colspan="5" class="empty-state">No modules in this category.</td></tr>'}
         </tbody>
-      </table></section>
+      </table></div></section>
     `).join('');
   }
 
@@ -366,7 +366,7 @@ class AdminModulesView {
   }
 
   async uninstall(moduleId) {
-    if (!AdminCommon.confirmAction(`Uninstall module "${moduleId}" and remove its registered state, settings namespace and declared permissions?`)) {
+    if (!await AdminCommon.confirmAction(`Uninstall module "${moduleId}" and remove its registered state, settings namespace and declared permissions?`)) {
       return;
     }
     const result = await this.api.uninstallModule(moduleId);

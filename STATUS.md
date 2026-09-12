@@ -1,33 +1,19 @@
-# Neutral status — operator-retest repairs
+# Neutral status — operator UX / module repair
 
-**Stand:** 2026-09-11
-**Code status:** Live-Root-Cause-Batch `c625c8e` lokal mit 536/536 Tests sowie CodeQL `34577789205` und FTPS/read-only Smoke `34577789937` bestanden
+**Stand:** 2026-09-12
+**Code status:** lokal in Verifikation
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 
-## Code-IST
+## Implementierter Stand
 
-Der aktive CODEX-Batch ist implementiert: Login-Eye, Profile-Install-Kompensation, Settings-Sofortfeedback, vereinfachte Admin Shell/Scroll, getrennte App/System Module, Summary-Dashboard, exklusive Management-Editoren, sortierbare Organization/User-Tabelle, nachvollziehbare Device-Policy, responsive Sessions und persistente auditierte Database-/Path-Tests. Module Permissions bleiben manifestgetrieben; Field Notes wurde fachlich nicht erweitert.
+- Profile ist als User-App-Modul navigierbar und führt berechtigte Benutzer direkt zur vorhandenen, API-gestützten Profile-Ansicht.
+- Die Admin-User-Projektion transportiert die kanonische Organization-Zuordnung nun bis in die Übersicht.
+- Session-Übersicht und Dashboard verwenden einen gemeinsamen Aktivitätsstatus; dauerhafte, aber seit 30 Minuten nicht gesehene Sessions werden als `idle` statt `active` projiziert und können beendet werden.
+- GPS ist einspaltig, teilt Google Maps, öffnet Google Maps sicher in einem neuen Kontext und hält OSM ausschließlich als eingebettete Karte.
+- Settings und bestätigungspflichtige Adminaktionen nutzen Frameworkdialoge; native Confirm-/Alert-Fallbacks wurden entfernt.
+- Module, Appearance, Diagnostics, Sidebar, Dashboard und Release-/Deployment-Status wurden entsprechend dem aktuellen Operatorvertrag bereinigt.
 
-## Live-Wahrheit
+## Wahrheitsgrenze
 
-Weiterhin als datierter Operator-PASS erhalten: GPS Produktfunktion; Media, Postbox und Sharing & Visibility Lifecycle; Audit Delete All; Maintenance State. Alle in diesem Lauf reparierten Punkte sind bis zur gesammelten Bedienabnahme **OPERATOR RETEST REQUIRED**. Kein Production Restore, keine destruktive Produktionsaktion, kein Referral/Rewards, keine automatische Setup-Routine und kein Core Freeze.
-
-## Aktueller Live-Root-Cause-Batch
-
-User Login nutzt jetzt den funktionierenden gemeinsamen Admin-Password-Enhancer. Profile-Install scheiterte am leeren Down-Pfad seiner ansonsten additiven Migration; der generische reversible Vertrag ist nun vollständig. Sidebar und Logout erfüllen die aktuellen mobilen UX-Vorgaben. Alle vier Bedienpunkte bleiben **OPERATOR RETEST REQUIRED**.
-
-## Frontend-Binding-Hotfix
-
-Code-IST: Password-Toggle wird im Capture-Pfad am aktuell sichtbaren Feld aufgelöst und gegen doppeltes Umschalten markiert. App-/System-Module besitzen instanzlokale Lifecycle-Listener; der tote globale Kompatibilitätseintrag wurde entfernt. Live-Status für beide: **OPERATOR RETEST REQUIRED**. Alle früher bestätigten PASS-Befunde bleiben unverändert.
-
-## 2026-09-11 — Operator repair batch implemented locally
-
-- Profile lifecycle remains operator-live PASS.
-- User Login now uses one static pointer hold-to-reveal control; user sessions have no server-side normal expiry; Profile Settings require the active module plus both Profile permissions.
-- License/package editors now replace their lists, and Edit User exposes immutable account identity before editable presentation data.
-- These repairs remain **OPERATOR RETEST REQUIRED** until the production deployment is verified. No Core Freeze has been declared.
-
-## 2026-09-11 — Kritische Auth-/Session-Recovery
-
-Root Cause: serverseitiges Installation-Replacement war trotz getrennter Cookies nicht scopegebunden und konnte User-/Admin-Sessions gegenseitig ersetzen; eine verlorene PHP-Sessiondatei konnte nicht aus der gültigen DB-Registry rekonstruiert werden. Scopegebundene DB-Sessions, Recovery und User-only Device-Zählung sind implementiert. Technisch verifiziert, aber bis Deployment und Betreiberprüfung **OPERATOR RETEST REQUIRED**; kein Core Freeze.
+Automatisierte Tests und Deployment können die angeordneten realen Operator-Interaktionen nicht ersetzen. Alle Punkte aus `CURRENT-TASK.md` bleiben bis zum Produktionsdeployment und dem geordneten Betreiber-Retest **OPERATOR RETEST REQUIRED**. Moderation/Postbox wurden in diesem Batch nicht fachlich erweitert. Kein Core Freeze.

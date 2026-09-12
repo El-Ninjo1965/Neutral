@@ -60,7 +60,7 @@ test('dashboard renders authoritative device count and readable nested database 
     modules: [{ id: 'gps', active: true }, { id: 'reference-notes', active: false }], settings: {}, backupReadiness: { keyConfigured: false }
   };
   view.render();
-  assert.match(view.container.innerHTML, /Active sessions[\s\S]*>1</);
+  assert.match(view.container.innerHTML, /Active sessions[\s\S]*>1<\/strong>/);
   assert.match(view.container.innerHTML, /Backup action required/);
   assert.doesNotMatch(view.container.innerHTML, /\[object Object\]|<pre[^>]*>\s*\{\s*\}<\/pre>/);
   delete global.AdminCommon;

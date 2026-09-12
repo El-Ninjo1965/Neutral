@@ -34,8 +34,7 @@ class AdminShell {
     return `
       <div class="admin-cms-layout">
         <aside id="admin-cms-sidebar" class="admin-cms-sidebar" aria-label="Administration">
-          <div class="admin-cms-brand"><span aria-hidden="true">N</span><div><strong>Neutral Administration</strong><small>Core 1.0</small></div></div>
-          <button type="button" class="admin-cms-nav-button admin-sidebar-theme" data-admin-theme aria-label="Switch to dark mode">Dark theme</button>
+          <div class="admin-sidebar-theme"><label for="admin-theme-select">Theme</label><select id="admin-theme-select" data-admin-theme><option value="light">Light</option><option value="dark">Dark</option></select></div>
           <nav aria-label="Administration">${navigation}</nav>
           <button type="button" class="admin-cms-nav-button admin-sidebar-logout" data-admin-logout>Logout</button>
         </aside>
@@ -73,7 +72,8 @@ class AdminShell {
       return;
     }
     if (event.target.closest('[data-admin-close]')) this.closeDrawer();
-    if (event.target.closest('[data-admin-theme]')) this.toggleTheme();
+    const themeSelect = event.target.closest('[data-admin-theme]');
+    if (themeSelect) this.applyTheme(themeSelect.value);
     if (event.target.closest('[data-admin-logout]')) this.onLogout();
   }
 
@@ -85,11 +85,8 @@ class AdminShell {
   applyTheme(theme) {
     const nextTheme = theme === 'dark' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', nextTheme);
-    const button = this.container.querySelector('[data-admin-theme]');
-    if (button) {
-      button.textContent = nextTheme === 'dark' ? 'Light theme' : 'Dark theme';
-      button.setAttribute('aria-label', nextTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-    }
+    const select = this.container.querySelector('[data-admin-theme]');
+    if (select) select.value = nextTheme;
     try { window.localStorage.setItem('neutral-admin-theme', nextTheme); } catch { /* Storage can be unavailable. */ }
   }
 

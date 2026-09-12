@@ -342,3 +342,9 @@ Für den User Login gilt der abschließende Betreiberentscheid: genau ein Eingab
 ## User Login – abschließender Click-Eye-Vertrag (2026-09-11)
 
 Der neueste Betreiberauftrag ersetzt den sichtbaren Fallback: User Login verwendet ein browser-autofillfähiges `type="password"` mit genau einem statischen Eye im Control. Ein Klick schaltet denselben unveränderten Wert auf `text`, der nächste zurück auf `password`. Keine externe Helper-Abhängigkeit, kein Hold und kein Observer; Admin bleibt unverändert.
+
+## Operator UX / module repair (2026-09-12)
+
+Profile is a visible User-App module when active, entitled and permitted; its navigation opens the protected Profile Settings workflow. GPS presents one sequential responsive flow and keeps OpenStreetMap as the embedded map while Google Maps owns explicit open/share actions. User Settings and destructive Admin actions use the shared framework dialog rather than native browser dialogs.
+
+Admin App/System Modules use one page heading and one continuous responsive table surface. Appearance contains Global Start Page, sequential Light/Dark palettes, shared geometry, a complete preview and Advanced CSS as distinct bounded sections. Diagnostics reports failed optional parts precisely. The sidebar theme selector is not navigation, while Dashboard cards use canonical administrative counts and route to their source views. Release status describes the external deployment pipeline truthfully and keeps Maintenance separate.

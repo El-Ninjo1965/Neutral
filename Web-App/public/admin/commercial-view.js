@@ -25,7 +25,7 @@ class AdminPackagesView {
     this.container.querySelector('#newPackage')?.addEventListener('click', () => this.editor());
     this.container.querySelectorAll('[data-edit-package]').forEach((button) => button.addEventListener('click', () => this.editor(this.packages.find((p) => String(p.id) === button.dataset.editPackage))));
     this.container.querySelectorAll('[data-delete-package]').forEach((button) => button.addEventListener('click', async () => {
-      if (!AdminCommon.confirmAction('Delete this unassigned package?')) return;
+      if (!await AdminCommon.confirmAction('Delete this unassigned package?')) return;
       const result = await this.api.delete(`/api/admin/packages/${button.dataset.deletePackage}`);
       if (result.ok) await this.init(this.container); else AdminCommon.showAlert(result.error, 'error');
     }));
@@ -74,7 +74,7 @@ class AdminLicensesView {
     this.container.querySelector('#newLicense')?.addEventListener('click', () => this.editor());
     this.container.querySelectorAll('[data-edit-license]').forEach((button) => button.addEventListener('click', () => this.editor(this.licenses.find((license) => String(license.id) === button.dataset.editLicense))));
     this.container.querySelectorAll('[data-delete-license]').forEach((button) => button.addEventListener('click', async () => {
-      if (!AdminCommon.confirmAction('Delete this unreferenced license permanently? Assigned users or managers must be removed first.')) return;
+      if (!await AdminCommon.confirmAction('Delete this unreferenced license permanently? Assigned users or managers must be removed first.')) return;
       const result = await this.api.delete(`/api/admin/licenses/${button.dataset.deleteLicense}`);
       if (result.ok) { AdminCommon.showAlert('License deleted.', 'success'); await this.init(this.container); }
       else AdminCommon.showAlert(result.error || 'License could not be deleted.', 'error');

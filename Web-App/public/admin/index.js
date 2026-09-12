@@ -91,9 +91,9 @@ class AdminSessionsView {
                   <tr>
                     <td>${session.displayName || session.username || '—'}${session.username ? ` <span class="small-muted">@${session.username}</span>` : ''}${session.userId ? ` <span class="small-muted">· #${session.userId}</span>` : ''}</td>
                     <td>${Array.isArray(session.roles) ? session.roles.join(', ') : '—'}</td>
-                    <td>${session.status || 'active'}${session.current ? ' · Current' : ''}</td>
+                    <td>${session.status || 'inactive'}${session.current ? ' · Current' : ''}</td>
                     <td><time datetime="${session.issuedAt || ''}">${formatLocalAdminDate(session.issuedAt)}</time></td>
-                    <td><time datetime="${session.lastSeenAt || ''}">${formatLocalAdminDate(session.lastSeenAt)}</time></td>
+                    <td><time datetime="${session.lastSeenAt || ''}">${formatLocalAdminDate(session.lastSeenAt)}</time>${session.current ? '' : ` <button type="button" class="btn btn-sm btn-danger" data-session-invalidate="${session.sessionId}">End</button>`}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -105,7 +105,7 @@ class AdminSessionsView {
     `;
     container.querySelectorAll('[data-session-invalidate]').forEach((button) => {
       button.addEventListener('click', async () => {
-        if (!AdminCommon.confirmAction('End this session? The session will no longer authenticate.')) return;
+        if (!await AdminCommon.confirmAction('End this session? The session will no longer authenticate.')) return;
         const response = await this.api.invalidateSession(button.dataset.sessionInvalidate);
         if (!response.ok) {
           AdminCommon.showAlert(`Session could not be ended: ${response.error || 'Unknown error'}`, 'error');
@@ -126,7 +126,7 @@ class AdminDashboardView {
 
   async init(container) {
     this.container = container;
-    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult, backupReadinessResult, installationMetricsResult] = await Promise.all([
+    const [statusResult, healthResult, usersResult, sessionsResult, modulesResult, settingsResult, backupReadinessResult, rolesResult, packagesResult, licensesResult, databaseResult, inventoryResult] = await Promise.all([
       this.api.get('/api/status'),
       this.api.get('/api/admin/system/health'),
       this.api.getUsers(),
@@ -134,7 +134,11 @@ class AdminDashboardView {
       this.api.getAdminModules(),
       this.api.getSettings(),
       this.api.get('/api/admin/backups/readiness'),
-      this.api.get('/api/admin/installations/metrics')
+      this.api.getRoles(),
+      this.api.get('/api/admin/packages'),
+      this.api.get('/api/admin/licenses'),
+      this.api.get('/api/admin/database'),
+      this.api.get('/api/admin/database/inventory')
     ]);
 
     const runtime = statusResult.ok ? AdminCommon.unwrapData(statusResult, null, {}) : {};
@@ -147,7 +151,11 @@ class AdminDashboardView {
     const modules = modulesResult.ok ? AdminCommon.unwrapData(modulesResult, 'modules', []) : [];
     const settings = settingsResult.ok ? AdminCommon.unwrapData(settingsResult, 'settings', {}) : {};
     const backupReadiness = backupReadinessResult.ok ? AdminCommon.unwrapData(backupReadinessResult, 'readiness', {}) : {};
-    const installationMetrics = installationMetricsResult.ok ? AdminCommon.unwrapData(installationMetricsResult, 'metrics', {}) : {};
+    const roles = rolesResult.ok ? AdminCommon.unwrapData(rolesResult, 'roles', []) : [];
+    const packages = packagesResult.ok ? AdminCommon.unwrapData(packagesResult, 'packages', []) : [];
+    const licenses = licensesResult.ok ? AdminCommon.unwrapData(licensesResult, 'licenses', []) : [];
+    const database = databaseResult.ok ? AdminCommon.unwrapData(databaseResult, 'database', {}) : {};
+    const inventory = inventoryResult.ok ? AdminCommon.unwrapData(inventoryResult, 'inventory', {}) : {};
 
     this.snapshot = {
       runtime,
@@ -157,7 +165,7 @@ class AdminDashboardView {
       modules,
       settings,
       backupReadiness,
-      installationMetrics
+      roles, packages, licenses, database, inventory
     };
 
     this.render();
@@ -171,26 +179,35 @@ class AdminDashboardView {
     const modules = this.snapshot?.modules || [];
     const settings = this.snapshot?.settings || {};
     const backupReadiness = this.snapshot?.backupReadiness || {};
-    const installationMetrics = this.snapshot?.installationMetrics || {};
+    const roles = this.snapshot?.roles || [];
+    const packages = this.snapshot?.packages || [];
+    const licenses = this.snapshot?.licenses || [];
+    const database = this.snapshot?.database || {};
+    const inventory = this.snapshot?.inventory || {};
     const appName = settings.appName || settings.settings?.appName || 'Neutral Platform';
     const appId = settings.appId || settings.settings?.appId || 'neutral-app';
-    const systemStatus = health && typeof health === 'object' && (health.status || health.state) ? String(health.status || health.state) : (runtime.status || 'healthy');
-    const moduleActiveCount = modules.filter((module) => module && (module.lifecycleState === 'ACTIVE' || module.status === 'active' || module.active)).length;
     const activeSessions = sessions.filter((session) => String(session.status || 'active').toLowerCase() === 'active').length;
+    const userActiveCount = users.filter((user) => String(user.status).toLowerCase() === 'active').length;
+    const appModules = modules.filter((module) => (module.category || 'user') === 'user');
+    const systemModules = modules.filter((module) => module.category === 'system');
+    const active = (module) => module && (module.lifecycleState === 'ACTIVE' || module.status === 'active' || module.active);
+    const organizations = new Set(licenses.map((license) => license.organizationName).filter(Boolean)).size;
     const metrics = [
-      { label: 'Status', value: systemStatus, tone: 'ok' },
-      { label: 'Users', value: String(users.length), tone: 'neutral' },
-      { label: 'Active sessions', value: String(activeSessions), tone: 'neutral' },
-      { label: 'Modules', value: `${moduleActiveCount}/${modules.length || 0}`, tone: moduleActiveCount ? 'ok' : 'warn' }
-      ,{ label: 'Known installations', value: String(installationMetrics.knownInstallationsTotal || 0), tone: 'neutral' }
-      ,{ label: 'Active 30 days', value: String(installationMetrics.active30Days || 0), tone: 'neutral' }
+      { label: 'Core version', value: String(runtime.version || '1.0'), tone: 'neutral' },
+      { label: 'Users', value: `${users.length} · ${userActiveCount} active · ${users.length - userActiveCount} inactive`, tone: 'neutral', view: 'users' },
+      { label: 'Active sessions', value: String(activeSessions), tone: 'neutral', view: 'sessions' },
+      { label: 'App modules', value: `${appModules.filter(active).length}/${appModules.length}`, tone: 'neutral', view: 'app-modules' },
+      { label: 'System modules', value: `${systemModules.filter(active).length}/${systemModules.length}`, tone: 'neutral', view: 'system-modules' },
+      { label: 'Roles', value: String(roles.length), tone: 'neutral', view: 'roles' },
+      { label: 'Packages', value: String(packages.length), tone: 'neutral', view: 'packages' },
+      { label: 'Licenses / organizations', value: `${licenses.length} / ${organizations}`, tone: 'neutral', view: 'licenses' }
     ];
 
     const details = [
       ['Application', appName],
       ['App ID', appId],
       ['Runtime', String(runtime.environment || runtime.runtime || 'PHP/LiteSpeed')],
-      ['Database', this.readableStatus(runtime.database || runtime.databaseStatus || health.database || 'configured')],
+      ['Database', `${this.readableStatus(database.status || runtime.database || runtime.databaseStatus || health.database || 'configured')} · ${database.type || 'MySQL'} · ${Array.isArray(inventory.tables) ? inventory.tables.length : '—'} tables`],
       ['Last check', this.formatDate(runtime.timestamp || runtime.generatedAt || new Date().toISOString())]
     ];
 
@@ -202,10 +219,10 @@ class AdminDashboardView {
         ${backupReadiness.keyConfigured === false ? '<div class="admin-state admin-state-warning" role="status"><strong>Backup action required:</strong> configure the host-only encryption key before creating backups.</div>' : ''}
         <div class="stat-grid">
           ${metrics.map((metric) => `
-            <div class="stat-card">
+            <${metric.view ? 'button' : 'div'} type="${metric.view ? 'button' : ''}" class="stat-card" ${metric.view ? `data-dashboard-view="${metric.view}"` : ''}>
               <span class="stat-label">${metric.label}</span>
               <strong class="stat-value ${metric.tone}">${metric.value}</strong>
-            </div>
+            </${metric.view ? 'button' : 'div'}>
           `).join('')}
         </div>
         <div class="summary-grid"><div class="card-grid">
@@ -218,6 +235,7 @@ class AdminDashboardView {
           </div></div>
       </div>
     `;
+    this.container.querySelectorAll?.('[data-dashboard-view]').forEach((button) => button.addEventListener('click', () => window.adminRouter?.showView(button.dataset.dashboardView)));
     this.container.querySelector('[data-dashboard-all-sessions]')?.addEventListener('click', () => window.adminRouter?.showView('sessions'));
   }
 
@@ -540,8 +558,8 @@ class AdminInfrastructureView {
               <div><dt>Status</dt><dd>${release.maintenanceMode ? 'Maintenance mode' : 'Operational'}</dd></div>
               <div><dt>Version</dt><dd>${release.version || '—'}</dd></div>
               <div><dt>Commit</dt><dd><code>${this.escape(release.commit || 'Unavailable')}</code></dd></div>
-              <div><dt>Built</dt><dd>${this.escape(release.buildAt || 'Unavailable')}</dd></div>
-              <div><dt>Updater</dt><dd>${release.updateActionsSupported ? 'Available' : 'Not supported; releases are deployed externally'}</dd></div>
+              <div><dt>Built</dt><dd>${this.escape(formatLocalAdminDate(release.buildAt))}</dd></div>
+              <div><dt>Deployment</dt><dd>${release.updateActionsSupported ? 'Managed update available' : 'Core releases are deployed externally through the verified GitHub/FTPS pipeline.'}</dd></div>
             </dl>
           </div>
           <div class="card panel-box">
@@ -627,7 +645,7 @@ class AdminInfrastructureView {
     this.container.querySelectorAll('[data-backup-download]').forEach((button) => button.addEventListener('click', () => this.downloadBackup(button.dataset.backupDownload)));
     this.container.querySelectorAll('[data-backup-restore]').forEach((button) => button.addEventListener('click', () => this.restoreBackup(button.dataset.backupRestore)));
     this.container.querySelectorAll('[data-backup-delete]').forEach((button) => button.addEventListener('click', async () => {
-      if (!AdminCommon.confirmAction('Delete this encrypted backup permanently?')) return;
+      if (!await AdminCommon.confirmAction('Delete this encrypted backup permanently?')) return;
       const result = await this.api.delete(`/api/admin/backups/${button.dataset.backupDelete}`);
       if (result.ok) { this.notify('Backup deleted', 'success'); await this.init(this.container); } else this.notify(`Backup delete failed: ${result.error || 'Unknown error'}`, 'error');
     }));
@@ -647,7 +665,7 @@ class AdminInfrastructureView {
   }
 
   async restoreBackup(backupId) {
-    const confirmed = window.AdminCommon.confirmAction(`Restore backup ${backupId}? Current managed data will be replaced and you will be signed out.`);
+    const confirmed = await window.AdminCommon.confirmAction(`Restore backup ${backupId}? Current managed data will be replaced and you will be signed out.`);
     if (!confirmed) return;
     const result = await this.api.post(`/api/admin/backups/${backupId}/restore`, {});
     if (!result.ok) { this.notify(`Backup restore failed: ${result.error || 'Unknown error'}`, 'error'); return; }
@@ -671,9 +689,7 @@ class AdminInfrastructureView {
       window.AdminCommon.showAlert(message, type);
       return;
     }
-    if (typeof alert === 'function') {
-      alert(message);
-    }
+    // The shared framework owns operator feedback; never fall back to a native browser dialog.
   }
 
   escape(value) {
@@ -709,7 +725,8 @@ class AdminDiagnosticsView {
     this.snapshot = {
       health: AdminCommon.unwrapData(healthResult, 'health', null),
       framework: AdminCommon.unwrapData(frameworkResult, 'framework', null),
-      error: !healthResult.ok ? healthResult.error : (!frameworkResult.ok ? frameworkResult.error : null)
+      healthError: healthResult.ok ? null : healthResult.error,
+      frameworkError: frameworkResult.ok ? null : frameworkResult.error
     };
     this.render();
   }
@@ -733,7 +750,8 @@ class AdminDiagnosticsView {
         <div class="section-header">
           <h2>Diagnostics</h2>
         </div>
-        ${this.snapshot.error ? `<div class="admin-state admin-state-error" role="alert">${AdminCommon.formatValue(this.snapshot.error)}</div>` : ''}
+        ${this.snapshot.healthError ? `<div class="admin-state admin-state-error" role="alert">System health unavailable: ${AdminCommon.formatValue(this.snapshot.healthError)}</div>` : ''}
+        ${this.snapshot.frameworkError && !Object.keys(framework).length ? `<div class="admin-state admin-state-warning" role="status">Framework summary unavailable: ${AdminCommon.formatValue(this.snapshot.frameworkError)}</div>` : ''}
         <div class="card-grid">
           <div class="card panel-box">
             <div class="card-header"><h3>System check</h3></div>
@@ -842,7 +860,7 @@ class AdminRouter {
   }
 
   async logout() {
-    if (!AdminCommon.confirmAction('Logout now?')) return;
+    if (!await AdminCommon.confirmAction('Logout now?')) return;
     await this.api.logout();
     window.location.replace(window.NeutralPublicPath.admin());
   }

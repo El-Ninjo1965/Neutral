@@ -9,9 +9,9 @@
   "globalName": "NeutralProfileModule",
   "defaultActivation": "active",
   "presentation": {
-    "userNavigation": false,
+    "userNavigation": true,
     "adminNavigation": false,
-    "system": true
+    "system": false
   },
   "dependencies": [],
   "optionalDependencies": [

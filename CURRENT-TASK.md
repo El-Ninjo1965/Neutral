@@ -1,17 +1,23 @@
-# CURRENT TASK – USER LOGIN PASSWORD EYE
+# CURRENT TASK – OPERATOR UX / MODULE REPAIR
 
-**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
-**Datum:** 2026-09-11
-**Quelle:** neuester Betreiberauftrag
+**Status:** IN ARBEIT
+**Datum:** 2026-09-12
+**Quelle:** aktueller Betreiberauftrag in `CODEX.md`
 
-- [x] User Login als normales browser-autofillfähiges `type="password"`-Feld mit `name` und `autocomplete="current-password"` rendern.
-- [x] Genau einen statischen Eye-Button direkt im Passwort-Control rendern.
-- [x] Einfacher lokaler Klick: verborgen ↔ sichtbar; Wert und Autofill unverändert.
-- [x] Keine externe Helper-Abhängigkeit, kein Observer, kein Hold, kein Auth-/Session-/Admin-Umbau.
-- [x] Login-Submit mit verborgenem und sichtbarem Passwort verhaltensnah testen.
-- [x] Browser-Autofillattribute, genau ein Eye und Toggle-Verhalten testen; Admin regressionsfrei halten.
-- [x] Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
-- [x] `CHATGPT.md`, `CURRENT-TASK.md`, `UI-UX.md` und Change-Historie wahrheitsgemäß aktualisieren.
-- [x] Commit/Push `main`; CodeQL, FTPS und read-only Production Smoke terminal prüfen.
+- [x] Profile-Modul-Discovery reparieren: aktives/berechtigtes Profile in User-Navigation und Settings > Apps sichtbar; View/Update nutzbar.
+- [x] Organization im Admin-User-Editor und in der User-Liste aus derselben kanonischen Zuordnung anzeigen.
+- [x] Sessions: Status, Current-Markierung, Widerruf und Dashboard-Zahl auf dieselbe tatsächlich aktive Sessiondefinition bringen.
+- [x] GPS User UX gemäß Produktentscheidung vereinfachen und responsiv ordnen; Google-Link/Share korrekt, OSM nur eingebettet.
+- [x] User Settings Save/Error über zentrale Frameworkdialoge melden.
+- [x] App Modules/System Modules Überschriften, Reload-Platzierung, Tabellenbreite/-rahmen und Responsive-Verhalten korrigieren.
+- [x] Appearance-Editor in klar getrennte Light-/Dark-/Geometrie-/Advanced-Blöcke mit dynamischer Vollbreiten-Preview ordnen.
+- [x] Diagnostics-Gesamtfehler bei vorhandenen Daten beseitigen; partielle Fehler präzise anzeigen.
+- [x] Native Admin-Browserdialoge durch zentrale Frameworkdialoge ersetzen, insbesondere Audit Clear.
+- [x] Sidebar-Kopf und Theme-Steuerung vereinfachen; Statusinformation ins Dashboard verschieben.
+- [x] Dashboard mit kanonischen Kennzahlen und Navigation überarbeiten.
+- [x] Updates-Ansicht wahrheitsgemäß beschriften, Zeiten lesbar machen und Core-/Modul-/Maintenance-Grenzen wahren.
+- [x] Moderation/Postbox geprüft und mangels belegter kleiner Root Cause auf die angeordnete Folgeprüfung begrenzt; keine fachliche Erweiterung.
+- [x] Für jede Korrektur Verhaltenstests ergänzen; Vollsuite, Syntax, Lint, Diff und Production Package ausführen.
+- [ ] Wahrheitsgemäße Dokumentation, Commit/Push, CodeQL, FTPS-Deployment und read-only Production Smoke terminal prüfen.
 
-Operator-Retest: Browserpasswort wird eingesetzt; Eye-Klick zeigt/versteckt denselben Wert; Login normal und Inkognito. Kein Core Freeze.
+Operator-Retest bleibt für alle sichtbaren Live-Interaktionen erforderlich. Kein Core Freeze.

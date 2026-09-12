@@ -278,7 +278,7 @@ test('admin Appearance UI exposes the Startseite contract while Settings does no
   const source = read('Web-App/public/admin/appearance-view.js');
   const settings = read('Web-App/public/admin/settings-view.js');
 
-  assert.match(source, /<legend>Global Start Page<\/legend>/);
+  assert.match(source, /<h3 id="appearance-homepage-title">Global Start Page<\/h3>/);
   assert.match(source, /id="homepageMode"/);
   assert.match(source, /id="homepageContent"/);
   assert.match(source, /id="homepageModuleId"/);
@@ -339,9 +339,9 @@ test('local settings save uses the shared success dialog and retains inline erro
 
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = '';\s*status\.className = 'user-settings-status';\s*window\.NeutralUiFeedback\?\.showSuccess\('Profile and settings saved successfully\.'\);\s*\} else \{\s*status\.textContent = 'Settings could not be saved\. Local storage is unavailable or restricted\.';\s*status\.className = 'user-settings-status error';/s);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = '';\s*status\.className = 'user-settings-status';\s*window\.NeutralUiFeedback\?\.showSuccess\('Successfully saved\.'/s);
   assert.match(css, /\.user-settings-status\.error\s*\{/);
-  assert.doesNotMatch(source, /Profile and settings saved successfully\.'[\s\S]{0,200}[Aa]dmin/);
+  assert.doesNotMatch(source, /Profile and settings saved successfully/);
 });
 
 test('local feature visibility persists without a show-all control or permission mutation', () => {

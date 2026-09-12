@@ -7,7 +7,7 @@ const NeutralProfileModule = Object.freeze({
   capabilities: Object.freeze(['profile', 'settings.profile']),
   dependencies: Object.freeze([]),
   optionalDependencies: Object.freeze(['media', 'sharing']),
-  presentation: Object.freeze({ userNavigation: false, adminNavigation: false, system: true })
+  presentation: Object.freeze({ userNavigation: true, adminNavigation: false, system: false })
 });
 
 if (typeof window !== 'undefined') window.NeutralProfileModule = NeutralProfileModule;

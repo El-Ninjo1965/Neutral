@@ -62,14 +62,13 @@ class AdminAuditView {
     });
     purge?.addEventListener('click', async () => {
       const retentionDays = Number(document.getElementById('auditRetention')?.value || 90);
-      if (!AdminCommon.confirmAction(`Permanently purge audit entries older than ${retentionDays} days? The purge itself will be audited.`)) return;
+      if (!await AdminCommon.confirmAction(`Permanently purge audit entries older than ${retentionDays} days? The purge itself will be audited.`)) return;
       const result = await this.api.post('/api/admin/audit/purge', { retentionDays });
       if (result.ok) { const payload = AdminCommon.unwrapData(result, null, {}); AdminCommon.showAlert(`${Number(payload.purged || 0)} audit entries deleted.`, 'success'); await this.init(this.container); }
       else AdminCommon.showAlert(`Audit purge failed: ${result.error || 'Unknown error'}`, 'error');
     });
     document.getElementById('auditClearAll')?.addEventListener('click', async () => {
-      if (!AdminCommon.confirmAction('Delete ALL previous audit entries? This cannot be undone.')) return;
-      if (!AdminCommon.confirmAction('Are you sure you want to permanently delete all previous audit entries?')) return;
+      if (!await AdminCommon.confirmAction('Delete ALL previous audit entries? This cannot be undone.')) return;
       const result = await this.api.post('/api/admin/audit/clear', { confirmed: true });
       if (result.ok) { const payload = AdminCommon.unwrapData(result, null, {}); AdminCommon.showAlert(`${Number(payload.deleted || 0)} audit entries deleted.`, 'success'); await this.init(this.container); }
       else AdminCommon.showAlert(`Audit clear failed: ${result.error || 'Unknown error'}`, 'error');

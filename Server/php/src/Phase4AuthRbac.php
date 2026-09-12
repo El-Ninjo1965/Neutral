@@ -1368,13 +1368,17 @@ final class Phase4SessionRegistry
                 continue;
             }
             $support = self::supportMetadata((string) ($session['user_agent'] ?? ''), (string) ($session['device_label'] ?? ''));
+            $current = hash_equals((string) ($session['session_id'] ?? ''), session_id());
+            $lastSeen = strtotime((string) ($session['last_seen_at'] ?? ''));
+            $activityStatus = $current || ($lastSeen !== false && $lastSeen >= time() - 1800) ? 'active' : 'idle';
             $public[] = [
                 'sessionId' => (string) ($session['session_id'] ?? ''),
                 'userId' => $session['user_id'] !== null ? (string) $session['user_id'] : '',
                 'username' => (string) ($session['username'] ?? ''),
                 'displayName' => (string) ($session['display_name'] ?? ''),
                 'roles' => ($session['role_keys'] ?? '') !== '' ? explode(',', (string) $session['role_keys']) : [],
-                'status' => (string) ($session['status'] ?? 'active'),
+                'status' => $activityStatus,
+                'authenticationStatus' => (string) ($session['status'] ?? 'active'),
                 'issuedAt' => $this->mysqlUtcIso((string) ($session['issued_at'] ?? '')),
                 'lastSeenAt' => $this->mysqlUtcIso((string) ($session['last_seen_at'] ?? '')),
                 'expiresAt' => $this->mysqlUtcIso((string) ($session['expires_at'] ?? '')),
@@ -1385,7 +1389,7 @@ final class Phase4SessionRegistry
                 'operatingSystem' => $support['operatingSystem'],
                 'browser' => $support['browser'],
                 'platform' => $support['operatingSystem'] . ' · ' . $support['browser'],
-                'current' => hash_equals((string) ($session['session_id'] ?? ''), session_id()),
+                'current' => $current,
             ];
         }
         return $public;

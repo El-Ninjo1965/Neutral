@@ -89,7 +89,7 @@ test('GPS Web-Mercator projection matches independent Davao reference values', (
   delete global.window; delete global.navigator;
 });
 
-test('OpenStreetMap opens a safe new browsing context while Google retains existing behavior', async () => {
+test('Map providers open in safe new browsing contexts', async () => {
   const calls = [];
   global.window = { open: (...args) => { calls.push(['open', ...args]); return { opener: 'set' }; }, location: { assign: (url) => calls.push(['assign', url]) } };
   Object.defineProperty(global, 'navigator', { value: { language: 'en' }, configurable: true });
@@ -100,6 +100,7 @@ test('OpenStreetMap opens a safe new browsing context while Google retains exist
   assert.deepEqual(calls[0].slice(0, 3), ['open', gps.locationLinks(gps.lastPosition).openStreetMap, '_blank']);
   assert.match(calls[0][3], /noopener/);
   await gps.openCurrentPosition('google');
-  assert.equal(calls[1][0], 'assign');
+  assert.deepEqual(calls[1].slice(0, 3), ['open', gps.locationLinks(gps.lastPosition).googleMaps, '_blank']);
+  assert.match(calls[1][3], /noopener/);
   delete global.window; delete global.navigator;
 });

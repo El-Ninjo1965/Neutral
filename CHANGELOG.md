@@ -567,3 +567,11 @@ After the native-placeholder correction, production classification advanced back
 - Sichtbaren Fallback gemäß neuestem Betreiberauftrag durch ein normales browser-autofillfähiges Passwortfeld ersetzt.
 - Genau einen statischen, lokal gebundenen Click-Eye-Button ergänzt; Wert bleibt beim Anzeigen/Verbergen unverändert.
 - Keine Auth-, Session-, Backend- oder Admin-Änderung.
+
+## 2026-09-12 — Operator UX / module repair
+
+- Made the optional Profile app navigable for permitted users and routed it to the existing protected Profile settings workflow.
+- Preserved canonical organization membership in the Admin user-list projection and separated recent session activity from durable authentication state.
+- Simplified GPS around Google Maps sharing/new-tab navigation and the embedded responsive OSM map.
+- Replaced native Admin confirmations with the shared framework dialog and added explicit User Settings save/error feedback.
+- Corrected module-table headings, Appearance grouping, Diagnostics partial-error projection, sidebar theme selection, canonical Dashboard cards and truthful external deployment status.

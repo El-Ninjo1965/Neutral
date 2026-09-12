@@ -26,7 +26,7 @@ test('save surfaces use the shared success contract while errors remain alerts',
   const user = read('Web-App/public/user-app.js');
   const commerce = read('Web-App/public/admin/commercial-view.js');
   assert.match(common, /type === 'success'[\s\S]*NeutralUiFeedback\.showSuccess/);
-  assert.match(user, /NeutralUiFeedback\?\.showSuccess\('Profile and settings saved successfully\.'/);
+  assert.match(user, /NeutralUiFeedback\?\.showSuccess\('Successfully saved\.'/);
   assert.doesNotMatch(user, /status\.textContent = 'Settings saved successfully\.'/);
   assert.match(commerce, /License (updated|created) successfully/);
   assert.match(common, /alert-\$\{type\}/);

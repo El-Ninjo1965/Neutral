@@ -284,13 +284,13 @@ test('backup mutations use protected admin API routes', () => {
   assert.doesNotMatch(source, /post\('\/api\/backups'/);
 });
 
-test('shared admin safeguards provide explicit confirmation and recoverable states', () => {
+test('shared admin safeguards provide framework confirmation and recoverable states', async () => {
   const { AdminCommon } = require('../Web-App/public/admin/common.js');
   const previousWindow = global.window;
   let prompt = '';
-  global.window = { confirm: (message) => { prompt = message; return true; } };
+  global.window = { NeutralUiFeedback: { confirmAction: async (message) => { prompt = message; return true; } } };
   try {
-    assert.equal(AdminCommon.confirmAction('Replace managed data?'), true);
+    assert.equal(await AdminCommon.confirmAction('Replace managed data?'), true);
     assert.equal(prompt, 'Replace managed data?');
     const container = { innerHTML: '', querySelector: () => null };
     AdminCommon.renderState(container, { type: 'forbidden' });
@@ -313,5 +313,6 @@ test('admin shell exposes a persistent light and dark theme control', () => {
   const AdminShell = require('../Web-App/public/admin/shell.js');
   const html = AdminShell.render({ groups: [], userLabel: 'Developer' });
   assert.match(html, /data-admin-theme/);
-  assert.match(html, /Switch to dark mode/);
+  assert.match(html, /<select[^>]+data-admin-theme/);
+  assert.match(html, />Light<\/option>.*>Dark<\/option>/s);
 });

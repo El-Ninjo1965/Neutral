@@ -1,25 +1,31 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** USER-LOGIN CLICK-EYE DEPLOYED / OPERATOR RETEST REQUIRED
+**Status:** OPERATOR UX / MODULE REPAIR IN VERIFIKATION
 **Core Freeze:** NICHT erklärt
 
 ## Ergebnis
 
-Der neueste Betreiberauftrag ersetzt den vorherigen sichtbaren Fallback. User Login besitzt wieder ein normales browser-autofillfähiges Passwortfeld (`name="password"`, `type="password"`, `autocomplete="current-password"`) und genau einen statischen Eye-Button direkt im Feld.
+Die in `CODEX.md` priorisierten Root Causes wurden minimal korrigiert: Profile fiel wegen `presentation.userNavigation:false` aus dem gleichen Discoverypfad wie GPS; die User-API-Projektion ließ `organizationName` trotz kanonischer SQL-Hydrierung fallen; dauerhafte Sessions projizierten ihren DB-Authentifizierungsstatus fälschlich als aktuelle Aktivität; Diagnostics übernahm den 404 des optionalen Framework-Summary als globalen Fehler.
 
-Der Eye-Klick ist vollständig lokal in `showLoginForm`: Klick schaltet nur den `type` zwischen `password` und `text`, aktualisiert ARIA und fokussiert dasselbe Input. Der Wert wird weder ersetzt noch neu gesetzt; ein vom Browser eingesetztes Passwort bleibt deshalb identisch. Es gibt keine externe Helper-Datei, keinen Observer, kein Hold-Verhalten und keine Änderung an Auth, Sessions oder Admin Login.
+Profile ist nun navigierbar und öffnet die vorhandene Profile-Settings-Ansicht mit deren geschützten View/Update-Routen. Organization wird aus derselben License-Membership-Projektion in Liste und Editor gezeigt. Sessionaktivität ist von der dauerhaften Authentifizierung getrennt (`active` bei Current oder Aktivität innerhalb 30 Minuten, sonst `idle`), Dashboard zählt exakt diese Projektion und nicht-current Sessions besitzen eine End-Aktion.
 
-Wichtig: Das Passwortfeld maskiert nur die Browseranzeige. Verschlüsselung/Hashing wird dadurch nicht gesteuert und musste nicht geändert werden.
+GPS öffnet Google Maps sicher in einem neuen Tab, teilt einen Google-Maps-Link, zeigt keine separate OSM-Aktion und ordnet Position, Metadaten, Auto-Option, Actions und eingebettete Karte einspaltig. Settings-Erfolg lautet `Successfully saved.`; Fehler sowie destruktive Adminbestätigungen laufen über die zentrale Framework-Komponente.
 
-Lokal bestanden 540/540 Tests, JavaScript-Syntax, PHP-Lint, Diff-Check und das Production Package mit 134 Dateien. Verhaltenstests führen den realen Login-Renderer aus, setzen einen browserähnlich vorbefüllten Wert, klicken das Eye zweimal und prüfen Wert, Typ, ARIA sowie den tatsächlichen API-Submit im sichtbaren Zustand.
-
-Commit `37d9d00bf84a344f43529be2e70d12a741933241` ist auf `main`. CodeQL `34599241157` und FTPS Deploy `34599240691` waren terminal erfolgreich. Tests, 134-Datei-Produktionspaket, FTPS-Client, Upload von 136 Dateien und read-only Production Smoke bestanden; Deploymentrevision und `migrationsReady:true` wurden bestätigt.
+App/System Modules haben nur eine Überschrift und eine durchgängige scrollbare Tabelle. Appearance hat eingefasste, nacheinander angeordnete Light-/Dark-/Geometrie-/Preview-Bereiche. Sidebar verwendet ein neutrales Light/Dark-Select; Produkt-/Core-Status ist aus dem Navigationskopf entfernt. Das Dashboard nutzt kanonische User-, Session-, Modul-, Rollen-, Package-, License-/Organization- und DB-Daten mit Navigation. Updates heißt wahrheitsgemäß Deployment und zeigt lesbare Buildzeit; Maintenance bleibt getrennt.
 
 ## Operator-Retest nach Deployment
 
-1. Browser speichert/füllt das User-Passwort.
-2. Eye-Klick zeigt exakt diesen Wert; zweiter Klick verbirgt ihn wieder.
-3. User Login funktioniert normal und Inkognito.
+1. Profile beim Tester sichtbar; Profile öffnen, lesen und speichern.
+2. `Verein Bonn` bei User 102 in Liste und Editor identisch.
+3. Sessions: Current/Active/Idle sowie End/Revoke und Dashboard-Zahl.
+4. GPS: Layout, Google Maps neuer Tab, Share-Link, OSM-Karte.
+5. Settings Save/Error Dialog.
+6. App/System Modules Tabellenlayout.
+7. Appearance auf Desktop/iPad/Handy.
+8. Diagnostics ohne falsches globales `Not found`.
+9. Audit- und sonstige Frameworkdialoge.
+10. Sidebar Theme und Dashboard-Navigation.
+11. Release-/Deployment- und Maintenance-Anzeige.
 
-Kein Core Freeze.
+Moderation/Postbox bleiben Folgeprüfung nach Profile. Kein Core Freeze.

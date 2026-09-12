@@ -50,7 +50,7 @@ test('birthday accepts real ISO calendar dates only, including leap years and de
   assert.deepEqual(JSON.parse(result.stdout), { ok: ['2024-02-29', ''], bad: 4 });
 });
 
-test('admin UX exposes free device limits, user-selected managers, birthday dropdowns and exactly two audit confirmations', () => {
+test('admin UX exposes free device limits, user-selected managers, birthday dropdowns and one clear-all confirmation', () => {
   const commercial = read('Web-App/public/admin/commercial-view.js');
   const users = read('Web-App/public/admin/users-view.js');
   const profile = read('Web-App/public/user-app.js');
@@ -65,7 +65,7 @@ test('admin UX exposes free device limits, user-selected managers, birthday drop
   assert.match(profile, /profileBirthdayMonth/);
   assert.match(profile, /profileBirthdayYear/);
   assert.doesNotMatch(profile, /profileBirthday" type="date/);
-  assert.equal((audit.match(/AdminCommon\.confirmAction\(/g) || []).length, 3, 'one purge confirmation plus exactly two clear confirmations');
+  assert.equal((audit.match(/AdminCommon\.confirmAction\(/g) || []).length, 2, 'one purge confirmation plus one clear confirmation');
   assert.match(audit, /confirmed: true/);
   assert.doesNotMatch(audit, /window\.prompt|Type DELETE/);
 });
