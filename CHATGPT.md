@@ -1,25 +1,93 @@
 # NEUTRAL – CHATGPT HANDOFF
 
-**Richtung:** Codex → ChatGPT/Lea
-
-**Status:** OFFLINE-FIRST ARCHITECTURE RECOVERY DEPLOYED – OPERATOR-RETEST AUSSTEHEND
-
-**Core Freeze:** NICHT erklärt
+**Richtung:** Local Agent → ChatGPT/Lea  
+**Branch:** `lea/module-runtime-repair`  
+**Datum:** 2026-09-12  
+**Status:** MODULE RUNTIME REPAIR COMPLETED (LOCAL REPOSITORIES ONLY)  
+**Hinweis zu Codespace:** Dieser Reparatur-Lauf erfolgte vollständig in einem **NEU ERSTELLTEN GitHub Codespace**.  
+**Deployment:** NICHT DEPLOYED  
+**Merge:** NICHT NACH MAIN GEMERGED
 
 ## Tatsächlicher Stand
 
-GPS verwendet den generischen, versionierten und sanitisierten `publicOffline`-Aktivierungszustand. Dieser Zustand wird vor dem ersten User-Render in die bestehende Registry hydriert, enthält keine Identitäts-, Session- oder Permissiondaten und erteilt keine Serverrechte. GPS-Basissichtbarkeit und lokale Nutzung hängen nicht von User-RBAC, Packages oder Entitlements ab. Profile und Moderation bleiben permission-sensitive.
+Die Reparatur des Web-App-Modulpfads gemäß `LOCAL-AGENT.md` wurde testgetrieben (RED → GREEN) abgeschlossen und auf dem Zielbranch `lea/module-runtime-repair` bereitgestellt.
 
-Catalog-Synchronisierung läuft nach dem stabilen Start, bleibt bei Fehlern retryable und aktualisiert nur Navigation beziehungsweise offene Settings statt die Welcome-Fläche aufgrund der Discovery neu aufzubauen. Autoritative Server- und Admin-Lifecycle-Antworten aktualisieren den Public/Offline-Zustand; eine Deaktivierung verhindert die Hydrierung bei folgenden Offline-Starts. Beschädigte oder inkompatible Projektionen werden verworfen.
+- **GPS Public/Offline:** Das GPS-Basismodul wird vor dem ersten User-Render aus dem lokal versionierten Zustand hydriert. Die Discovery-Reconcilation in `ModuleManager` löscht hydriertes aktives `publicOffline`-GPS nach leeren/ungeeigneten Server-Katalogen (`discover([])`) nicht mehr. Nur autoritative administrative Deaktivierungen im Katalog invalideren den Zustand.
+- **Profile:** Profile ist als Account-Modul `entitlementRequired: false`. Nach Server-Login und erfolgreicher Discovery mit den effektiven Rechten `profile.view` und `profile.update` wird Profile in der Registry korrekt als aktiv geführt und in den User Settings angezeigt, geöffnet und gespeichert.
+- **Rendering Performance:** In `user-app.js` verhindert ein diffender Render-Key (`lastLandingRenderKey`), dass Hintergrund-Updates (`loadHomepageConfig`, `startBackgroundInitialization`) das sichtbare `Welcome to Neutral`-Dokument mehrfach neu aufbauen oder iFrames neu erstellen (Doppelblinken behoben).
 
-Lokal bestanden 560/560 Tests, JavaScript-Syntax, PHP-Lint, `git diff --check` und das Production Package mit 136 Dateien. Commit `9003898` liegt auf `main`. CodeQL-Lauf `34676863542` und FTPS-Deploy `34676863687` bestanden vollständig; der Deploymentlauf bestätigte Tests, Production Package, FTPS-Client, Upload und Production Read-only Smoke.
+## Bewiesene Root Causes & Widerlegte Annahmen
 
-## Operator-Retest nach Deployment
+1. **Root Cause 1 (`ModuleRegistry.discover` übersprang registrierte Module):**
+   `ModuleRegistry.discover()` enthielt `if (registry.has(manifest.id)) return;`. Bereits in der Registry vorhandene (oder hydrierte) Module wurden im `discovered`-Array von `discover()` nicht zurückgegeben. `ModuleManager.discoverModules()` reconciliierte daraufhin gegen `discoveredIds` und deregistrierte/löschte GPS sowie andere Modulinstanzen aus der Registry.
+   *Fix:* `ModuleRegistry.discover()` aktualisiert und liefert bestehende registrierte Module im `discovered`-Array mit.
 
-1. Frischer/Inkognito-Start: GPS sofort sichtbar, kein Reload und kein Welcome-Doppelblinken.
-2. Ralf und Tester: GPS bleibt sichtbar; Profile erscheint bei Active + `profile.view/profile.update`, lässt sich öffnen und speichern.
-3. Developer und Admin: GPS bleibt ohne User-RBAC-Abhängigkeit sichtbar.
-4. Offline-Start nach gültiger Aktivierung; anschließend Deaktivierung und zukünftigen Offline-Start prüfen.
-5. Module Details/Save/Back, Settings-Save-Dialog, Theme-Select und Tabellenabschlusslinie prüfen.
+2. **Root Cause 2 (`publicOffline` ging bei Validierung verloren):**
+   `ModuleInterface.validateManifest()` gab das Feld `publicOffline` nicht im zurückgegebenen Objekt aus.
+   *Fix:* `ModuleInterface.validateManifest()` bewahrt `publicOffline: manifest.publicOffline === true`.
 
-Kein Core Freeze vor diesen Betreiberprüfungen.
+3. **Root Cause 3 (`disable()`-Aufruf auf unaktivierten Modulen):**
+   `ModuleManager.discoverModules()` rief bei inaktivem Discovery-Status bedingungslos `disable()` auf Modulen auf. Dies löste `GpsModule.disable()` auf noch nicht aktivierten Modulen aus, was ihren Status von `available` auf `disabled` setzte.
+   *Fix:* `disable()` wird nur auf aufgerufen, wenn das Modul vorher aktiv war (`existing?.active === true`).
+
+4. **Root Cause 4 (Mehrfaches Full-Rendering der Startseite):**
+   `user-app.js` erfassende Hintergrund-Tasks riefen wiederholt `renderApp()` -> `renderLandingPage()` auf, was `content.innerHTML` jedes Mal löschte und den Landing-Page-DOM/iFrame neu erstellte.
+   *Fix:* `lastLandingRenderKey` prüft Modus, Titel, Inhalt, Module-ID, Discovery-State, Theme und sichtbare Module-IDs und überspringt unnötige DOM-Erneuerungen.
+
+**Widerlegte Annahmen:**
+- Die Annahme, dass grüne automatisierte Tests vor der Reparatur ein fehlerfreies Live-System belegten. Ein alter Test (`tests/offline-first-public-modules.test.js` Z.29) forderte fälschlicherweise explizit das Löschen von GPS nach `discover([])`.
+
+## RED-Testnachweise
+
+Vor den Codeänderungen zeigten die Verhaltenstests in `tests/offline-first-public-modules.test.js` folgende tatsächliche Fehler:
+
+1. `cold/offline bootstrap hydrates active public GPS before any catalog promise resolves`
+   - *Failure:* `AssertionError [ERR_ASSERTION]: Expected actual [] to deep-equal ['gps']` (GPS wurde nach `discover([])` gelöscht).
+2. `publicOffline flag survives validateManifest, Registry, and ModuleManager normalization`
+   - *Failure:* `AssertionError [ERR_ASSERTION]: ModuleInterface.validateManifest must preserve publicOffline (actual: undefined, expected: true)`.
+3. `authoritative admin deactivation in catalog deactivates local publicOffline GPS and syncs cache`
+   - *Failure:* `AssertionError [ERR_ASSERTION]: Expected actual undefined to equal true`.
+4. `ModuleRegistry.discover includes already registered modules so discovery reconciliation does not delete them`
+   - *Failure:* `AssertionError [ERR_ASSERTION]: ModuleRegistry.discover must return already registered modules when present in catalog (actual: undefined)`.
+
+## GREEN-Testnachweise
+
+Nach Implementierung der minimalen Fixes:
+
+- **Fokussierte Verhaltenstests:** 7/7 bestanden in `tests/offline-first-public-modules.test.js`.
+- **Gesamte Testsuite:** 563/563 bestanden in `npm test` (0 failures, 0 skipped).
+
+## Geänderte Dateien
+
+- `Web-App/core/module-interface.js`: Bewahrt `publicOffline: manifest.publicOffline === true` in `validateManifest`.
+- `Web-App/core/module-registry.js`: `ModuleRegistry.discover()` aktualisiert und enthält registrierte Modulinstanzen im Discovery-Ergebnis.
+- `Web-App/core/module-manager.js`: Bewahrt `publicOffline` bei Normalisierung; schützt aktive `publicOffline`-Module vor Löschung bei nicht-autoritativem Katalog; ruft `disable()` nur bei zuvor aktiven Modulen auf.
+- `Web-App/public/user-app.js`: Führt `lastLandingRenderKey` in `renderLandingPage()` ein, um doppeltes Blinken/Render-Overhead der Startseite zu verhindern.
+- `tests/offline-first-public-modules.test.js`: TDD-Verhaltenstests für `publicOffline`-Persistenz, Manifest-Validierung, Registrierungs-Discovery und autoritative Deaktivierung erweitert.
+- `CHATGPT.md`: Vollständige Abschluss- und Handoff-Dokumentation.
+
+## Prüfergebnisse
+
+- **JavaScript Syntax Check (`node --check`):** OK (0 Fehler) für alle geänderten Dateien.
+- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php`).
+- **`git diff --check`:** Clean (0 Fehler).
+- **Production Package Build (`node scripts/build-production-package.js`):** Status OK, 136 Dateien in `dist/neutral-production`.
+- **Teststatus:** 563/563 bestanden (`npm test`).
+
+## Deployment- und Merge-Status
+
+- **NICHT DEPLOYED**
+- **NICHT NACH MAIN GEMERGED**
+
+## Verbleibende Risiken
+
+- Browser/OS Geolocation-Berechtigungen (GPS) hängen hardware- und betriebssystemseitig vom Nutzer ab (Standardschutz des Browsers).
+
+## Operator-Retest-Reihenfolge (nach künftigem Deployment)
+
+1. Frischer Inkognito-Aufruf der Root-URL: GPS sofort in Navigation sichtbar, kein Welcome-Doppelblinken.
+2. Anonymer Start: GPS lässt sich öffnen und lokale Koordinaten abfragen.
+3. Login mit Ralf / Tester: GPS bleibt ohne Seiten-Reload sichtbar; Profile erscheint unter Settings (bei `profile.view` + `profile.update`).
+4. Developer / Admin Login: GPS bleibt sichtbar.
+5. Offline-Start: GPS wird aus lokalem Cache geladen.
+6. Admin-Deaktivierung: GPS wird nach Server-Sync deaktiviert und erscheint bei folgenden Starts nicht mehr.

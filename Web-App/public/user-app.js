@@ -976,13 +976,25 @@
     `;
   };
 
+  let lastLandingRenderKey = null;
+
   const renderLandingPage = () => {
     if (!homepageResolved) {
       content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';
+      lastLandingRenderKey = null;
       return;
     }
     const homepage = getHomepageConfig();
     const appName = getAppName();
+    const currentTheme = readUserTheme();
+    const visibleModuleIds = getVisibleModules().map((m) => m.id).sort().join(',');
+    const landingKey = `${homepage.mode}:${homepage.title || ''}:${homepage.content || ''}:${homepage.moduleId || ''}:${state.discoveryState}:${currentTheme}:${visibleModuleIds}`;
+
+    if (lastLandingRenderKey === landingKey && content.firstElementChild) {
+      return;
+    }
+    lastLandingRenderKey = landingKey;
+
     if (homepage.mode === 'module') {
       if (state.discoveryState === 'pending') {
         content.innerHTML = '<section class="user-app-panel"><div class="user-app-status" role="status">Loading…</div></section>';

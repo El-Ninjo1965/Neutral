@@ -230,6 +230,7 @@
                     : [],
                 access: normalizeAccessDefinition(manifest.access, permissionDefinitions),
                 clientAccess: normalizeClientAccess(manifest.clientAccess),
+                publicOffline: manifest.publicOffline === true || (manifest.manifest && manifest.manifest.publicOffline === true),
                 registered: manifest.registered === true,
                 status: typeof manifest.status === 'string' ? manifest.status : null,
                 lifecycleState: typeof manifest.lifecycleState === 'string' ? manifest.lifecycleState : null,
