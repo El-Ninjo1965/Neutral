@@ -196,7 +196,9 @@
         return permissions.some((permission) => hasPermission(permission));
     };
 
-    const canUseModule = () => hasAnyPermission(access.usagePermissions);
+    // Public/offline base use is local and grants no server permission. Any
+    // protected module endpoint remains independently authorized by PHP.
+    const canUseModule = () => true;
 
     const readSettings = () => {
         const configManager = coreFacade('ConfigManager');
@@ -331,6 +333,7 @@
         standalone,
         database: { tables: [] },
         capabilities: ['gps', 'geolocation'],
+        publicOffline: true,
         admin: {
             title: 'GPS settings',
             description: 'Controls for browser geolocation behaviour and local GPS data handling.',

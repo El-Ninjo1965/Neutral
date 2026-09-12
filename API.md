@@ -1,3 +1,7 @@
+## Module catalog synchronization (2026-09-12)
+
+`GET /api/v1/modules` synchronisiert Lifecycle- und authentifizierte Projektionen nach dem stabilen First Render. Es ist nicht Voraussetzung für die initiale Sichtbarkeit eines lokal validierten `publicOffline`-Moduls. Antworten enthalten weiterhin `accessContext.mode` sowie die begrenzte Betriebs-Evidence `Server-Timing: module-catalog;dur=<ms>` und `X-Neutral-Catalog-Mode`. Ein Fehler darf clientseitig nicht als autoritativer leerer Catalog behandelt werden.
+
 # NEUTRAL – API
 
 ## Technischer Korrekturstand 2026-09-11

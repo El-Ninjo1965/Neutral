@@ -145,6 +145,7 @@ final class Phase7ModuleRuntime
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
                 'requiresLogin' => isset($module['requiresLogin']) ? (bool) ($module['requiresLogin']) : ((bool) ($manifest['requiresLogin'] ?? false)),
                 'entitlementRequired' => ($module['entitlementRequired'] ?? true) !== false,
+                'publicOffline' => ($module['publicOffline'] ?? false) === true,
             ];
         }, $modules);
     }
@@ -634,6 +635,7 @@ final class Phase7ModuleRuntime
             'database' => $this->normalizeDatabase($manifest['database'] ?? null),
             'admin' => is_array($manifest['admin'] ?? null) ? $manifest['admin'] : null,
             'entitlementRequired' => ($manifest['entitlementRequired'] ?? true) !== false,
+            'publicOffline' => ($manifest['publicOffline'] ?? false) === true,
             'modulePath' => isset($manifest['modulePath']) ? (string) $manifest['modulePath'] : null,
             'manifest' => $manifest,
             'public' => isset($manifest['public']) ? (bool) $manifest['public'] : null,
@@ -929,6 +931,7 @@ final class Phase7ModuleRuntime
             'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
             'admin' => is_array($module['admin'] ?? null) ? $module['admin'] : null,
             'entitlementRequired' => ($module['entitlementRequired'] ?? true) !== false,
+            'publicOffline' => ($module['publicOffline'] ?? false) === true,
             'modulePath' => $module['modulePath'] ?? ($record['filesystemPath'] ?? null),
             'manifest' => is_array($module['manifest'] ?? null) ? $module['manifest'] : ($record['manifest'] ?? []),
             'public' => $module['public'] ?? null,
@@ -1324,10 +1327,11 @@ final class Phase7ModuleRuntime
         $hasPermission = static fn (string $permission): bool => in_array($permission, $permissions, true)
             || ($mode === 'authenticated' && in_array('admin.write', $permissions, true));
         $canView = $active
-            && $visibilityPermissions !== []
-            && count(array_filter($visibilityPermissions, $hasPermission)) > 0;
+            && ((($module['publicOffline'] ?? false) === true)
+                || ($visibilityPermissions !== [] && count(array_filter($visibilityPermissions, $hasPermission)) > 0));
         $canUse = $canView
-            && ($usagePermissions === [] || count(array_filter($usagePermissions, $hasPermission)) > 0);
+            && ((($module['publicOffline'] ?? false) === true)
+                || $usagePermissions === [] || count(array_filter($usagePermissions, $hasPermission)) > 0);
 
         $result = [
             'mode' => $mode,

@@ -1,4 +1,6 @@
-# NEUTRAL – Vision
+## Verbindliche Offline-First-Präzisierung (2026-09-12)
+
+Ein aktives `publicOffline`-Modul ist aus einer versionierten, sanitisierten lokalen Aktivierungsprojektion beim ersten stabilen Render verfügbar. GPS ist das öffentliche Referenzmodul und seine lokale Basisfunktion hängt weder von Rolle, User-Permission, Package noch Entitlement ab. Administrative Aktivierung bleibt autoritativ und wird im Hintergrund für folgende Starts synchronisiert. Profile und Moderation bleiben authentifiziert und permission-sensitiv; lokaler Zustand erteilt niemals Serverrechte. Diese Präzisierung ersetzt die ältere Aussage, ein anonymer Server-Catalog müsse vor jeder initialen Modulnavigation bestätigt sein.
 
 ## Verbindliche Modularitätsentscheidung (2026-09-11)
 

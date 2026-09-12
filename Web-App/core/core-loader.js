@@ -56,7 +56,7 @@
         }
     ]);
 
-    const ANONYMOUS_CATALOG_CACHE_PREFIX = 'neutral.module-catalog.anonymous.v1:';
+    const ANONYMOUS_CATALOG_CACHE_PREFIX = 'neutral.module-catalog.public-offline.v1:';
 
     const anonymousCatalogCacheKey = () => {
         const basePath = window.NeutralPublicPath && typeof window.NeutralPublicPath.base === 'function'
@@ -84,20 +84,45 @@
         });
     };
 
-    const readAnonymousCatalogCache = () => {
+    const sanitizePublicOfflineEntries = (modules) => Array.isArray(modules) ? modules.map((entry) => {
+        if (!entry || entry.publicOffline !== true || !/^[a-z][a-z0-9-]{1,63}$/.test(String(entry.id || ''))) return null;
+        if (!/^\d+\.\d+\.\d+$/.test(String(entry.version || ''))) return null;
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(String(entry.entry || '')) || String(entry.entry).includes('..')) return null;
+        if (!/^Web-App\/app\/modules\/[a-z0-9-]+$/.test(String(entry.modulePath || ''))) return null;
+        if (!/^[A-Za-z][A-Za-z0-9]*$/.test(String(entry.globalName || ''))) return null;
+        return {
+            id: String(entry.id), name: String(entry.name || entry.id), displayName: String(entry.displayName || entry.name || entry.id),
+            version: String(entry.version), type: 'module', entry: String(entry.entry), modulePath: String(entry.modulePath), globalName: String(entry.globalName),
+            presentation: { userNavigation: entry.presentation?.userNavigation !== false, adminNavigation: entry.presentation?.adminNavigation !== false, system: entry.presentation?.system === true },
+            publicOffline: true, registered: entry.registered === true, active: entry.active === true, enabled: entry.active === true,
+            status: entry.active === true ? 'active' : 'inactive', lifecycleState: entry.active === true ? 'ACTIVE' : 'INACTIVE',
+            clientAccess: { mode: 'anonymous', canView: entry.active === true, canUse: entry.active === true, navigationVisible: entry.active === true }
+        };
+    }).filter(Boolean) : [];
+
+    const readStoredPublicOfflineCatalog = () => {
         if (typeof localStorage === 'undefined') {
-            return [];
+            return null;
         }
         try {
             const raw = localStorage.getItem(anonymousCatalogCacheKey());
             const cached = raw ? JSON.parse(raw) : null;
-            if (!cached || cached.schemaVersion !== 1 || cached.mode !== 'anonymous') {
-                return [];
+            if (!cached || cached.schemaVersion !== 1 || cached.kind !== 'public-offline' || !Array.isArray(cached.modules)) {
+                return null;
             }
-            return normalizeCatalogEntries(cached.modules, 'anonymous');
+            const modules = sanitizePublicOfflineEntries(cached.modules);
+            return modules.length === cached.modules.length ? modules : null;
         } catch (error) {
-            return [];
+            return null;
         }
+    };
+
+    const readAnonymousCatalogCache = () => {
+        const stored = readStoredPublicOfflineCatalog();
+        if (stored !== null) return stored.filter((module) => module.active);
+        const seed = window.NeutralPublicOfflineModules;
+        if (!seed || seed.schemaVersion !== 1) return [];
+        return sanitizePublicOfflineEntries(seed.modules).filter((module) => module.active);
     };
 
     const writeAnonymousCatalogCache = (modules) => {
@@ -105,10 +130,11 @@
             return;
         }
         try {
+            const publicModules = sanitizePublicOfflineEntries(modules.filter((module) => module?.publicOffline === true));
             localStorage.setItem(anonymousCatalogCacheKey(), JSON.stringify({
                 schemaVersion: 1,
-                mode: 'anonymous',
-                modules
+                kind: 'public-offline',
+                modules: publicModules
             }));
         } catch (error) {
             // Restricted storage must not prevent online module discovery.
@@ -238,10 +264,9 @@
     };
 
     // ── Local-first catalog hydration ─────────────────────────────────────────
-    // A previously cached anonymous catalog is a valid last-known-good state.
-    // Warmstart must hydrate from it immediately; the remote catalog is then
-    // reconciled in the background. Security contract: only anonymous catalogs
-    // are ever cached, authenticated responses never persist as fallback.
+    // A sanitized public/offline activation projection hydrates before first
+    // paint. Online catalogs reconcile later; authenticated metadata is never
+    // persisted into this public projection.
     let catalogRequestSequence = 0;
     let lastCatalogRequest = null;
 
@@ -292,9 +317,7 @@
             if (!catalogIsValid) throw new Error('Module catalog response is invalid.');
             if (mode !== expectedMode) throw new Error(`Stale module catalog response (${mode || 'unknown'} while ${expectedMode} was expected).`);
 
-            if (mode === 'anonymous' && catalogIsValid) {
-                writeAnonymousCatalogCache(modules);
-            }
+            writeAnonymousCatalogCache(modules);
 
             mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
             lastCatalogRequest = { requestId, mode, status: response.status, durationMs: Date.now() - startedAt, moduleCount: modules.length };
@@ -386,6 +409,27 @@
 
     const CoreLoader = {
         initialized: false,
+
+        getPublicOfflineModules() {
+            return readAnonymousCatalogCache().map((projection) => {
+                const implementation = resolveModuleImplementation(projection);
+                return implementation ? { ...implementation, ...projection, clientAccess: { mode: 'anonymous', canView: true, canUse: true, navigationVisible: true } } : null;
+            }).filter(Boolean);
+        },
+
+        syncPublicOfflineCatalog(modules) {
+            writeAnonymousCatalogCache(Array.isArray(modules) ? modules : []);
+            return this.getPublicOfflineModules();
+        },
+
+        syncPublicOfflineModule(module) {
+            if (!module || module.publicOffline !== true) return this.getPublicOfflineModules();
+            const current = readStoredPublicOfflineCatalog() ?? sanitizePublicOfflineEntries(window.NeutralPublicOfflineModules?.modules || []);
+            const next = current.filter((entry) => entry.id !== module.id);
+            next.push(module);
+            writeAnonymousCatalogCache(next);
+            return this.getPublicOfflineModules();
+        },
 
         getCatalogDiagnostics() {
             return lastCatalogRequest ? Object.freeze({ ...lastCatalogRequest }) : null;

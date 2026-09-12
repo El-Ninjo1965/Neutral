@@ -380,6 +380,7 @@ class AdminModulesView {
       AdminCommon.showAlert(`Install failed: ${result.error}`, 'error');
       return;
     }
+    globalThis.CoreLoader?.syncPublicOfflineModule?.(AdminCommon.unwrapData(result, 'module', null));
     AdminCommon.showAlert(`Module ${moduleId} installed`, 'success');
     await this.reload();
     await this.showDetails(moduleId);
@@ -391,6 +392,7 @@ class AdminModulesView {
       AdminCommon.showAlert(`Activation failed: ${result.error}`, 'error');
       return;
     }
+    globalThis.CoreLoader?.syncPublicOfflineModule?.(AdminCommon.unwrapData(result, 'module', null));
     AdminCommon.showAlert(`Module ${moduleId} activated`, 'success');
     await this.reload();
     await this.showDetails(moduleId);
@@ -402,6 +404,7 @@ class AdminModulesView {
       AdminCommon.showAlert(`Deactivation failed: ${result.error}`, 'error');
       return;
     }
+    globalThis.CoreLoader?.syncPublicOfflineModule?.(AdminCommon.unwrapData(result, 'module', null));
     AdminCommon.showAlert(`Module ${moduleId} deactivated`, 'success');
     await this.reload();
     await this.showDetails(moduleId);

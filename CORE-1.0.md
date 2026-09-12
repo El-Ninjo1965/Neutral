@@ -1,3 +1,7 @@
+## Public/Offline module projection (2026-09-12)
+
+Core besitzt nun einen generischen `publicOffline`-Manifestvertrag. Die lokale Projektion ist versioniert, auf eine feste Metadaten-Allowlist reduziert und wird in dieselbe Registry hydriert; sie ist keine zweite Modullaufzeit. Online-Synchronisierung aktualisiert Aktivierung, ohne den Homepage-Inhalt erneut zu rendern. Permission-sensitive Module und Serveraktionen bleiben außerhalb dieses lokalen Vertrauensbereichs. GPS belegt den Vertrag, ohne GPS-spezifische Verzweigung im Registry-/Loader-Core.
+
 # NEUTRAL – Core 1.0
 
 ## Freeze-Klarstellung 2026-09-11

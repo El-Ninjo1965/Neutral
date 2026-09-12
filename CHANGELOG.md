@@ -1,3 +1,11 @@
+## 2026-09-12 – Offline-first GPS startup architecture recovery
+
+- Added a generic, versioned and sanitized public/offline activation projection and hydrated it into the existing registry before first render.
+- Declared GPS `publicOffline` and removed User RBAC/package/entitlement checks from its local base visibility/use while retaining server authorization and Admin lifecycle control.
+- Reconciled public activation state after server/admin lifecycle responses; corrupt projection data fails closed.
+- Limited catalog completion rendering to navigation/open Settings, preventing delayed discovery from rebuilding Welcome.
+- Kept Profile/Moderation permission-sensitive and retained retryable catalog failure behavior.
+
 ## 2026-09-12 – Production module catalog determinism repair
 
 - Replaced the online anonymous cache/background-refresh split with one authoritative, credentialed catalog request; anonymous cache is now offline fallback only. Catalog failures remain errors and can be retried instead of being converted into an authoritative empty registry.

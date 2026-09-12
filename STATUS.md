@@ -1,4 +1,10 @@
-# Neutral status — production module catalog recovery
+# Neutral status — offline-first startup recovery
+
+**Stand:** 2026-09-12
+**Code status:** Implementiert; vollständige Verifikation/Deployment ausstehend
+**Operator status:** RETEST REQUIRED
+
+GPS wird aus dem generischen, sanitisierten Public/Offline-Aktivierungszustand vor dem ersten Render hydriert. Server-Catalog und Session Restore sind keine Sichtbarkeitsvoraussetzung mehr. Catalog-Sync aktualisiert gezielt Navigation/Settings; Profile und Moderation bleiben permission-sensitiv. Admin-Lifecycle synchronisiert den lokalen Zustand für folgende Starts. Kein Core Freeze.
 
 **Stand:** 2026-09-12
 **Code status:** Local implementation and 553-test suite PASS; deployment pending

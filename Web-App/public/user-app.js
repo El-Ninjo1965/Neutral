@@ -1119,9 +1119,12 @@
   if (window.Core && typeof window.Core.on === 'function') {
     window.Core.on('startup:modules-ready', () => {
       state.discoveryState = 'ready';
+      renderModuleNav();
+      if (state.activeView === 'settings') renderUserSettings();
     });
     window.Core.on('startup:modules-error', () => {
       state.discoveryState = 'error';
+      if (state.activeView === 'settings') renderUserSettings();
     });
   }
 
@@ -1135,6 +1138,10 @@
   }
 
   // First paint and basic navigation do not wait for IndexedDB, auth, network or module discovery.
+  window.CoreLoader?.init?.();
+  window.ModuleManager?.init?.();
+  const publicOfflineModules = window.ModuleManager?.hydratePublicOfflineModules?.() || [];
+  if (publicOfflineModules.length) state.discoveryState = 'ready';
   applyHashRoute();
   window.addEventListener('hashchange', () => { applyHashRoute();renderApp(); });
   if (window.CorePerformance) window.CorePerformance.mark('shell-visible');

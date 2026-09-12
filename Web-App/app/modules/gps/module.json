@@ -7,6 +7,9 @@
   "description": "Neutral location reference module for a current position, accuracy, explicit sharing and an OpenStreetMap view.",
   "entry": "index.js",
   "globalName": "GpsModule",
+  "defaultActivation": "active",
+  "publicOffline": true,
+  "entitlementRequired": false,
   "permissions": [
     {
       "key": "gps.view",

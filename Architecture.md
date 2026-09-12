@@ -1,3 +1,7 @@
+## 2026-09-12 – Implementierter Public/Offline-Modulstart
+
+Der aktuelle Startvertrag trennt zwei Projektionen. Eine versionierte und streng sanitisiert gelesene `public-offline`-Projektion enthält ausschließlich Client-Metadaten administrativ aktiver öffentlicher Offline-Module. Sie wird synchron vor dem ersten User-Render in die bestehende ModuleRegistry hydriert. Der spätere Server-Catalog synchronisiert Lifecycle-Zustand; Fehler sind kein leerer Erfolg. Authentifizierte Profile-/Moderation-Metadaten werden niemals lokal als öffentlicher Fallback persistiert. Lokale Sichtbarkeit verleiht keine Serverrechte. GPS ist die erste Manifestdeklaration dieses generischen Vertrags.
+
 # NEUTRAL – Architektur
 
 ## Aktueller Minimal-Core-/Systemmodul-Vertrag (2026-09-11)

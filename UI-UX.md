@@ -1,3 +1,7 @@
+## Stabiler Offline-First-Start (2026-09-12)
+
+GPS erscheint bei aktivem lokalem Public/Offline-Zustand bereits im ersten stabilen Navigationsrender. Catalog-Synchronisierung aktualisiert ausschließlich Navigation beziehungsweise die gerade offene Settings-Projektion und baut den sichtbaren Welcome-/Homepage-Inhalt nicht erneut auf. GPS bleibt bei Login und Rollenwechsel sichtbar; Profile/Moderation erscheinen weiterhin ausschließlich nach erfolgreicher authentifizierter Projektion.
+
 # NEUTRAL – UI/UX-Zielbild
 
 ## Module discovery and details (2026-09-12)

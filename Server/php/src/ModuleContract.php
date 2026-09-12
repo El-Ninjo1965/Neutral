@@ -71,6 +71,7 @@ final class ModuleContract
         ];
         $normalized['category'] = $category;
         $normalized['entitlementRequired'] = ($manifest['entitlementRequired'] ?? true) !== false;
+        $normalized['publicOffline'] = ($manifest['publicOffline'] ?? false) === true;
         return $normalized;
     }
 

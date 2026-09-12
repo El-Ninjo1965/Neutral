@@ -28,6 +28,17 @@
             this.registry = window.ModuleRegistry;
         },
 
+        hydratePublicOfflineModules() {
+            this.ensureInitialized();
+            const modules = window.CoreLoader?.getPublicOfflineModules?.() || [];
+            for (const module of modules) {
+                if (this.get(module.id)) continue;
+                if (typeof module.enable === 'function') module.enable();
+                this.register({ ...module, status: 'enabled', lifecycleState: 'ACTIVE', active: true, enabled: true, registered: true });
+            }
+            return modules;
+        },
+
         normalizeModule(module) {
             if (!module || typeof module !== 'object') {
                 throw new TypeError('Invalid module definition.');

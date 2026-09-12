@@ -23,7 +23,7 @@ const moduleEntry = {
   version: '1.0.0',
   type: 'module',
   entry: 'index.js',
-  modulePath: '/Web-App/app/modules/gps',
+  modulePath: 'Web-App/app/modules/gps',
   globalName: 'GpsModule',
   permissions: [
     { key: 'gps.view', defaultRoles: [] },
@@ -37,6 +37,7 @@ const moduleEntry = {
   status: 'active',
   lifecycleState: 'ACTIVE',
   active: true,
+  publicOffline: true,
   enabled: true,
   clientAccess: { mode: 'anonymous', canView: true, canUse: true }
 };
@@ -106,7 +107,7 @@ test('successful anonymous catalog is cached and propagates access plus active s
     requestId: 1, mode: 'anonymous', status: 200, durationMs: context.CoreLoader.getCatalogDiagnostics().durationMs, moduleCount: 1
   });
 
-  const cacheKeys = Array.from(storage.seed.keys()).filter((key) => key.startsWith('neutral.module-catalog.anonymous.v1:'));
+  const cacheKeys = Array.from(storage.seed.keys()).filter((key) => key.startsWith('neutral.module-catalog.public-offline.v1:'));
   assert.equal(cacheKeys.length, 1);
   assert.doesNotMatch(storage.seed.get(cacheKeys[0]), /admin\.write|session\.read|cookie|token/i);
 });
@@ -219,7 +220,7 @@ test('first offline load without anonymous cache fails closed', async () => {
   await assert.rejects(context.CoreLoader.discoverExternalModules(), /offline/);
 });
 
-test('authenticated catalog is usable online but never persisted as anonymous fallback', async () => {
+test('authenticated catalog persists only its sanitized public/offline subset', async () => {
   const storage = createStorage();
   const context = loadContext({
     storage,
@@ -235,10 +236,13 @@ test('authenticated catalog is usable online but never persisted as anonymous fa
 
   const modules = await context.CoreLoader.discoverExternalModules();
   assert.equal(modules.length, 1);
-  assert.equal(Array.from(storage.seed.keys()).some((key) => key.startsWith('neutral.module-catalog.anonymous.v1:')), false);
+  const persisted = Array.from(storage.seed.values()).join('\n');
+  assert.match(persisted, /public-offline/);
+  assert.doesNotMatch(persisted, /profile\.view|userId|session|cookie|token/i);
 
   const offline = loadContext({ storage, catalogError: new Error('offline') });
-  await assert.rejects(offline.CoreLoader.discoverExternalModules(), /offline/);
+  const publicFallback = await offline.CoreLoader.discoverExternalModules();
+  assert.deepEqual(Array.from(publicFallback, (module) => module.id), ['gps']);
 });
 
 test('authenticated discovery bypasses a stale anonymous warm-start catalog', async () => {
@@ -304,4 +308,19 @@ test('catalog failure is observable and a later retry succeeds without a page re
   const modules = await context.CoreLoader.discoverExternalModules();
   assert.deepEqual(Array.from(modules, (module) => module.id), ['gps']);
   assert.equal(context.CoreLoader.getCatalogDiagnostics().moduleCount, 1);
+});
+
+test('authoritative deactivation updates the public projection for future offline starts', async () => {
+  const storage = createStorage();
+  const context = loadContext({ storage, catalogResponse: { ok: true, data: { modules: [moduleEntry], accessContext: { mode: 'anonymous' } } } });
+  await context.CoreLoader.discoverExternalModules();
+  assert.deepEqual(Array.from(context.CoreLoader.getPublicOfflineModules(), (module) => module.id), ['gps']);
+  context.CoreLoader.syncPublicOfflineModule({ ...moduleEntry, active: false, enabled: false, status: 'inactive', lifecycleState: 'INACTIVE' });
+  assert.deepEqual(Array.from(context.CoreLoader.getPublicOfflineModules(), (module) => module.id), []);
+});
+
+test('corrupt public projection fails closed without evaluating its entry', () => {
+  const storage = createStorage(new Map([['neutral.module-catalog.public-offline.v1:%2F', JSON.stringify({ schemaVersion: 1, kind: 'public-offline', modules: [{ id: 'gps', version: '1.0.0', entry: '../../evil.js', modulePath: 'Web-App/app/modules/gps', globalName: 'GpsModule', publicOffline: true, active: true }] })]]));
+  const context = loadContext({ storage, catalogResponse: null });
+  assert.deepEqual(Array.from(context.CoreLoader.getPublicOfflineModules()), []);
 });

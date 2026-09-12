@@ -1093,7 +1093,7 @@ test('marks gps permission denied without starting a watcher', { skip: gpsRefere
   assert.equal(geolocationState.watchCalls, 0);
 });
 
-test('blocks gps usage when the current user lacks the module usage permission', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+test('GPS base usage remains local for a user without server module permissions', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   cleanupRuntimeState();
 
   const { sandbox } = createGpsModuleContext({
@@ -1113,19 +1113,20 @@ test('blocks gps usage when the current user lacks the module usage permission',
   sandbox.ModuleManager.enable('gps');
 
   const startResult = gps.startTracking();
-  assert.equal(startResult.ok, false);
-  assert.equal(startResult.code, 'INSUFFICIENT_PERMISSIONS');
-  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
+  assert.equal(startResult.ok, true);
+  const position = await gps.getCurrentPosition();
+  assert.equal(position.latitude, 52.52);
 });
 
-test('anonymous gps usage follows the server-provided client access decision', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
+test('anonymous GPS base usage does not depend on server RBAC projection', { skip: gpsReferenceAvailable ? false : 'GPS reference is not included' }, async () => {
   const { sandbox } = createGpsModuleContext({ currentUser: null, authContext: true });
   const gps = sandbox.GpsModule;
   gps.install();
   gps.enable();
 
   gps.clientAccess = { mode: 'anonymous', canView: true, canUse: false };
-  await assert.rejects(gps.getCurrentPosition(), (error) => error.code === 'INSUFFICIENT_PERMISSIONS');
+  const localPosition = await gps.getCurrentPosition();
+  assert.equal(localPosition.latitude, 52.52);
 
   gps.clientAccess = { mode: 'anonymous', canView: true, canUse: true };
   const position = await gps.getCurrentPosition();

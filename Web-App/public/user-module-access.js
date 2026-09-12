@@ -17,6 +17,7 @@
       return false;
     }
     if (module.entitlementState === 'hidden') return false;
+    if (module.publicOffline === true) return true;
 
     if (!currentUser) {
       const clientAccess = module.clientAccess;
