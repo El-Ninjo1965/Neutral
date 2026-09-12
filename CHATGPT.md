@@ -1,7 +1,7 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Codex → ChatGPT/Lea
-**Status:** OPERATOR UX / MODULE REPAIR IN VERIFIKATION
+**Status:** OPERATOR UX / MODULE REPAIR DEPLOYED / OPERATOR RETEST REQUIRED
 **Core Freeze:** NICHT erklärt
 
 ## Ergebnis
@@ -13,6 +13,10 @@ Profile ist nun navigierbar und öffnet die vorhandene Profile-Settings-Ansicht 
 GPS öffnet Google Maps sicher in einem neuen Tab, teilt einen Google-Maps-Link, zeigt keine separate OSM-Aktion und ordnet Position, Metadaten, Auto-Option, Actions und eingebettete Karte einspaltig. Settings-Erfolg lautet `Successfully saved.`; Fehler sowie destruktive Adminbestätigungen laufen über die zentrale Framework-Komponente.
 
 App/System Modules haben nur eine Überschrift und eine durchgängige scrollbare Tabelle. Appearance hat eingefasste, nacheinander angeordnete Light-/Dark-/Geometrie-/Preview-Bereiche. Sidebar verwendet ein neutrales Light/Dark-Select; Produkt-/Core-Status ist aus dem Navigationskopf entfernt. Das Dashboard nutzt kanonische User-, Session-, Modul-, Rollen-, Package-, License-/Organization- und DB-Daten mit Navigation. Updates heißt wahrheitsgemäß Deployment und zeigt lesbare Buildzeit; Maintenance bleibt getrennt.
+
+## Technische Verifikation
+
+Commit `b737e2c` ist auf `main`. Lokal bestanden 546/546 Tests, JS-Syntax, PHP-Lint, Diff-Check und das 134-Datei-Production-Package. CodeQL `34667988356` sowie FTPS Deploy `34667988682` bestanden terminal einschließlich Tests, Production Package, FTPS-Client, Upload und read-only Production Smoke.
 
 ## Operator-Retest nach Deployment
 

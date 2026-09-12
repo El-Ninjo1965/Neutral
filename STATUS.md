@@ -1,7 +1,7 @@
 # Neutral status — operator UX / module repair
 
 **Stand:** 2026-09-12
-**Code status:** lokal in Verifikation
+**Code status:** `b737e2c` auf `main`; lokal 546/546, CodeQL `34667988356` und FTPS/read-only Smoke `34667988682` bestanden
 **Operator status:** **RETEST REQUIRED**
 **Core Freeze:** nicht erklärt
 

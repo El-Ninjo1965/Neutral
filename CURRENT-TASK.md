@@ -1,6 +1,6 @@
 # CURRENT TASK – OPERATOR UX / MODULE REPAIR
 
-**Status:** IN ARBEIT
+**Status:** DEPLOYED / OPERATOR RETEST REQUIRED
 **Datum:** 2026-09-12
 **Quelle:** aktueller Betreiberauftrag in `CODEX.md`
 
@@ -18,6 +18,6 @@
 - [x] Updates-Ansicht wahrheitsgemäß beschriften, Zeiten lesbar machen und Core-/Modul-/Maintenance-Grenzen wahren.
 - [x] Moderation/Postbox geprüft und mangels belegter kleiner Root Cause auf die angeordnete Folgeprüfung begrenzt; keine fachliche Erweiterung.
 - [x] Für jede Korrektur Verhaltenstests ergänzen; Vollsuite, Syntax, Lint, Diff und Production Package ausführen.
-- [ ] Wahrheitsgemäße Dokumentation, Commit/Push, CodeQL, FTPS-Deployment und read-only Production Smoke terminal prüfen.
+- [x] Wahrheitsgemäße Dokumentation, Commit/Push, CodeQL, FTPS-Deployment und read-only Production Smoke terminal geprüft (CodeQL `34667988356`, FTPS/Smoke `34667988682`).
 
 Operator-Retest bleibt für alle sichtbaren Live-Interaktionen erforderlich. Kein Core Freeze.
