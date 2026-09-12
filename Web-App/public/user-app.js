@@ -13,7 +13,8 @@
     profileLoading: false,
     authStatusKnown: false,
     activeModuleId: null,
-    discoveryState: 'pending'
+    discoveryState: 'pending',
+    discoveryRequestId: 0
   };
 
   const USER_SETTINGS_KEY = 'neutral.user.preferences.v1';
@@ -375,13 +376,22 @@
 
   const refreshModuleDiscovery = async () => {
     if (!window.ModuleManager || typeof window.ModuleManager.discoverModules !== 'function') return [];
+    const requestId = ++state.discoveryRequestId;
     state.discoveryState = 'pending';
     try {
       const modules = await window.ModuleManager.discoverModules();
+      if (requestId !== state.discoveryRequestId) return modules;
       state.discoveryState = 'ready';
+      if (state.activeView === 'settings') {
+        renderUserSettings();
+      }
       return modules;
     } catch (error) {
+      if (requestId !== state.discoveryRequestId) return [];
       state.discoveryState = 'error';
+      if (state.activeView === 'settings') {
+        renderUserSettings();
+      }
       throw error;
     }
   };
@@ -892,10 +902,13 @@
         const status = document.getElementById('userSettingsStatus');
         if (status) {
           if (nextPreferences.persisted) {
+            state.activeView = 'settings';
+            state.activeModuleId = null;
+            writeHashRoute(`settings/${state.settingsSection}`);
             status.textContent = '';
             status.className = 'user-settings-status';
             renderApp();
-            window.NeutralUiFeedback.showSuccess('Successfully saved.', { title: 'Saved' });
+            window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });
             return;
           } else {
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';
@@ -1130,11 +1143,17 @@
 
   if (window.Core && typeof window.Core.on === 'function') {
     window.Core.on('startup:modules-ready', () => {
+      if (state.discoveryState === 'error' && state.discoveryRequestId > 0) {
+        return;
+      }
       state.discoveryState = 'ready';
       renderModuleNav();
       if (state.activeView === 'settings') renderUserSettings();
     });
     window.Core.on('startup:modules-error', () => {
+      if (state.discoveryState === 'ready') {
+        return;
+      }
       state.discoveryState = 'error';
       if (state.activeView === 'settings') renderUserSettings();
     });

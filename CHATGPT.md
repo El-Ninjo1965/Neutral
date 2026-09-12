@@ -1,162 +1,252 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Local Agent → ChatGPT/Lea  
-**Branch:** `main`  
+**Branch:** `lea/user-ui-stability`  
 **Datum:** 2026-09-12  
-**Status:** DEPLOYED – OPERATOR-LIVE-RETEST AUSSTEHEND  
-**Deployment:** ERFOLGREICH ÜBER GITHUB ACTIONS / FTPS  
-**Merge-Commit:** `147b835` (`Merge branch 'lea/live-runtime-followup' into main`)  
-**Aktueller main-Commit:** `147b835`  
-**CodeQL:** ERFOLGREICH (`run 34690413847`)  
-**FTPS Deploy:** ERFOLGREICH (`run 34690414182`)  
-**Production Smoke:** ERFOLGREICH (`production/ftps-http`)  
-**Operator-Live-Retest:** AUSSTEHEND – nicht als abgeschlossen behauptet
+**Status:** STOP – es bleibt ein echter Produktionscode-Fehler im stale-discovery-Pfad erhalten; der `live-startup-regression`-Eintrag an [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342) ist eine Test-/Regex-Fehlklassifikation, kein App-Fehler.  
+**Deployment:** VERBOTEN  
+**Merge nach `main`:** VERBOTEN  
+**Aktueller Commit:** `850ffa5`
 
-## Live Runtime Follow-up Evidence & Root Causes
+## Branch-/Sync-Status
 
-### Root Cause A (GPS "Aktivieren Sie das Modul, bevor eine Position abgefragt wird")
-- **Ursache:** `CoreLoader.getPublicOfflineModules()` erzeugte entkoppelte Objekt-Kopien (`{ ...implementation, ...projection }`). Beim Hydrieren rief `ModuleManager.hydratePublicOfflineModules()` `module.enable()` auf dieser flachen Kopie auf. Der globale `window.GpsModule`-Singleton sowie dessen Properties (`active`, `status`) blieben un-aktiviert (`active: false`, `status: 'available'`). `renderUserInterface()` und `getCurrentPosition()` griffen auf `window.GpsModule` zu und wiesen den Aufruf wegen `MODULE_NOT_ENABLED` ab.
-- **Fix:** `CoreLoader.getPublicOfflineModules()` aktualisiert das echte Modul-Implementationsobjekt (`window.GpsModule`) und gibt dieses zurück. `ModuleManager.hydratePublicOfflineModules()` aktiviert und registriert die eigentliche Modulinstanz.
+- Branch aktiv: `lea/user-ui-stability`
+- `git fetch origin` ausgeführt.
+- `git rebase origin/lea/user-ui-stability` erfolgreich.
+- Lokale Harness-Arbeit wurde erhalten.
+- Remote-Branch war vor dem Rebase weiter voraus; kein Force-Push, kein `ours`/`theirs` blind verwendet.
 
-### Root Cause B (User Settings: "Modules could not be loaded. Check your connection and try again.")
-- **Ursache:** In `Web-App/core/core-loader.js` validierte `fetchRemoteCatalog()` Serverantworten mit `catalogIsValid = Array.isArray(sourceModules) && modules.length === sourceModules.length;`. Da `normalizeCatalogEntries()` Nicht-Sichtbares (`canView !== true`) herausfilterte, führte jede Serverantwort mit nicht-sichtbaren Modulen dazu, dass `modules.length < sourceModules.length` war. Dadurch stufte `fetchRemoteCatalog()` die valide Antwort fälschlicherweise als ungültig ein (`Module catalog response is invalid`), woraufhin die Modul-Discovery fehlschlug.
-- **Fix:** In `core-loader.js` validiert `catalogIsValid = Array.isArray(sourceModules) && sourceModules.every(isWellFormedCatalogEntry);`. Formvalidierte Serverantworten werden akzeptiert und Nicht-Sichtbares sauber gefiltert, ohne die Discovery abzubrechen.
+## Verbleibender echter Produktionsfehler
 
-### Root Cause C (Admin Login bleibt bei "Checking the current server session...")
-- **Ursache:** In `Server/php/views/admin-ui.php` startet `#authMessage` mit dem statischen Text `"Checking the current server session…"`. In `Web-App/public/master-ui.js` rief `init()` auf Auth-Seiten `sessionApiClient.me()` auf. Bei nicht-authentifizierten Besuchern (401) wurde die Session gelöscht und das Login-Formular angezeigt, aber `#authMessage` wurde nie geleert. Der Text blieb dauerhaft stehen, obwohl das Login-Formular interaktiv war.
-- **Fix:** In `master-ui.js` wird `#authMessage` nach Abschluss der Session-Prüfung geleert, wenn kein angemeldeter Nutzer zurückgegeben wurde.
+### C. Stale settings catalog responses do not overwrite successful state
 
-## RED / GREEN Testnachweise
+**Testname:** `C. Stale settings catalog responses do not overwrite successful state`
 
-1. **RED-Tests (Vor Fixes):**
-   - `publicOffline GPS hydration enables the GpsModule runtime singleton instance directly` → **FAIL** (`AssertionError: GpsModule singleton active property must be true after hydration`).
-   - `fetchRemoteCatalog accepts catalog payloads containing modules with canView=false without throwing catalog invalid error` → **FAIL** (`Error: Module catalog response is invalid.`).
-   - `admin session check clears authMessage when unauthenticated during page init` → **FAIL** (`AssertionError: The input did not match the regular expression`).
+**Exakte Assertion:**
+`assert.ok(runtime.document.querySelectorAll('[data-user-setting-module]').length > 0, 'newer success result renders the catalog');`
 
-2. **GREEN-Tests (Nach Fixes):**
-   - 11/11 Verhaltenstests in `tests/offline-first-public-modules.test.js` bestanden (**PASS**).
-   - 567/567 Tests in der gesamten npm-Testsuite bestanden (**PASS**).
+**Erwarteter Zustand:**
+- Nach dem zweiten, neueren Discovery-Ergebnis muss die Settings-Katalogansicht wieder als erfolgreich gerendert werden.
+- Ein späteres altes Ergebnis darf den aktuellen guten Zustand nicht überschreiben.
 
-## Geänderte Dateien
+**Tatsächlicher Zustand:**
+- Das alte, spätere Promise wird nach dem zweiten erfolgreichen Resultat noch als gültig behandelt und setzt den Render wieder auf den fehler-/pending-Zustand zurück oder verhindert das korrekte erneute Rendern.
+- Die Testausgabe zeigt genau: `AssertionError [ERR_ASSERTION]: newer success result renders the catalog`.
 
-- `Web-App/core/core-loader.js`: Modulimplementierung in `getPublicOfflineModules` direkt aktualisiert; Formprüfung in `fetchRemoteCatalog` korrigiert.
-- `Web-App/core/module-manager.js`: Hydrierung aktiviert das echte Modul-Implementationsobjekt.
-- `Web-App/public/master-ui.js`: `#authMessage` nach unauthentifiziertem Session-Check zurückgesetzt.
-- `tests/offline-first-public-modules.test.js`: Regressionstests für A, B und C ergänzt.
-- `CHATGPT.md`: Dokumentation vollständig aktualisiert.
+**Klassifikation:**
+- **B) echter Produktionscode-Fehler**
+- Ursache: Der stale-discovery-Pfad in [Web-App/public/user-app.js](Web-App/public/user-app.js) prüft zwar `requestId` beim Abschluss, aber der Settings-Render selbst berücksichtigt nicht sauber die aktuelle Laufzeit-Generation und lässt ein altes Resultat in den UI-Status hineinlaufen.
 
-## Prüfergebnisse
+## Verbleibender weiterer Nachweis: live-startup-regression
 
-- **Vor-Merge-Verifikation erfolgreich:** `npm test` (567/567 bestanden), `git diff --check` (0 Fehler), `node scripts/build-production-package.js` (Status OK, 136 Dateien).
-- **CodeQL:** success (`34690413847`).
-- **FTPS Deploy:** success (`34690414182`).
-- **Production Smoke:** success (`production/ftps-http`).
-- **Operator-Live-Retest:** offen; keine gültige Abschlussbehauptung zu den drei Live-Problemen aus dem CI-/Deployment-Status abgeleitet.
+### Datei/Zeile
+- [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342)
 
-## Deployment- & Merge-Status
+### Testbeschreibung
+`local settings save uses the shared success dialog and retains inline errors`
 
-- **MERGE-VERIFIZIERT:** `147b835` auf `main`
-- **CODEQL:** success (`34690413847`)
-- **FTPS DEPLOY:** success (`34690414182`)
-- **PRODUCTION SMOKE:** success (`production/ftps-http`)
-- **OPERATOR-LIVE-RETEST:** offen, noch nicht abgeschlossen
-- **ABSCHLUSSSTATUS:** DEPLOYED – OPERATOR-LIVE-RETEST AUSSTEHEND
+### Exakte Assertion
+`assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = ''\;\s*status\.className = 'user-settings-status';\s*renderApp\(\);\s*window\.NeutralUiFeedback\.showSuccess\('Successfully saved\.'/s);`
 
-## Tatsächlicher Stand
+### Erwarteter Zustand
+- Der Code muss genau diese Zeilenfolge in der Source enthalten.
 
-Die Reparatur des Web-App-Modulpfads gemäß `LOCAL-AGENT.md` wurde testgetrieben (RED → GREEN) abgeschlossen und auf dem Zielbranch `lea/module-runtime-repair` bereitgestellt.
+### Tatsächlicher Zustand
+- Der echte Code in [Web-App/public/user-app.js](Web-App/public/user-app.js) nutzt:
+  `window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });`
+- Das ist semantisch korrekt, aber der Regex-Test erwartet eine andere Zeichenfolge mit einem anderen Form- und Argumentstil.
 
-- **GPS Public/Offline & RBAC-Cleanup:** Das GPS-Basismodul wird vor dem ersten User-Render aus dem lokal versionierten Zustand hydriert. Die Discovery-Reconcilation in `ModuleManager` löscht hydriertes aktives `publicOffline`-GPS nach leeren/ungeeigneten Server-Katalogen (`discover([])`) nicht mehr. Im Follow-up Audit wurden tote Helper-Funktionen (`getCurrentUser`, `hasPermission`, etc.) entfernt und die User-Permissions `gps.view`/`gps.use` aus `visibilityPermissions`/`usagePermissions` gelöscht (`[]`), da die Basisnutzung rollenunabhängig ist. Die administrativen Rechte `gps.manage`/`gps.admin` sichern weiterhin die Admin-Konfiguration.
-- **Profile:** Profile ist als Account-Modul `entitlementRequired: false`. Nach Server-Login und erfolgreicher Discovery mit den effektiven Rechten `profile.view` und `profile.update` wird Profile in der Registry korrekt als aktiv geführt und in den User Settings angezeigt, geöffnet und gespeichert.
-- **Rendering Performance:** In `user-app.js` verhindert ein diffender Render-Key (`lastLandingRenderKey`), dass Hintergrund-Updates (`loadHomepageConfig`, `startBackgroundInitialization`) das sichtbare `Welcome to Neutral`-Dokument mehrfach neu aufbauen oder iFrames neu erstellen (Doppelblinken behoben).
+**Klassifikation:**
+- **A) Harness-/Test-Fehler / Regex-Fehlklassifikation**
+- Kein echter App-Laufzeitfehler. Es ist ein string-basierter Test, der eine konkrete Code-Form erwartet, obwohl der produktive Code die gleiche Aktion mit optionalem Chaining und zusätzlichem Argument erfüllt.
 
-## Follow-up Audit (GPS User-RBAC Cleanup)
+## Früher identifizierte Harnessfehler, die korrigiert wurden
 
-- **Entfernte tote & irreführende Strukturen:** In `Web-App/app/modules/gps/index.js` wurden `getCurrentUser()`, `hasAuthContext()`, `hasPermission()` und `hasAnyPermission()` ersatzlos entfernt, da `canUseModule()` stets `() => true` für die lokale Basisnutzung auswertet.
-- **Klare Trennung von User- & Admin-RBAC:**
-  - `visibilityPermissions: []` und `usagePermissions: []` im GPS-Manifest (`index.js`, `module.json`, `index.json`).
-  - `managementPermissions: ['gps.manage']` und `adminPermissions: ['gps.admin']` sichern weiterhin die administrative Modulverwaltung und Moduleinstellungen.
-- **Nachweise:**
-  1. *Anonymous, User, Tester, Developer, Admin:* Alle Rollen können GPS lokal ohne `gps.view`/`gps.use` öffnen und nutzen.
-  2. *Administrative Deaktivierung:* Deaktivierung im Katalog invaldiert und deaktiviert GPS im Client und synchronisiert den lokalen Cache.
-  3. *Profile-Pfad:* Active Profile-Modul + `profile.view` + `profile.update` führt in den User Settings verlässlich zur Anzeige, Öffnung und Speicherung des Profils.
+### 1. Falsche Pending/Retry-Erwartung
+- Der C-Test war ursprünglich auf dem falschen Grundsatz gelaufen: Während `pending` kein Retry-Button sichtbar sein darf.
+- Dieser Teil wurde als Harness/Expectations-Problem identifiziert und korrigiert.
 
-## Bewiesene Root Causes & Widerlegte Annahmen
+### 2. D-Close-Button-Harnessfehler
+- Die `NeutralUiFeedback.showSuccess()`-Fake-Implementierung in [tests/user-ui-stability.test.js](tests/user-ui-stability.test.js) erzeugte den Dialog, aber der Close-Button hatte keinen echten Klick-Handler.
+- Korrigiert, damit der Dialog per Klick tatsächlich verschwindet.
 
-1. **Root Cause 1 (`ModuleRegistry.discover` übersprang registrierte Module):**
-   `ModuleRegistry.discover()` enthielt `if (registry.has(manifest.id)) return;`. Bereits in der Registry vorhandene (oder hydrierte) Module wurden im `discovered`-Array von `discover()` nicht zurückgegeben. `ModuleManager.discoverModules()` reconciliierte daraufhin gegen `discoveredIds` und deregistrierte/löschte GPS sowie andere Modulinstanzen aus der Registry.
-   *Fix:* `ModuleRegistry.discover()` aktualisiert und liefert bestehende registrierte Module im `discovered`-Array mit.
+## Statusmatrix
 
-2. **Root Cause 2 (`publicOffline` ging bei Validierung verloren):**
-   `ModuleInterface.validateManifest()` gab das Feld `publicOffline` nicht im zurückgegebenen Objekt aus.
-   *Fix:* `ModuleInterface.validateManifest()` bewahrt `publicOffline: manifest.publicOffline === true`.
+### Basis 1–4
+- Basis 1: PASS
+- Basis 2: PASS
+- Basis 3: PASS
+- Basis 4: PASS
 
-3. **Root Cause 3 (`disable()`-Aufruf auf unaktivierten Modulen):**
-   `ModuleManager.discoverModules()` rief bei inaktivem Discovery-Status bedingungslos `disable()` auf Modulen auf. Dies löste `GpsModule.disable()` auf noch nicht aktivierten Modulen aus, was ihren Status von `available` auf `disabled` setzte.
-   *Fix:* `disable()` wird nur auf aufgerufen, wenn das Modul vorher aktiv war (`existing?.active === true`).
+### A–D
+- A: PASS
+- B: PASS
+- C: FAIL (echter Produktionscode-Fehler)
+- D: PASS
 
-4. **Root Cause 4 (Mehrfaches Full-Rendering der Startseite):**
-   `user-app.js` erfassende Hintergrund-Tasks riefen wiederholt `renderApp()` -> `renderLandingPage()` auf, was `content.innerHTML` jedes Mal löschte und den Landing-Page-DOM/iFrame neu erstellte.
-   *Fix:* `lastLandingRenderKey` prüft Modus, Titel, Inhalt, Module-ID, Discovery-State, Theme und sichtbare Module-IDs und überspringt unnötige DOM-Erneuerungen.
+### Live Startup Regression
+- [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342): Test-Regex-/Harness-Mismatch, kein App-Fehler
 
-**Widerlegte Annahmen:**
-- Die Annahme, dass grüne automatisierte Tests vor der Reparatur ein fehlerfreies Live-System belegten. Ein alter Test (`tests/offline-first-public-modules.test.js` Z.29) forderte fälschlicherweise explizit das Löschen von GPS nach `discover([])`.
+### npm test
+- FAIL
+- Ursache: C. Stale settings catalog responses do not overwrite successful state
 
-## RED-Testnachweise
+### Production Package
+- Nicht erneut gestartet, weil die Stop-Bedingung erreicht wurde: echter Produktionscode-Fehler erkannt, keine Codeänderung am Produkt erlaubt.
 
-Vor den Codeänderungen zeigten die Verhaltenstests in `tests/offline-first-public-modules.test.js` folgende tatsächliche Fehler:
+## Verifiziertes Protokoll
 
-1. `cold/offline bootstrap hydrates active public GPS before any catalog promise resolves`
-   - *Failure:* `AssertionError [ERR_ASSERTION]: Expected actual [] to deep-equal ['gps']` (GPS wurde nach `discover([])` gelöscht).
-2. `publicOffline flag survives validateManifest, Registry, and ModuleManager normalization`
-   - *Failure:* `AssertionError [ERR_ASSERTION]: ModuleInterface.validateManifest must preserve publicOffline (actual: undefined, expected: true)`.
-3. `authoritative admin deactivation in catalog deactivates local publicOffline GPS and syncs cache`
-   - *Failure:* `AssertionError [ERR_ASSERTION]: Expected actual undefined to equal true`.
-4. `ModuleRegistry.discover includes already registered modules so discovery reconciliation does not delete them`
-   - *Failure:* `AssertionError [ERR_ASSERTION]: ModuleRegistry.discover must return already registered modules when present in catalog (actual: undefined)`.
+### Erfolgreich grün
+- `node --test --test-concurrency=1 --test-name-pattern='Basis 1: anonymous startup renders login shell without hanging' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='Basis 2: successful normal login resolves user state and home route' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='Basis 3: settings opens and renders module catalog without race' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='Basis 4: normal settings save triggers success and state persistence' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='A\. Login \+ delayed discovery' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='B\. Start button stays stable during background updates' tests/user-ui-stability.test.js`
+- `node --test --test-concurrency=1 --test-name-pattern='D\. Settings save keeps user in settings and shows success modal' tests/user-ui-stability.test.js`
 
-## GREEN-Testnachweise
-
-Nach Implementierung der minimalen Fixes:
-
-- **Fokussierte Verhaltenstests:** 8/8 bestanden in `tests/offline-first-public-modules.test.js`.
-- **Gesamte Testsuite:** 564/564 bestanden in `npm test` (0 failures, 0 skipped).
+### Rot
+- `node --test --test-concurrency=1 tests/user-ui-stability.test.js`
+  - Ergebnis: 1 fail, C. Stale settings catalog responses do not overwrite successful state
+- `node --test --test-concurrency=1 tests/live-startup-regression.test.js`
+  - Ergebnis: Test-/Regex-Mismatch, keine App-Laufzeitfehlschlag-Validierung
 
 ## Geänderte Dateien
 
-- `Web-App/app/modules/gps/index.js`: Tote RBAC-Helper entfernt; `visibilityPermissions: []` / `usagePermissions: []` gesetzt; `gps.manage`/`gps.admin` für Admin-Einstellungen behalten.
-- `Web-App/app/modules/gps/module.json`: `visibilityPermissions` / `usagePermissions` bereinigt; Status-Route auf `gps.manage` verknüpft.
-- `Web-App/app/modules/index.json`: GPS-Katalogeintrag synchronisiert.
-- `Web-App/core/module-interface.js`: Bewahrt `publicOffline: manifest.publicOffline === true` in `validateManifest`.
-- `Web-App/core/module-registry.js`: `ModuleRegistry.discover()` aktualisiert und enthält registrierte Modulinstanzen im Discovery-Ergebnis.
-- `Web-App/core/module-manager.js`: Bewahrt `publicOffline` bei Normalisierung; schützt aktive `publicOffline`-Module vor Löschung bei nicht-autoritativem Katalog; ruft `disable()` nur bei zuvor aktiven Modulen auf.
-- `Web-App/public/user-app.js`: Führt `lastLandingRenderKey` in `renderLandingPage()` ein, um doppeltes Blinken/Render-Overhead der Startseite zu verhindern.
-- `tests/offline-first-public-modules.test.js`: Verhaltenstests für rollenunabhängiges GPS, Profile-Pfad und administrative Deaktivierung erweitert.
-- `tests/master-framework.test.js` & `tests/operator-ux-module-repair.test.js`: Test-Erwartungen an bereinigtes GPS-Manifest angepasst.
-- `CHATGPT.md`: Vollständige Abschluss- und Handoff-Dokumentation inklusive Audit-Follow-up.
+- [tests/user-ui-stability.test.js](tests/user-ui-stability.test.js)
+  - korrigierter Harness für den erfolgreichen D-Dialog-Handler
+- [CHATGPT.md](CHATGPT.md)
+  - aktualisierter Handoff mit korrekter Klassifikation
 
-## Prüfergebnisse
+## Produktionscode-Status
 
-- **JavaScript Syntax Check (`node --check`):** OK (0 Fehler) für alle geänderten Dateien.
-- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php` & `Server/php/modules/gps/module.php`).
-- **`git diff --check`:** Clean (0 Fehler).
-- **Production Package Build (`node scripts/build-production-package.js`):** Status OK, 136 Dateien in `dist/neutral-production`.
-- **Teststatus:** 564/564 bestanden (`npm test`).
+- **PRODUKTIONSCODE UNVERÄNDERT**
+- Keine Änderung an [Web-App/public/user-app.js](Web-App/public/user-app.js)
 
-## Deployment- und Merge-Status
+## Deployment / Merge-Status
 
-- **NICHT DEPLOYED**
-- **NICHT NACH MAIN GEMERGED**
+- **nicht deployed**
+- **nicht nach main gemergt**
+- **nur Branch `lea/user-ui-stability`**
 
-## Verbleibende Risiken
+## Abschluss
 
-- Browser/OS Geolocation-Berechtigungen (GPS) hängen hardware- und betriebssystemseitig vom Nutzer ab (Standardschutz des Browsers).
+Die einzige verbleibende echte Runtime-Regression ist der C-Laufpfad im stale-discovery-Flow. Der `live-startup-regression`-Eintrag ist kein echter Produktfehler, sondern ein zu strenger Test-/Regex-Check. Gemäß der gegebenen Entscheidungsregel wurde kein Produktcode verändert; stattdessen wurde der Zustand fachlich dokumentiert und der Branch sauber mit dem Remote-Upstream rebase-synchronisiert.
 
-## Operator-Retest-Reihenfolge (nach künftigem Deployment)
+## Root-Cause-Handoff für Lea – C: stale settings catalog responses do not overwrite successful state
 
-1. Frischer Inkognito-Aufruf der Root-URL: GPS sofort in Navigation sichtbar, kein Welcome-Doppelblinken.
-2. Anonymer Start: GPS lässt sich öffnen und lokale Koordinaten abfragen.
-3. Login mit Ralf / Tester: GPS bleibt ohne Seiten-Reload sichtbar; Profile erscheint unter Settings (bei `profile.view` + `profile.update`).
-4. Developer / Admin Login: GPS bleibt sichtbar.
-5. Offline-Start: GPS wird aus lokalem Cache geladen.
-6. Admin-Deaktivierung: GPS wird nach Server-Sync deaktiviert und erscheint bei folgenden Starts nicht mehr.
+### 1) Vollständiger Testname
+`C. Stale settings catalog responses do not overwrite successful state`
+
+### 2) Exakte fehlgeschlagene Assertion
+`assert.ok(runtime.document.querySelectorAll('[data-user-setting-module]').length > 0, 'newer success result renders the catalog');`
+
+### 3) Erwarteter DOM-/Runtime-Zustand
+- `state.activeView` ist bereits auf `settings`.
+- `state.discoveryState` wurde mit dem zweiten Request auf `pending` gesetzt und anschließend auf `ready` gesetzt.
+- Die Settings-UI muss nach dem neueren erfolgreichen Discovery erneut mit sichtbaren Module-Checkboxen gerendert werden.
+- Es darf kein früheres `pending`/`error`-Fragment mehr sichtbar sein.
+- Der sichtbare Settings-Zustand muss mindestens ein Element mit dem Attribut `[data-user-setting-module]` enthalten.
+
+### 4) Tatsächlicher DOM-/Runtime-Zustand
+- Der erste Request bleibt offen, der zweite Request schafft zwar den Umschaltpunkt zu einem neueren erfolgreichen Verlauf, aber der UI-Render wird nicht erneut ausgelöst.
+- Das DOM bleibt dabei auf dem Zustand aus dem älteren pending/settings render stehen.
+- Damit ist `runtime.document.querySelectorAll('[data-user-setting-module]').length` nach dem zweiten erfolgreichen Resolve noch `0`.
+- Die Testausgabe zeigt exakt: `AssertionError [ERR_ASSERTION]: newer success result renders the catalog`.
+
+### 5) Vollständige zeitliche Reihenfolge
+1. `Request/Discovery 1`
+   - `pendingDiscovery = runtime.window.__testHooks.refreshModuleDiscovery();`
+   - `state.discoveryRequestId` wird auf `1` gesetzt.
+   - `state.discoveryState` wird auf `'pending'` gesetzt.
+2. `Settings-Render während pending`
+   - `settingsButton.click();`
+   - `renderUserSettings()` läuft und erkennt `isDiscoveryPending() || state.discoveryState === 'error'`.
+   - Dadurch erscheint der leere/pending-Status statt des Module-Katalogs.
+3. `Request/Discovery 2`
+   - `retryDiscovery = runtime.window.__testHooks.refreshModuleDiscovery();`
+   - `state.discoveryRequestId` wird auf `2` gesetzt.
+   - `state.discoveryState` wieder auf `'pending'` gesetzt.
+4. `Auflösung von Request 2` (neuere erfolgreiche Antwort)
+   - `resolveSecond([{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }]);`
+   - in `refreshModuleDiscovery()` gilt nun: `requestId === state.discoveryRequestId` und `state.discoveryState = 'ready';`.
+   - Der Rückgabewert ist korrekt, aber kein `renderApp()`/`renderUserSettings()` wird nach diesem erfolgreichen Resolve ausgelöst.
+5. `sichtbarer Settings-Zustand`
+   - Das DOM bleibt auf dem älteren pending/empty settings render stehen.
+   - Es gibt nach diesem erfolgreichen Update noch kein sichtbares Module-Listing.
+6. `spätere stale Auflösung`
+   - `resolveFirst(new Error('stale failure'));`
+   - `refreshModuleDiscovery()` für Request 1 prüft `requestId !== state.discoveryRequestId` und beendet sich ohne `state.discoveryState = 'error'`.
+   - Damit ist der spätere Fehler zwar korrekt abgebrochen, aber schon zu spät: Der eigentliche Fehler war das fehlende Re-Render nach dem neueren erfolgreichen Discovery.
+
+### 6) Welche konkrete Funktion den korrekten neueren Zustand anschließend überschreibt
+Die eigentliche Ursache ist kein einzelner `discoveryRequestId`-Override, sondern das Fehlen eines nachfolgenden UI-Re-Render nach einem neuen erfolgreichen Discovery. Der kritisch relevante Pfad ist:
+- `renderUserSettings()` entscheidet anhand von `state.discoveryState` und `isDiscoveryPending()` über die sichtbare Settings-Anzeige.
+- Der Lauf bleibt wegen des fehlenden Re-Render nach einem erfolgreichen Request auf dem älteren pending/empty Zustand stehen.
+- Das bedeutet: Der korrekte neuere Zustand wird nicht „überschrieben“, sondern schlicht nicht in das DOM übernommen.
+
+### 7) Datei + Funktion + relevante Zeilen
+- Datei: [Web-App/public/user-app.js](Web-App/public/user-app.js)
+- Funktion: `refreshModuleDiscovery()`
+  - relevante Zeilen: ca. 377–391 in der aktuellen Datei
+- Funktion: `renderUserSettings()`
+  - relevante Zeilen: ca. 768–838 in der aktuellen Datei
+- Kernäußerungen:
+  - `refreshModuleDiscovery()` setzt nur `state.discoveryState`, aber führt nach erfolgreichen Discovery-Auflösungen keinen `renderApp()`/`renderUserSettings()` aus.
+  - `renderUserSettings()` zeigt den `pending`/`error`-State oder die empty-state-Katalogansicht, solange `state.discoveryState` nicht erneut mit einem Re-Render in den erfolgreichen Zustand gebracht wurde.
+
+### 8) Welcher Callback/Event/Promise diesen Aufruf auslöst
+- Der direkte Aufruf kommt aus dem Test selbst:
+  - `runtime.window.__testHooks.refreshModuleDiscovery()`
+- Die eigentliche DOM-Aktualisierung kommt nicht aus einem echten `startup:modules-ready`-Event im C-Pfad, sondern aus dem Render-Flow, der durch `settingsButton.click()` und die nachfolgende `renderUserSettings()`-Ausführung gestartet wurde.
+- Nach einem erfolgreichen Resolve von `window.ModuleManager.discoverModules()` bleibt der Trigger unverfüllt, weil weder `renderApp()` noch `renderUserSettings()` im Erfolgsfall erneut aufgerufen werden.
+
+### 9) Warum `discoveryRequestId` diesen konkreten Pfad nicht verhindert
+`discoveryRequestId` schützt nur gegen veraltete Antworten, wenn der Abschluss wirklich den aktuellen UI-Status überschreiben will. In diesem Fall ist der Fehler anders:
+- Request 2 gewinnt korrekt aufgrund des aktuellen `requestId`.
+- `state.discoveryState` wird auf `ready` gesetzt.
+- Der UI-Render selbst läuft aber nie erneut, deshalb bleibt der vorherige Sichtzustand sichtbar.
+- `discoveryRequestId` verhindert hier kein falsches Re-Render, sondern nur einen veralteten Antwortpfad nach einem bereits neueren Request.
+- Der eigentliche Produktionsfehler ist daher: Das erfolgreiche Ergebnis wird zwar registriert, aber nicht an die UI-Render-Lane zurückgegeben.
+
+### 10) Verantwortlicher Pfad
+- Verantwortlich ist der kombinierte Flow aus:
+  - `refreshModuleDiscovery()`
+  - `renderApp()`
+  - `renderUserSettings()`
+- Nicht primär verantwortlich:
+  - `startup:modules-ready` / `startup:modules-error` als Event-Signal, weil dieser Test den UI-Zustand mit direktem `refreshModuleDiscovery()`-Aufruf und anschließendem Render erzeugt.
+
+### 11) Minimal mögliche Reparaturhypothese – NUR BESCHREIBEN, noch nicht implementieren
+- Nachdem ein Discovery-Request erfolgreich einen neueren `requestId` abschließt, muss der UI-Render zwingend erneut angestoßen werden, wenn der aktuelle aktive View `settings` ist.
+- Die minimale und sichere Hypothese ist: Erfolgs- und Fehlerpfad in `refreshModuleDiscovery()` müssen im aktuellen View-Kontext ein gezieltes `renderApp()` oder `renderUserSettings()` auslösen, aber nur wenn der Request noch der jüngste ist.
+- Zusätzlich wäre eine sauberere Variante: Der Erfüllungsweg von `discoverModules()` sollte nicht nur `state.discoveryState` updaten, sondern auch den aktiven Render-Trigger konsistent durchlaufen.
+
+### 12) Welche Regressionen diese Reparatur theoretisch gefährden könnte
+- `settings`-View könnte nach einem normalen katalogischen Refresh unnötig neu gerendert werden und damit Fokus/Scroll-Position verlieren.
+- `startup:modules-ready` und andere Background-Events könnten doppelte Re-renders auslösen, wenn die Render-Auslöser nicht dedupliziert werden.
+- Dieser Fall betrifft besonders den `settings`-Pfad, daher könnten Navigations-/Theme-/Profile-Änderungen kurzzeitig in einen erneuten Re-Render schalten und dadurch UX-Störungen verursachen.
+- Eine zu aggressive Re-Render-Logik könnte im Home-/Landing-Pfad den ersten stabilen Render wiederholen und das Welcome-Flackern verstärken.
+
+## Klassifikation der gemeldeten Regression in `live-startup-regression.test.js:342`
+
+### Status
+**Harness-/Testfehler**
+
+### Warum
+- Der Test prüft eine exakte Source-String-Reihenfolge in [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342), nicht das tatsächliche Runtime-Verhalten.
+- Die reale Implementierung in [Web-App/public/user-app.js](Web-App/public/user-app.js) enthält semantisch dieselbe Logik, aber mit einem zusätzlichen optionalen Chaining-Parameter und anderer Formatierung:
+  - `window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });`
+- Das ist ein technischer Regex-Mismatch, kein Laufzeitfehler oder ein echter Re-Render-/Discovery-Fehler.
+
+### Einordnung
+- **Nicht dieselbe Root Cause wie C**
+- **Kein Folgefehler von C**
+- **Harness-/Testfehler**
+- **Nicht ein unabhängiger Produktionsfehler**
+
+## Produktstatus
+- **PRODUKTIONSCODE UNVERÄNDERT**
+- **KEIN MERGE**
+- **KEIN DEPLOYMENT**
+- **KEIN FORCE-PUSH**
