@@ -3166,6 +3166,11 @@
         }
         if (window.CorePerformance) window.CorePerformance.mark('auth-status-known');
       }
+      const authMessage = document.getElementById('authMessage');
+      if (authMessage && authMessage.textContent.includes('Checking')) {
+        authMessage.textContent = '';
+        authMessage.className = 'message';
+      }
     }
     const currentUser = getCurrentUser();
     const targetPage = resolveRoleRoute(currentUser);

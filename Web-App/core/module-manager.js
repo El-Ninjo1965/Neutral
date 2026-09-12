@@ -34,7 +34,12 @@
             for (const module of modules) {
                 if (this.get(module.id)) continue;
                 if (typeof module.enable === 'function') module.enable();
-                this.register({ ...module, status: 'enabled', lifecycleState: 'ACTIVE', active: true, enabled: true, registered: true });
+                module.status = 'enabled';
+                module.lifecycleState = 'ACTIVE';
+                module.active = true;
+                module.enabled = true;
+                module.registered = true;
+                this.register(module);
             }
             return modules;
         },
