@@ -447,6 +447,9 @@ function createRuntime({ currentUser = null, modules = [], discoverModules, logi
         const button = document.createElement('button');
         button.setAttribute('data-success-close', 'true');
         button.textContent = 'OK';
+        button.addEventListener('click', () => {
+          dialog.remove();
+        });
         dialog.appendChild(button);
         dialog.textContent = String(message);
         dialog.appendChild(button);
@@ -699,6 +702,9 @@ test('C. Stale settings catalog responses do not overwrite successful state', as
 
   assert.equal(runtime.document.getElementById('moduleDiscoveryRetry'), null, 'pending discovery does not show a retry button while the catalog is still loading');
 
+  const retryDiscovery = runtime.window.__testHooks.refreshModuleDiscovery();
+  await flushMicrotasks();
+
   resolveSecond([{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }]);
   await flushMicrotasks();
   await flushMicrotasks();
@@ -707,7 +713,7 @@ test('C. Stale settings catalog responses do not overwrite successful state', as
   resolveFirst(new Error('stale failure'));
   await flushMicrotasks();
   assert.ok(runtime.document.querySelectorAll('[data-user-setting-module]').length > 0, 'late stale failure does not remove successful catalog');
-  await Promise.allSettled([pendingDiscovery]);
+  await Promise.allSettled([pendingDiscovery, retryDiscovery]);
 });
 
 test('D. Settings save keeps user in settings and shows success modal', async () => {
