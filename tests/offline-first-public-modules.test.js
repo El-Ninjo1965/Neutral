@@ -178,3 +178,71 @@ test('authenticated user with profile.view and profile.update sees and updates p
   const profileAvailable = Boolean(profileModule.active && permissions.includes('profile.view') && permissions.includes('profile.update'));
   assert.equal(profileAvailable, true, 'Profile must be available in settings when active and permissions match');
 });
+
+test('publicOffline GPS hydration enables the GpsModule runtime singleton instance directly', {
+  skip: !fs.existsSync(path.join(root, 'Web-App/app/modules/gps/index.js'))
+}, async () => {
+  const sandbox = {
+    window: null,
+    document: { readyState: 'complete', addEventListener() {} },
+    isSecureContext: true,
+    navigator: { geolocation: { getCurrentPosition(cb) { cb({ coords: { latitude: 50, longitude: 10 }, timestamp: Date.now() }); } } },
+    NeutralPublicPath: { join(...args) { return args.join('/'); }, api(p) { return '/api/' + p; } },
+    localStorage: { store: new Map(), getItem(k) { return this.store.get(k) || null; }, setItem(k, v) { this.store.set(k, v); } }
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/public/public-module-state.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-interface.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-registry.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-manager.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/core-loader.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/app/modules/gps/index.js'), 'utf8'), sandbox);
+
+  sandbox.ModuleManager.init();
+  sandbox.ModuleManager.hydratePublicOfflineModules();
+
+  const runtimeState = sandbox.GpsModule.getRuntimeState();
+  assert.equal(runtimeState.active, true, 'GpsModule singleton active property must be true after hydration');
+  assert.equal(runtimeState.status, 'enabled', 'GpsModule singleton status property must be enabled after hydration');
+
+  const position = await sandbox.GpsModule.getCurrentPosition();
+  assert.equal(position.latitude, 50, 'getCurrentPosition must resolve without MODULE_NOT_ENABLED error');
+});
+
+test('fetchRemoteCatalog accepts catalog payloads containing modules with canView=false without throwing catalog invalid error', async () => {
+  const sandbox = {
+    window: null,
+    document: { readyState: 'complete', addEventListener() {} },
+    navigator: { onLine: true },
+    GpsModule: { id: 'gps', name: 'GPS' },
+    NeutralPublicPath: { join(...args) { return args.join('/'); }, api(p) { return '/api/' + p; } },
+    localStorage: { store: new Map(), getItem(k) { return this.store.get(k) || null; }, setItem(k, v) { this.store.set(k, v); } },
+    fetch: async (url) => ({
+      ok: !url.includes('.json'),
+      text: async () => '/* script */',
+      json: async () => ({
+        data: {
+          accessContext: { mode: 'anonymous' },
+          modules: [
+            { id: 'gps', publicOffline: true, clientAccess: { mode: 'anonymous', canView: true, canUse: true } },
+            { id: 'restricted', clientAccess: { mode: 'anonymous', canView: false, canUse: false } }
+          ]
+        }
+      })
+    })
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/module-interface.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Web-App/core/core-loader.js'), 'utf8'), sandbox);
+
+  const discovered = await sandbox.CoreLoader.discoverExternalModules();
+  assert.equal(discovered.length, 1, 'Should filter out non-viewable modules without throwing catalog invalid error');
+  assert.equal(discovered[0].id, 'gps');
+});
+
+test('admin session check clears authMessage when unauthenticated during page init', () => {
+  const source = fs.readFileSync(path.join(root, 'Web-App/public/master-ui.js'), 'utf8');
+  assert.match(source, /if\s*\(isServerAuthPage\)\s*\{[\s\S]*?sessionApiClient\.me\(\)[\s\S]*?authMessage/);
+});

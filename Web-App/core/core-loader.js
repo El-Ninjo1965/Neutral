@@ -65,23 +65,23 @@
         return `${ANONYMOUS_CATALOG_CACHE_PREFIX}${encodeURIComponent(String(basePath || '/'))}`;
     };
 
+    const isWellFormedCatalogEntry = (entry) => {
+        if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || !entry.id.trim()) {
+            return false;
+        }
+        const access = entry.clientAccess;
+        if (!access || typeof access !== 'object') return false;
+        if (!['anonymous', 'authenticated'].includes(access.mode)) return false;
+        if (typeof access.canView !== 'boolean' || typeof access.canUse !== 'boolean') return false;
+        return true;
+    };
+
     const normalizeCatalogEntries = (modules, mode) => {
         if (!Array.isArray(modules) || !['anonymous', 'authenticated'].includes(mode)) {
             return [];
         }
 
-        return modules.filter((entry) => {
-            if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || !entry.id.trim()) {
-                return false;
-            }
-            const access = entry.clientAccess;
-            return !!access
-                && typeof access === 'object'
-                && access.mode === mode
-                && typeof access.canView === 'boolean'
-                && typeof access.canUse === 'boolean'
-                && access.canView === true;
-        });
+        return modules.filter((entry) => isWellFormedCatalogEntry(entry) && entry.clientAccess.mode === mode && entry.clientAccess.canView === true);
     };
 
     const sanitizePublicOfflineEntries = (modules) => Array.isArray(modules) ? modules.map((entry) => {
@@ -311,10 +311,10 @@
                 ? envelope.accessContext.mode
                 : '';
             const sourceModules = envelope && envelope.modules;
-            const modules = normalizeCatalogEntries(sourceModules, mode);
-            const catalogIsValid = Array.isArray(sourceModules) && modules.length === sourceModules.length;
+            const catalogIsValid = Array.isArray(sourceModules) && sourceModules.every(isWellFormedCatalogEntry);
 
             if (!catalogIsValid) throw new Error('Module catalog response is invalid.');
+            const modules = normalizeCatalogEntries(sourceModules, mode);
             if (mode !== expectedMode) throw new Error(`Stale module catalog response (${mode || 'unknown'} while ${expectedMode} was expected).`);
 
             writeAnonymousCatalogCache(modules);
@@ -413,7 +413,15 @@
         getPublicOfflineModules() {
             return readAnonymousCatalogCache().map((projection) => {
                 const implementation = resolveModuleImplementation(projection);
-                return implementation ? { ...implementation, ...projection, clientAccess: { mode: 'anonymous', canView: true, canUse: true, navigationVisible: true } } : null;
+                if (!implementation) return null;
+                Object.assign(implementation, projection, {
+                    active: projection.active === true,
+                    enabled: projection.active === true,
+                    status: projection.active === true ? 'enabled' : 'disabled',
+                    lifecycleState: projection.active === true ? 'ACTIVE' : 'INACTIVE',
+                    clientAccess: { mode: 'anonymous', canView: true, canUse: true, navigationVisible: true }
+                });
+                return implementation;
             }).filter(Boolean);
         },
 

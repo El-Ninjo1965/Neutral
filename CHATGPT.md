@@ -1,24 +1,57 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Local Agent → ChatGPT/Lea  
-**Branch:** `main` (gemergt von `lea/module-runtime-repair`)  
+**Branch:** `lea/live-runtime-followup`  
 **Datum:** 2026-09-12  
-**Status:** MODULE RUNTIME REPAIR MERGED & DEPLOYED TO PRODUCTION – OPERATOR-LIVE-RETEST AUSSTEHEND  
-**Hinweis zu Codespace:** Dieser Reparatur- und Integrationslauf erfolgte vollständig in einem **NEU ERSTELLTEN GitHub Codespace**.  
-**Deployment:** ERFOLGREICH VIA FTPS DEPLOYED  
-**Merge:** NACH MAIN GEMERGED (`15932b7`)
+**Status:** LIVE RUNTIME FOLLOW-UP REPAIR COMPLETED (LOCAL BRANCH ONLY)  
+**Deployment:** NICHT DEPLOYED  
+**Merge:** NICHT NACH MAIN GEMERGED
 
-## Integration & Deployment-Evidence
+## Live Runtime Follow-up Evidence & Root Causes
 
-- **Merge-Commit auf `main`:** `15932b7` (`Merge branch 'lea/module-runtime-repair' into main`)
-- **Geprüfter Reparatur-Commit:** `4135dbc`
-- **GitHub Actions FTPS Deploy Run:** `34686565441` – **Status:** `completed` / `success`
-  - Vollständige Node- und PHP-Tests (564/564): **SUCCESS**
-  - Verifiziertes Produktionspaket (136 Dateien): **SUCCESS**
-  - FTPS-Client & Upload nach Produktion: **SUCCESS**
-  - Produktionsstand rein lesend prüfen (Production Read-Only Smoke): **SUCCESS**
-- **CodeQL Security Analysis Run:** `34686565182` – **Status:** `completed` / `success`
-- **WICHTIGE BETREIBER-HINWEISE:** Automatisierte grüne Tests und ein erfolgreiches CI/Smoke-Deployment sind notwendig, bedeuten aber noch keine Betreiber-Abnahme. Der abschließende reale iPad-/Geräte-Live-Test durch den Betreiber bleibt zwingend erforderlich. **OPERATOR-LIVE-RETEST AUSSTEHEND.**
+### Root Cause A (GPS "Aktivieren Sie das Modul, bevor eine Position abgefragt wird")
+- **Ursache:** `CoreLoader.getPublicOfflineModules()` erzeugte entkoppelte Objekt-Kopien (`{ ...implementation, ...projection }`). Beim Hydrieren rief `ModuleManager.hydratePublicOfflineModules()` `module.enable()` auf dieser flachen Kopie auf. Der globale `window.GpsModule`-Singleton sowie dessen Properties (`active`, `status`) blieben un-aktiviert (`active: false`, `status: 'available'`). `renderUserInterface()` und `getCurrentPosition()` griffen auf `window.GpsModule` zu und wiesen den Aufruf wegen `MODULE_NOT_ENABLED` ab.
+- **Fix:** `CoreLoader.getPublicOfflineModules()` aktualisiert das echte Modul-Implementationsobjekt (`window.GpsModule`) und gibt dieses zurück. `ModuleManager.hydratePublicOfflineModules()` aktiviert und registriert die eigentliche Modulinstanz.
+
+### Root Cause B (User Settings: "Modules could not be loaded. Check your connection and try again.")
+- **Ursache:** In `Web-App/core/core-loader.js` validierte `fetchRemoteCatalog()` Serverantworten mit `catalogIsValid = Array.isArray(sourceModules) && modules.length === sourceModules.length;`. Da `normalizeCatalogEntries()` Nicht-Sichtbares (`canView !== true`) herausfilterte, führte jede Serverantwort mit nicht-sichtbaren Modulen dazu, dass `modules.length < sourceModules.length` war. Dadurch stufte `fetchRemoteCatalog()` die valide Antwort fälschlicherweise als ungültig ein (`Module catalog response is invalid`), woraufhin die Modul-Discovery fehlschlug.
+- **Fix:** In `core-loader.js` validiert `catalogIsValid = Array.isArray(sourceModules) && sourceModules.every(isWellFormedCatalogEntry);`. Formvalidierte Serverantworten werden akzeptiert und Nicht-Sichtbares sauber gefiltert, ohne die Discovery abzubrechen.
+
+### Root Cause C (Admin Login bleibt bei "Checking the current server session...")
+- **Ursache:** In `Server/php/views/admin-ui.php` startet `#authMessage` mit dem statischen Text `"Checking the current server session…"`. In `Web-App/public/master-ui.js` rief `init()` auf Auth-Seiten `sessionApiClient.me()` auf. Bei nicht-authentifizierten Besuchern (401) wurde die Session gelöscht und das Login-Formular angezeigt, aber `#authMessage` wurde nie geleert. Der Text blieb dauerhaft stehen, obwohl das Login-Formular interaktiv war.
+- **Fix:** In `master-ui.js` wird `#authMessage` nach Abschluss der Session-Prüfung geleert, wenn kein angemeldeter Nutzer zurückgegeben wurde.
+
+## RED / GREEN Testnachweise
+
+1. **RED-Tests (Vor Fixes):**
+   - `publicOffline GPS hydration enables the GpsModule runtime singleton instance directly` → **FAIL** (`AssertionError: GpsModule singleton active property must be true after hydration`).
+   - `fetchRemoteCatalog accepts catalog payloads containing modules with canView=false without throwing catalog invalid error` → **FAIL** (`Error: Module catalog response is invalid.`).
+   - `admin session check clears authMessage when unauthenticated during page init` → **FAIL** (`AssertionError: The input did not match the regular expression`).
+
+2. **GREEN-Tests (Nach Fixes):**
+   - 11/11 Verhaltenstests in `tests/offline-first-public-modules.test.js` bestanden (**PASS**).
+   - 567/567 Tests in der gesamten npm-Testsuite bestanden (**PASS**).
+
+## Geänderte Dateien
+
+- `Web-App/core/core-loader.js`: Modulimplementierung in `getPublicOfflineModules` direkt aktualisiert; Formprüfung in `fetchRemoteCatalog` korrigiert.
+- `Web-App/core/module-manager.js`: Hydrierung aktiviert das echte Modul-Implementationsobjekt.
+- `Web-App/public/master-ui.js`: `#authMessage` nach unauthentifiziertem Session-Check zurückgesetzt.
+- `tests/offline-first-public-modules.test.js`: Regressionstests für A, B und C ergänzt.
+- `CHATGPT.md`: Dokumentation vollständig aktualisiert.
+
+## Prüfergebnisse
+
+- **JavaScript Syntax Check (`node --check`):** OK (0 Fehler).
+- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php` & `Server/php/src/Phase7ModuleRuntime.php`).
+- **`git diff --check`:** Clean (0 Fehler).
+- **Production Package Build (`node scripts/build-production-package.js`):** Status OK (136 Dateien).
+- **Teststatus:** 567/567 bestanden (`npm test`).
+
+## Deployment- & Merge-Status
+
+- **NICHT DEPLOYED**
+- **NICHT NACH MAIN GEMERGED**
 
 ## Tatsächlicher Stand
 
