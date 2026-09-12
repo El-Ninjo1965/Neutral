@@ -12,24 +12,6 @@
   "entitlementRequired": false,
   "permissions": [
     {
-      "key": "gps.view",
-      "description": "Allows a user to see the GPS module in the workspace.",
-      "defaultRoles": [
-        "admin",
-        "developer",
-        "user"
-      ]
-    },
-    {
-      "key": "gps.use",
-      "description": "Allows a user to request and deliberately share the current position.",
-      "defaultRoles": [
-        "admin",
-        "developer",
-        "user"
-      ]
-    },
-    {
       "key": "gps.manage",
       "description": "Allows a user to manage GPS-related module settings.",
       "defaultRoles": [
@@ -47,12 +29,8 @@
     }
   ],
   "access": {
-    "visibilityPermissions": [
-      "gps.view"
-    ],
-    "usagePermissions": [
-      "gps.use"
-    ],
+    "visibilityPermissions": [],
+    "usagePermissions": [],
     "managementPermissions": [
       "gps.manage"
     ],
@@ -81,7 +59,7 @@
         "path": "status",
         "service": "module.gps.status",
         "action": "status",
-        "permission": "gps.view",
+        "permission": "gps.manage",
         "csrf": false
       }
     ]

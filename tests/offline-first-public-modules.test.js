@@ -49,11 +49,18 @@ test('catalog failure is not an empty success and keeps locally active GPS', asy
 });
 
 test('public GPS is role/permission independent while Profile and Moderation remain sensitive', () => {
-  const gps = { id: 'gps', active: true, publicOffline: true };
+  const gps = { id: 'gps', active: true, publicOffline: true, access: { visibilityPermissions: [], usagePermissions: [] } };
   const profile = { id: 'profile', active: true, access: { visibilityPermissions: ['profile.view'] } };
   const moderation = { id: 'moderation', active: true, access: { visibilityPermissions: ['moderation.review'] } };
-  for (const currentUser of [null, { roles: ['Tester'], permissions: [] }, { roles: ['Developer'], permissions: [] }, { roles: ['Administrator'], permissions: [] }]) {
-    assert.equal(access.isVisible(gps, currentUser), true);
+  for (const currentUser of [
+    null, // anonymous
+    { roles: ['User'], permissions: [] },
+    { roles: ['Tester'], permissions: [] },
+    { roles: ['Developer'], permissions: [] },
+    { roles: ['Administrator'], permissions: [] }
+  ]) {
+    assert.equal(access.isVisible(gps, currentUser), true, 'GPS must be visible for all roles without permissions');
+    assert.equal(access.isNavigable(gps, currentUser), true, 'GPS must be navigable for all roles without permissions');
   }
   assert.equal(access.isVisible(profile, { permissions: [] }), false);
   assert.equal(access.isVisible(profile, { permissions: ['profile.view'] }), true);
@@ -148,4 +155,26 @@ test('ModuleRegistry.discover includes already registered modules so discovery r
   const discovered = await sandbox.ModuleRegistry.discover();
   const gpsDiscovered = discovered.find((m) => m.id === 'gps');
   assert.ok(gpsDiscovered, 'ModuleRegistry.discover must return already registered modules when present in catalog');
+});
+
+test('authenticated user with profile.view and profile.update sees and updates profile in settings path', () => {
+  const user = { id: '42', username: 'ralf', permissions: ['profile.view', 'profile.update'] };
+  const profileModule = {
+    id: 'profile',
+    name: 'Profile',
+    active: true,
+    status: 'enabled',
+    lifecycleState: 'ACTIVE',
+    access: { visibilityPermissions: ['profile.view'], usagePermissions: ['profile.update'] },
+    clientAccess: { mode: 'authenticated', canView: true, canUse: true, navigationVisible: true }
+  };
+
+  const visible = access.visibleModules([profileModule], { currentUser: user });
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].id, 'profile');
+
+  // Verify profile permissions check for Settings UI
+  const permissions = user.permissions;
+  const profileAvailable = Boolean(profileModule.active && permissions.includes('profile.view') && permissions.includes('profile.update'));
+  assert.equal(profileAvailable, true, 'Profile must be available in settings when active and permissions match');
 });

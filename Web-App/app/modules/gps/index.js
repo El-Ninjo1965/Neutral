@@ -65,16 +65,6 @@
     }
     const permissionDefinitions = Object.freeze([
         {
-            key: 'gps.view',
-            description: 'Allows a user to see the GPS module in the workspace.',
-            defaultRoles: ['admin', 'developer', 'user']
-        },
-        {
-            key: 'gps.use',
-            description: 'Allows a user to request positions and start GPS tracking.',
-            defaultRoles: ['admin', 'developer', 'user']
-        },
-        {
             key: 'gps.manage',
             description: 'Allows a user to manage GPS-related module settings.',
             defaultRoles: ['admin', 'developer']
@@ -86,8 +76,8 @@
         }
     ]);
     const access = Object.freeze({
-        visibilityPermissions: ['gps.view'],
-        usagePermissions: ['gps.use'],
+        visibilityPermissions: [],
+        usagePermissions: [],
         managementPermissions: ['gps.manage'],
         adminPermissions: ['gps.admin']
     });
@@ -136,64 +126,6 @@
             && !!navigator.permissions
             && typeof navigator.permissions.query === 'function';
         diagnostics.permissionState = permissionState;
-    };
-
-    const getCurrentUser = () => {
-        if (window.UserModule && typeof window.UserModule.getCurrentUser === 'function') {
-            const user = window.UserModule.getCurrentUser();
-            if (user) {
-                return user;
-            }
-        }
-
-        if (window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function') {
-            return window.CoreAuth.getCurrentUser();
-        }
-
-        return null;
-    };
-
-    const hasAuthContext = () => (
-        (window.UserModule && typeof window.UserModule.getCurrentUser === 'function')
-        || (window.CoreAuth && typeof window.CoreAuth.getCurrentUser === 'function')
-    );
-
-    const hasPermission = (permission) => {
-        const user = getCurrentUser();
-        if (!hasAuthContext()) {
-            return true;
-        }
-        if (!permission) {
-            return false;
-        }
-
-        if (!user) {
-            const clientAccess = GpsModule.clientAccess;
-            if (!clientAccess || clientAccess.mode !== 'anonymous') {
-                return false;
-            }
-            if (access.visibilityPermissions.includes(permission)) {
-                return clientAccess.canView === true;
-            }
-            if (access.usagePermissions.includes(permission)) {
-                return clientAccess.canUse === true;
-            }
-            return false;
-        }
-
-        if (window.CoreAccess && typeof window.CoreAccess.hasPermission === 'function') {
-            return !!window.CoreAccess.hasPermission(user, permission);
-        }
-
-        return Array.isArray(user.permissions) && user.permissions.includes(permission);
-    };
-
-    const hasAnyPermission = (permissions) => {
-        if (!Array.isArray(permissions) || permissions.length === 0) {
-            return true;
-        }
-
-        return permissions.some((permission) => hasPermission(permission));
     };
 
     // Public/offline base use is local and grants no server permission. Any

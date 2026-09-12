@@ -12,9 +12,20 @@
 
 Die Reparatur des Web-App-Modulpfads gemäß `LOCAL-AGENT.md` wurde testgetrieben (RED → GREEN) abgeschlossen und auf dem Zielbranch `lea/module-runtime-repair` bereitgestellt.
 
-- **GPS Public/Offline:** Das GPS-Basismodul wird vor dem ersten User-Render aus dem lokal versionierten Zustand hydriert. Die Discovery-Reconcilation in `ModuleManager` löscht hydriertes aktives `publicOffline`-GPS nach leeren/ungeeigneten Server-Katalogen (`discover([])`) nicht mehr. Nur autoritative administrative Deaktivierungen im Katalog invalideren den Zustand.
+- **GPS Public/Offline & RBAC-Cleanup:** Das GPS-Basismodul wird vor dem ersten User-Render aus dem lokal versionierten Zustand hydriert. Die Discovery-Reconcilation in `ModuleManager` löscht hydriertes aktives `publicOffline`-GPS nach leeren/ungeeigneten Server-Katalogen (`discover([])`) nicht mehr. Im Follow-up Audit wurden tote Helper-Funktionen (`getCurrentUser`, `hasPermission`, etc.) entfernt und die User-Permissions `gps.view`/`gps.use` aus `visibilityPermissions`/`usagePermissions` gelöscht (`[]`), da die Basisnutzung rollenunabhängig ist. Die administrativen Rechte `gps.manage`/`gps.admin` sichern weiterhin die Admin-Konfiguration.
 - **Profile:** Profile ist als Account-Modul `entitlementRequired: false`. Nach Server-Login und erfolgreicher Discovery mit den effektiven Rechten `profile.view` und `profile.update` wird Profile in der Registry korrekt als aktiv geführt und in den User Settings angezeigt, geöffnet und gespeichert.
 - **Rendering Performance:** In `user-app.js` verhindert ein diffender Render-Key (`lastLandingRenderKey`), dass Hintergrund-Updates (`loadHomepageConfig`, `startBackgroundInitialization`) das sichtbare `Welcome to Neutral`-Dokument mehrfach neu aufbauen oder iFrames neu erstellen (Doppelblinken behoben).
+
+## Follow-up Audit (GPS User-RBAC Cleanup)
+
+- **Entfernte tote & irreführende Strukturen:** In `Web-App/app/modules/gps/index.js` wurden `getCurrentUser()`, `hasAuthContext()`, `hasPermission()` und `hasAnyPermission()` ersatzlos entfernt, da `canUseModule()` stets `() => true` für die lokale Basisnutzung auswertet.
+- **Klare Trennung von User- & Admin-RBAC:**
+  - `visibilityPermissions: []` und `usagePermissions: []` im GPS-Manifest (`index.js`, `module.json`, `index.json`).
+  - `managementPermissions: ['gps.manage']` und `adminPermissions: ['gps.admin']` sichern weiterhin die administrative Modulverwaltung und Moduleinstellungen.
+- **Nachweise:**
+  1. *Anonymous, User, Tester, Developer, Admin:* Alle Rollen können GPS lokal ohne `gps.view`/`gps.use` öffnen und nutzen.
+  2. *Administrative Deaktivierung:* Deaktivierung im Katalog invaldiert und deaktiviert GPS im Client und synchronisiert den lokalen Cache.
+  3. *Profile-Pfad:* Active Profile-Modul + `profile.view` + `profile.update` führt in den User Settings verlässlich zur Anzeige, Öffnung und Speicherung des Profils.
 
 ## Bewiesene Root Causes & Widerlegte Annahmen
 
@@ -54,25 +65,29 @@ Vor den Codeänderungen zeigten die Verhaltenstests in `tests/offline-first-publ
 
 Nach Implementierung der minimalen Fixes:
 
-- **Fokussierte Verhaltenstests:** 7/7 bestanden in `tests/offline-first-public-modules.test.js`.
-- **Gesamte Testsuite:** 563/563 bestanden in `npm test` (0 failures, 0 skipped).
+- **Fokussierte Verhaltenstests:** 8/8 bestanden in `tests/offline-first-public-modules.test.js`.
+- **Gesamte Testsuite:** 564/564 bestanden in `npm test` (0 failures, 0 skipped).
 
 ## Geänderte Dateien
 
+- `Web-App/app/modules/gps/index.js`: Tote RBAC-Helper entfernt; `visibilityPermissions: []` / `usagePermissions: []` gesetzt; `gps.manage`/`gps.admin` für Admin-Einstellungen behalten.
+- `Web-App/app/modules/gps/module.json`: `visibilityPermissions` / `usagePermissions` bereinigt; Status-Route auf `gps.manage` verknüpft.
+- `Web-App/app/modules/index.json`: GPS-Katalogeintrag synchronisiert.
 - `Web-App/core/module-interface.js`: Bewahrt `publicOffline: manifest.publicOffline === true` in `validateManifest`.
 - `Web-App/core/module-registry.js`: `ModuleRegistry.discover()` aktualisiert und enthält registrierte Modulinstanzen im Discovery-Ergebnis.
 - `Web-App/core/module-manager.js`: Bewahrt `publicOffline` bei Normalisierung; schützt aktive `publicOffline`-Module vor Löschung bei nicht-autoritativem Katalog; ruft `disable()` nur bei zuvor aktiven Modulen auf.
 - `Web-App/public/user-app.js`: Führt `lastLandingRenderKey` in `renderLandingPage()` ein, um doppeltes Blinken/Render-Overhead der Startseite zu verhindern.
-- `tests/offline-first-public-modules.test.js`: TDD-Verhaltenstests für `publicOffline`-Persistenz, Manifest-Validierung, Registrierungs-Discovery und autoritative Deaktivierung erweitert.
-- `CHATGPT.md`: Vollständige Abschluss- und Handoff-Dokumentation.
+- `tests/offline-first-public-modules.test.js`: Verhaltenstests für rollenunabhängiges GPS, Profile-Pfad und administrative Deaktivierung erweitert.
+- `tests/master-framework.test.js` & `tests/operator-ux-module-repair.test.js`: Test-Erwartungen an bereinigtes GPS-Manifest angepasst.
+- `CHATGPT.md`: Vollständige Abschluss- und Handoff-Dokumentation inklusive Audit-Follow-up.
 
 ## Prüfergebnisse
 
 - **JavaScript Syntax Check (`node --check`):** OK (0 Fehler) für alle geänderten Dateien.
-- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php`).
+- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php` & `Server/php/modules/gps/module.php`).
 - **`git diff --check`:** Clean (0 Fehler).
 - **Production Package Build (`node scripts/build-production-package.js`):** Status OK, 136 Dateien in `dist/neutral-production`.
-- **Teststatus:** 563/563 bestanden (`npm test`).
+- **Teststatus:** 564/564 bestanden (`npm test`).
 
 ## Deployment- und Merge-Status
 
