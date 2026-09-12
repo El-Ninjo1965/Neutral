@@ -23,6 +23,12 @@ test('profile privacy defaults off and entitlement states never grant hidden mod
   assert.equal(data.hidden.state, 'hidden');
 });
 
+test('account modules explicitly outside commercial entitlement remain projected', () => {
+  const result = runPhp(`$modules=[['id'=>'gps','entitlementRequired'=>true],['id'=>'profile','entitlementRequired'=>false]];$projected=Neutral\\Core\\AccountLicenseService::applyModuleEntitlements($modules,['gps'=>'hidden']);echo json_encode($projected);`);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout).map((module) => [module.id, module.entitlementState]), [['profile', 'available']]);
+});
+
 test('license manager scope is exact and profile-media validation rejects non-images', () => {
   const result = runPhp(`$scope=[Neutral\\Core\\AccountLicenseService::allowsLicenseScope(7,7),Neutral\\Core\\AccountLicenseService::allowsLicenseScope(7,8)]; $rejected=false; try{Neutral\\Core\\AccountLicenseService::validateProfileImage('not an image');}catch(RuntimeException $e){$rejected=true;} echo json_encode(compact('scope','rejected'));`);
   assert.equal(result.status, 0, result.stderr);

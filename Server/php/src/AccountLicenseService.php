@@ -313,6 +313,23 @@ final class AccountLicenseService
     public function moduleEntitlementsForUser(int $userId): array
     { $s=$this->database->connect()->prepare("SELECT p.entitlements_json FROM packages p WHERE p.status='active' AND p.id=COALESCE((SELECT l.package_id FROM license_users lu JOIN licenses l ON l.id=lu.license_id WHERE lu.user_id=:user AND lu.membership_status='active' AND l.status='active' ORDER BY lu.license_role='manager' DESC,lu.assigned_at DESC LIMIT 1),(SELECT u.package_id FROM users u WHERE u.id=:direct_user)) LIMIT 1");$s->execute([':user'=>$userId,':direct_user'=>$userId]);$raw=$s->fetchColumn();if($raw===false)return [];$data=json_decode((string)$raw,true);return is_array($data['modules']??null)?$data['modules']:[]; }
 
+    /** @param list<array<string,mixed>> $modules @param array<string,string> $entitlements @return list<array<string,mixed>> */
+    public static function applyModuleEntitlements(array $modules, array $entitlements): array
+    {
+        if ($entitlements === []) return $modules;
+        $projected = [];
+        foreach ($modules as $module) {
+            if (($module['entitlementRequired'] ?? true) === false) {
+                $module['entitlementState'] = 'available';
+            } else {
+                $state = (string) ($entitlements[(string) ($module['id'] ?? '')] ?? 'hidden');
+                $module['entitlementState'] = in_array($state, ['available', 'locked', 'hidden'], true) ? $state : 'hidden';
+            }
+            if ($module['entitlementState'] !== 'hidden') $projected[] = $module;
+        }
+        return $projected;
+    }
+
     /** @return array{mimeType:string,byteSize:int} */
     public static function validateProfileImage(string $bytes): array
     {

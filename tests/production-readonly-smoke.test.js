@@ -32,7 +32,7 @@ function productionFixture(overrides = {}) {
         accessContext: { mode: 'anonymous' },
         modules: [{ id: 'gps', clientAccess: { canView: true, canUse: true } }],
       },
-    })),
+    }), null, { 'server-timing': 'module-catalog;dur=12', 'x-neutral-catalog-mode': 'anonymous' }),
     '/api/v1/auth/login': response(401, JSON.stringify({ ok: false, error: { message: 'Invalid username or password.' } })),
     '/api/v1/admin/auth/login': response(401, JSON.stringify({ ok: false, error: { message: 'Invalid username or password.' } })),
     '/api/v1/auth/me': response(401, JSON.stringify({ ok: false, error: { message: 'Not authenticated.' } })),
@@ -156,7 +156,9 @@ test('production smoke emits only bounded status evidence for a valid deployment
     }],
   });
 
-  assert.deepEqual(result, {
+  assert.ok(Number.isInteger(result.moduleCatalogDurationMs));
+  const { moduleCatalogDurationMs, ...stableResult } = result;
+  assert.deepEqual(stableResult, {
     root: 200,
     rewrite: 200,
     adminProtected: 401,
@@ -187,7 +189,7 @@ test('production smoke fails closed when viewer GPS use is not granted', async (
       accessContext: { mode: 'anonymous' },
       modules: [{ id: 'gps', clientAccess: { canView: true, canUse: false } }],
     },
-  }));
+  }), null, { 'server-timing': 'module-catalog;dur=12', 'x-neutral-catalog-mode': 'anonymous' });
 
   await assert.rejects(
     runSmoke({

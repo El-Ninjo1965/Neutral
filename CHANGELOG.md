@@ -1,3 +1,12 @@
+## 2026-09-12 – Production module catalog determinism repair
+
+- Replaced the online anonymous cache/background-refresh split with one authoritative, credentialed catalog request; anonymous cache is now offline fallback only. Catalog failures remain errors and can be retried instead of being converted into an authoritative empty registry.
+- Added latest-request-wins registry reconciliation so a delayed anonymous response cannot overwrite a catalog requested after login. Client diagnostics record only request id, scope, status, duration and module count.
+- Removed recursive per-module visibility lookups from client catalog projection, mapped authenticated identities to stable visibility audiences, and preserved explicit manifest defaults.
+- Declared Profile as independent of commercial package entitlements through a generic manifest contract; normal commercial modules remain entitlement-gated.
+- Added response scope and Server-Timing evidence to the catalog endpoint and required it in production smoke.
+- Bound Admin theme selection to the semantic `change` event and normalized the final module-table row border.
+
 ## 2026-09-12 – Authenticated module discovery repair
 
 - Fixed the User bootstrap race that allowed the anonymous warm-start module catalog to win before session restoration. Authenticated starts and successful logins now perform authoritative discovery before projecting User modules.

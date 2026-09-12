@@ -102,14 +102,18 @@ final class Phase7ModuleRuntime
      */
     public function listForClient(?array $identity = null): array
     {
+        $visibilityConfig = $this->loadVisibilityConfig();
+        $withVisibility = array_map(function (array $module) use ($visibilityConfig): array {
+            $module['visibility'] = $this->resolvedVisibility($module, $visibilityConfig);
+            return $module;
+        }, $this->listForAdmin());
         $modules = array_values(array_filter(
-            $this->listForAdmin(),
+            $withVisibility,
             fn (array $module): bool => $this->shouldExposeToClient($module, $identity)
         ));
 
         return array_map(function (array $module) use ($identity): array {
             $manifest = is_array($module['manifest'] ?? null) ? $module['manifest'] : [];
-            $module['visibility'] = $this->visibilityFor((string) ($module['id'] ?? ''));
             $clientAccess = $this->resolveClientAccess($module, $identity);
 
             return [
@@ -140,6 +144,7 @@ final class Phase7ModuleRuntime
                 'isPublic' => isset($module['isPublic']) ? (bool) $module['isPublic'] : ((bool) ($manifest['isPublic'] ?? false)),
                 'loginRequired' => isset($module['loginRequired']) ? (bool) $module['loginRequired'] : ((bool) ($manifest['loginRequired'] ?? false)),
                 'requiresLogin' => isset($module['requiresLogin']) ? (bool) ($module['requiresLogin']) : ((bool) ($manifest['requiresLogin'] ?? false)),
+                'entitlementRequired' => ($module['entitlementRequired'] ?? true) !== false,
             ];
         }, $modules);
     }
@@ -271,8 +276,14 @@ final class Phase7ModuleRuntime
     {
         $module = $this->getForAdmin($moduleId);
         if ($module === null) throw new \RuntimeException('Module not found.');
+        return $this->resolvedVisibility($module, $this->loadVisibilityConfig());
+    }
+
+    /** @param array<string,mixed> $module @param array<string,array<string,bool>> $config @return array<string,bool> */
+    private function resolvedVisibility(array $module, array $config): array
+    {
         $default = (($module['presentation']['userNavigation'] ?? true) !== false);
-        $stored = $this->loadVisibilityConfig()[$moduleId] ?? [];
+        $stored = $config[(string) ($module['id'] ?? '')] ?? [];
         $result = [];
         foreach (['admin', 'developer', 'user', 'viewer'] as $role) $result[$role] = array_key_exists($role, $stored) ? $stored[$role] : $default;
         return $result;
@@ -622,6 +633,7 @@ final class Phase7ModuleRuntime
             'standalone' => $this->normalizeStandalone($manifest['standalone'] ?? null),
             'database' => $this->normalizeDatabase($manifest['database'] ?? null),
             'admin' => is_array($manifest['admin'] ?? null) ? $manifest['admin'] : null,
+            'entitlementRequired' => ($manifest['entitlementRequired'] ?? true) !== false,
             'modulePath' => isset($manifest['modulePath']) ? (string) $manifest['modulePath'] : null,
             'manifest' => $manifest,
             'public' => isset($manifest['public']) ? (bool) $manifest['public'] : null,
@@ -916,6 +928,7 @@ final class Phase7ModuleRuntime
             'standalone' => is_array($module['standalone'] ?? null) ? $module['standalone'] : null,
             'database' => is_array($module['database'] ?? null) ? $module['database'] : ['tables' => []],
             'admin' => is_array($module['admin'] ?? null) ? $module['admin'] : null,
+            'entitlementRequired' => ($module['entitlementRequired'] ?? true) !== false,
             'modulePath' => $module['modulePath'] ?? ($record['filesystemPath'] ?? null),
             'manifest' => is_array($module['manifest'] ?? null) ? $module['manifest'] : ($record['manifest'] ?? []),
             'public' => $module['public'] ?? null,
@@ -1301,10 +1314,13 @@ final class Phase7ModuleRuntime
             || in_array(strtolower((string) ($module['status'] ?? '')), ['active', 'enabled'], true)
             || strtoupper((string) ($module['lifecycleState'] ?? '')) === 'ACTIVE';
         $permissions = is_array($identity['permissions'] ?? null) ? $identity['permissions'] : [];
-        $roles = $mode === 'anonymous' ? ['viewer'] : (is_array($identity['roles'] ?? null) ? array_map('strtolower', array_map('strval', $identity['roles'])) : []);
+        $roles = is_array($identity['roles'] ?? null) ? array_map('strtolower', array_map('strval', $identity['roles'])) : [];
         $defaultNavigation = (($module['presentation']['userNavigation'] ?? true) !== false);
         $visibility = is_array($module['visibility'] ?? null) ? $module['visibility'] : array_fill_keys(['admin','developer','user','viewer'], $defaultNavigation);
-        $navigationVisible = count(array_filter($roles, static fn (string $role): bool => ($visibility[$role] ?? false) === true)) > 0;
+        $audience = $mode === 'anonymous'
+            ? 'viewer'
+            : (in_array('admin.write', $permissions, true) ? 'admin' : (in_array('developer', $roles, true) ? 'developer' : 'user'));
+        $navigationVisible = ($visibility[$audience] ?? $defaultNavigation) === true;
         $hasPermission = static fn (string $permission): bool => in_array($permission, $permissions, true)
             || ($mode === 'authenticated' && in_array('admin.write', $permissions, true));
         $canView = $active

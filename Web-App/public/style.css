@@ -1049,6 +1049,8 @@ code {
   padding: 12px 14px;
 }
 
+.admin-table tbody tr:last-child > td { border-bottom: 0; }
+
 .action-buttons,
 .form-actions,
 .permissions-checklist {

@@ -18,6 +18,7 @@
 
     const ModuleManager = {
         registry: null,
+        discoveryRevision: 0,
 
         init() {
             if (!window.ModuleRegistry) {
@@ -143,6 +144,7 @@
 
         async discoverModules() {
             this.ensureInitialized();
+            const revision = ++this.discoveryRevision;
 
             mark('module-manager-discover-modules-start'); // TEMPORARY diagnostic mark
             if (!window.ModuleRegistry || typeof window.ModuleRegistry.discover !== 'function') {
@@ -151,6 +153,11 @@
             }
 
             const discovered = await window.ModuleRegistry.discover();
+
+            // A login/logout can start a newer scope-specific discovery while an
+            // older request is still in flight. Only the latest request may
+            // reconcile the authoritative registry.
+            if (revision !== this.discoveryRevision) return window.ModuleRegistry.getAll();
 
             const discoveredIds = new Set(discovered.map((module) => String(module?.id || '')).filter(Boolean));
             for (const existing of window.ModuleRegistry.getAll()) {

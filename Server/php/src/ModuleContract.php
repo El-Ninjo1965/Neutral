@@ -70,6 +70,7 @@ final class ModuleContract
             'system' => ($presentation['system'] ?? false) === true,
         ];
         $normalized['category'] = $category;
+        $normalized['entitlementRequired'] = ($manifest['entitlementRequired'] ?? true) !== false;
         return $normalized;
     }
 

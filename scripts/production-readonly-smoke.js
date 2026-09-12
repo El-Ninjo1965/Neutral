@@ -53,6 +53,7 @@ function assertFinalUrl(responseUrl, requestedUrl, baseUrl) {
 
 async function readResponse(fetchImpl, baseUrl, route) {
   const requestedUrl = endpoint(baseUrl, route);
+  const startedAt = Date.now();
   const response = await fetchImpl(requestedUrl, {
     method: 'GET',
     redirect: 'follow',
@@ -61,7 +62,13 @@ async function readResponse(fetchImpl, baseUrl, route) {
     headers: { Accept: 'text/html,application/json,text/javascript;q=0.9,*/*;q=0.1' },
   });
   assertFinalUrl(response.url, requestedUrl, baseUrl);
-  return { status: response.status, body: await response.text() };
+  return {
+    status: response.status,
+    body: await response.text(),
+    durationMs: Date.now() - startedAt,
+    serverTiming: response.headers?.get?.('server-timing') || null,
+    catalogMode: response.headers?.get?.('x-neutral-catalog-mode') || null,
+  };
 }
 
 async function probeInvalidLogin(fetchImpl, baseUrl, route, scope) {
@@ -177,6 +184,9 @@ async function runSmoke({
   const moduleData = modulePayload && modulePayload.data;
   requireCondition(modulePayload && modulePayload.ok === true && Array.isArray(moduleData?.modules), 'Modulkatalog besitzt nicht den erwarteten Vertrag.');
   requireCondition(moduleData.accessContext?.mode === 'anonymous', 'Modulkatalog ist nicht im anonymen Kontext.');
+  requireCondition(results.modules.durationMs < 10_000, `Öffentlicher Modulkatalog ist zu langsam (${results.modules.durationMs}ms).`);
+  requireCondition(results.modules.catalogMode === 'anonymous', 'Modulkatalog-Responseheader besitzt nicht den anonymen Scope.');
+  requireCondition(/^module-catalog;dur=\d+$/.test(results.modules.serverTiming || ''), 'Modulkatalog besitzt keine Server-Timing-Evidence.');
   for (const moduleId of expectedViewerModules) {
     const visibleModule = moduleData.modules.find((entry) => entry && entry.id === moduleId);
     requireCondition(visibleModule && visibleModule.clientAccess?.canView === true, `Erwartetes Viewer-Modul ${moduleId} ist nicht sichtbar.`);
@@ -251,6 +261,7 @@ async function runSmoke({
     statusApi: results.status.status,
     migrationsReady: true,
     moduleCatalog: results.modules.status,
+    moduleCatalogDurationMs: results.modules.durationMs,
     internalCoreProtected: results.internal.status,
     deploymentRevision: true,
     moduleContracts: expectedModules.length,

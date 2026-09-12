@@ -54,11 +54,16 @@ $inactive = $base;
 $inactive['active'] = false;
 $inactive['enabled'] = false;
 $inactive['status'] = 'inactive';
+$visible = $base;
+$visible['visibility'] = ['admin' => true, 'developer' => true, 'user' => true, 'viewer' => true];
 echo json_encode([
   'none' => $method->invoke($runtime, $base, $none),
   'view' => $method->invoke($runtime, $base, $view),
   'use' => $method->invoke($runtime, $base, $use),
   'inactive' => $method->invoke($runtime, $inactive, $use),
+  'tester' => $method->invoke($runtime, $visible, ['roles' => ['Tester'], 'permissions' => ['gps.view', 'gps.use']]),
+  'developer' => $method->invoke($runtime, $visible, ['roles' => ['Developer'], 'permissions' => ['gps.view', 'gps.use']]),
+  'admin' => $method->invoke($runtime, $visible, ['roles' => ['Administrator'], 'permissions' => ['admin.write', 'gps.view', 'gps.use']]),
   'publicAccess' => $sanitize->invoke($runtime, $base),
 ], JSON_THROW_ON_ERROR);
 `;
@@ -70,6 +75,9 @@ echo json_encode([
   assert.deepEqual(payload.view, { mode: 'anonymous', canView: true, canUse: false });
   assert.deepEqual(payload.use, { mode: 'anonymous', canView: true, canUse: true });
   assert.deepEqual(payload.inactive, { mode: 'anonymous', canView: false, canUse: false });
+  for (const role of ['tester', 'developer', 'admin']) {
+    assert.deepEqual(payload[role], { mode: 'authenticated', canView: true, canUse: true, navigationVisible: true });
+  }
   assert.deepEqual(payload.publicAccess, {
     visibilityPermissions: ['gps.view'],
     usagePermissions: ['gps.use'],

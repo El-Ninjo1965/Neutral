@@ -5,6 +5,9 @@ const assert = require('node:assert/strict');
 const access = require('../Web-App/public/user-module-access.js');
 const Moderation = require('../Web-App/app/modules/moderation/index.js');
 const AdminModulesView = require('../Web-App/public/admin/modules-view.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 const activeModule = (id, permission, navigationVisible = true) => ({
   id,
@@ -74,4 +77,31 @@ test('module overview is lightweight and Details replaces it with its own view',
   assert.match(container.innerHTML, /module-detail-view/);
   assert.match(container.innerHTML, /Back to App Modules/);
   assert.doesNotMatch(container.innerHTML, /id="modules-table"/);
+});
+
+test('a delayed anonymous discovery cannot overwrite a newer authenticated catalog', async () => {
+  const pending = [];
+  const records = new Map();
+  const registry = {
+    discover: () => new Promise((resolve) => pending.push(resolve)),
+    getAll: () => Array.from(records.values()),
+    get: (id) => records.get(id),
+    has: (id) => records.has(id),
+    register: (module) => { records.set(module.id, module); return module; },
+    unregister: (id) => records.delete(id)
+  };
+  const sandbox = { window: null, ModuleRegistry: registry, Core: { emit() {} }, ModuleInterface: {}, console };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../Web-App/core/module-manager.js'), 'utf8'), sandbox);
+  sandbox.ModuleManager.init();
+
+  const anonymousRequest = sandbox.ModuleManager.discoverModules();
+  const authenticatedRequest = sandbox.ModuleManager.discoverModules();
+  pending[1]([activeModule('profile', 'profile.view')]);
+  await authenticatedRequest;
+  pending[0]([activeModule('gps', 'gps.view')]);
+  await anonymousRequest;
+
+  assert.deepEqual(Array.from(records.keys()), ['profile']);
 });

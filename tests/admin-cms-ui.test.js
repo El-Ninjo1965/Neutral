@@ -82,6 +82,22 @@ test('admin router delegates layout and navigation to AdminShell', () => {
   assert.doesNotMatch(source, /admin-top-nav/);
 });
 
+test('admin theme select applies one change event immediately', () => {
+  const AdminShell = require('../Web-App/public/admin/shell.js');
+  const attributes = new Map();
+  const select = { value: 'dark', closest: (selector) => selector === '[data-admin-theme]' ? select : null };
+  const container = { contains: (node) => node === select, querySelector: () => select };
+  const previousDocument = global.document;
+  const previousWindow = global.window;
+  global.document = { body: { setAttribute: (key, value) => attributes.set(key, value) } };
+  global.window = { localStorage: { setItem() {} } };
+  const shell = new AdminShell(container);
+  shell.handleChange({ target: select });
+  assert.equal(attributes.get('data-theme'), 'dark');
+  global.document = previousDocument;
+  global.window = previousWindow;
+});
+
 test('Settings and Appearance are separate views with distinct responsibilities', () => {
   const settings = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/settings-view.js'), 'utf8');
   const appearance = fs.readFileSync(path.join(__dirname, '../Web-App/public/admin/appearance-view.js'), 'utf8');

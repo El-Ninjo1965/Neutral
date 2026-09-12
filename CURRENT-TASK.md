@@ -1,18 +1,18 @@
-# CURRENT TASK – PROFILE / MODERATION END-TO-END REPAIR
+# CURRENT TASK – PRODUCTION MODULE CATALOG RECOVERY
 
-**Status:** IMPLEMENTIERT – TEST/DEPLOYMENT AUSSTEHEND
+**Status:** IMPLEMENTIERT – DEPLOYMENT/LIVE-RETEST AUSSTEHEND
 **Datum:** 2026-09-12
-**Quelle:** aktueller fokussierter Auftrag in `CODEX.md`
 
-- [ ] Profile-vs-GPS vom aktiven Serverzustand bis zum tatsächlichen User-DOM instrumentieren und Root Cause beheben.
-- [ ] Reales Verhalten testen: authentifizierter berechtigter User sieht Profile, öffnet es und speichert über die geschützte Route; Deaktivierung entfernt es.
-- [ ] Moderation über denselben generischen Discovery-/Presentation-/Permission-Vertrag für die Moderatorrolle erreichbar machen und Self-Test prüfen.
-- [ ] Manifestdefaults und Admin-Overrides für Visibility/Navigation deterministisch zusammenführen.
-- [ ] User Settings Apps- und Navigation-Save im echten Handler mit sichtbarem Frameworkdialog und schließendem OK testen/reparieren.
-- [ ] App-/System-Modulübersichten von eigenen Detailrouten trennen; Detail-Save bestätigt und navigiert zurück.
-- [ ] Optionalen generischen moduleigenen Admin-Settings-Vertrag prüfen/ergänzen, ohne Provider-Sondercode oder Secret-Leak.
-- [ ] GPS-Standorttext auf reale verfügbare Ortsangabe oder ehrlichen Koordinaten-/Unavailable-Fallback ändern und Section-Abstand ergänzen.
-- [ ] Verhaltensnahe DOM/API-End-to-End-Tests, Vollsuite, Syntax, PHP-Lint, Diff und Production Package.
-- [ ] Dokumentation, Commit/Push, CodeQL, FTPS und read-only Production Smoke terminal prüfen; kein Core Freeze.
+- [x] Anonymous/authenticated request order, credentials, response scope and timing instrumented.
+- [x] Online catalog made authoritative; anonymous cache restricted to offline fallback.
+- [x] Delayed anonymous vs authenticated login race reproduced and fixed with latest-request-wins reconciliation.
+- [x] Catalog failure remains retryable and successful retry updates state without reload.
+- [x] Ralf/Tester, Developer and Administrator visibility audiences behavior-tested with effective GPS permissions.
+- [x] Profile removed from commercial entitlement filtering via generic manifest contract.
+- [x] Repeated visibility projection work removed from the server catalog hot path.
+- [x] Production smoke extended with catalog scope, duration and server timing.
+- [x] Theme one-change behavior and shared table border corrected.
+- [x] Full local suite passed.
+- [ ] Push, CodeQL, FTPS, production smoke and ordered operator retest.
 
-Operator-Retest bleibt erforderlich.
+Core Freeze remains not declared.

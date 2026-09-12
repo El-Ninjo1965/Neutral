@@ -761,7 +761,7 @@
           <h2 data-i18n-key="settings.areas">App areas</h2>
           <p data-i18n-key="settings.areas.help">Choose the areas you want to see in the app navigation.</p>
           <div class="user-settings-module-list">
-            ${isDiscoveryPending() || state.discoveryState === 'error' ? `<p class="user-app-empty">${getDiscoveryMessage()}</p>` : modules.length ? modules.map((module) => `
+            ${isDiscoveryPending() || state.discoveryState === 'error' ? `<p class="user-app-empty">${getDiscoveryMessage()}${state.discoveryState === 'error' ? ' <button type="button" class="ui-button ui-button--secondary" id="moduleDiscoveryRetry">Retry</button>' : ''}</p>` : modules.length ? modules.map((module) => `
               <label class="user-settings-toggle" for="module-toggle-${escapeHtml(module.id)}">
                 <input id="module-toggle-${escapeHtml(module.id)}" type="checkbox" data-user-setting-module="${escapeHtml(module.id)}" ${moduleVisibility.has(module.id) ? 'checked' : ''} />
                 <span>
@@ -830,6 +830,10 @@
     `;
 
     const saveButton = document.getElementById('userSettingsSaveButton');
+    document.getElementById('moduleDiscoveryRetry')?.addEventListener('click', async () => {
+      await refreshModuleDiscovery().catch(() => []);
+      renderApp();
+    });
     document.querySelectorAll('[data-settings-section]').forEach((button) => button.addEventListener('click', () => { state.settingsSection = button.dataset.settingsSection;writeHashRoute(`settings/${state.settingsSection}`);renderApp(); }));
     document.querySelectorAll('[data-navigation-label-reset]').forEach((button) => button.addEventListener('click', () => {
       const input = document.querySelector(`[data-navigation-label="${button.dataset.navigationLabelReset}"]`);
@@ -1115,11 +1119,9 @@
   if (window.Core && typeof window.Core.on === 'function') {
     window.Core.on('startup:modules-ready', () => {
       state.discoveryState = 'ready';
-      renderApp();
     });
     window.Core.on('startup:modules-error', () => {
       state.discoveryState = 'error';
-      renderApp();
     });
   }
 

@@ -612,6 +612,7 @@ if (preg_match('#^admin/media/(\d+)/(approve|reject|delete)$#',$route,$matches)=
 }
 
 if ($route === 'modules' && $method === 'GET') {
+    $catalogStartedAt = microtime(true);
     $databaseConfig = $config->database();
     $databaseConfigured = trim((string) ($databaseConfig['url'] ?? '')) !== ''
         || (
@@ -627,7 +628,10 @@ if ($route === 'modules' && $method === 'GET') {
         ];
     }
     $clientModules=$databaseConfigured && $clientIdentity !== null ? $moduleRuntime->listForClient($clientIdentity) : [];
-    if($identity){$entitlements=$accountLicenseService->moduleEntitlementsForUser(identity_user_id($identity));if($entitlements!==[])$clientModules=array_values(array_filter(array_map(static function(array $module)use($entitlements):array{$state=(string)($entitlements[$module['id']]??'hidden');$module['entitlementState']=in_array($state,['available','locked','hidden'],true)?$state:'hidden';return $module;},$clientModules),static fn(array $module):bool=>$module['entitlementState']!=='hidden'));}
+    if($identity){$clientModules=AccountLicenseService::applyModuleEntitlements($clientModules,$accountLicenseService->moduleEntitlementsForUser(identity_user_id($identity)));}
+    $catalogDurationMs = (int) round((microtime(true) - $catalogStartedAt) * 1000);
+    header('Server-Timing: module-catalog;dur=' . $catalogDurationMs);
+    header('X-Neutral-Catalog-Mode: ' . ($identity ? 'authenticated' : 'anonymous'));
     JsonResponse::success([
         'modules' => $clientModules,
         'accessContext' => [

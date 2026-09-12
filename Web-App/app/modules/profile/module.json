@@ -8,6 +8,7 @@
   "entry": "index.js",
   "globalName": "NeutralProfileModule",
   "defaultActivation": "active",
+  "entitlementRequired": false,
   "presentation": {
     "userNavigation": true,
     "adminNavigation": false,

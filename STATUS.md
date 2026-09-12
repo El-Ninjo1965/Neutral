@@ -1,4 +1,15 @@
-# Neutral status — focused Profile / Moderation repair
+# Neutral status — production module catalog recovery
+
+**Stand:** 2026-09-12
+**Code status:** Local implementation and 553-test suite PASS; deployment pending
+**Operator status:** **RETEST REQUIRED**
+
+## Proven root causes
+
+`ab3c488` did not prevent the live failure because its online anonymous warmstart returned cached data while the background response was never reconciled, concurrent anonymous/login discoveries could commit out of order, and catalog failures were silently converted to an empty successful discovery. Separately, Profile was removed by commercial package entitlement projection even when its module permissions were valid. Server projection also repeated full module/visibility reads per module and classified custom authenticated roles inconsistently for navigation.
+
+The repaired contract uses one authoritative online request with same-origin credentials, offline-only anonymous fallback, latest-request-wins registry commits, explicit retry errors, stable visibility audiences, and a generic entitlement-exemption manifest flag for account modules. Catalog responses expose bounded scope/timing evidence. Core Freeze is not declared.
+
 
 **Stand:** 2026-09-12
 **Code status:** Implemented; deployment verification pending

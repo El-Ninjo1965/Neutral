@@ -1,5 +1,10 @@
 # NEUTRAL – CHATGPT HANDOFF
 
+## 2026-09-12 P0 production catalog repair
+
+The live symptoms were not primarily permissions. The browser could return an anonymous cache online, discard the background result without registry reconciliation, race that request against post-login discovery, and turn request failures into an empty successful catalog. Profile was additionally filtered by package entitlements. The fix makes online discovery authoritative and credentialed, commits only the newest discovery, keeps failures retryable, removes repeated server visibility scans, normalizes authenticated visibility audiences, and exempts Profile through a generic module manifest contract. Production smoke now requires anonymous scope and Server-Timing evidence below ten seconds. Deployment and ordered operator retest remain mandatory; no Core Freeze.
+
+
 ## 2026-09-12 focused repair handoff
 
 The authenticated module-catalog race has been repaired: session restoration now precedes startup discovery, login refreshes discovery, and omitted modules are removed from the browser registry. Profile and Moderation use the same permission-driven visibility path; Moderation now has a real User workspace and protected service self-test. Module details are separate views and consume optional manifest-owned Admin settings generically. Production/operator retest is still required; do not declare Core Freeze yet.

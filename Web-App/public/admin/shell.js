@@ -8,6 +8,7 @@ class AdminShell {
     this.onNavigate = typeof options.onNavigate === 'function' ? options.onNavigate : () => {};
     this.onLogout = typeof options.onLogout === 'function' ? options.onLogout : () => {};
     this.boundClick = this.handleClick.bind(this);
+    this.boundChange = this.handleChange.bind(this);
     this.boundKeydown = this.handleKeydown.bind(this);
   }
 
@@ -53,6 +54,7 @@ class AdminShell {
   mount() {
     this.container.innerHTML = AdminShell.render({ groups: this.groups, userLabel: this.userLabel });
     this.container.addEventListener('click', this.boundClick);
+    this.container.addEventListener('change', this.boundChange);
     document.addEventListener('keydown', this.boundKeydown);
     this.applyTheme(this.storedTheme());
     return this;
@@ -72,9 +74,12 @@ class AdminShell {
       return;
     }
     if (event.target.closest('[data-admin-close]')) this.closeDrawer();
-    const themeSelect = event.target.closest('[data-admin-theme]');
-    if (themeSelect) this.applyTheme(themeSelect.value);
     if (event.target.closest('[data-admin-logout]')) this.onLogout();
+  }
+
+  handleChange(event) {
+    const themeSelect = event.target.closest('[data-admin-theme]');
+    if (themeSelect && this.container.contains(themeSelect)) this.applyTheme(themeSelect.value);
   }
 
   storedTheme() {
@@ -142,6 +147,7 @@ class AdminShell {
 
   destroy() {
     this.container.removeEventListener('click', this.boundClick);
+    this.container.removeEventListener('change', this.boundChange);
     document.removeEventListener('keydown', this.boundKeydown);
     document.body.classList.remove('admin-drawer-open');
   }

@@ -242,7 +242,8 @@
     // Warmstart must hydrate from it immediately; the remote catalog is then
     // reconciled in the background. Security contract: only anonymous catalogs
     // are ever cached, authenticated responses never persist as fallback.
-    let backgroundCatalogSyncPromise = null;
+    let catalogRequestSequence = 0;
+    let lastCatalogRequest = null;
 
     const isCatalogRefreshOnline = () => {
         if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
@@ -256,19 +257,25 @@
         return true;
     };
 
-    const fetchRemoteCatalog = async (catalogPath) => {
+    const currentCatalogMode = () => (window.CoreAuth?.currentUser || window.UserModule?.currentUser)
+        ? 'authenticated'
+        : 'anonymous';
+
+    const fetchRemoteCatalog = async (catalogPath, expectedMode = currentCatalogMode()) => {
         if (!isCatalogRefreshOnline()) {
             mark('fetch-remote-catalog-skipped'); // TEMPORARY diagnostic mark
-            return null;
+            throw new Error('Module catalog is unavailable while offline.');
         }
 
         mark('fetch-remote-catalog-start'); // TEMPORARY diagnostic mark
+        const requestId = ++catalogRequestSequence;
+        const startedAt = Date.now();
         try {
-            const response = await fetch(catalogPath, { cache: 'no-store' });
+            const response = await fetch(catalogPath, { cache: 'no-store', credentials: 'same-origin' });
 
             if (!response.ok) {
                 mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
-                return null;
+                throw new Error(`Module catalog request failed with HTTP ${response.status}.`);
             }
 
             const payload = await response.json();
@@ -282,36 +289,21 @@
             const modules = normalizeCatalogEntries(sourceModules, mode);
             const catalogIsValid = Array.isArray(sourceModules) && modules.length === sourceModules.length;
 
+            if (!catalogIsValid) throw new Error('Module catalog response is invalid.');
+            if (mode !== expectedMode) throw new Error(`Stale module catalog response (${mode || 'unknown'} while ${expectedMode} was expected).`);
+
             if (mode === 'anonymous' && catalogIsValid) {
                 writeAnonymousCatalogCache(modules);
             }
 
             mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
-            return catalogIsValid ? modules : null;
+            lastCatalogRequest = { requestId, mode, status: response.status, durationMs: Date.now() - startedAt, moduleCount: modules.length };
+            return modules;
         } catch (error) {
+            lastCatalogRequest = { requestId, mode: expectedMode, status: Number(error?.status || 0), durationMs: Date.now() - startedAt, moduleCount: 0, error: String(error?.message || error) };
             mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
-            return null;
+            throw error;
         }
-    };
-
-    const startBackgroundCatalogSync = (catalogPath) => {
-        if (!isCatalogRefreshOnline()) {
-            return null;
-        }
-
-        if (backgroundCatalogSyncPromise) {
-            return backgroundCatalogSyncPromise;
-        }
-
-        backgroundCatalogSyncPromise = fetchRemoteCatalog(catalogPath)
-            .then((modules) => {
-                if (Array.isArray(modules) && window.Core && typeof window.Core.emit === 'function') {
-                    window.Core.emit('module-catalog:refreshed', { count: modules.length });
-                }
-                return modules;
-            })
-            .finally(() => { backgroundCatalogSyncPromise = null; });
-        return backgroundCatalogSyncPromise;
     };
 
     const readModuleCatalog = async (catalogPath) => {
@@ -321,30 +313,21 @@
             return readAnonymousCatalogCache();
         }
 
-        const authenticated = !!(
-            window.CoreAuth?.currentUser
-            || window.UserModule?.currentUser
-        );
-        const cached = authenticated ? [] : readAnonymousCatalogCache();
-        if (cached.length > 0) {
-            // Warmstart: hydrate from the last known good catalog immediately and
-            // reconcile against the server in the background without blocking the UI.
-            if (isCatalogRefreshOnline()) {
-                startBackgroundCatalogSync(catalogPath);
-            }
+        const mode = currentCatalogMode();
+        const cached = mode === 'anonymous' ? readAnonymousCatalogCache() : [];
+        if (!isCatalogRefreshOnline()) {
             mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
             return cached;
         }
-
-        if (!isCatalogRefreshOnline()) {
+        try {
+            const remote = await fetchRemoteCatalog(catalogPath, mode);
             mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
-            return [];
+            return remote;
+        } catch (error) {
+            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
+            if (mode === 'anonymous' && cached.length) return cached;
+            throw error;
         }
-
-        // First run without any local state: the remote catalog is the only source.
-        const remote = await fetchRemoteCatalog(catalogPath);
-        mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
-        return remote || [];
     };
 
     const normalizeModuleKey = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -403,6 +386,10 @@
 
     const CoreLoader = {
         initialized: false,
+
+        getCatalogDiagnostics() {
+            return lastCatalogRequest ? Object.freeze({ ...lastCatalogRequest }) : null;
+        },
 
         getDefaultFrameworkCatalog() {
             return [...defaultFrameworkCatalog];
