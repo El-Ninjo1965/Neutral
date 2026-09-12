@@ -2,7 +2,7 @@
 
 **Richtung:** Codex → ChatGPT/Lea
 
-**Status:** OFFLINE-FIRST ARCHITECTURE RECOVERY LOKAL VERIFIZIERT – DEPLOYMENT AUSSTEHEND
+**Status:** OFFLINE-FIRST ARCHITECTURE RECOVERY DEPLOYED – OPERATOR-RETEST AUSSTEHEND
 
 **Core Freeze:** NICHT erklärt
 
@@ -12,7 +12,7 @@ GPS verwendet den generischen, versionierten und sanitisierten `publicOffline`-A
 
 Catalog-Synchronisierung läuft nach dem stabilen Start, bleibt bei Fehlern retryable und aktualisiert nur Navigation beziehungsweise offene Settings statt die Welcome-Fläche aufgrund der Discovery neu aufzubauen. Autoritative Server- und Admin-Lifecycle-Antworten aktualisieren den Public/Offline-Zustand; eine Deaktivierung verhindert die Hydrierung bei folgenden Offline-Starts. Beschädigte oder inkompatible Projektionen werden verworfen.
 
-Lokal bestanden 560/560 Tests, JavaScript-Syntax, PHP-Lint, `git diff --check` und das Production Package mit 136 Dateien. GitHub-Push, CodeQL, FTPS-Deployment und Production Read-only Smoke stehen noch aus.
+Lokal bestanden 560/560 Tests, JavaScript-Syntax, PHP-Lint, `git diff --check` und das Production Package mit 136 Dateien. Commit `9003898` liegt auf `main`. CodeQL-Lauf `34676863542` und FTPS-Deploy `34676863687` bestanden vollständig; der Deploymentlauf bestätigte Tests, Production Package, FTPS-Client, Upload und Production Read-only Smoke.
 
 ## Operator-Retest nach Deployment
 

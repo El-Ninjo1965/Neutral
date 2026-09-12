@@ -1,6 +1,6 @@
 # CURRENT TASK – OFFLINE-FIRST MODULE START
 
-**Status:** IMPLEMENTIERT UND LOKAL VERIFIZIERT – DEPLOYMENT AUSSTEHEND
+**Status:** IMPLEMENTIERT, VERIFIZIERT UND DEPLOYED – OPERATOR-RETEST AUSSTEHEND
 **Datum:** 2026-09-12
 
 - [x] Failing delayed/offline/lifecycle behavior captured.
@@ -13,6 +13,6 @@
 - [x] Profile/Moderation remain permission-sensitive; catalog errors remain retryable.
 - [x] Accepted Details/Save/Theme/Table/GPS UI contracts retained.
 - [x] Full suite (560/560), JS syntax, PHP lint, diff check and 136-file production package.
-- [ ] Commit, push, CodeQL, FTPS and production smoke.
+- [x] Commit, Push, CodeQL, FTPS und Production Read-only Smoke.
 
 Core Freeze remains not declared.
