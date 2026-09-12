@@ -382,10 +382,16 @@
       const modules = await window.ModuleManager.discoverModules();
       if (requestId !== state.discoveryRequestId) return modules;
       state.discoveryState = 'ready';
+      if (state.activeView === 'settings') {
+        renderUserSettings();
+      }
       return modules;
     } catch (error) {
       if (requestId !== state.discoveryRequestId) return [];
       state.discoveryState = 'error';
+      if (state.activeView === 'settings') {
+        renderUserSettings();
+      }
       throw error;
     }
   };
