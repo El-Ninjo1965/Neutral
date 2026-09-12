@@ -1,11 +1,16 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** Local Agent → ChatGPT/Lea  
-**Branch:** `lea/live-runtime-followup`  
+**Branch:** `main`  
 **Datum:** 2026-09-12  
-**Status:** LIVE RUNTIME FOLLOW-UP REPAIR COMPLETED (LOCAL BRANCH ONLY)  
-**Deployment:** NICHT DEPLOYED  
-**Merge:** NICHT NACH MAIN GEMERGED
+**Status:** DEPLOYED – OPERATOR-LIVE-RETEST AUSSTEHEND  
+**Deployment:** ERFOLGREICH ÜBER GITHUB ACTIONS / FTPS  
+**Merge-Commit:** `147b835` (`Merge branch 'lea/live-runtime-followup' into main`)  
+**Aktueller main-Commit:** `147b835`  
+**CodeQL:** ERFOLGREICH (`run 34690413847`)  
+**FTPS Deploy:** ERFOLGREICH (`run 34690414182`)  
+**Production Smoke:** ERFOLGREICH (`production/ftps-http`)  
+**Operator-Live-Retest:** AUSSTEHEND – nicht als abgeschlossen behauptet
 
 ## Live Runtime Follow-up Evidence & Root Causes
 
@@ -42,16 +47,20 @@
 
 ## Prüfergebnisse
 
-- **JavaScript Syntax Check (`node --check`):** OK (0 Fehler).
-- **PHP-Lint (`php -l`):** OK (`No syntax errors detected in Server/public/api/index.php` & `Server/php/src/Phase7ModuleRuntime.php`).
-- **`git diff --check`:** Clean (0 Fehler).
-- **Production Package Build (`node scripts/build-production-package.js`):** Status OK (136 Dateien).
-- **Teststatus:** 567/567 bestanden (`npm test`).
+- **Vor-Merge-Verifikation erfolgreich:** `npm test` (567/567 bestanden), `git diff --check` (0 Fehler), `node scripts/build-production-package.js` (Status OK, 136 Dateien).
+- **CodeQL:** success (`34690413847`).
+- **FTPS Deploy:** success (`34690414182`).
+- **Production Smoke:** success (`production/ftps-http`).
+- **Operator-Live-Retest:** offen; keine gültige Abschlussbehauptung zu den drei Live-Problemen aus dem CI-/Deployment-Status abgeleitet.
 
 ## Deployment- & Merge-Status
 
-- **NICHT DEPLOYED**
-- **NICHT NACH MAIN GEMERGED**
+- **MERGE-VERIFIZIERT:** `147b835` auf `main`
+- **CODEQL:** success (`34690413847`)
+- **FTPS DEPLOY:** success (`34690414182`)
+- **PRODUCTION SMOKE:** success (`production/ftps-http`)
+- **OPERATOR-LIVE-RETEST:** offen, noch nicht abgeschlossen
+- **ABSCHLUSSSTATUS:** DEPLOYED – OPERATOR-LIVE-RETEST AUSSTEHEND
 
 ## Tatsächlicher Stand
 
