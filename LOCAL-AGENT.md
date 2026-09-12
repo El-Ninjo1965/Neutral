@@ -7,104 +7,100 @@
 **Deployment:** VERBOTEN  
 **Merge nach `main`:** VERBOTEN
 
-## Ausgangslage
+## WICHTIGE KORREKTUR DER STOP-REGEL
 
-Der Produktionsfix `fad6b593` darf in diesem Auftrag nicht verändert werden. Die früheren Regex-/Source-String-Tests wurden zu Recht als unzureichend verworfen. Inzwischen existiert ein echter DOM-/Runtime-Harness in `tests/user-ui-stability.test.js`.
+Der vorherige Auftrag war missverständlich: Du hast bei Test C korrekt gestoppt, obwohl der bekannte C-Failure bereits als **falsche Harness-Erwartung** identifiziert wurde.
 
-Der Agent hat nach der vereinbarten STOP-Regel angehalten.
+Für den JETZIGEN Schritt gilt deshalb ausdrücklich:
 
-Bisherige belastbare Evidence:
+> Der bekannte C-Failure `retry button is visible while the first catalog request is still pending` ist KEIN Stop-Grund. Du bist ausdrücklich autorisiert und angewiesen, diesen TEST/HARNESS zu korrigieren.
 
-- Basis 1–4: **4 PASS / 0 FAIL**.
-- Test B `Start button stays stable during background updates`: **PASS**.
-- Test C `Stale settings catalog responses do not overwrite successful state`: **FAIL**.
-- Der aktuelle C-Failure lautet sinngemäß: `retry button is visible while the first catalog request is still pending`.
+Die STOP-Regel gilt **erst nachdem** diese bekannte falsche Harness-Erwartung korrigiert wurde und der korrigierte Runtime-Test tatsächlich ausgeführt wird.
 
-## Lea Review / verbindliche Entscheidung
+Produktionscode bleibt vollständig gesperrt.
 
-Der C-Failure beweist aktuell **keinen Produktionsfehler**.
+## Verbindlicher UI-Vertrag für Test C
 
-Die echte App zeigt den Retry-Control nur im Zustand `error`, nicht im Zustand `pending`. Das ist das gewünschte Verhalten:
+- `pending` → Discovery läuft. Kein Error-State und kein Retry-Button als Pflicht.
+- `ready` → erfolgreiche Module/Settings-Anzeige.
+- `error` → Fehlermeldung und Retry-Control.
 
-- `pending` → Discovery läuft; **kein Retry-Button erforderlich/erwartet**.
-- `ready` → Module anzeigen; kein Fehler.
-- `error` → Fehlermeldung + Retry-Control.
+Der Test darf den Produktionscode nicht dazu zwingen, im Pending-State einen Retry-Button zu zeigen.
 
-Der Harness darf deshalb NICHT verlangen, dass während eines noch laufenden ersten Catalog-Requests bereits ein Retry-Button sichtbar ist.
+## SCHRITT 1 – bekannten Harness-Fehler jetzt tatsächlich korrigieren
 
-Die Test-Erwartung ist an den verbindlichen UI-Vertrag anzupassen. Der Produktionscode darf nicht an diese falsche Testannahme angepasst werden.
+Bearbeite `tests/user-ui-stability.test.js`.
 
-## Auftrag 1 – Test C korrigieren
+Entferne/ersetze die falsche C-Erwartung, dass während des ersten noch laufenden Catalog-Requests ein Retry-Button sichtbar sein müsse.
 
-Ändere ausschließlich Test-/Harness-Code so, dass C den echten Nutzervertrag prüft.
+Baue C als echten Runtime-/DOM-Verhaltenstest über den realen User-Flow:
 
-C muss mit kontrollierbaren Promises/Deferreds mindestens folgendes Verhalten tatsächlich ausführen:
-
-1. Settings ist geöffnet.
-2. Catalog Request 1 startet und bleibt `pending`.
-3. Während `pending` darf KEIN Fehlerzustand verlangt werden; insbesondere darf der Test keinen Retry-Button als Pflicht erwarten.
-4. Ein neuerer Catalog-/Retry-/Discovery-Lauf wird ausgelöst, sobald dies über den realen User-Flow zulässig ist.
-5. Der neuere Lauf liefert erfolgreich sichtbare Module.
-6. Eine ältere/stale Antwort oder ein älterer Fehler trifft anschließend ein.
-7. Beweise im DOM/Runtime-State:
-   - der neuere erfolgreiche Catalog bleibt maßgeblich;
+1. Settings öffnen.
+2. Catalog Request 1 bleibt kontrolliert pending.
+3. Beweisen: Pending wird NICHT als Error dargestellt; Retry ist in diesem Zustand nicht erforderlich.
+4. Erzeuge anschließend über einen fachlich realen Flow einen Zustand, in dem ein weiterer Discovery-Lauf stattfinden kann. Falls ein Retry benötigt wird, muss zuerst ein echter Error-State eintreten, in dem der Retry-Control sichtbar ist.
+5. Neuerer Request liefert erfolgreich Module.
+6. Älterer Request/älterer Fehler trifft verspätet ein.
+7. Beweisen:
+   - neuester Erfolg bleibt maßgeblich;
    - Module bleiben sichtbar;
-   - `discoveryState` bleibt `ready` bzw. die UI bleibt im erfolgreichen Zustand;
-   - die alte Antwort erzeugt nicht nachträglich `Modules could not be loaded`;
-   - ein Retry-Control erscheint nur im tatsächlichen Error-State.
+   - kein nachträgliches `Modules could not be loaded` durch stale Resultat;
+   - Retry-Control erscheint nur im tatsächlichen Error-State.
 
-Nutze soweit möglich echte user-visible Aktionen und den realen App-Code. Keine unexponierten Interna nur für den Test öffnen. Keine Regex-/Source-String-Assertions als Verhaltensbeweis.
+Keine Regex-/Source-String-Beweise. Keine unexponierten Produktionsinternas nur für Tests öffnen.
 
-## Auftrag 2 – Basis und A–D vollständig ausführen
+### Entscheidungsregel während Schritt 1
 
-Nach Korrektur von C zuerst ausführen:
+Wenn C wegen eines **Harness-/Fake-Browser-Problems** fehlschlägt, darfst und sollst du den Harness weiter korrigieren.
 
+Wenn C nach einem validierten Harness wegen eines **nachweislichen Produktionsverhaltens** fehlschlägt, dann STOP und melde den exakten Runtime-Failure.
+
+## SCHRITT 2 – danach ALLE Basis- und Runtime-Tests ausführen
+
+Erst nach erfolgreicher Harness-Korrektur von C gemeinsam ausführen:
+
+### Basis
 - Basis 1
 - Basis 2
 - Basis 3
 - Basis 4
+
+### Runtime
 - A Login + delayed/stale discovery
 - B Start button during background updates
 - C competing/stale Settings catalog
 - D Settings Save + Success Modal
 
-Jeder Test muss als echter Runtime-/DOM-Verhaltenstest laufen.
-
-Verbindliche Erwartungen:
+Erwartungen:
 
 ### A
-Nach erfolgreichem Login bleibt Home/Start deterministisch aktiv. Eine ältere Discovery-Antwort darf Login oder eine alte Route nicht wiederherstellen.
+Erfolgreicher Login → Home/Start bleibt deterministisch aktiv. Stale Discovery darf keine alte Login-/Route-View wiederherstellen.
 
 ### B
-Ein einzelner Klick auf Start öffnet Home auch nach Background-Updates. Kein zweiter Klick erforderlich.
+Ein Klick auf Start reicht auch nach Background-Updates. Eventhandler/DOM bleiben funktionsfähig.
 
 ### C
-Neuester erfolgreicher Catalog gewinnt. Stale Antworten/Fehler dürfen ihn nicht überschreiben.
+Neuester erfolgreicher Catalog gewinnt. Stale Resultate überschreiben ihn nicht.
 
 ### D
-Nach erfolgreichem Settings-Save:
-- User bleibt in Settings;
-- keine Weiterleitung erforderlich;
-- `Successfully saved.` erscheint als echtes Success-Modal/Popup;
-- Modal bleibt nach dem Render vorhanden;
-- Modal verschwindet erst durch Benutzeraktion/OK.
+Erfolgreicher Settings-Save → User bleibt in Settings; `Successfully saved.` erscheint als echtes Modal/Popup; bleibt nach Render sichtbar; verschwindet erst nach Benutzeraktion/OK. Keine Weiterleitung erforderlich.
 
-## STOP-Regel
+## STOP-REGEL AB SCHRITT 2
 
-Wenn der nun validierte Harness bei Basis 1–4 oder A–D gegen den aktuellen Produktionscode reproduzierbar FAIL zeigt:
+Jetzt erst gilt die harte STOP-Regel:
 
-**STOP.**
+Wenn Basis 1–4 oder A–D nach validiertem Harness einen reproduzierbaren **Produktionscode-Failure** zeigen:
 
+- STOP.
 - Produktionscode NICHT ändern.
-- Failure mit tatsächlichem Runtime-/DOM-Zustand dokumentieren.
-- Keine weitere Reparatur auf Verdacht.
+- tatsächlichen DOM-/Runtime-State dokumentieren.
 - `STOP – REVIEW DURCH LEA ERFORDERLICH` melden.
 
-Wenn Basis 1–4 und A–D vollständig PASS sind, darf mit Auftrag 3 fortgefahren werden.
+Wenn Basis 1–4 + A–D vollständig PASS → weiter zu Schritt 3.
 
-## Auftrag 3 – vollständige Verifikation
+## SCHRITT 3 – vollständige Verifikation
 
-Nur wenn Basis + A–D vollständig PASS:
+Nur bei vollständigem PASS:
 
 1. `npm test`
 2. `node --check Web-App/public/user-app.js`
@@ -112,18 +108,16 @@ Nur wenn Basis + A–D vollständig PASS:
 4. `git diff --check`
 5. `node scripts/build-production-package.js`
 
-Keine Produktionsänderung.
-
 ## Änderungsgrenzen
 
 Erlaubt:
 - `tests/user-ui-stability.test.js`
-- notwendige reine Test-Harness-Hilfen unter `tests/`, falls wirklich erforderlich
+- notwendige reine Harness-Hilfen unter `tests/`
 - `CHATGPT.md`
 
-Nicht erlaubt:
+VERBOTEN:
 - `Web-App/public/user-app.js`
-- GPS-Code oder GPS-Manifest
+- GPS
 - Profile
 - Moderation
 - Admin
@@ -131,23 +125,23 @@ Nicht erlaubt:
 - Core-Runtime
 - Datenbank
 
-Keine gerätespezifische Optimierung. Die Web-App ist plattformneutral; Tests dürfen keine Annahme erzwingen, dass ein bestimmtes iPad-, Android-, Windows-, macOS-, Safari- oder Chrome-Verhalten die Zielplattform definiert.
+Keine gerätespezifische Optimierung. Die Ziel-Web-App ist plattformneutral.
 
-## Abschlussdokumentation
+## SCHRITT 4 – Dokumentation / Commit
 
-`CHATGPT.md` aktualisieren mit:
+`CHATGPT.md` aktualisieren:
 
 ### HARNESS
-- Basis 1: PASS/FAIL
-- Basis 2: PASS/FAIL
-- Basis 3: PASS/FAIL
-- Basis 4: PASS/FAIL
+- Basis 1 PASS/FAIL
+- Basis 2 PASS/FAIL
+- Basis 3 PASS/FAIL
+- Basis 4 PASS/FAIL
 
 ### RUNTIME
-- A: PASS/FAIL
-- B: PASS/FAIL
-- C: PASS/FAIL
-- D: PASS/FAIL
+- A PASS/FAIL
+- B PASS/FAIL
+- C PASS/FAIL
+- D PASS/FAIL
 
 ### VERIFIKATION
 - npm test
@@ -156,9 +150,9 @@ Keine gerätespezifische Optimierung. Die Web-App ist plattformneutral; Tests d�
 - Production Package
 
 ### PRODUKTIONSCODE
-Ausdrücklich dokumentieren:
+Ausdrücklich:
 `PRODUKTIONSCODE UNVERÄNDERT`
 
 Committe und pushe ausschließlich Test-/Dokumentationsänderungen auf `lea/user-ui-stability`.
 
-Nicht deployen. Nicht nach `main` mergen.
+NICHT DEPLOYEN. NICHT NACH MAIN MERGEN.
