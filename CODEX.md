@@ -1,315 +1,271 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** OPERATOR UX / MODULE REPAIR BATCH – KEIN CORE FREEZE  
-**Datum:** 2026-09-12
+**Status:** LIVE RETEST FAILED – PROFILE / MODULE DISCOVERY / DETAILS / SETTINGS FEEDBACK  
+**Datum:** 2026-09-12  
+**Core Freeze:** NICHT erklärt
 
-# Bestätigter Referenzstand
+# Referenzstand – nicht regressieren
 
-Der User-Login ist operator-live funktionsfähig. Browser-Autofill funktioniert und der aktuelle einfache lokale Click-Eye funktioniert ausreichend. **Diesen Login-Aufbau nicht grundsätzlich umbauen.** Ein gelegentlich nötiger zweiter Klick ist derzeit kein Blocker.
+- User Login funktioniert operator-live; Browser-Autofill + einfacher Click-Eye akzeptiert. Nicht grundsätzlich umbauen.
+- Admin Login funktioniert.
+- User Management Organization-Fix ist operator-live **PASS**: `Verein Bonn` wird inzwischen korrekt in der Übersicht angezeigt.
+- User blockieren/reaktivieren funktioniert.
+- Doppelte Überschrift bei App Modules/System Modules ist entfernt und damit **PASS**.
+- Google-Maps-/GPS-Grundfunktionen und eingebettete OSM-Karte grundsätzlich vorhanden.
 
-Admin-Login funktioniert ebenfalls.
-
-Dieser Batch basiert auf einem vollständigen Operator-Rundgang durch User-App und Admin. Root Causes jeweils vor Änderung prüfen; keine großen Core-/Auth-Refactorings.
+Dieser Auftrag bearbeitet die beim direkten Produktions-Retest weiterhin fehlerhaften Punkte. Keine kosmetische Behauptung als Fix akzeptieren: die reale User-App muss das Ergebnis zeigen.
 
 ---
 
-# PRIORITÄT 1 – Profile-Modul muss im User-Bereich erscheinen
+# P0 – PROFILE IST TROTZ INSTALL + ACTIVE + PERMISSIONS WEITERHIN NICHT SICHTBAR
 
-## Live-Evidence
+## Neuer Live-Retest
 
-Für User `Tester` ist dreifach bestätigt:
+Nach dem letzten Deployment wurde Profile ausdrücklich erneut:
 
-- App Module `Profile` ist **Installed + Active**.
-- Rolle `User` besitzt `profile.view` und `profile.update`.
-- Permission Catalog führt `profile.view` und `profile.update` als User-App-Permissions des Moduls `Profile`.
-- Trotzdem erscheint Profile weder im User-Grundmenü noch in Settings → Apps.
-- GPS ist ebenfalls aktiv/berechtigt und erscheint korrekt.
+1. installiert,
+2. aktiviert,
+3. gespeichert,
+4. User ausgeloggt,
+5. als `Ralf` neu eingeloggt.
+
+Ergebnis weiterhin:
+
+- Settings zeigt nur `Apps` und `Navigation`.
+- Kein Profile.
+- Profile erscheint auch nicht als nutzbarer User-App-Bereich.
+
+Vorherige Evidence bleibt zusätzlich bestehen:
+
+- `Profile` Installed + Active.
+- `profile.view` + `profile.update` in Rolle/User vorhanden.
+- Permission Catalog enthält beide Profile-Permissions.
+- GPS funktioniert im gleichen User-App-Umfeld.
+
+Der letzte Fix `presentation.userNavigation` war also **nicht ausreichend**. Nicht erneut denselben Source-String als Erfolg werten.
+
+## Auftrag – echte End-to-End Root Cause
+
+Profile und GPS vom Server bis zum realen User-Renderpfad instrumentiert vergleichen:
+
+- Manifest
+- installierter/aktiver Registry-Zustand
+- serverseitige Module-/Visibility-Projektion für authentifizierten User
+- effektive Permissions
+- API-Response an den User-Browser
+- User-App Discovery/Module Access
+- Settings → Apps Projection
+- Navigation Projection
+- Route/Entry
+- Profile Settings Projection
+
+Verhaltensnah beweisen: **ein real authentifizierter Testuser mit aktiver Profile-Installation und `profile.view/profile.update` bekommt Profile in der tatsächlich gerenderten User-App und kann Profile öffnen/speichern.**
+
+Wenn Profile fachlich bewusst kein Top-Level-App-Menü sein soll, muss es mindestens als klarer Profile-Bereich in Settings erscheinen. Aktuell erscheint es nirgends; das ist der Bug.
+
+Keine Permission-Sonderbehandlung und keine hardcodierte `Tester`-/`Ralf`-Ausnahme.
+
+---
+
+# P0 – MODERATION ZEIGT DEN GLEICHEN GRUNDFEHLER
+
+Neuer Operator-Test:
+
+- System Module `Moderation` installiert + aktiviert.
+- User `Ralf` besitzt bereits Rolle `Moderator`.
+- zusätzliche Moderation-Rechte wurden operatorseitig vergeben.
+- Trotzdem erscheint für Ralf keine Moderationsfunktion.
+- Visibility/Navigation in den Module Details war nach Aktivierung leer.
+- Module Self-Test war nicht nutzbar/erfolgreich.
 
 ## Auftrag
 
-- GPS und Profile im vollständigen User-App-Discovery-/Visibility-/Navigation-Pfad direkt vergleichen.
-- Exakt feststellen, wo Profile herausfällt: Manifest/Registry/Discovery/API/Projection/Visibility/Navigation/Settings-Apps/Route/Module-Entry.
-- Kein Permission-Workaround; Permissions sind nach Operator-Evidence vorhanden.
-- Kleinsten Root-Cause-Fix implementieren.
-- Profile muss für einen berechtigten User tatsächlich aufrufbar und benutzbar sein.
-- Profile View/Update funktional testen, nicht nur Sichtbarkeit.
+Nicht als separates UI-Einzelproblem behandeln. Prüfen, ob Profile und Moderation an demselben generischen Modul-Discovery-/Presentation-/Role-/Visibility-Vertrag scheitern.
 
-Erst wenn Profile funktioniert, sind weitere Module wie Moderation/Postbox sinnvoll operator-testbar.
+- Module müssen ihre vorgesehenen Permissions/Visibility-/Navigation-Metadaten sauber mitbringen bzw. aus Manifest/Registry projizieren.
+- Eine vorhandene Rolle `Moderator` darf nicht durch eine zweite künstliche Rolle ersetzt werden.
+- Wenn Moderation laut Architektur nur für bestimmte Rollen/Permissions sichtbar sein soll, diesen Vertrag korrekt aus Manifest/Permission Catalog/effective permissions ableiten.
+- Systemmodul darf nicht automatisch als normales User-App-Menü erscheinen, wenn sein Manifest das nicht vorsieht; aber berechtigte Moderationsfunktion muss dort erreichbar sein, wo der Modulvertrag sie definiert.
+- Self-Test-Vertrag prüfen und klaren Erfolg/Fehler anzeigen.
 
----
-
-# PRIORITÄT 2 – Organization in User Management
-
-## Live-Evidence
-
-User `Tester` / User ID 102:
-
-- Edit User zeigt unter `License or Organization`: `Verein Bonn — Verein`.
-- Effective Package wird von `Verein Bonn` geerbt.
-- In der User-Management-Übersicht steht in der Spalte `Organization` trotzdem `—`.
-
-## Auftrag
-
-- Organization-Projektion der User-Liste reparieren.
-- Vorhandene Zuordnung aus derselben kanonischen Quelle anzeigen, die Edit User/Effective Package nutzt.
-- Keine zweite Datenquelle/duplizierte Zuordnung erfinden.
-- Regressionstest: User mit Organization zeigt diese in Übersicht; User ohne Organization bleibt leer/—.
+Profile zuerst beweisen; danach Moderation mit Ralf als zweites End-to-End-Beispiel desselben Frameworkvertrags testen.
 
 ---
 
-# PRIORITÄT 3 – Sessions: echte aktive Sessions statt historischer Alt-Sessions
+# P1 – USER SETTINGS SAVE FEEDBACK IST LIVE WEITERHIN NICHT VORHANDEN
 
-## Live-Evidence
+Operator-Retest:
 
-Sessions-Seite zeigt denselben Administrator mehrfach als `Active`, obwohl alte Zeilen eine `Last Activity` vom 01.09. bzw. 11.09. haben und nicht die aktuelle Session sind. Aktuelle Session ist separat `Current`.
+- Settings → Apps ändern + `Save Settings`: Speicherung funktioniert, **keine Bestätigung**.
+- Settings → Navigation ändern + `Save Settings`: Speicherung funktioniert, **keine Bestätigung**.
 
-## Zielvertrag
+Der letzte angebliche Feedback-Fix ist damit live FAIL.
 
-- `Active` bedeutet tatsächlich aktive Session, nicht lediglich aktiver User-Account.
-- Historische/beendete Sessions dürfen nicht als aktiv erscheinen.
-- `Current` bezeichnet die Session des aktuellen Browser-/Admin-Kontexts.
-- Wenn nur eine aktuelle Session existiert, darf die Übersicht nicht drei aktive Sessions melden.
-- Wenn derselbe Account tatsächlich auf mehreren Geräten gültig eingeloggt ist, dürfen mehrere echte aktive Sessions existieren; nicht künstlich auf eine Session pro Account begrenzen.
-- Sessions müssen administrativ beendet/revoked werden können, sofern das bestehende Sicherheits-/Sessionmodell dies vorsieht.
-- Dashboard-Zähler `Active Sessions` muss denselben kanonischen Zustand verwenden.
+## Verbindlicher Vertrag
 
-Root Cause in DB-Sessionstatus, Revoke/Logout, Expiry/Persistenz und UI-Projektion prüfen; keine kosmetische Filterung über falsche Daten legen.
+Nach erfolgreichem Save:
 
----
+- Framework-eigenes sichtbares Modal/Popup.
+- Text sinngemäß `Successfully saved.`
+- genau `OK` zum Schließen.
+- kein Reset, keine Zusatzaktion.
+- kein nativer Browser-Alert.
 
-# PRIORITÄT 4 – GPS UX / Responsive Layout
+Bei Fehler: Framework-eigene klare Fehlermeldung.
 
-## Bestätigter Funktionsstand
-
-- Geolocation funktioniert.
-- OSM-Karte/Marker funktioniert.
-- Aktualisieren funktioniert.
-- OpenStreetMap öffnet bereits in neuem Tab.
-- Position teilen funktioniert technisch.
-
-## Änderungen
-
-1. `In Google Maps öffnen` muss in neuem Tab/Fenster öffnen (`target=_blank` + sichere rel-Attribute bzw. äquivalentes Verhalten).
-2. `In OpenStreetMap öffnen` als separaten Action-Button **entfernen**. OSM bleibt als eingebettete Kartenbasis.
-3. `Position teilen` soll standardmäßig einen **Google-Maps-Link** mit der aktuellen Position teilen, damit Empfänger direkt mit Google Maps navigieren können.
-4. Layout neu ordnen, responsiv und einspaltig:
-   - `Aktuelle Position`
-   - nutzerfreundliche Standort-/Adressdarstellung
-   - Genauigkeit
-   - Zeitpunkt
-   - `Position beim Öffnen automatisch ermitteln`
-   - Actions: `Position aktualisieren`, `In Google Maps öffnen`, `Position teilen`
-   - darunter die Karte über die verfügbare Breite.
-5. Rohwerte Breitengrad/Längengrad nicht prominent als Hauptinformation zeigen. Wenn Reverse-Geocoding bereits sauber/zulässig vorhanden ist, bevorzugt lesbare Adresse/Ortsbezeichnung anzeigen. **Keine neue externe API-Abhängigkeit oder kostenpflichtige Geocoding-Abhängigkeit nur dafür einführen.** Falls keine verlässliche Adresse verfügbar ist, eine robuste nutzerfreundliche Fallbackdarstellung wählen und Koordinaten intern für Links/Map behalten.
-6. Karte responsiv: auf iPad groß und deutlich; auf kleinen Handys ohne überlaufende Content-Blöcke.
+Wichtig: Test muss den echten Settings-Save-Handler und den tatsächlich sichtbaren Dialog im User-App-DOM prüfen, nicht nur das Vorhandensein einer Feedback-Funktion im Source.
 
 ---
 
-# PRIORITÄT 5 – User Settings Save Feedback
-
-Live funktionieren Settings-Speicherungen (Navigation Labels, GPS-App aktiv/deaktiv), aber es gibt **keinerlei sichtbare Bestätigung**.
-
-Vertrag:
-
-- Nach erfolgreichem Speichern einfache Framework-eigene Bestätigung: sinngemäß `Successfully saved.` + `OK`.
-- Keine zusätzlichen Aktionen wie Reset.
-- Bei Fehler entsprechend klare Fehlermeldung.
-- Nicht native `alert()`/`confirm()` verwenden, wenn dadurch Browseroptionen wie `Dialogfelder unterdrücken` erscheinen.
-- Einheitlichen kleinen Framework-Dialog/Modal verwenden.
-
-Dasselbe Prinzip für relevante Admin-Speicher-/Bestätigungsaktionen anwenden, aber nicht jede harmlose Navigation mit Dialogen belasten.
-
----
-
-# PRIORITÄT 6 – Admin App Modules / System Modules Layout
+# P1 – APP MODULES / SYSTEM MODULES: DETAILS AUF EIGENE SEITE
 
 ## Livebefund
 
-- `App Modules` und `System Modules` zeigen die Seitenüberschrift doppelt.
-- Ursache wirkt mit dem oberen Reload-Aktionsbereich gekoppelt; prüfen, nicht nur vermuten.
-- Reload kann in den eigentlichen Inhalts-/Actionbereich unter die Überschrift verschoben werden; kein zusätzlicher Header.
-- Tabellen wirken nicht wie eine durchgängige Tabelle: Border/Trennlinien bei `Actions` sind vertikal versetzt; unter letzter Actions-Zelle erscheint eine zusätzliche untere Linie.
-- Inhaltsbreite ist gegenüber System Settings/Appearance unnötig zusammengedrückt.
+Die Übersichten selbst sind jetzt akzeptabel: schlanke Modulliste, doppelte Überschrift entfernt.
+
+Aber Klick auf `Details` bei **App Modules** und **System Modules** rendert den kompletten Detailblock weiterhin **unterhalb der gesamten Modulliste auf derselben Seite**.
+
+Das ist nicht gewünscht und verursacht unnötige lange Seiten/Lade- und Bedienballast.
+
+## Zielvertrag für beide Modularten
+
+### Übersicht
+
+- Nur Modulliste/Tabelle + notwendige Übersichtsaktionen.
+- Keine vorausgerenderten Detailblöcke unter der Liste.
+
+### Klick `Details`
+
+- öffnet eine **eigene Detailansicht/Route** für genau dieses Modul;
+- dort: Status, Lifecycle-Actions, Visibility/Navigation, Permissions, Self-Test, Notes und künftig modul-eigene Settings soweit vorhanden;
+- eindeutige `Back to App Modules` bzw. `Back to System Modules` Navigation.
+
+### Save
+
+- nach Save Framework-Popup `Successfully saved.` + `OK`;
+- nach OK zurück zur passenden Modulübersicht, sofern der Save-Flow abgeschlossen ist;
+- Fehler bleiben auf Detailseite mit klarer Meldung.
+
+Keine Detaildaten für alle Module schon beim Laden der Übersicht unnötig rendern/fetchen, wenn sie erst auf Details gebraucht werden.
+
+---
+
+# P1 – GENERISCHER VERTRAG FÜR MODUL-EIGENE ADMIN SETTINGS
+
+Produktentscheidung aus dem GPS-Test:
+
+Neutral soll Module eigenständig halten. Ein Modul soll optional eigene Admin-Konfiguration deklarieren können, die in seiner **Module Detail**-Ansicht eingebunden wird, statt GPS-/Provider-Sondercode in den Core zu schreiben.
+
+## Architekturauftrag
+
+Bestehende Manifest-/Module-Contracts zuerst prüfen und möglichst erweitern statt neuen Parallelmechanismus bauen.
+
+Ein Modul darf optional Admin-Settings definieren, z. B. für GPS künftig:
+
+- Kartenanbieter/Map Provider
+- Geocoding Provider
+- API-Key/Provider Credential, falls ein Provider ihn benötigt
+- provider-spezifische Optionen
+
+Regeln:
+
+- Core stellt nur generischen Settings-Host/Contract bereit.
+- Modul besitzt Schema/Defaults/Validierung/Lesen/Speichern seiner Settings.
+- Secrets niemals im Klartext wieder anzeigen; vorhandenes Secret-Handling nutzen.
+- Keine Google-API oder andere kostenpflichtige externe API jetzt hart einbauen.
+- OSM-Karte bleibt aktueller kostenloser Default.
+- Spätere Module können denselben Settings-Contract nutzen.
+
+Für diesen Batch reicht ein sauberer generischer Contract + nachweisbare Einbindung in Module Details, sofern noch kein solcher Vertrag existiert. Keine unnötige Provider-Plattform neu bauen.
+
+---
+
+# P1 – GPS: STANDORT IST KEINE STANDORTANGABE
+
+## Livebefund
+
+GPS zeigt unter `Standort` lediglich:
+
+`Aktuelle Position ermittelt.`
+
+Das ist eine Statusmeldung, keine Ortsangabe. Die Karte selbst erkennt/zeigt im Operator-Test `Red Knight Gardens`, während der Text keinerlei Ort, Straße, Stadt/Region oder Land nennt.
+
+Zusätzlich kleben Positions-Contentblock und Kartenblock optisch direkt aneinander; ein klarer vertikaler Abstand fehlt.
 
 ## Ziel
 
-- genau eine Seitenüberschrift;
-- einheitliche nutzbare Contentbreite;
-- Reload als normale Seitenaktion;
-- saubere gemeinsame Tabellenzeilen/-border über alle Spalten;
-- responsive ohne horizontales „Schwimmen“/unnötiges Zusammendrücken.
+1. Zwischen Positionsblock und Kartenblock sichtbaren normalen Section-Abstand setzen.
+2. `Standort` muss eine tatsächliche nutzerverständliche Ortsangabe sein, **wenn sie zuverlässig verfügbar ist**.
+3. Bevorzugte Information: POI/Adresse/Ort, Stadt/Gemeinde, Region/Provinz, Land – abhängig von verfügbarer Reverse-Geocoding-Antwort.
+4. Wenn mit dem bestehenden kostenlosen Stack keine zuverlässige Reverse-Geocoding-Quelle vorhanden ist, **nicht halluzinieren und nicht `Aktuelle Position ermittelt` als Standort ausgeben**. Dann klarer Fallback, z. B. Koordinaten kompakt oder `Address unavailable`, während Google-Maps-Link und Marker weiterhin exakt funktionieren.
+5. Prüfe, ob der vorhandene OSM-Stack/Nominatim bereits genutzt werden darf/konfiguriert ist. Nutzungsbedingungen/Rate-Limits respektieren; keine aggressive Requests.
+6. Keine Google Developer API ohne explizite spätere Provider-Konfiguration/API-Key-Entscheidung einführen.
 
 ---
 
-# PRIORITÄT 7 – Appearance strukturell aufräumen
+# P2 – MODUL-VISIBILITY/PERMISSIONS DEFAULTS
 
-## Global Start Page
+Bei frisch installierter/aktivierter Moderation waren Visibility/Navigation in Details leer. Prüfe generisch:
 
-- `Global Start Page` und `User UI Design` sollen klar **innerhalb** ihrer jeweiligen Container/Sections stehen, nicht optisch halb auf dem Border.
-- Global-Start-Page-Preview soll dieselbe sinnvolle/dynamische Breite wie das Text/HTML-Eingabefeld nutzen; aktuelle schmale Preview erzeugt künstliche Zeilenumbrüche.
+- Welche Werte kommen aus Manifest?
+- Welche sind Installationsdefaults?
+- Welche sind Admin-Overrides?
+- Darf leeres Override den Manifestdefault versehentlich löschen?
 
-## User UI Design
-
-Responsive Struktur:
-
-1. Gemeinsamer äußerer Block `Light`:
-   - Base Colors
-   - Actions and Buttons
-   - Navigation
-   - Forms
-2. Darunter eigener äußerer Block `Dark` mit denselben Unterbereichen.
-3. `Geometry and Typography` separat als gemeinsamer, themeübergreifender Block.
-4. Light/Dark nicht als zwei starre breite Spalten erzwingen; auf schmalen Screens sicher untereinander.
-5. Gesamten `Preview Theme`-Bereich inklusive Theme-Auswahl, Header-Vorschau, Active/Inactive, Example Card und Primary/Secondary als klar zusammengehörigen Preview-Container einfassen.
-6. `Advanced Custom CSS` danach separat.
-
-Keine Funktionsänderung der Designwerte; nur Struktur/Responsiveness/Lesbarkeit.
+Ziel: Installation/Aktivierung eines Moduls übernimmt seine deklarierten sinnvollen Defaults deterministisch. Admin kann danach bewusst überschreiben. Keine stillen leeren Werte, die das Modul trotz korrekter Permissions unsichtbar machen.
 
 ---
 
-# PRIORITÄT 8 – Diagnostics inkonsistenter Status
+# Bereits bestätigte Punkte NICHT erneut umbauen
 
-Live zeigt Diagnostics oben `Not found`, während darunter gültige Systemdaten (PHP-Version, Extensions, MySQL PDO Driver, Rewrite etc.) angezeigt werden.
+- Organization `Verein Bonn` in User Management: PASS.
+- User Block/Unblock: PASS.
+- App/System Modules doppelte Überschrift: PASS.
+- User Login/Eye: akzeptierter Referenzstand.
+- Primary DB Provider bleibt read-only/Setup-Vertrag; keine leicht editierbare Live-DB-Verbindung bauen.
 
-- Root Cause des `Not found` bestimmen: falscher Endpoint, falsche Statusprojektion oder echter fehlender Teilservice.
-- Keine Fehlermeldung anzeigen, wenn die Diagnose erfolgreich geladen wurde.
-- Falls tatsächlich nur ein Teil fehlt, diesen Teil konkret benennen statt global `Not found`.
-
----
-
-# PRIORITÄT 9 – Framework-eigene Dialoge statt Browserdialoge
-
-Audit Log `Clear audit log` zeigt nativen Browser-Confirm mit zusätzlicher Browseroption `Dialogfelder unterdrücken`.
-
-- Für solche bestätigungspflichtigen Adminaktionen eigenen simplen Framework-Dialog verwenden.
-- Destruktiv: klare Meldung + `OK/Confirm` und `Cancel/Abbrechen`.
-- Normale Erfolgsmeldung: Meldung + `OK`.
-- Keine unnötigen Optionen.
-- Bestehende zentrale UI-Feedback-Komponente nutzen/vereinfachen, falls vorhanden; keine neue Dialogbibliothek bauen.
+Sessions, Appearance, Diagnostics, Dashboard, Sidebar Theme, Audit Dialoge, Deployment-Anzeige aus dem vorherigen Batch sind weiterhin operator-retest-pending, aber **nicht Gegenstand dieses fokussierten Reparaturbatches**, außer eine direkte Regression durch obige Änderungen entsteht.
 
 ---
 
-# PRIORITÄT 10 – Admin Sidebar / Theme
+# Tests – echte Verhaltenstests
 
-1. `Neutral Administration` + `CORE 1.0` aus dem Navigationskopf entfernen und als Status-/Summary-Information sinnvoll im Dashboard/Summary anzeigen.
-2. Theme-Umschalter nicht als konkurrierenden Navigationsbutton zwischen Statusinfo und Menü darstellen.
-3. Stattdessen kompakte Theme-Auswahl, bevorzugt Select/Pulldown `Light / Dark` an sinnvoller Stelle der Sidebar.
-4. Theme-Auswahl darf nicht wie aktiver Navigationspunkt hervorgehoben werden oder Dashboard-Active-State verschieben.
-5. Navigation stabil; kein horizontales Verschieben/„Schwimmen“ beim Anklicken.
+Mindestens:
 
----
+1. Profile: installed + active + User role + `profile.view/update` → API-Projektion enthält Profile → User DOM zeigt Profile → öffnen → speichern.
+2. Profile deactivated → verschwindet wieder.
+3. Moderation: installed + active + Ralf/Moderator + effektive Permission → vorgesehener Moderationsentry erreichbar.
+4. Manifest defaults vs Admin overrides für Visibility/Navigation.
+5. Settings Apps Save → sichtbares Framework-Modal; OK schließt.
+6. Settings Navigation Save → sichtbares Framework-Modal; OK schließt.
+7. App Modules Overview enthält keine gerenderten Details; Details navigiert eigene Route.
+8. System Modules entsprechend.
+9. Module Detail Save → sichtbare Bestätigung + Rücknavigation.
+10. optionaler generischer Module-Admin-Settings-Contract ohne Core-Sonderfall.
+11. GPS Standort zeigt echte Reverse-Geocoding-Daten oder ehrlichen Fallback; niemals Statussatz als Standort.
+12. GPS Sections haben responsive spacing.
+13. Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
 
-# PRIORITÄT 11 – Dashboard als echte Schnellübersicht
+Tests nicht auf bloße Source-Strings beschränken, wenn der letzte Batch genau dadurch live falsche PASS-Annahmen ermöglicht hat.
 
-Aktuelle unklare Werte wie `Status OK`, `Known installations 16`, `Active 30 days 16` sind ohne Erklärung/Navigationsnutzen nicht ausreichend.
+# Deployment / Dokumentation
 
-## Auftrag
-
-- Zuerst fachlich klären, was diese bestehenden Metriken wirklich bedeuten. Keine Fantasiedefinitionen.
-- Unklare/nutzlose Metriken entfernen oder eindeutig benennen/erklären.
-- Dashboard als kompakte Schnellübersicht aus kanonischen Admin-Daten ausbauen, z. B. soweit Daten bereits vorhanden:
-  - Core-Version
-  - User gesamt / aktiv / inaktiv
-  - echte aktive Sessions
-  - App-/System-Module aktiv/gesamt
-  - Rollen
-  - Packages
-  - Licenses
-  - Organizations
-  - Datenbankstatus, DB-Typ, Tabellenanzahl soweit sicher ermittelbar
-  - letzter Check/Build in menschenlesbarer Darstellung.
-- Keine gefährlichen DB-Lösch-/Editierfunktionen auf das Dashboard setzen. Optimierung/Wartung nur, wenn es bereits einen sicheren fachlichen Vertrag dafür gibt.
-- Relevante Kennzahlen/Karten anklickbar machen: Users → User Management; Sessions → Sessions; Modules → passende Module-Seite; Rollen → Roles; Licenses/Organizations → entsprechender Bereich usw.
-- Dashboard ist Übersicht/Navigation, nicht Diagnostics.
-
----
-
-# PRIORITÄT 12 – Updates muss eine echte Funktion haben
-
-## Livebefund
-
-Maintenance funktioniert. Updates/Updater zeigt dagegen im Wesentlichen:
-
-- `Releases`
-- `Updater: Not supported; releases are deployed externally.`
-- Commit
-- Build Time als rohe ISO-Zeit wie `2026-09-11T12:36:57.488Z`.
-
-Damit ist die Seite für einen Admin aktuell kaum handlungsfähig.
-
-## Auftrag – zuerst Architektur prüfen
-
-Neutral soll weiterhin modular bleiben und Core nicht unnötig verändern. Prüfe vorhandene Update-/Release-/Module-Discovery-Verträge und dokumentiere, was im Shared-Hosting-/GitHub-Deploymentmodell sicher möglich ist.
-
-Zielbild:
-
-- Build-/Release-Zeit menschenlesbar anzeigen (lokal/verständlich; keine rohe ISO-Zeichenfolge als primäre UI).
-- Bezeichnungen fachlich korrekt; `Updater` nicht verwenden, wenn keine Updatefunktion existiert.
-- Für neu entdeckte oder neuere Modulversionen soll Admin erkennen können, dass Installation/Update verfügbar ist, auf Basis vorhandener Manifest-/Versions-/Discovery-Daten.
-- Wenn bestehende Architektur sichere Module-Updates unterstützt: entsprechende verfügbare Updates anzeigen und explizite Admin-Aktion anbieten.
-- Core-Update nur dann anbieten, wenn ein sicherer bestehender Release-/Deploymentvertrag dies trägt. **Keinen unsicheren Self-Updater bauen, der GitHub/FTPS/Serverdateien aus dem Browser manipuliert.**
-- Maintenance bleibt separat und funktionsfähig.
-- Falls Updates in dieser Architektur bewusst extern deployed werden müssen, Seite ehrlich als Release-/Deployment-Status gestalten und nicht vortäuschen, dass der Admin dort updaten kann.
-
-Vor Implementierung eines größeren Update-Mechanismus Architektur/Threat-Modell und bestehenden Deploymentweg respektieren.
-
----
-
-# Zurückgestellte Folgeprüfung nach diesem Batch
-
-Nach erfolgreichem Profile-Fix:
-
-- Moderation-Modul installieren/aktivieren und mit User `Ralf`/Moderatorrolle operator-testen.
-- Postbox installieren/aktivieren und User-Discovery/Permissions prüfen.
-- Weitere Module nacheinander testen.
-
-GPS-Menü erscheint beim frischen User-App-Load erst nach ca. 1–2 Sekunden trotz schneller Verbindung. **Performance als separates Folge-Thema notieren**, in diesem Batch nur optimieren, wenn eine klare kleine Ursache im ohnehin bearbeiteten Discovery-Pfad sichtbar wird. Keine riskante Startup-Neuarchitektur.
-
-Connections/Providers: aktueller Read-only-Status mit Primary Database `Ready` und nicht konfigurierten optionalen Providern ist akzeptiert. Primären DB-Provider nicht als leicht editierbare Live-Adminfunktion öffnen.
-
----
-
-# Tests / Verifikation
-
-Für jeden Fix verhaltensnahe Regressionstests ergänzen. Besonders:
-
-- Profile active + permissions → erscheint und ist aufrufbar.
-- GPS vs Profile Discovery-Vertrag.
-- User Organization list projection.
-- Session active/current/revoked semantics + Dashboard count.
-- GPS Google Maps `_blank`, Google-Maps-Share-Link, responsive structure.
-- Settings Save Feedback.
-- Modules/System Modules genau eine Überschrift + Tabellenstruktur.
-- Appearance responsive Section-Struktur.
-- Diagnostics kein falsches globales `Not found`.
-- eigener Confirm/Feedback-Dialog statt nativer Browserdialoge.
-- Sidebar Theme Select und stabiler Active-State.
-- Dashboard canonical counts + Navigation.
-- Update/Release UI entsprechend tatsächlich implementiertem Architekturvertrag.
-
-Danach vollständige Suite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
-
-# Deployment
-
-- Sinnvolle kleine Commits; keine Secrets.
+- Root Causes konkret dokumentieren.
+- kleine nachvollziehbare Commits.
 - Push `main` erst nach Tests.
 - CodeQL + FTPS terminal abwarten.
 - read-only Production Smoke.
-- `CHATGPT.md`, `CURRENT-TASK.md`, `STATUS.md`, `UI-UX.md`, ggf. `API.md`, `Database.md`, `Security.md`, `CHANGELOG.md` nur entsprechend tatsächlicher Änderungen synchronisieren.
+- `CHATGPT.md`, `CURRENT-TASK.md`, `STATUS.md`, `UI-UX.md`, ggf. `API.md`, `Security.md`, `CHANGELOG.md` entsprechend tatsächlichem Vertrag aktualisieren.
 - Kein Core Freeze.
+- Keine Secrets ausgeben.
 
-# Operator-Retest danach – Reihenfolge
+# Nächster Operator-Retest
 
-1. Profile beim Tester sichtbar + Profile View/Update.
-2. Organization `Verein Bonn` in User Management sichtbar.
-3. Sessions: nur echte aktive/current Sessions + Beenden/Revoke.
-4. GPS Layout/Google Maps/Share.
-5. User Settings Save Feedback.
-6. App/System Modules Layout.
-7. Appearance responsive Struktur + Preview.
-8. Diagnostics.
-9. Audit/Framework Dialoge.
-10. Sidebar Theme + Dashboard.
-11. Updates/Release-Verhalten.
-12. Danach Moderation/Postbox als nächste Modulprüfung.
+1. Profile als Tester/Ralf sichtbar → öffnen → speichern.
+2. User Settings Apps/Navigation speichern → Popup sichtbar.
+3. App Modules Details → eigene Seite → Save → Popup → zurück.
+4. System Modules ebenso.
+5. Moderation als Ralf erreichbar.
+6. GPS Standorttext + Abstand zur Karte.
+7. Erst danach Sessions/Appearance/Diagnostics/Dashboard/Sidebar/Deployment-Retest fortsetzen.
