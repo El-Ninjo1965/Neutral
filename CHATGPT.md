@@ -152,6 +152,48 @@ Nach Implementierung der minimalen Fixes:
 
 - Browser/OS Geolocation-Berechtigungen (GPS) hängen hardware- und betriebssystemseitig vom Nutzer ab (Standardschutz des Browsers).
 
+## User-UI Stabilisierung: Root Cause & Nachweis (Branch `lea/user-ui-stability`)
+
+### A. Erfolgreicher User-Login bleibt deterministisch auf Start/Home
+- **Root Cause:** Die Login-Flusslogik setzte nach erfolgreichem `apiClient.login()` nur `serverUser` und führte `refreshModuleDiscovery()` aus, aber der spätere async Discovery-Callback konnte ältere Zustände ohne Revision-Schutz auf die dominante View zurückschreiben. Das `hashchange`/`renderApp()`-Lifecyle ließ zudem spätere Rerender die Route erneut auf Login oder veraltete State lesen.
+- **Red Nachweis:** `tests/user-ui-stability.test.js` prüfte vorher, dass nach Login das `activeView` deterministisch auf `home` gesetzt wird und veraltete Discovery-Requests keine Route zurücksetzen.
+- **Fix:** `state.discoveryRequestId` schützt `refreshModuleDiscovery()` gegen stale async Ergebnisse; nach Login bleibt `activeView = 'home'` und `writeHashRoute('')` stabil.
+- **Green Nachweis:** Der erste Red-Test in `tests/user-ui-stability.test.js` läuft jetzt grün.
+
+### B. Start-Button reagiert nach mehreren Background-Renders nicht
+- **Root Cause:** Render-/Discovery-/Hash-Updates wurden mehrfach ohne stabilen State-Guard parallel ausgeführt, sodass der aktive Button-State zwischen Home/Settings/Module wechseln konnte, obwohl der Nutzer bereits auf Start war.
+- **Red Nachweis:** Repro-Test erwartet die Stabilität des Home-Start-Navigationspfads bei mehreren Render-Zyklen und Discovery-Updates.
+- **Fix:** `renderApp()` bleibt auf dem aktivierten View-State; `renderModuleNav()` und Rendering-Logik greifen denselben `state.activeView` an und verhindern den Button-Reset auf veraltete `home`- oder `login`-Callbacks.
+- **Green Nachweis:** Der Start-Button-Test in `tests/user-ui-stability.test.js` läuft grün.
+
+### C. Settings Catalog: stale older catalog/error responses überschreiben erfolgreichen Zustand nicht
+- **Root Cause:** Der Module-Discovery- und Settings-Render-Pfad akzeptierte ältere `discoverModules()`-Antworten und Fehler ohne Revisionseinschränkung. Ein späteres Fehler- oder veraltetes Resultat konnte den neueren, erfolgreichen Catalog-State wieder auf `error` bzw. auf veraltete Module-Sichtbarkeit zurücksetzen.
+- **Red Nachweis:** Der Repro-Test simulierte zwei competing catalog answers und erwartete, dass stale results ignored werden.
+- **Fix:** `refreshModuleDiscovery()` inkrementiert `state.discoveryRequestId` und verwirft ältere Responses. `startup:modules-ready`/`startup:modules-error` werden nur noch für den aktuellsten Discovery-Lauf akzeptiert.
+- **Green Nachweis:** Die Repro-Tests für Discovery-Ordering und Settings-Catalog-Guard sind grün.
+
+### D. Settings Save Popup bleibt sichtbar und User bleibt in Settings
+- **Root Cause:** Nach erfolgreichem Save wurde `renderApp()` im selben Tick ausgelöst, wodurch ein neuer Render den Erfolg-Dialog sofort wieder verworfen hat. Zusätzlich wurde die Route durch einen späteren Hash-Render/Navigation-Callback wieder verändert.
+- **Red Nachweis:** Der Repro-Test prüfte, dass nach Save `state.activeView` in `settings` bleibt und der `showSuccess`-Dialog nicht auf einem Hash-Route-Reset ausgelöst wird.
+- **Fix:** Save setzt explizit `state.activeView = 'settings'`, setzt `activeModuleId = null`, schreibt `settings/<section>` zurück, rendert und zeigt danach `NeutralUiFeedback.showSuccess(...)` an. Der nachfolgende Render kann den Dialog nicht mehr entfernen, weil kein weiterer Redirect ins Home/Landing passiert.
+- **Green Nachweis:** Der Save-Popup-Test in `tests/user-ui-stability.test.js` läuft grün.
+
+## Geänderte Dateien
+- `Web-App/public/user-app.js`: stale Discovery-Guards, State-Stabilisierung nach Login, Settings-Save ohne Redirect, Success popup retention.
+- `tests/user-ui-stability.test.js`: vier reproduzierende Tests für A-D.
+
+## Teststatus
+- `node --test --test-concurrency=1 tests/user-ui-stability.test.js`: PASS
+- `npm test`: PASS
+- `node --check Web-App/public/user-app.js`: PASS
+- `node --check tests/user-ui-stability.test.js`: PASS
+- `node scripts/build-production-package.js`: PASS (`136` Dateien)
+- `git diff --check`: PASS
+
+## Deployment / Merge Status
+- **NICHT DEPLOYED**
+- **NICHT NACH MAIN GEMERGED**
+
 ## Operator-Retest-Reihenfolge (nach künftigem Deployment)
 
 1. Frischer Inkognito-Aufruf der Root-URL: GPS sofort in Navigation sichtbar, kein Welcome-Doppelblinken.
