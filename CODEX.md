@@ -1,271 +1,301 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** LIVE RETEST FAILED – PROFILE / MODULE DISCOVERY / DETAILS / SETTINGS FEEDBACK  
+**Status:** P0 PRODUCTION MODULE LOADING FAILURE AFTER `ab3c488`  
 **Datum:** 2026-09-12  
 **Core Freeze:** NICHT erklärt
 
-# Referenzstand – nicht regressieren
+# WICHTIG: letzter Batch technisch grün, aber Production-Retest klar FAIL
 
-- User Login funktioniert operator-live; Browser-Autofill + einfacher Click-Eye akzeptiert. Nicht grundsätzlich umbauen.
+Commit `ab3c488b6bedcbe1c9478d42f59aaba2ed0a9c15` wurde laut Agent mit 550/550 Tests, CodeQL, FTPS und Production Smoke erfolgreich deployed. Der direkte Operator-Retest zeigt jedoch reproduzierbar, dass der reale Browser-Modulpfad weiterhin bzw. neu fehlerhaft ist.
+
+**Keine weiteren Source-String-PASS-Annahmen. Keine Permission-Experimente. Zuerst den echten Production-Request-/Bootstrap-Pfad beweisen.**
+
+Referenz-PASS, nicht regressieren:
+
+- User Login/Eye akzeptiert.
 - Admin Login funktioniert.
-- User Management Organization-Fix ist operator-live **PASS**: `Verein Bonn` wird inzwischen korrekt in der Übersicht angezeigt.
-- User blockieren/reaktivieren funktioniert.
-- Doppelte Überschrift bei App Modules/System Modules ist entfernt und damit **PASS**.
-- Google-Maps-/GPS-Grundfunktionen und eingebettete OSM-Karte grundsätzlich vorhanden.
-
-Dieser Auftrag bearbeitet die beim direkten Produktions-Retest weiterhin fehlerhaften Punkte. Keine kosmetische Behauptung als Fix akzeptieren: die reale User-App muss das Ergebnis zeigen.
+- Organization `Verein Bonn` in User Management korrekt.
+- User Block/Unblock funktioniert.
+- App/System Module doppelte Überschrift entfernt.
+- Module `Details` öffnet jetzt eigene Detailansicht; Save-Bestätigung + Rückkehr zur Übersicht funktioniert operator-live.
 
 ---
 
-# P0 – PROFILE IST TROTZ INSTALL + ACTIVE + PERMISSIONS WEITERHIN NICHT SICHTBAR
+# P0 – MODULE CATALOG / DISCOVERY IST IN PRODUCTION KAPUTT
 
-## Neuer Live-Retest
+## Reproduzierbare Live-Evidence
 
-Nach dem letzten Deployment wurde Profile ausdrücklich erneut:
+### Anonym / ausgeloggt
 
-1. installiert,
-2. aktiviert,
-3. gespeichert,
-4. User ausgeloggt,
-5. als `Ralf` neu eingeloggt.
+- Neutral über Root `https://www.turbolikes.com/#/` frisch aufgerufen.
+- GPS ist zunächst **nicht sichtbar**.
+- Teilweise auch nach ~30 Sekunden nicht sichtbar; erst manueller Reload bringt GPS.
+- Bei weiteren Versuchen erscheint GPS nach ca. 2–3 Sekunden.
+- Währenddessen blinkt/re-rendert `Welcome to Neutral` etwa zweimal.
 
-Ergebnis weiterhin:
+=> Anonymer Startup-Discovery-Pfad ist langsam/instabil und rendert mehrfach.
 
-- Settings zeigt nur `Apps` und `Navigation`.
-- Kein Profile.
-- Profile erscheint auch nicht als nutzbarer User-App-Bereich.
+### Login als `Ralf` / `Tester`
 
-Vorherige Evidence bleibt zusätzlich bestehen:
+Direkt nach erfolgreichem Login:
 
-- `Profile` Installed + Active.
-- `profile.view` + `profile.update` in Rolle/User vorhanden.
-- Permission Catalog enthält beide Profile-Permissions.
-- GPS funktioniert im gleichen User-App-Umfeld.
+- kein GPS-Menüpunkt;
+- Settings → Apps zeigt `Modules could not be loaded. Check your connection and try again.`;
+- Module werden nicht nachträglich geladen;
+- **erst manueller Browser-Reload** führt bei Ralf/Tester dazu, dass GPS wieder erscheint und Settings → Apps das Modul sieht;
+- Profile erscheint weiterhin nicht, auch nach Reload.
 
-Der letzte Fix `presentation.userNavigation` war also **nicht ausreichend**. Nicht erneut denselben Source-String als Erfolg werten.
+### Login als `Developer` / `ElNino` (Administrator)
 
-## Auftrag – echte End-to-End Root Cause
+- kein GPS-Menüpunkt;
+- Settings → Apps: Module konnten nicht geladen werden;
+- selbst mehrere manuelle Reloads bringen GPS nicht zurück;
+- Admin/Developer sehen damit weniger als anonyme bzw. normale User.
 
-Profile und GPS vom Server bis zum realen User-Renderpfad instrumentiert vergleichen:
+Operator hat im Admin die GPS Module Details geprüft:
 
-- Manifest
-- installierter/aktiver Registry-Zustand
-- serverseitige Module-/Visibility-Projektion für authentifizierten User
-- effektive Permissions
-- API-Response an den User-Browser
-- User-App Discovery/Module Access
-- Settings → Apps Projection
-- Navigation Projection
-- Route/Entry
-- Profile Settings Projection
+- Visibility/Navigation für Admin, Developer, User, Viewer gesetzt;
+- Admin/Developer besitzen GPS View/Use/Manage/Admin;
+- User/Viewer besitzen vorgesehene View/Use-Rechte.
 
-Verhaltensnah beweisen: **ein real authentifizierter Testuser mit aktiver Profile-Installation und `profile.view/profile.update` bekommt Profile in der tatsächlich gerenderten User-App und kann Profile öffnen/speichern.**
+Änderungen an diesen Permissions verändern das Fehlverhalten nicht.
 
-Wenn Profile fachlich bewusst kein Top-Level-App-Menü sein soll, muss es mindestens als klarer Profile-Bereich in Settings erscheinen. Aktuell erscheint es nirgends; das ist der Bug.
-
-Keine Permission-Sonderbehandlung und keine hardcodierte `Tester`-/`Ralf`-Ausnahme.
+**Permissions als primäre Root Cause damit nicht weiter verfolgen, solange nicht konkrete Server-Evidence das Gegenteil beweist.**
 
 ---
 
-# P0 – MODERATION ZEIGT DEN GLEICHEN GRUNDFEHLER
+# P0 – ECHTE FEHLERMELDUNG / TIMEOUT
 
-Neuer Operator-Test:
+Im Admin/System-Modules-Livetest trat auf:
 
-- System Module `Moderation` installiert + aktiviert.
-- User `Ralf` besitzt bereits Rolle `Moderator`.
-- zusätzliche Moderation-Rechte wurden operatorseitig vergeben.
-- Trotzdem erscheint für Ralf keine Moderationsfunktion.
-- Visibility/Navigation in den Module Details war nach Aktivierung leer.
-- Module Self-Test war nicht nutzbar/erfolgreich.
+`Failed to load modules, Request timeout after 10000 milliseconds`
 
-## Auftrag
+Danach wurden Inhalte teilweise trotzdem verspätet sichtbar.
 
-Nicht als separates UI-Einzelproblem behandeln. Prüfen, ob Profile und Moderation an demselben generischen Modul-Discovery-/Presentation-/Role-/Visibility-Vertrag scheitern.
+Weitere Symptome:
 
-- Module müssen ihre vorgesehenen Permissions/Visibility-/Navigation-Metadaten sauber mitbringen bzw. aus Manifest/Registry projizieren.
-- Eine vorhandene Rolle `Moderator` darf nicht durch eine zweite künstliche Rolle ersetzt werden.
-- Wenn Moderation laut Architektur nur für bestimmte Rollen/Permissions sichtbar sein soll, diesen Vertrag korrekt aus Manifest/Permission Catalog/effective permissions ableiten.
-- Systemmodul darf nicht automatisch als normales User-App-Menü erscheinen, wenn sein Manifest das nicht vorsieht; aber berechtigte Moderationsfunktion muss dort erreichbar sein, wo der Modulvertrag sie definiert.
-- Self-Test-Vertrag prüfen und klaren Erfolg/Fehler anzeigen.
+- Menü-/Detail-Links reagieren teilweise erst beim zweiten Tippen;
+- Module laden merklich träge;
+- Theme-Select reagiert ebenfalls erst nach einem zweiten Tap/erneuten Öffnen.
 
-Profile zuerst beweisen; danach Moderation mit Ralf als zweites End-to-End-Beispiel desselben Frameworkvertrags testen.
+Das deutet auf einen tieferen Request-/State-/Render-/Event-Lifecycle-Fehler hin. Nicht jeden UI-Symptom einzeln mit zusätzlichen Listenern patchen.
 
 ---
 
-# P1 – USER SETTINGS SAVE FEEDBACK IST LIVE WEITERHIN NICHT VORHANDEN
+# P0 – AUFTRAG: PRODUCTION REQUEST CHAIN INSTRUMENTIEREN UND ROOT CAUSE BEWEISEN
 
-Operator-Retest:
+Untersuche den realen Ablauf für **anonym, Ralf/Tester, Developer und Admin**:
 
-- Settings → Apps ändern + `Save Settings`: Speicherung funktioniert, **keine Bestätigung**.
-- Settings → Navigation ändern + `Save Settings`: Speicherung funktioniert, **keine Bestätigung**.
+1. initialer HTML/JS-Bootstrap;
+2. Service Worker / Cache nur soweit tatsächlich beteiligt;
+3. Session Restore `/auth/me`;
+4. Modul-Catalog-Request(s): exakte Route, Reihenfolge, Auth-Cookie, Responsecode, Dauer;
+5. Core Loader Cache-Entscheidung;
+6. authoritative discovery;
+7. Registry reconciliation;
+8. User-App projection/navigation/settings;
+9. Re-render count / event lifecycle;
+10. Admin Module-Requests und 10s timeout.
 
-Der letzte angebliche Feedback-Fix ist damit live FAIL.
+Für jede Rolle konkret feststellen:
 
-## Verbindlicher Vertrag
+- welcher Request wird gesendet;
+- wann relativ zu Session Restore;
+- mit welchem Scope/Cookie;
+- HTTP-Status;
+- Serverantwort;
+- Laufzeit;
+- ob Request doppelt/mehrfach läuft;
+- ob ein Abort/Timeout den später erfolgreichen Response verwirft;
+- ob anonymer/authentifizierter Cache falsch wiederverwendet wird;
+- ob Admin/Developer aufgrund einer falschen Scope-/Permission-Projektion einen Fehler statt Katalog erhalten.
 
-Nach erfolgreichem Save:
-
-- Framework-eigenes sichtbares Modal/Popup.
-- Text sinngemäß `Successfully saved.`
-- genau `OK` zum Schließen.
-- kein Reset, keine Zusatzaktion.
-- kein nativer Browser-Alert.
-
-Bei Fehler: Framework-eigene klare Fehlermeldung.
-
-Wichtig: Test muss den echten Settings-Save-Handler und den tatsächlich sichtbaren Dialog im User-App-DOM prüfen, nicht nur das Vorhandensein einer Feedback-Funktion im Source.
-
----
-
-# P1 – APP MODULES / SYSTEM MODULES: DETAILS AUF EIGENE SEITE
-
-## Livebefund
-
-Die Übersichten selbst sind jetzt akzeptabel: schlanke Modulliste, doppelte Überschrift entfernt.
-
-Aber Klick auf `Details` bei **App Modules** und **System Modules** rendert den kompletten Detailblock weiterhin **unterhalb der gesamten Modulliste auf derselben Seite**.
-
-Das ist nicht gewünscht und verursacht unnötige lange Seiten/Lade- und Bedienballast.
-
-## Zielvertrag für beide Modularten
-
-### Übersicht
-
-- Nur Modulliste/Tabelle + notwendige Übersichtsaktionen.
-- Keine vorausgerenderten Detailblöcke unter der Liste.
-
-### Klick `Details`
-
-- öffnet eine **eigene Detailansicht/Route** für genau dieses Modul;
-- dort: Status, Lifecycle-Actions, Visibility/Navigation, Permissions, Self-Test, Notes und künftig modul-eigene Settings soweit vorhanden;
-- eindeutige `Back to App Modules` bzw. `Back to System Modules` Navigation.
-
-### Save
-
-- nach Save Framework-Popup `Successfully saved.` + `OK`;
-- nach OK zurück zur passenden Modulübersicht, sofern der Save-Flow abgeschlossen ist;
-- Fehler bleiben auf Detailseite mit klarer Meldung.
-
-Keine Detaildaten für alle Module schon beim Laden der Übersicht unnötig rendern/fetchen, wenn sie erst auf Details gebraucht werden.
+**Ziel:** Ein einziger deterministischer Startup-/Login-Vertrag ohne manuellen Reload.
 
 ---
 
-# P1 – GENERISCHER VERTRAG FÜR MODUL-EIGENE ADMIN SETTINGS
+# VERBINDLICHER MODUL-STARTVERTRAG
 
-Produktentscheidung aus dem GPS-Test:
+## Anonym
 
-Neutral soll Module eigenständig halten. Ein Modul soll optional eigene Admin-Konfiguration deklarieren können, die in seiner **Module Detail**-Ansicht eingebunden wird, statt GPS-/Provider-Sondercode in den Core zu schreiben.
+- App rendert Startseite sofort stabil, ohne sichtbares Doppelblinken.
+- öffentlicher Modul-Catalog wird einmal zuverlässig geladen.
+- GPS erscheint automatisch ohne manuellen Reload, sofern anonym sichtbar/aktiv.
 
-## Architekturauftrag
+## Nach Login
 
-Bestehende Manifest-/Module-Contracts zuerst prüfen und möglichst erweitern statt neuen Parallelmechanismus bauen.
+- erfolgreicher Login darf die UI nicht in einen Zustand mit leerem/fehlerhaftem Modulkatalog bringen.
+- authentifizierter Catalog muss automatisch geladen/projiziert werden.
+- kein manueller Browser-Reload nötig.
+- User sieht alle aktiven, entitled und permitted Module.
 
-Ein Modul darf optional Admin-Settings definieren, z. B. für GPS künftig:
+## Admin / Developer
 
-- Kartenanbieter/Map Provider
-- Geocoding Provider
-- API-Key/Provider Credential, falls ein Provider ihn benötigt
-- provider-spezifische Optionen
+- Admin/Developer dürfen nicht wegen ihrer höheren Rolle weniger Module sehen als normale User, sofern sie die effektiven Modulrechte besitzen.
+- Rollen-/Scope-Projektion muss additive/effective Permissions korrekt behandeln.
+- Keine Sonderregel `admin sees all` hardcoden, wenn RBAC das nicht vorsieht; aber vorhandene effektive Rechte müssen funktionieren.
 
-Regeln:
+## Fehler
 
-- Core stellt nur generischen Settings-Host/Contract bereit.
-- Modul besitzt Schema/Defaults/Validierung/Lesen/Speichern seiner Settings.
-- Secrets niemals im Klartext wieder anzeigen; vorhandenes Secret-Handling nutzen.
-- Keine Google-API oder andere kostenpflichtige externe API jetzt hart einbauen.
-- OSM-Karte bleibt aktueller kostenloser Default.
-- Spätere Module können denselben Settings-Contract nutzen.
-
-Für diesen Batch reicht ein sauberer generischer Contract + nachweisbare Einbindung in Module Details, sofern noch kein solcher Vertrag existiert. Keine unnötige Provider-Plattform neu bauen.
-
----
-
-# P1 – GPS: STANDORT IST KEINE STANDORTANGABE
-
-## Livebefund
-
-GPS zeigt unter `Standort` lediglich:
-
-`Aktuelle Position ermittelt.`
-
-Das ist eine Statusmeldung, keine Ortsangabe. Die Karte selbst erkennt/zeigt im Operator-Test `Red Knight Gardens`, während der Text keinerlei Ort, Straße, Stadt/Region oder Land nennt.
-
-Zusätzlich kleben Positions-Contentblock und Kartenblock optisch direkt aneinander; ein klarer vertikaler Abstand fehlt.
-
-## Ziel
-
-1. Zwischen Positionsblock und Kartenblock sichtbaren normalen Section-Abstand setzen.
-2. `Standort` muss eine tatsächliche nutzerverständliche Ortsangabe sein, **wenn sie zuverlässig verfügbar ist**.
-3. Bevorzugte Information: POI/Adresse/Ort, Stadt/Gemeinde, Region/Provinz, Land – abhängig von verfügbarer Reverse-Geocoding-Antwort.
-4. Wenn mit dem bestehenden kostenlosen Stack keine zuverlässige Reverse-Geocoding-Quelle vorhanden ist, **nicht halluzinieren und nicht `Aktuelle Position ermittelt` als Standort ausgeben**. Dann klarer Fallback, z. B. Koordinaten kompakt oder `Address unavailable`, während Google-Maps-Link und Marker weiterhin exakt funktionieren.
-5. Prüfe, ob der vorhandene OSM-Stack/Nominatim bereits genutzt werden darf/konfiguriert ist. Nutzungsbedingungen/Rate-Limits respektieren; keine aggressive Requests.
-6. Keine Google Developer API ohne explizite spätere Provider-Konfiguration/API-Key-Entscheidung einführen.
+- kein pauschaler 10s Timeout, der einen noch laufenden gültigen Request künstlich als Fehler markiert, ohne Root Cause zu verstehen.
+- Timeouts dürfen sinnvoll bleiben, aber Ursache für >10s Request beseitigen.
+- bei echtem Fehler klare retry-fähige UI; keine stale Registry.
 
 ---
 
-# P2 – MODUL-VISIBILITY/PERMISSIONS DEFAULTS
+# P0 – PROFILE BLEIBT LIVE FAIL
 
-Bei frisch installierter/aktivierter Moderation waren Visibility/Navigation in Details leer. Prüfe generisch:
+Auch nach `ab3c488`:
 
-- Welche Werte kommen aus Manifest?
-- Welche sind Installationsdefaults?
-- Welche sind Admin-Overrides?
-- Darf leeres Override den Manifestdefault versehentlich löschen?
+- Profile Installed + Active;
+- Profile Permissions vorhanden;
+- Ralf/Tester sehen Profile weiterhin nicht;
+- Settings enthält weiterhin nur Apps/Navigation.
 
-Ziel: Installation/Aktivierung eines Moduls übernimmt seine deklarierten sinnvollen Defaults deterministisch. Admin kann danach bewusst überschreiben. Keine stillen leeren Werte, die das Modul trotz korrekter Permissions unsichtbar machen.
+Profile erst **nach Stabilisierung des Catalog-/Requestpfads** erneut debuggen. Dann vom tatsächlichen Production-API-Response bis zum DOM beweisen:
 
----
+`active Profile` → server catalog → client registry → effective permissions → Settings/Profile entry → öffnen → speichern.
 
-# Bereits bestätigte Punkte NICHT erneut umbauen
-
-- Organization `Verein Bonn` in User Management: PASS.
-- User Block/Unblock: PASS.
-- App/System Modules doppelte Überschrift: PASS.
-- User Login/Eye: akzeptierter Referenzstand.
-- Primary DB Provider bleibt read-only/Setup-Vertrag; keine leicht editierbare Live-DB-Verbindung bauen.
-
-Sessions, Appearance, Diagnostics, Dashboard, Sidebar Theme, Audit Dialoge, Deployment-Anzeige aus dem vorherigen Batch sind weiterhin operator-retest-pending, aber **nicht Gegenstand dieses fokussierten Reparaturbatches**, außer eine direkte Regression durch obige Änderungen entsteht.
+Nicht erneut nur Manifest/Source testen.
 
 ---
 
-# Tests – echte Verhaltenstests
+# P1 – MODERATION BLEIBT LIVE UNBESTÄTIGT/FAIL
 
-Mindestens:
+Ralf/Moderator konnte Moderation vor diesem Batch nicht erreichen. Wegen des jetzt nachgewiesenen generellen Catalog-Fehlers Moderation erst nach P0 erneut testen.
 
-1. Profile: installed + active + User role + `profile.view/update` → API-Projektion enthält Profile → User DOM zeigt Profile → öffnen → speichern.
-2. Profile deactivated → verschwindet wieder.
-3. Moderation: installed + active + Ralf/Moderator + effektive Permission → vorgesehener Moderationsentry erreichbar.
-4. Manifest defaults vs Admin overrides für Visibility/Navigation.
-5. Settings Apps Save → sichtbares Framework-Modal; OK schließt.
-6. Settings Navigation Save → sichtbares Framework-Modal; OK schließt.
-7. App Modules Overview enthält keine gerenderten Details; Details navigiert eigene Route.
-8. System Modules entsprechend.
-9. Module Detail Save → sichtbare Bestätigung + Rücknavigation.
-10. optionaler generischer Module-Admin-Settings-Contract ohne Core-Sonderfall.
-11. GPS Standort zeigt echte Reverse-Geocoding-Daten oder ehrlichen Fallback; niemals Statussatz als Standort.
-12. GPS Sections haben responsive spacing.
-13. Vollsuite, JS-Syntax, PHP-Lint, `git diff --check`, Production Package.
+Danach:
 
-Tests nicht auf bloße Source-Strings beschränken, wenn der letzte Batch genau dadurch live falsche PASS-Annahmen ermöglicht hat.
+- System Module active;
+- Ralf Rolle Moderator;
+- effektive moderation permissions;
+- vorgesehener User-Einstieg sichtbar/erreichbar;
+- Self-Test tatsächlicher Status-Endpunkt.
 
-# Deployment / Dokumentation
+Keine zusätzliche Moderatorrolle erfinden.
 
-- Root Causes konkret dokumentieren.
-- kleine nachvollziehbare Commits.
-- Push `main` erst nach Tests.
-- CodeQL + FTPS terminal abwarten.
-- read-only Production Smoke.
-- `CHATGPT.md`, `CURRENT-TASK.md`, `STATUS.md`, `UI-UX.md`, ggf. `API.md`, `Security.md`, `CHANGELOG.md` entsprechend tatsächlichem Vertrag aktualisieren.
-- Kein Core Freeze.
+---
+
+# P1 – USER SETTINGS SAVE FEEDBACK ERNEUT LIVE PRÜFEN
+
+Vor `ab3c488` fehlte das Popup bei Apps/Navigation. Der Agent hat Timing geändert, aber wegen des Catalog-Fehlers konnte dieser Punkt noch nicht sauber bestätigt werden.
+
+Nach P0 testen/reparieren:
+
+- Apps Save → `Successfully saved.` + `OK` sichtbar;
+- Navigation Save → gleich;
+- kein Browser-Alert;
+- Dialog darf nicht durch Re-render sofort verschwinden.
+
+---
+
+# P1 – APP/SYSTEM MODULE TABLE BORDER NOCH FEHLERHAFT
+
+Operator-PASS:
+
+- separate Detailansicht funktioniert;
+- Save-Popup funktioniert;
+- nach OK Rückkehr zur Übersicht funktioniert.
+
+Noch offen:
+
+- Tabellen-Trennlinie zwischen `Registered`/`Active` bzw. im Actions-Bereich ist vertikal versetzt;
+- unter Actions existiert offenbar eine zusätzliche Border/Trennlinie, wodurch Zeilen optisch nicht durchgängig sind;
+- gleicher Fehler bei App Modules und System Modules.
+
+Nach P0 mit **einer** gemeinsamen Tabellenstruktur/CSS-Regel korrigieren. Keine per-Zelle Sonderlinien.
+
+---
+
+# P1 – THEME SELECT BRAUCHT TEILWEISE ZWEITEN TAP
+
+Sidebar Light/Dark Pulldown ist vorhanden, aber operator-live:
+
+- Auswahl `Light`/`Dark` führt teilweise nicht sofort zur Änderung;
+- erst erneutes Antippen/Öffnen des Select löst die sichtbare Theme-Änderung aus.
+
+Prüfe echten `change`-Event-/State-/Renderpfad auf iPad/Chrome. Kein künstlicher OK-Button. Auswahl soll beim normalen Select-Change einmalig sofort angewandt und gespeichert werden.
+
+Da gleichzeitig Module-Links doppelte Taps/Timeouts zeigen, zuerst prüfen, ob dieselbe Render-/Event-Blockade beteiligt ist.
+
+---
+
+# GPS – STANDORT / MODUL SETTINGS
+
+Vorheriger Vertrag bleibt:
+
+- GPS darf ohne Reverse-Geocoder ehrliche kompakte Koordinaten anzeigen.
+- Karten-/Positionsblöcke mit normalem Abstand.
+- OSM bleibt Default.
+- generische moduleigene Admin-Settings sollen später Provider/Geocoding/API-Key ermöglichen, ohne Google hart in Core einzubauen.
+
+Dieser Punkt ist nach P0 zu operator-retesten; keine neue externe API in diesem Batch erzwingen.
+
+---
+
+# PERFORMANCE / RENDERING IST JETZT TEIL DES BUGS, NICHT NUR POLISH
+
+Die früher notierten 1–2 Sekunden GPS-Ladezeit sind nun zusammen mit 2–3s+, Doppelblinken, 10s Timeout und fehlenden Catalogs ein funktionaler Befund.
+
+Messe/instrumentiere:
+
+- Anzahl Module-Catalog-Requests pro Start/Login;
+- Dauer serverseitig/clientseitig;
+- unnötige serielle Requests;
+- doppelte Discovery;
+- unnötige Full-Renders;
+- Cache hit/miss getrennt anonym/authenticated;
+- AbortController/Timeouts;
+- Service Worker stale-while-revalidate Verhalten, falls beteiligt.
+
+Ziel ist nicht Mikrooptimierung, sondern deterministisches Laden ohne Reload und ohne sichtbare Doppelinitialisierung.
+
+---
+
+# VERHALTENSTESTS – DIE 550 ALTEN TESTS REICHEN NICHT
+
+Ergänze Tests, die den beobachteten Ablauf reproduzieren:
+
+1. Cold anonymous start → Catalog delayed → GPS erscheint automatisch ohne Reload.
+2. Anonymous start → Login Ralf → authenticated catalog replaces anonymous catalog → GPS/Profile erscheinen ohne Reload.
+3. Login Tester entsprechend.
+4. Login Developer mit GPS effective permissions → GPS sichtbar ohne Reload.
+5. Login Admin mit GPS effective permissions → GPS sichtbar ohne Reload.
+6. Catalog request failure → klare Retry-UI; erfolgreicher Retry aktualisiert Navigation/Settings ohne Full Reload.
+7. Catalog response > bisherigem problematischen Timing darf nicht durch Race/stale render verloren gehen; gleichzeitig Serverlaufzeit optimieren.
+8. Kein doppeltes Startseiten-Flackern durch konkurrierende Renders.
+9. Module Admin request bleibt deutlich unter Timeout unter normalen Testbedingungen; keine parallelen unnötigen Detailloads.
+10. Profile active/permitted → tatsächlicher User DOM entry.
+11. Module Details separate view + Save/Back bleibt PASS.
+12. Theme Select `change` einmal → Theme sofort geändert.
+13. Tabellen-Borders strukturell einheitlich.
+14. Vollsuite, JS Syntax, PHP Lint, `git diff --check`, Production Package.
+
+Nutze Fake-Timer/delayed promises/integration harnesses, um Race Conditions deterministisch zu reproduzieren. Nicht nur Source-Regex.
+
+---
+
+# DEPLOYMENT / LIVE-EVIDENCE
+
+- Root Cause konkret dokumentieren, inklusive warum `ab3c488` die Production-Symptome nicht verhindert hat.
+- kleine Commits.
+- Push `main` nach Tests.
+- CodeQL + FTPS terminal.
+- Production Smoke erweitern, soweit ohne echte User-Secrets möglich, um Catalog-Endpunkte/Antwortzeiten/Scope wenigstens strukturell zu prüfen.
 - Keine Secrets ausgeben.
+- Kein Core Freeze.
 
-# Nächster Operator-Retest
+# NÄCHSTER OPERATOR-RETEST – EXAKTE REIHENFOLGE
 
-1. Profile als Tester/Ralf sichtbar → öffnen → speichern.
-2. User Settings Apps/Navigation speichern → Popup sichtbar.
-3. App Modules Details → eigene Seite → Save → Popup → zurück.
-4. System Modules ebenso.
-5. Moderation als Ralf erreichbar.
-6. GPS Standorttext + Abstand zur Karte.
-7. Erst danach Sessions/Appearance/Diagnostics/Dashboard/Sidebar/Deployment-Retest fortsetzen.
+1. Inkognito/frischer Root-Aufruf: GPS erscheint selbständig, kein Reload, kein Doppelblinken.
+2. Ralf Login: GPS sofort/automatisch; Settings Modules lädt; Profile sichtbar.
+3. Tester entsprechend.
+4. Developer Login: GPS sichtbar.
+5. Admin/ElNino Login: GPS sichtbar.
+6. Profile öffnen/speichern.
+7. Settings Apps/Navigation Save-Popup.
+8. Moderation als Ralf.
+9. App/System Module Tabellenborder.
+10. Theme Select einmalige Reaktion.
+11. Danach restliche frühere Retests (Sessions, Appearance, Diagnostics, Dashboard, Deployment).
