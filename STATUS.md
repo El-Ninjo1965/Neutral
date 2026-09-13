@@ -1,44 +1,39 @@
-# Neutral status — offline-first startup recovery
+# Neutral status
 
-**Stand:** 2026-09-12
-**Code status:** Implementiert, lokal verifiziert und über GitHub Actions deployed
-**Operator status:** RETEST REQUIRED
+**Stand:** 2026-09-13  
+**Deployed main:** `b5b76f70d57fee982cee7eb397d37009debde001`  
+**Automated Production Smoke:** PASS  
+**Operator-Live-Retest:** DURCHGEFÜHRT  
+**Core Freeze:** NICHT erklärt
 
-GPS wird aus dem generischen, sanitisierten Public/Offline-Aktivierungszustand vor dem ersten Render hydriert. Server-Catalog und Session Restore sind keine Sichtbarkeitsvoraussetzung mehr. Catalog-Sync aktualisiert gezielt Navigation/Settings; Profile und Moderation bleiben permission-sensitiv. Admin-Lifecycle synchronisiert den lokalen Zustand für folgende Starts. Kein Core Freeze.
+## Bestätigter Live-Stand
 
-**Stand:** 2026-09-12
-**Code status:** Local implementation and 553-test suite PASS; deployment pending
-**Operator status:** **RETEST REQUIRED**
+Der User-UI- und Admin-Live-Retest wurde am 2026-09-13 durchgeführt. Die zuvor offenen allgemeinen Retest-Blöcke sind damit nicht mehr pauschal als `RETEST REQUIRED` zu führen.
 
-## Proven root causes
+### User UI – bestätigt funktionsfähig
 
-`ab3c488` did not prevent the live failure because its online anonymous warmstart returned cached data while the background response was never reconciled, concurrent anonymous/login discoveries could commit out of order, and catalog failures were silently converted to an empty successful discovery. Separately, Profile was removed by commercial package entitlement projection even when its module permissions were valid. Server projection also repeated full module/visibility reads per module and classified custom authenticated roles inconsistently for navigation.
+Anonym/Inkognito und authentifiziert funktionieren insbesondere Startnavigationseinstieg, GPS-Grundfunktion, Settings, Theme, Login, GPS-Aktualisierung, Google-Maps-Öffnen, natives Teilen, Apps/Navigation in Settings sowie GPS-Aktivierung/Deaktivierung und Navigation-Label Rename/Restore. Tester-Login und Settings-Speicherung funktionieren.
 
-The repaired contract uses one authoritative online request with same-origin credentials, offline-only anonymous fallback, latest-request-wins registry commits, explicit retry errors, stable visibility audiences, and a generic entitlement-exemption manifest flag for account modules. Catalog responses expose bounded scope/timing evidence. Core Freeze is not declared.
+### Drei reproduzierbare User-UI-Fehler offen
 
+1. **Start/Home:** Der Start-Button wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View. Navigation, View-State und Content laufen auseinander.
+2. **Settings Save Success:** Änderungen werden gespeichert und übernommen, aber das erwartete Shared-Success-Popup `Successfully saved.` erscheint im realen Browser nicht.
+3. **Passwort-Auge:** Ein einzelner Klick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; erst Doppelklick funktioniert.
 
-**Stand:** 2026-09-12
-**Code status:** Implemented; deployment verification pending
-**Operator status:** **RETEST REQUIRED**
+Diese drei Punkte sind der nächste technische Reparaturblock. Sie dürfen nicht mit Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen vermischt werden.
 
-- Root cause: User bootstrap discovered modules concurrently with session restoration and could consume an anonymous cache that excludes permission-gated Profile/Moderation modules.
-- Authenticated discovery, stale-registry reconciliation, Moderation reachability/self-test, dedicated Admin detail views, generic module settings, Settings confirmation timing, and honest GPS location fallback are implemented and behavior-tested.
-- Core Freeze remains **not declared** pending production deployment and operator retest.
+### Admin UI – Basis live bestanden
 
-**Stand:** 2026-09-12
-**Code status:** `b737e2c` auf `main`; lokal 546/546, CodeQL `34667988356` und FTPS/read-only Smoke `34667988682` bestanden
-**Operator status:** **RETEST REQUIRED**
-**Core Freeze:** nicht erklärt
+Admin-Login, Dashboard, App Modules, System Modules, Settings, Appearance, Users, Licenses/Organizations, Packages/Entitlements, Sessions, Roles & Permissions, Permission Catalog, Connections & Providers, Server-Test, Database-Test, Backup/Restore, Storage Path Test, Maintenance/Backup, Diagnostics, Audit Log und Logout wurden live erfolgreich geprüft.
 
-## Implementierter Stand
+Spätere, nicht blockierende Admin-Themen: Dashboard-Darstellung, Unlimited Device Limit als `∞`, alte `idle`-Sessions/Session-Lifecycle.
 
-- Profile ist als User-App-Modul navigierbar und führt berechtigte Benutzer direkt zur vorhandenen, API-gestützten Profile-Ansicht.
-- Die Admin-User-Projektion transportiert die kanonische Organization-Zuordnung nun bis in die Übersicht.
-- Session-Übersicht und Dashboard verwenden einen gemeinsamen Aktivitätsstatus; dauerhafte, aber seit 30 Minuten nicht gesehene Sessions werden als `idle` statt `active` projiziert und können beendet werden.
-- GPS ist einspaltig, teilt Google Maps, öffnet Google Maps sicher in einem neuen Kontext und hält OSM ausschließlich als eingebettete Karte.
-- Settings und bestätigungspflichtige Adminaktionen nutzen Frameworkdialoge; native Confirm-/Alert-Fallbacks wurden entfernt.
-- Module, Appearance, Diagnostics, Sidebar, Dashboard und Release-/Deployment-Status wurden entsprechend dem aktuellen Operatorvertrag bereinigt.
+## Architekturstatus
+
+Der generische Offline-First/Public-Module-Startvertrag ist implementiert und deployed. GPS verwendet die versionierte sanitisierten Public/Offline-Aktivierungsprojektion; Profile und Moderation bleiben permission-sensitiv. Ein Core Freeze wurde ausdrücklich nicht erklärt.
+
+Nach Abschluss und Live-Abnahme der drei User-UI-Fehler folgt ein separater Modularchitektur-Audit. Erst danach werden Profile/Moderation und weitere Module erneut fachlich bewertet bzw. repariert.
 
 ## Wahrheitsgrenze
 
-Automatisierte Tests und Deployment können die angeordneten realen Operator-Interaktionen nicht ersetzen. Alle Punkte aus `CURRENT-TASK.md` bleiben bis zum Produktionsdeployment und dem geordneten Betreiber-Retest **OPERATOR RETEST REQUIRED**. Moderation/Postbox wurden in diesem Batch nicht fachlich erweitert. Kein Core Freeze.
+Automatisierte Tests, CI, Deployment und Production Smoke ersetzen keinen ausdrücklich angeordneten Betreiber-Livetest. Neuere Betreiber-Livebefunde haben Vorrang vor älteren Statusaussagen.
