@@ -1,323 +1,166 @@
-## 2026-09-12 – Implementierter Public/Offline-Modulstart
-
-Der aktuelle Startvertrag trennt zwei Projektionen. Eine versionierte und streng sanitisiert gelesene `public-offline`-Projektion enthält ausschließlich Client-Metadaten administrativ aktiver öffentlicher Offline-Module. Sie wird synchron vor dem ersten User-Render in die bestehende ModuleRegistry hydriert. Der spätere Server-Catalog synchronisiert Lifecycle-Zustand; Fehler sind kein leerer Erfolg. Authentifizierte Profile-/Moderation-Metadaten werden niemals lokal als öffentlicher Fallback persistiert. Lokale Sichtbarkeit verleiht keine Serverrechte. GPS ist die erste Manifestdeklaration dieses generischen Vertrags.
-
 # NEUTRAL – Architektur
 
-## Aktueller Minimal-Core-/Systemmodul-Vertrag (2026-09-11)
-
-**Zielvertrag:** Core stellt Identity/RBAC, Session/CSRF, Modul-Discovery und Lifecycle, manifestvalidierte Serverrouten, Settings, Events, sichere Storage-/Backup-Primitives sowie UI-/I18N-/Theme-Grundlagen bereit. Konkrete Profile-, Media-, Sharing-, Notification-, Moderation- und Messaging-Semantik gehört in optionale Module. `dependencies` sind nur für zwingende Laufzeitabhängigkeiten; `optionalDependencies` beschreiben nicht blockierende Enhancements und werden derzeit nicht lifecycle-erzwungen.
-
-**Code-IST:** Der Vertrag normalisiert `presentation.userNavigation`, `presentation.adminNavigation`, `presentation.system` und `optionalDependencies`. Runtimezustände Discovery, Registration/Installation und Activation sind getrennt. Die User-Navigation respektiert `userNavigation=false`. Eine separate rollenbezogene Visibility-/Navigation-Matrix existiert noch nicht; aktuelle Sichtbarkeit wird über Manifestpräsentation und Permissions abgeleitet. Das Profile-Manifest und seine generische Route sind vorhanden, Profile scheiterte aber im Betreiber-Livecheck bei der Aktivierung. Die fünf übrigen neuen Systemmodule sind überwiegend Manifest-/Status-Service-Scaffolding, keine fertigen Fachprodukte.
-
-**Live 2026-09-11:** Moderation, Notifications, Postbox und Sharing durchliefen Install → Activate → Deactivate → Activate und wurden danach deaktiviert. Profile-Aktivierung endete mit HTTP 500; Media-Installation mit `Load failed`. GPS blieb aktiv. Diese Lifecyclebefunde beweisen keine Fachfunktion.
-
----
-
-**Status:** TECHNISCHER IST-/ZIELVERTRAG
-
-**Geprüft:** 2026-09-04
-**Autorität:** untergeordnet zu [`VISION.md`](VISION.md) und [`CORE-1.0.md`](CORE-1.0.md); Statusübersicht in [`STATUS.md`](STATUS.md).
-
-## P4-Auslieferungs- und Startvertrag
-
-### Zentraler User-Theme-Vertrag
-
-Framework- und Moduloberflächen verwenden die semantischen Tokens `--bg`, `--surface`, `--surface-secondary`, `--surface-tertiary`, `--text`, `--text-muted`, `--border`, `--line-strong` und `--primary`. Light/Dark werden zentral durch denselben persistenten User-Theme-State gesteuert; Module benötigen keine eigenen Dark-Mode-Sonderfarben. Freies Homepage-HTML wird nicht umgeschrieben, sein Frameworkcontainer bleibt theme-neutral transparent.
-
-- Der öffentliche PHP-Endpunkt liefert ausschließlich die zentrale Homepage-Projektion; die User-App wendet sie unabhängig von Auth- und Core-/Discovery-Fehlern an.
-- Core-Start, Homepage-Fetch und Wiederherstellung der User-Session sind getrennte Startpfade. Ein Fehler in einem Pfad darf die beiden anderen nicht verhindern.
-- Das Produktionspaket bindet lokale JavaScript- und CSS-URLs im User-Entry-Document an denselben Deployment-Commit wie den Service-Worker-Cache. Damit kann ein neuer Worker keinen alten HTTP-Cache-Inhalt in einen neuen Shell-Cache übernehmen.
-- Branding ist App-Metadatum (`iconText`, optional `logoUrl`) und kein unveränderliches Neutral-Element.
-- Ein als Homepage konfiguriertes Modul wird innerhalb des Navigationskontexts `Start` gerendert. Nur eine bewusste Auswahl im Modulmenü wechselt den aktiven Navigationskontext zum eigenständigen Modul.
-- Bis öffentliche Homepage-Projektion und – beim Modulmodus – Discovery aufgelöst sind, zeigt die Shell einen neutralen Ladezustand statt kurzzeitig einen fachlich falschen Defaultinhalt.
-- Die letzte validierte öffentliche Homepage-Projektion besitzt einen eigenen versionierten Local-Storage-Cache (`public-homepage`). Ein Warmstart darf daraus synchron rendern; der Serverabgleich aktualisiert ihn anschließend. Sessionidentitäten und permission-sensitive Katalogantworten gehören ausdrücklich nicht in diesen Cache.
-
-## Statuslegende
-
-- **IST**: im aktuellen Repository nachweisbar implementiert.
-- **GEPLANT**: verbindliche Zielrichtung aus `VISION.md`, noch nicht vollständig implementiert.
-- **FEHLT**: erforderliche Fähigkeit ohne belastbare Implementierung.
+**Status:** AKTUELLER TECHNISCHER VERTRAG  
+**Stand:** 2026-09-13  
+**Autorität:** `VISION.md` → `CORE-1.0.md` → diese Datei / `ModuleCreation.md`
 
 ## 1. Systemgrenze
 
-### Zielbild – GEPLANT
-
 ```text
-Mobile-first Web-App mit Client-Core
-        ↓ HTTPS/JSON-API
+Mobile-first Web-App
+        ↓ HTTPS/JSON
 PHP-Server als Vertrauensgrenze
         ↓ PDO
-MariaDB/MySQL
+MySQL/MariaDB
 ```
 
-Web-App, Server und Datenbank sind durch dokumentierte Verträge getrennt. Infrastrukturdetails sind konfigurierbar.
+Web-App, Server und Datenbank sind getrennte Schichten. Die Web-App greift nie direkt auf die Serverdatenbank zu. Infrastrukturdetails werden über Konfiguration und Adapter entkoppelt.
 
-### Repositorystruktur – IST
+## 2. Repositorystruktur
 
 ```text
 Neutral/
 ├── Web-App/
-│   ├── app/          # App-Shell und GPS-Referenzmodul
-│   ├── apps/         # App-Metadaten
-│   ├── core/         # Browser-Core
-│   └── public/       # Browser-UI und Assets
+│   ├── app/       # App-Shell und Module
+│   ├── apps/      # App-Metadaten
+│   ├── core/      # Browser-Core
+│   └── public/    # User-/Admin-UI und Assets
 ├── Server/
-│   ├── node/         # ausschließlich Entwicklung und Tests
-│   ├── php/          # produktiver PHP-Core
-│   └── public/       # PHP-Entrypoints und API
-├── tests/            # Entwicklungs-/Regressionstests
-└── scripts/          # notwendige Start-, Preflight- und Deploywerkzeuge
+│   ├── php/       # produktiver PHP-Core
+│   ├── public/    # produktive Entrypoints/API
+│   └── node/      # Entwicklung/Testreferenz
+├── tests/
+└── scripts/
 ```
 
-Die früher parallel im Root vorhandenen Laufzeitordner `app`, `apps`, `core`, `platform`, `webroot`, `server` und `config` existieren nicht mehr. Generierte Zustände liegen ignoriert innerhalb `Server/`.
+Node ist keine Produktionsvoraussetzung.
 
-### Aktueller Gesamtzustand – IST/TEILWEISE
+## 3. Browser-Core
 
-- Browser-Client vollständig unter `Web-App/`: `public/` enthält Shell und UI, `core/` den neutralen Client-Core, `app/` App-Shell und Erweiterungen sowie `apps/` die App-Metadaten.
-- Server vollständig unter `Server/`: `php/` enthält den PHP-Core, `public/` die PHP-Entrypoints/API und `node/` ausschließlich die Referenz-/Testlaufzeit.
-- Node ist keine Voraussetzung der Shared-Hosting-Produktion.
-- Die konkrete Referenzmodulbasis besteht aus `GPS` als technischer Geräte-/Client-Referenz und `reference-notes` als zweitem fachlich unabhängigen Server-/Modulvertragsbeispiel unter `Web-App/app/modules/`; neue Produktkopien entfernen `reference-notes` als reine Vertragsreferenz automatisch.
+Der Browser-Core stellt generische Fähigkeiten bereit:
 
-**Settings-/User-UI-Vertrag (2026-09-06):** User-Theme und Präferenzen werden lokal/offline versioniert gespeichert; Light ist der Erststart und Dark wird vor dem ersten sichtbaren Paint angewendet. Normale Module erhalten zentrale Navigation ohne technische Manifestbeschreibung oder generischen Back-Link. Die Application ID bleibt serverseitig unveränderbar, während der Application Name ein persistenter Anzeigename ist. Session-Invalidierung ist eine geschützte Einzelaktion; der Permission Catalog ist read-only.
+- Lifecycle und Initialisierung;
+- Event-Bus und begrenzte Eventhistorie;
+- Konfiguration;
+- lokale Storage-/IndexedDB-Abstraktionen;
+- Netzwerkstatus;
+- Fehlerbehandlung/Logging;
+- Service-Registry;
+- Auth-/User-/Access-/Context-Fassaden;
+- Module Interface, Registry, Manager und Loader;
+- zentrale UI-, Theme- und I18N-Grundlagen.
 
-**P4-/Appearance-Vertrag (2026-09-08):** System-/Technikeinstellungen und
-Darstellung sind eigenständige Admin-Views. Die globale Startseite wird zentral
-als aktives, startbares Modul oder als unverändertes vertrauenswürdiges
-Administrator-HTML persistiert. Die User-App liest ausschließlich die öffentliche
-Homepage-Projektion, respektiert beim Modulstart den vorhandenen
-Client-Zugriffsvertrag und fällt bei fehlender oder ungültiger Konfiguration auf
-den neutralen Startzustand zurück. Schreibzugriff verbleibt im geschützten
-Admin-/CSRF-Pfad.
-Historische `settings.theme`-/`settings.layout`-Werte bleiben kompatibel gespeichert, besitzen aber keinen produktiven UI-Consumer und werden deshalb nicht als Appearance-Steuerung angeboten. Admin- und User-Theme bleiben getrennte lokale Header-Zustände.
-Der versionierte `appearance`-Vertrag wird serverseitig allowlist-validiert und öffentlich getrennt von Adminsettings projiziert. Die User-App liest ausschließlich diese Projektion, cached sie als öffentlichen schema-versionierten Zustand und mappt sie auf zentrale CSS Custom Properties; Custom CSS folgt nur im User-Dokument über `textContent`.
+Der Core enthält keine Fachlogik normaler Module.
 
-## 2. Web-App
+## 4. Modulruntime
 
-**IST:** `Web-App/public/index.html` stellt die Shell bereit. `Web-App/public/user-app.js` rendert sie sofort und startet Core, IndexedDB und Discovery danach im Hintergrund. `Web-App/public/public-path.js` normalisiert den öffentlichen Installationspräfix aus `NeutralConfig.basePath` beziehungsweise dem Meta-Element `neutral-base-path`; `api-client.js`, Assets, Admin und Setup konsumieren denselben Resolver. Ein zum normalisierten Basispfad passendes `<base href>` hält Assets auch auf tiefen SPA-Routen unter derselben Installation. Die einzige ausgelieferte Runtimekonfiguration enthält `basePath` und das daraus abgeleitete `apiBase`, keine Environment- oder Dateisystemwerte; der Resolver verwendet `basePath` als Eingabe.
+Clientseitig bilden `module-interface.js`, `module-registry.js`, `module-manager.js` und `core-loader.js` den generischen Modulpfad.
 
-**GEPLANT:** sofort sichtbare mobile Grundoberfläche vor langsamer Initialisierung; klare Schichten für Shell, Core und Erweiterungs-UI; messbare Browserkompatibilität.
+Verbindlich:
 
-**GEPLANT:** Gerätefunktionen müssen plattformneutral über Capability Detection und definierte Fallbacks genutzt werden. Das GPS-Modul dient als Referenz für mobile Web-Interaktionen auf iOS und Android, ohne hartcodierte Browser- oder Betriebssystemzweige.
+- Discovery, Registration/Installation und Activation sind getrennte Zustände;
+- App Modules und System Modules verwenden dieselbe Runtime;
+- `category: user|system` ist nur Klassifikation;
+- `presentation` steuert Darstellung/Navigation, nicht Serverrechte;
+- normale optionale Module dürfen Core oder unabhängige Module nicht voraussetzen;
+- harte Dependencies sind Ausnahmefälle;
+- optionale Enhancements verwenden `optionalDependencies`, Capability Detection und Fallback;
+- Details siehe `ModuleCreation.md`.
 
-**FEHLT/TEILWEISE:** belastbare Startperformance-Budgets und eine dokumentierte Geräte-/Browser-Testmatrix; weitere direkte UI-Fetches sind noch nicht vollständig auf den zentralen Transportadapter konsolidiert.
+## 5. Public/Offline-Start
 
-## 3. Core
+Ein `publicOffline`-Modul kann aus einer versionierten, sanitisierten lokalen Projektion vor dem ersten stabilen User-Render in dieselbe ModuleRegistry hydriert werden.
 
-**IST:** Browser-Core in `Web-App/core/`:
+Die Projektion:
 
-- `core-lifecycle.js`: Zustände created, initializing, ready, running, stopped.
-- `core-network.js`: Browser-Online-/Offline-Zustand, Subscription und Event `network:changed`, ohne Servererreichbarkeit oder Sync zu behaupten.
-- `core-event-bus.js` und `core-event-ring.js`: synchrone Events und begrenzte Ereignishistorie.
-- `config-manager.js`/`core-config.js`: Konfigurationszugriff.
-- `core-storage.js` und `storage-manager.js`: lokale Schlüssel-/Adapter-Speicherung.
-- `database-manager.js`: IndexedDB und CRUD.
-- `service-manager.js`: Service-Registry.
-- `core-error-handler.js`/`error-log.js`: Fehler- und Logpfad.
-- `core-loader.js`, `module-interface.js`, `module-registry.js`, `module-manager.js`: Discovery, Manifestnormalisierung und Lifecycle.
-- `core-auth.js`, `core-user.js`, `core-access.js`, `core-context.js`: Clientfacaden für Identität und Berechtigungsabfragen.
+- enthält nur erlaubte öffentliche Modulmetadaten;
+- enthält keine Session-, User-Permission-, Package- oder Secret-Daten;
+- ist keine zweite Runtime;
+- verleiht keine Serverrechte;
+- wird durch spätere autoritative Server-Synchronisierung aktualisiert.
 
-**GEPLANT:** stabile öffentliche Verträge, adapterbasierte Geräte-/Netzwerkfunktionen, Offline-Queue, Konfliktbehandlung und nicht blockierender Start.
+GPS ist das aktuelle Referenzmodul. Permission-sensitive Module wie Profile und Moderation bleiben außerhalb dieses öffentlichen Offline-Vertrauensbereichs.
 
-**FEHLT:** vollständiger produktiver Sync-Orchestrator und verbindliche Konfliktstrategie.
+## 6. User-App Start und Rendering
 
-## 4. Server und PHP
-
-**IST:** `Server/php/bootstrap.php` erzeugt `AppRuntime`. `AppConfig`, `EnvLoader`, `Database`, `SchemaMigrator`, Auth/RBAC-, Modul-, Settings- und Auditservices bilden die serverseitige Laufzeit. `Server/public/api/index.php` ist der zentrale PHP-API-Router. `Server/public/admin.php` schützt die Adminoberfläche serverseitig. `Server/public/setup.php` und Setup-Endpunkte initialisieren Installation und Schema.
-
-**IST:** Der öffentliche Modulpfad bildet ausschließlich die gespeicherten `viewer`-Modulrechte auf einen anonymen, bereinigten `clientAccess`-Kontext ab. Nur aktive und sichtbare Module gelangen in den Katalog; diese Cliententscheidung erweitert keine Serverberechtigung.
-
-**IST:** Der produktive PHP-Modulserver ist fachneutral: `ModuleContract` validiert Kompatibilität und Eigentum, `ModuleServerRegistry` lädt ausschließlich geschützte Entries unter `Server/php/modules/<id>/`, `ModuleHttpKernel` dispatcht deklarierte Routen mit Auth/Permission/CSRF, `ModuleLimitGuard` erzwingt quantitative Rollenlimits und `ModuleMigrationRunner` verwaltet checksumgebundene Up-/Down-Migrationen. Modulupdates und Deinstallationen sind nur inaktiv zulässig.
-
-**IST:** Das Shared-Hosting-Staging behält `Web-App/` und `Server/` als getrennte Komponenten unter dem Deploymentroot. Die Root-`.htaccess` bildet die öffentlichen Pfade auf diese Struktur ab und sperrt PHP-Core, Runtime und Dotfiles. `Server/node/` ist nicht Bestandteil des Produktions-Stagings.
-
-**IST:** `Server/php/src/PublicPath.php` und der Browserresolver implementieren denselben `NEUTRAL_BASE_PATH`-Vertrag. Der leere Wert gilt für Domain-Root und einen eigenen physischen DocumentRoot; `/meine-app` gilt ausschließlich für die entsprechende öffentliche URL-Basis. Der physische Deploymentordner bleibt eine unabhängige Einstellung. Die per-directory-Rewrite-Regeln benötigen kein festes `RewriteBase`.
-
-**IST:** `PublicPath::assetUrl()`/`AppConfig::assetUrl()` erweitern `publicUrl()` um einen optionalen Cache-Busting-Marker (`?v=<sourceCommit>`), damit statische Assets (`style.css`, Admin-JS), die serverseitig mit `Cache-Control: public, max-age=86400` ausgeliefert werden, nach einem Deployment nicht bis zu 24h lang in einer veralteten Version aus dem Browser-Cache bedient werden, während die zugehörige PHP-Seite (`no-store`) bereits die neue Struktur zeigt. Die Version wird von `AppRuntime::detectAssetVersion()` sicher (Fallback `null`, kein Fehler) aus dem bei jedem Produktionspaket vorhandenen `manifest.json` (`sourceCommit`) gelesen; ohne `manifest.json` (lokale Entwicklung/Tests) verhält sich `assetUrl()` identisch zu `publicUrl()`. Verwendet in `Server/public/admin.php` und `Server/php/views/admin-ui.php`.
-
-**IST:** Die PHP-Runtime ist für PHP 8.1+, PDO und MySQL/MariaDB geschrieben. Routing erfolgt über `Server/public/api/.htaccess` an `index.php`.
-
-**GEPLANT:** die PHP-Implementierung bleibt ein Adapter hinter dem API-Vertrag. Ein Infrastrukturwechsel darf den Clientvertrag nicht unnötig ändern.
-
-## 5. Node-Laufzeit
-
-**IST:** `Server/node/bootstrap/server.js` implementiert eine umfangreiche Node-API für lokale Entwicklung und Tests; `Server/node/server.js` exportiert sie.
-
-**Regel:** Node.js ist keine Voraussetzung der ersten Produktion. Verhalten der Node- und PHP-APIs darf nicht ungeprüft als identisch angenommen werden. `API.md` kennzeichnet beide Oberflächen getrennt.
-
-## 6. API und Datenfluss
-
-**IST:** Der Browser verwendet `ApiClient`; öffentliche API-URLs werden aus dem normalisierten Basispfad und `/api/v1` gebildet. Same-Origin-Cookies tragen die Session; bei Schreibmethoden wird `neutral_csrf` als `x-csrf-token` gesendet. Der PHP-Router validiert Identität, Berechtigungen und CSRF, ruft Services auf und antwortet über `JsonResponse`.
+Verbindliche Reihenfolge:
 
 ```text
-UI/Modul → ApiClient → HTTPS /api → PHP-Router → Service → PDO → MariaDB/MySQL
+Shell/UI → minimal notwendiger lokaler Zustand → Hintergrundinitialisierung
 ```
 
-**GEPLANT:** konfigurierbare API-Basis ohne feste Hostnamen, allgemeine Retry-/Backoff-Policy nur für sichere/idempotente Fälle und Offline-Queue.
+Homepage, Session-Restore und Modul-Discovery sind getrennte Pfade. Ein Fehler eines Pfads darf die anderen nicht unnötig blockieren.
 
-**IST:** API-Versionierung ist **VORHANDEN**: `/api/v1` ist kanonisch, `/api` bleibt kompatibel, Antworten senden `X-Neutral-API-Version: 1`, und unbekannte explizite Versionen wie `/api/v2` werden mit 404 abgewiesen. Ein zentraler kontrollierter Fetch-Timeout ist ebenfalls **VORHANDEN** und wird durch `tests/api-timeout.test.js` geprüft.
+Hintergrund-Discovery darf den stabilen sichtbaren Zustand nicht durch unnötige Full-Renders zurücksetzen. Navigation-State, aktive View und gerenderter Content müssen konsistent bleiben.
 
-**FEHLT/TEILWEISE:** allgemeine sichere Retry-/Backoff-Policy bleibt weiterhin offen.
+## 7. Homepage und Appearance
 
-## 7. Datenbank und lokale Speicherung
+- Homepage ist zentral konfiguriertes vertrauenswürdiges Admin-HTML oder ein startbares Modul.
+- öffentliche Homepage-Projektion wird unabhängig von geschützten Adminsettings gelesen;
+- versionierter lokaler Homepagecache darf einen Warmstart ermöglichen;
+- Sessionidentitäten und permission-sensitive Kataloge gehören nicht in diesen Cache;
+- User- und Admin-Theme sind getrennte Zustände;
+- Framework und Module verwenden zentrale semantische CSS-Tokens;
+- Module bauen keine eigene parallele Theme-Infrastruktur.
 
-### Client
+## 8. PHP-Server
 
-**IST:** `database-manager.js` öffnet IndexedDB `CoreDB` (konfigurierbar) und legt Stores `users`, `modules`, `logs`, `sessions`, `settings`, `cache`, `sync` an. CRUD und Indexsuche sind vorhanden. Mehrere Komponenten nutzen zusätzlich `localStorage`.
+`Server/php/bootstrap.php` erzeugt die produktive Laufzeit. Der Server stellt unter anderem bereit:
 
-**TEILWEISE:** Ein `sync`-Store existiert, aber keine vollständige persistente Queue-/Retry-/Konfliktengine. Schema-Upgrades erstellen fehlende Stores, besitzen aber noch keinen umfassenden Migrationskatalog.
+- Authentifizierung, Sessions und CSRF;
+- Rollen und Permissions;
+- Modul-Lifecycle;
+- Settings;
+- Audit und Diagnostik;
+- Datenbank/Migrationen;
+- Backup-/Restore-Verträge;
+- geschützte Modulrouten und Services.
 
-### Server
+`Server/public/api/index.php` ist der zentrale API-Einstieg. `Server/public/admin.php` schützt den Adminbereich serverseitig.
 
-**IST:** PDO mit MySQL/MariaDB; `SchemaMigrator.php` verwaltet `schema_migrations` sowie Rollen, Rechte, Benutzer, Sessions, Settings, Module, Modulstatus/-migrationen, Setupstatus, Audit, Backups und Releasezustand.
+## 9. Server-Modulvertrag
 
-**GEPLANT:** migrationsbasierte Weiterentwicklung mit minimalen DB-Rechten, Transaktionen und adapterfähiger Konfiguration.
+Der Server lädt Modulcode ausschließlich aus geschützten Modulpfaden. Generische Verträge prüfen:
 
-## 8. Authentifizierung und Autorisierung
+- Manifest-/Core-Kompatibilität;
+- Modulidentität und Eigentum;
+- aktiven Lifecycle;
+- Authentifizierung;
+- Permission;
+- CSRF bei Mutationen;
+- Mengenlimits;
+- versionierte Migrationen und Checksums;
+- sichere Update-/Uninstall-Bedingungen.
 
-**IST:** PHP-Login, Logout und `auth/me`; serverseitige Sessionregistrierung; Rollen/Permissions in MariaDB; Session-Cookie und CSRF-Token; Adminzugriff wird in PHP geprüft. Ein expliziter Bootstrap-Tokenpfad existiert für Setup/Automation und darf normale Benutzeranmeldung nicht ersetzen.
+Fachmodule benötigen keinen eigenen Zweig im zentralen Router.
 
-**TEILWEISE:** Der Browser besitzt lokale Auth-Hilfen für Entwicklung. Diese sind keine Serverautorität.
+## 10. API und Sicherheit
 
-**FEHLT/GEPLANT:** dokumentierte Remember-/Refresh-Strategie und Offline-Reauthentifizierungsregeln.
+Browserzugriffe verwenden den zentralen API-Client und Same-Origin-Sessions. Zustandsändernde Requests tragen CSRF. Der Server bleibt die endgültige Autorität für Identität, Permission, Entitlement und Datenzugriff.
 
-## 9. Konfiguration
+Client-Sichtbarkeit ist niemals Autorisierung.
 
-**IST:** Clientkonfiguration über ConfigManager und Runtimeobjekte. Serverkonfiguration über `.env`, `EnvLoader` und `AppConfig`; `.env` bleibt hostlokal. Die versionierte `.env.example` enthält nur leere hostabhängige/secretartige Werte und sichere öffentliche Defaults. `NEUTRAL_BASE_PATH` wird server- und browserseitig identisch validiert; ungültige Werte brechen ab und fallen nicht still auf Root zurück.
+## 11. Deployment und Portabilität
 
-**GEPLANT:** validiertes, versioniertes Konfigurationsschema und Adapterauswahl für Hostingwechsel.
+Produktionsziel ist PHP 8.1+ mit MySQL/MariaDB auf normalem HTTPS-Shared-Hosting. `Web-App/` und `Server/` bleiben getrennte Komponenten im Deployment. Öffentliche Pfade werden über die Host-/Rewrite-Konfiguration abgebildet; PHP-Core, Runtimezustände und Secrets sind nicht öffentlich zugänglich.
 
-## 10. Events und Services
+Das Produktionspaket und statische Assets verwenden Deployment-/Revision-Metadaten, damit gemischte alte/neue Browsercaches vermieden werden.
 
-**IST:** `Core.emit/on/off/once` delegiert an den Event-Bus. Lifecycle, Datenbank und Modulmanager emittieren Core-Events. `ServiceManager` registriert und liefert benannte Services. `MasterFramework` bietet weitere App-, Entity-, Provider-, Storage-, Rollen- und Modulfunktionen.
+## 12. UI-Vertrag
 
-**IST:** Corevertrag `1.0.0` katalogisiert öffentliche Facaden und kanonische Events; der EventBus isoliert Handler und Services besitzen Sichtbarkeit/Cleanup. Globale `window.*`-Objekte bleiben als dokumentierte Kompatibilitätsschicht, private Globals sind nicht Teil des Modulvertrags.
+Framework- und Moduloberflächen verwenden gemeinsame Komponenten/Tokens für:
 
-## 11. Abhängigkeiten
+- Navigation;
+- Buttons und Formulare;
+- Dialoge/Success/Error Feedback;
+- Tabellen und Content-Layout;
+- Light/Dark;
+- responsive Touch-Bedienung.
 
-- Browser: Web APIs, globale Lade-Reihenfolge der Skripte, optional Fetch/IndexedDB/Geolocation.
-- PHP: PHP 8.1+, PDO und `pdo_mysql`, Sessions, JSON, Dateisystemzugriff für Logs/Setupzustand.
-- Entwicklung/Test: Node.js und npm; `argon2` für die Node-Referenzruntime sowie Paketbau, Bootstrap und Offline-Preflight.
-- Produktion: Node ist nicht erforderlich.
+Module sollen UI-Verhalten nicht lokal duplizieren, wenn ein zentraler Vertrag existiert.
 
-## 12. Erweiterungspunkte
+## 13. Aktuelle Architekturgrenze
 
-**IST:** Modulmanifest, globaler Entry Point, Loader/Registry/Manager, Modul-Lifecycle, Manifest-Permissions, Capabilities, Adminsettings, lokaler Storagezugriff über Core, Events und Services. PHP entdeckt Manifestdateien und persistiert Modulzustände.
+Noch nicht vollständig vorhandene allgemeine Fähigkeiten werden als offene Arbeit dokumentiert, nicht durch produktspezifische Core-Hacks ersetzt. Dazu zählen insbesondere ein vollständiger generischer Sync-/Konflikt-Orchestrator und weitere noch nicht abgenommene Core-1.0-Verträge.
 
-**IST:** Loader, Interface und Registry erhalten den serverseitigen Clientzugriffskontext. Nur ein validierter anonymer Katalog wird installationsbezogen offline gespeichert. Die User-Shell filtert Navigation und Direktaufrufe fail-closed; lokale Benutzereinstellungen können Sichtbarkeit reduzieren, aber keine Freigabe erzeugen. Persistiert aktive Module werden nach Discovery tatsächlich initialisiert und aktiviert.
-
-**IST:** Modul-Datenbanktabellen, Migrationen, geschützte Services/Routen, Rechte, Mengenlimits und Deinstallationspolitik sind manifestbasiert. Der Core lädt Servercode nicht aus öffentlichen Pfaden und erlaubt destruktive Deinstallation nur für validierte modul-eigene Tabellen.
-
-**FEHLT:** standardisierte Hooks, Prozess-/Code-Sandboxing sowie vollständige Offline-/Sync-Verträge. Details stehen in `ModuleCreation.md`.
-
-### Versionierter Client-Core-Vertrag – IST
-
-`Web-App/core/core-contracts.js` veröffentlicht Vertrag `1.0.0`. Nur die dort gelisteten Facaden sind für Erweiterungen öffentlich; `CoreEventBus`, `CoreEventRing`, `CoreLoader`, `CoreState`, `MasterFramework` und `ErrorLog` bleiben interne Kompatibilitätsobjekte. Die globale Skript-Ladefolge bleibt derzeit technisch erforderlich, ist aber kein Freibrief für Module, beliebige Globals zu verwenden.
-
-`CoreNetwork` ist die öffentliche, fachfreie Connectivity-Facade. Startup initialisiert sie idempotent, Shutdown gibt Listener frei. API-Health, Retry und fachliche Synchronisation bleiben getrennte spätere Schichten.
-
-Module beziehen Core-Fähigkeiten über `Core.getFacade(name)`. Die weiterhin global geladenen Objekte sichern Bestandskompatibilität; nicht im Vertragskatalog gelistete Globals bleiben privat. Eine vollständige ESM-/Dependency-Injection-Migration wird nicht als verdeckte Breaking Change in P2 durchgeführt.
-
-## Startperformance – P3 IST
-
-### Zentrale User-App-Steuerelemente – IST
-
-Primary-, Secondary-, Navigations- und Icon-Aktionen teilen den zentralen `.ui-button`-Vertrag und dessen semantische Light-/Dark-Tokens. Module können diesen veröffentlichten visuellen Vertrag erben, statt eigene globale Buttonsysteme zu erzeugen. Die Home-Aktion ist ein lokales Inline-SVG mit textuellem Accessible Name; dies begründet ausdrücklich keine allgemeine Modul-Icon-Architektur.
-
-Freies Homepage-HTML bleibt als gespeicherte Quelle unverändert im Sandbox-Frame. Weil ein isoliertes `srcdoc`-Dokument auf Safari nicht zuverlässig allein vom `color-scheme` des iframe-Elements einen transparenten/dunklen Canvas ableitet, erzeugt `NeutralHomepageDocument` vor der Administratorquelle einen dokumenteigenen, themespezifischen Defaultstyle. Fragmente erhalten ein vollständiges neutrales Dokumentgerüst; bei vollständigen Dokumenten wird der Adapter am Anfang des vorhandenen beziehungsweise ergänzten `head` platziert. Nachfolgendes explizites Administrator-CSS überschreibt diese Defaults durch normale Cascade. Die Sandboxrechte werden nicht erweitert.
-
-Der Safari-First-Paint-Vertrag trennt Dokumentaufbau und Sichtbarkeit: Ein Frame ist standardmäßig `visibility:hidden`, während sein Wrapper bereits die semantische Theme-Surface in unveränderter Größe zeichnet. Theme und fertiges `srcdoc` werden vor DOM-Insertion gesetzt. Nur der einmalige, revisionsgebundene `load` des aktuellen Dokuments setzt die Ready-Klasse; ein überholter Load kann einen neu navigierten Frame nicht enthüllen. Dadurch wird kein unthematisiertes `about:blank` sichtbar, ohne den Inhalt durch Delay oder Animation zu kaschieren.
-
-Der Shell-First-Paint wird vor deferred JavaScript entschieden: Ein synchrones Head-Skript setzt aus dem kleinen lokalen Theme-Key `html[data-user-theme]`, bevor das render-blocking Hauptstylesheet ausgewertet wird. Die semantischen Dark-/Light-Tokens sind deshalb bereits auf `:root` aktiv, wenn Body und leere Content-Surface erstmals painten. Die statische Shell zeigt keinen pauschalen Loadingstatus; ein gültiger synchroner Homepagecache wird beim ersten User-App-Render direkt projiziert. Nur ohne gültigen Cache erzeugt der Runtimepfad nach Theme-Anwendung einen tokenbasierten, zugänglichen Cold-Start-Status.
-
-Die statische User-Shell enthält einen sichtbaren, zugänglichen Ladezustand. Externe klassische Scripts verwenden `defer` und behalten ihre deklarierte Reihenfolge, sodass HTML/CSS/Shell vor Ausführung vollständig geparst werden. `CorePerformance` ist die öffentliche, payloadfreie Messfacade für Navigation, DOM, Shell und weitere Startphasen; reale Gerätezeiten werden separat gemessen.
-
-`CoreStartup.start()` ist die minimale READY-Phase und wartet nicht auf IndexedDB oder Module. `startBackground()` ist die deduplizierte Hintergrundkette für Storage, Clientfacaden und Discovery; ihre Phasen emittieren Status und bleiben bei Einzelproblemen diagnostizierbar. Nur storageabhängige Funktionen warten auf `startup:storage-ready` bzw. die Hintergrund-Promise.
-
-Der Adminstart prüft die Serveridentität nach sichtbarer Auth-Shell. `neutral:auth-ready` startet den Router genau einmal; es existiert kein DOM-Polling und kein pauschaler Startdelay. CoreStartup ist alleinige Discovery-Autorität. Adminviews dürfen nach bestätigter Identität laden, aber First Paint und Loginstatus nicht blockieren.
-
-### P3-Abnahmekriterien – IST
-
-1. Statische Shell ist ohne Serverantwort sichtbar.
-2. Minimal-Core enthält keine IndexedDB-, Authserver- oder Discovery-Wartekette.
-3. UI wird vor `startBackground()` interaktiv markiert.
-4. Storage, Authstatus, Discovery und Hintergrundabschluss besitzen getrennte Marken.
-5. CoreStartup besitzt genau eine Discovery-Aufrufstelle.
-6. API-Timeout lässt Auth-Shell sichtbar und erteilt keine Rechte.
-7. Adminrouter startet eventgetrieben erst nach bestätigter Identität.
-
-Zeitbudgets auf realer Mobilhardware bleiben zwei ausdrücklich offene P8-Gerätetests.
-
-## Offline-First / Service Worker – IST (code-seitig), LIVE-Abnahme offen
-
-Nach mindestens einem erfolgreichen Online-Start registriert die User-Shell unter Secure Context den Core-Service-Worker `Web-App/public/service-worker.js`. Dieser cached unter dem versionierten Namen `neutral-shell-v<Source-Commit>` die App-Shell (HTML), `style.css`, alle Core-Skripte und die öffentlichen User-Skripte. Der Commit-Stempel wird vom Produktionspaket-Build (`scripts/lib/portable-install.js`) als erste Zeile `self.__NEUTRAL_DEPLOY_STAMP__ = '<commit>';` in die Paketkopie injiziert; die Repo-Quelle bleibt generisch, und der Build bricht ohne gültigen Commit erkennbar ab (kein stiller `dev`-Fallback in Produktion). Strategien: Navigation network-first mit Fallback auf die gecachte Shell (kein Festklemmen alter HTML-Versionen), statische Core-/Modul-Assets cache-first mit Hintergrund-Refresh, einmal erfolgreich geladene Modul-Entry-Skripte bleiben offline nutzbar. Sicherheitsgrenze: Nur GET; `/api/`, Auth-/Session-, Admin- und Setup-Endpunkte werden niemals aus dem Cache beantwortet. Beim `activate` werden alle älteren `neutral-shell-v*`-Caches entfernt, sodass kein Mischzustand aus altem Core und neuen Modulen entsteht. Der Service Worker selbst wird per `.htaccess` mit `no-cache` ausgeliefert und über eine Root-Rewrite-Regel am Scope-Root bereitgestellt. Der anonyme Modulkatalog bleibt zusätzlich local-first über localStorage hydriert. Reale Chrome-/iPadOS-Abnahme bleibt wegen der HTTPS-/Hosting-Abhängigkeit (Secure Context) offen.
-
-## Portable Installation – IST/TEILWEISE
-
-**IST:** `scripts/lib/portable-install.js` ist der gemeinsame Kern für Allowlist-Inventar, Pfadnormalisierung, SHA-256, Secretprüfung und verifizierte Pakete. `build-production-package.js` erzeugt `dist/neutral-production/` über einen benachbarten temporären Baum und ersetzt nur einen über Produzent, Format, Metadaten, exakte Allowlist, Inventar und Hashes positiv verifizierten Altstand. Das Manifest hält mit `sourceDirty` konservativ fest, ob der Git-Arbeitsbaum beim Build sauber war. Das Paket enthält Root-`.htaccess`, `Web-App/`, `Server/php/`, `Server/public/`, `.env.example`, `manifest.json` und `SHA256SUMS`; Node-Server, Tests, Dokumentation, Git-, Runtime-, Backup-, Log- und Secretdateien sind ausgeschlossen.
-
-**IST:** `create-neutral-app.js` erstellt aus einer sauberen versionierten Quelle einen lokalen Projektbaum in einem leeren Ziel, setzt öffentliche Appmetadaten, nimmt GPS nur explizit auf und initialisiert Git nur auf Wunsch ohne Remote. `cpanel-preflight.js` verifiziert ein vorhandenes Paket, den exakten HTTPS-Root/-Basispfad, Einstiegspunkte und Secretfreiheit. Alle JSON-Statuswerte sind `PASS`, `BLOCKED` oder `NICHT_GEPRUEFT`; lokale Blocker enden ungleich null.
-
-**TEILWEISE:** Der Offline-Preflight führt keine Server-, Datenbank-, Upload- oder Portoperation aus. Fehlende lokale PHP-Binary und externe Apache-/LiteSpeed-Rewritefähigkeit bleiben `NICHT_GEPRUEFT`, wodurch der Gesamtstatus nicht `PASS` sein kann. Neuer physischer DocumentRoot, echter URL-Unterpfad, leere Datenbank, Setup/Migration/Betreiber, Live-Smoke-Tests, neues Repository sowie CodeQL/FTPS des Abschlusscommits sind noch extern nachzuweisen.
-
-
-**Appearance V2 / lokale Präsentation (2026-09-09):** Designschema V2 erweitert die öffentliche allowlist-validierte Projektion komponentenspezifisch und migriert V1 kontrolliert. Lokale User-Navigation bleibt davon getrennt im Preferences-Record: Darstellungsmodus und reine Textlabels beeinflussen nur Rendering/Accessibility, nie IDs, Routing, Rechte oder I18N-Quellen.
-
-## Administrative operations boundary (2026-09-09)
-
-User-App/module permissions and Admin/System permissions are separate domains. The User-App consumes only public projections and module APIs. Users, roles, permission catalog, device sessions, audit, maintenance, infrastructure and backups remain Admin API/UI concerns with server-side permission and CSRF enforcement. Runtime health, database status, connection inventory and diagnostics derive from the same PHP runtime/configuration and module registry rather than independent UI placeholders.
-
-**Session-/Backup-Follow-up (2026-09-10):** Session identity remains the random persistent installation ID. User-agent-derived device class, OS and browser are bounded support projections only, never authentication, authorization, fingerprint or limit inputs. Backup storage is an installation setting consumed by both HTTP backup operations and the CLI scheduler; cryptographic key material remains exclusively in host environment configuration. A configured custom directory must pre-exist and pass protected/writable probing—application code neither creates it nor changes ownership/mode.
-
-**Backup content boundary (2026-09-10):** The logical encrypted artifact contains the 21 non-ephemeral tables owned by `SchemaMigrator`; `sessions` and `login_attempts` are intentionally absent and cleared on restore. It is a database snapshot, not a deployment/image archive: release code, host environment, runtime logs/caches, module-owned tables and media binaries are outside the current format. Consequently a full rebuild composes a verified release, host-local environment/secrets and the managed-data restore, plus separate handling for currently unsupported module/file data. See `BACKUP-CONTRACT.md`.
-
-## Phase 2 operational DTO flow
-
-Admin infrastructure uses one response path: PHP `JsonResponse` → `ApiClient` → `AdminCommon.unwrapData` → view DTO. Release identity comes from the package manifest; maintenance remains database state. Runtime/database/connection/diagnostic views use the same protected configuration and health sources instead of placeholder fallbacks.
-
-## 2026-09-09 Live-Retest-Follow-up und Core-Freeze
-
-Device sessions identify one browser installation by its random client installation ID. A successful re-login replaces older active server sessions for the same user and installation before registering the current session; dashboards and session views consume the same active registry projection. Admin view navigation owns an isolated per-navigation host and revision, so a late or failed view cannot block or overwrite a newer route.
-
-The Core-1.0 module audit found no missing generic extension point: the GPS and reference-notes contracts already exercise generic client entries, lifecycle, declarative permissions/settings, PHP services/routes, limits and migrations without feature branches in the central router. The current no-freeze decision in `CORE-1.0.md` is authoritative; product behavior stays in modules.
-
-## 2026-09-09 – Account/license foundation before Core 1.0 freeze
-
-The generic account boundary now separates login identity, private profile, field-level organization sharing, roles/permissions, configurable package entitlements, organization licenses and installation-based device limits. `AccountLicenseService` is server-authoritative; client module states (`available`, `locked`, `hidden`) are projections and never grant API access. License managers use the dedicated `license.manage` scope and can operate only on their assigned license. Installation presence records only a random installation ID, audience and first/last server contact. Generic profile media has validated image metadata and a moderation lifecycle, with no automatic publication. Messaging and Marketplace remain future independent capabilities, not speculative Core hooks.
-
-Core API bootstrap checks the deployed migration ledger and applies only pending, repository-defined additive/idempotent migrations before route services use their tables. Database-unavailable setup/readiness requests remain reportable; migration failure does not masquerade as readiness. This closes the previous deployment gap where FTPS delivered code but had no executable host shell step.
-
-## Freeze follow-up boundaries (2026-09-09)
-
-GPS tiles, map center and marker share a single Web-Mercator world-pixel coordinate system. License administration is a scoped association/device capability rather than global account administration. User media is a neutral permission-gated storage/moderation capability, not a community or marketplace feature.
-
-## Admin package/license projection
-
-The Admin UI now exposes the existing Role ≠ Permission ≠ Package ≠ License ≠ Device model. Package module/limit configuration projects through license assignment into client entitlement state and server device enforcement. This is generic platform administration, not product pricing logic.
-
-**Backup V2:** installed module tables are discovered from the generic manifest `database.tables` contract; managed Core media is embedded with logical paths, length and SHA-256 inside the encrypted payload. V1 remains readable as its documented Core-only legacy scope. V2 stages validated files and requires an empty managed target, preventing overwrite or path escape.
-
-Organization-sharing capability is projected by the account service from authoritative active license membership, never roles or browser state. User navigation uses a URL-hash/view-state adapter so main and Settings subnavigation are reproducible across reload/back/deep-link; presentation consumes central active-state tokens.
-## Shared browser feedback contract
-
-`Web-App/public/ui-feedback.js` is loaded by both public shells and owns success-dialog lifecycle, focus restoration, and password-visibility enhancement. Admin success notifications delegate to this contract; route errors continue through the existing alert/state channel.
-Direct User Package state is stored on `users`; active License membership takes precedence at projection and entitlement/device-limit resolution time. This preserves a deterministic direct fallback without allowing two effective Packages.
-## Optional system modules
-
-Module lifecycle and presentation are orthogonal. `presentation.userNavigation=false` supports active invisible capability modules; `optionalDependencies` advertises enhancements without installer/lifecycle coupling. Concrete system-feature boundaries and the Profile compatibility bridge are defined in `SYSTEM-MODULES.md`.
-
-## Optional profile boundary
-
-Profile reads and mutations travel through `/api/modules/profile/profile`; Core authentication has no Profile route. The settings shell discovers the active module before exposing profile UI. Bundled default activation runs only for an unregistered module, so persisted Admin lifecycle state always wins afterward.
-
-## 2026-09-11 repair contract
-
-Module manifests now normalize `category: user|system` with backward-compatible `user`; this is Admin grouping metadata only. Role-specific navigation visibility is persisted under `core.module.visibility`, projected separately from permissions, and consumed only by client navigation. All categories retain one registry, HTTP kernel and lifecycle. Profile migration execution is retry-safe because prior non-transactional partial DDL could leave `gender` present while its migration record was absent.
-
-## Pre-freeze extension proof (2026-09-11)
-
-The optional module Self-Test is normalized metadata, not a second lifecycle or privileged execution engine. A safe module-local HTML entry may be linked by Admin; absent entries produce no action. Field Notes uses the existing single registry/runtime, generic module HTTP kernel, namespaced permissions, CSRF, module migration/limit contracts, role navigation visibility and declared-table Backup V2 discovery. No Field-Notes branch exists in Core or the central API router. This is the code-side no-Core-change proof; operator acceptance and Core Freeze remain separate gates.
-
-## Operator-retest repair boundary (2026-09-11)
-
-App Modules and System Modules are two route-stable filtered Admin projections of one registry, contract, permission catalog and lifecycle engine. No second runtime was introduced. Installation DDL remains retry-safe; if post-registration resolution/migration fails, the lifecycle compensates the registry to `is_present=0`, disabled/error. Retained module data is not dropped, so a later install can retry additive migrations without a false registered state.
+Aktuelle konkrete Fehler und Operator-Retests stehen ausschließlich in `STATUS.md` und `CHATGPT.md`.
