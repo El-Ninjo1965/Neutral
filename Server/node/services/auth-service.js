@@ -5,7 +5,7 @@
  *
  * Central session-based authentication and authorization layer.
  *
- * Layer separation (see WORKFLOW.md Phase 5B):
+ * Layer separation:
  *   A) AUTHENTICATION - who is the user?           -> login/logout/session validation here
  *   B) AUTHORIZATION   - what may the user do?      -> resolveRoles()/hasRole() here
  *   C) SESSION         - how does the user stay in? -> SessionStore adapter (Server/node/services/session-store.js)
