@@ -1,15 +1,9 @@
 # NEUTRAL – Dokumentationsordnung
 
-## Ergänzung 2026-09-11: Entscheidungsprotokolle
-
-[`PRODUCT-DECISIONS-2026-09-11.md`](PRODUCT-DECISIONS-2026-09-11.md) ist nach diesem Konsistenzlauf ein **historisches, datiertes Betreiberentscheidungs- und Livebefundprotokoll**, keine konkurrierende Vertragsquelle. Seine Entscheidungen stehen dauerhaft in den gemäß dieser Hierarchie zuständigen Vertragsdateien; der aktuelle Nachweis steht in `STATUS.md`, ausführbare Arbeit in `TODO.md`. Bei Abweichungen gelten diese autoritativen Dateien.
-
----
-
 **Status:** VERBINDLICH  
-**Geprüft:** 2026-09-08
+**Geprüft:** 2026-09-13
 
-Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand, nächste Schritte und abgeschlossene Änderungen stehen.
+Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand und nächste Schritte stehen. Historische Entwicklung wird über die Git-History nachvollzogen und nicht in parallelen Chronikdateien gepflegt.
 
 ## Verbindliche Reihenfolge
 
@@ -21,7 +15,7 @@ Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie leg
 6. [`STATUS.md`](STATUS.md) beschreibt den aktuell nachgewiesenen Stand, ohne Anforderungen zu verändern.
 7. [`TODO.md`](TODO.md) enthält ausschließlich die nächsten ausführbaren Arbeiten.
 
-[`ROADMAP.md`](ROADMAP.md) enthält bewusst auf später verschobene Ziele. [`CHANGELOG.md`](CHANGELOG.md) dokumentiert abgeschlossene Änderungen. Installationsanleitungen konkretisieren ausschließlich den Betrieb und stehen unter den genannten Verträgen.
+[`ROADMAP.md`](ROADMAP.md) enthält bewusst auf später verschobene Ziele. Installationsanleitungen konkretisieren ausschließlich den Betrieb und stehen unter den genannten Verträgen.
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) beschreibt die verifizierte lokale Entwicklungsumgebung. Sie ist kein Produktionsvertrag und darf Node.js nicht zur Shared-Hosting-Voraussetzung machen.
 
@@ -33,7 +27,7 @@ Neue Module dürfen keine Architektur schaffen, die den zentralen I18N-Vertrag a
 
 ## Konfliktregel
 
-Bei einem Widerspruch gilt die höher eingeordnete Datei. Ein untergeordnetes Dokument darf keine neue Vision oder neue Core-1.0-Pflicht erfinden. Ein erkannter Widerspruch wird im selben Änderungssatz korrigiert und im Changelog genannt.
+Bei einem Widerspruch gilt die höher eingeordnete Datei. Neuere ausdrücklich dokumentierte Betreiber-Livebefunde haben Vorrang vor älteren Statusaussagen. Ein untergeordnetes Dokument darf keine neue Vision oder neue Core-1.0-Pflicht erfinden. Ein erkannter Widerspruch wird im selben Änderungssatz korrigiert.
 
 ## Statusbegriffe
 
@@ -51,9 +45,9 @@ Neutral Core 1.0 muss produktiv mit PHP 8.1+, MySQL/MariaDB, HTTPS und den übli
 
 ## Pflege bei jeder materiellen Änderung
 
-Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und das Arbeitsprotokoll in `WORKFLOW.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden. Jeder neue Workflow-Eintrag nennt außerdem, wer die Änderung ausgeführt und dokumentiert hat, damit spätere Codex-Sitzungen die Herkunft nachvollziehen können.
+Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md` und die operativen Übergabedateien gemäß `WORKFLOW.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden.
 
-Abgehakte historische Aufgaben gehören nicht dauerhaft in `TODO.md`; sie werden im Changelog bewahrt.
+Abgeschlossene Aufgaben und historische Zwischenstände gehören nicht dauerhaft in `TODO.md`, `CURRENT-TASK.md`, `CHATGPT.md` oder andere aktive Vertragsdateien. Historische Nachvollziehbarkeit liefert die Git-History.
 
 Operations contracts for device sessions, permission domains, maintenance, infrastructure truth, audit retention and backup automation are authoritative in `Security.md`, `Architecture.md`, `API.md`, `Database.md` and `Install-README-Server.md`.
 
