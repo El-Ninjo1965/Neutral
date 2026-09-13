@@ -33,7 +33,7 @@ Die Produktionspaketstruktur darf nicht abgeflacht werden.
 
 `NEUTRAL_BASE_PATH` ist leer für Domain-Root bzw. einen eigenen physischen DocumentRoot und z. B. `/meine-app` für einen echten URL-Unterpfad. Der Wert enthält keinen Host, Query oder Fragment und endet nicht mit `/`.
 
-`Web-App/public/public-path.js` ist die zentrale Pfadauflösung. Produktiver Clientcode verwendet keine fest verdrahteten Domain-Root-Pfade.
+`Web-App/public/public-path.js` liest `basePath` als zentralen Resolver-Eingang. Produktiver Clientcode verwendet keine fest verdrahteten Domain-Root-Pfade.
 
 Die statische Startdatei und das gebaute `<base href>` müssen denselben Basispfad verwenden. Der physische Serverordner und der öffentliche URL-Basispfad sind getrennte Konzepte.
 
