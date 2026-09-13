@@ -11,9 +11,7 @@
 (() => {
     'use strict';
 
-    // TEMPORARY diagnostic instrumentation (local-only, non-PII, no telemetry
-    // — see WORKFLOW.md). Removed once the offline/online discovery timing
-    // has been confirmed on a real device.
+    // Bounded, data-free startup phase measurements via CorePerformance.
     const mark = (name) => {
         if (typeof window !== 'undefined' && window.CorePerformance) window.CorePerformance.mark(name);
     };
@@ -201,7 +199,7 @@
         },
 
         async discover() {
-            mark('module-registry-discover-start'); // TEMPORARY diagnostic mark
+            mark('module-registry-discover-start');
             const catalog = Array.isArray(window.FrameworkModuleCatalog)
                 ? window.FrameworkModuleCatalog
                 : [];
@@ -324,7 +322,7 @@
                 discovered.push(module);
             });
 
-            mark('module-registry-discover-end'); // TEMPORARY diagnostic mark
+            mark('module-registry-discover-end');
             return discovered;
         }
     };

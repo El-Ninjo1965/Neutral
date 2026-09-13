@@ -6,6 +6,7 @@
     let backgroundPromise = null;
     let backgroundComplete = false;
 
+    // Bounded, data-free startup phase measurements via CorePerformance.
     const mark = (name) => {
         if (window.CorePerformance) window.CorePerformance.mark(name);
     };
@@ -18,7 +19,7 @@
         async start() {
             if (started) return true;
             if (startPromise) return startPromise;
-            mark('core-startup-start'); // TEMPORARY diagnostic mark (local-only, no PII) — see WORKFLOW.md
+            mark('core-startup-start');
             startPromise = Promise.resolve().then(() => {
                 if (window.CoreShutdown && typeof window.CoreShutdown.reset === 'function') window.CoreShutdown.reset();
                 const required = ['Core', 'CoreLoader', 'CoreContext', 'CoreConfig', 'CoreLifecycle', 'ModuleRegistry', 'ModuleManager'];
@@ -33,7 +34,7 @@
                 }
                 started = true;
                 mark('minimal-core-ready');
-                mark('core-startup-end'); // TEMPORARY diagnostic mark
+                mark('core-startup-end');
                 window.Core.emit('core:started', { version: window.CoreConfig.core.version, backgroundComplete: false });
                 return true;
             }).catch((error) => {
@@ -46,17 +47,17 @@
         startBackground() {
             if (backgroundPromise) return backgroundPromise;
             if (backgroundComplete) return Promise.resolve(true);
-            mark('start-background-start'); // TEMPORARY diagnostic mark
+            mark('start-background-start');
             backgroundPromise = this.start().then(async () => {
                 try {
-                    mark('database-manager-init-start'); // TEMPORARY diagnostic mark
+                    mark('database-manager-init-start');
                     if (window.DatabaseManager && typeof window.DatabaseManager.init === 'function') await window.DatabaseManager.init();
-                    mark('database-manager-init-end'); // TEMPORARY diagnostic mark
+                    mark('database-manager-init-end');
                     mark('storage-ready');
                     window.Core.emit('startup:storage-ready');
                 } catch (error) {
                     reportPhaseError('storage', error);
-                    mark('database-manager-init-end'); // TEMPORARY diagnostic mark
+                    mark('database-manager-init-end');
                     mark('storage-ready');
                 }
 
@@ -66,26 +67,26 @@
                     ['UserModule', 'user'], ['AdminModule', 'admin'], ['I18nModule', 'i18n']
                 ]) {
                     try {
-                        mark(`framework-init-${phase}-start`); // TEMPORARY diagnostic mark
+                        mark(`framework-init-${phase}-start`);
                         if (window[name] && typeof window[name].init === 'function') window[name].init();
-                        mark(`framework-init-${phase}-end`); // TEMPORARY diagnostic mark
+                        mark(`framework-init-${phase}-end`);
                     } catch (error) {
                         reportPhaseError(phase, error);
-                        mark(`framework-init-${phase}-end`); // TEMPORARY diagnostic mark
+                        mark(`framework-init-${phase}-end`);
                     }
                 }
 
                 try {
-                    mark('module-manager-discover-start'); // TEMPORARY diagnostic mark
+                    mark('module-manager-discover-start');
                     if (window.ModuleManager && typeof window.ModuleManager.discoverModules === 'function') {
                         await window.ModuleManager.discoverModules();
                     }
-                    mark('module-manager-discover-end'); // TEMPORARY diagnostic mark
+                    mark('module-manager-discover-end');
                     mark('module-discovery-complete');
                     window.Core.emit('startup:modules-ready');
                 } catch (error) {
                     reportPhaseError('module-discovery', error);
-                    mark('module-manager-discover-end'); // TEMPORARY diagnostic mark
+                    mark('module-manager-discover-end');
                     mark('module-discovery-complete');
                     window.Core.emit('startup:modules-error', {
                         message: error && error.message ? error.message : String(error)
@@ -102,7 +103,7 @@
                 }
                 backgroundComplete = true;
                 mark('background-initialization-complete');
-                mark('start-background-end'); // TEMPORARY diagnostic mark
+                mark('start-background-end');
                 window.Core.emit('core:background-ready');
                 return true;
             }).finally(() => { backgroundPromise = null; });

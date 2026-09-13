@@ -3154,7 +3154,7 @@
       clearServerIdentity();
       const sessionApiClient = getServerApiClient();
       if (sessionApiClient) {
-        if (window.CorePerformance) window.CorePerformance.mark('auth-status-start'); // TEMPORARY diagnostic mark
+        if (window.CorePerformance) window.CorePerformance.mark('auth-status-start');
         const sessionResult = await sessionApiClient.me();
         const sessionData = extractApiData(sessionResult);
         if (sessionResult.ok && sessionData && sessionData.user) {
