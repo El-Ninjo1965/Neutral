@@ -18,5 +18,5 @@ test('login Eye has a direct delegated click handler in the delivered page', () 
   assert.match(index, /closest\('#userLoginPasswordReveal'\)/);
   assert.match(index, /getElementById\('userLoginPassword'\)/);
   assert.match(index, /input\.type = input\.type === 'password' \? 'text' : 'password'/);
-  assert.match(index, /event\.stopPropagation\(\)/);
+  assert.match(index, /event\.stopImmediatePropagation\(\)/);
 });
