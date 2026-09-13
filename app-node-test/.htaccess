@@ -1,0 +1,6 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<FilesMatch "^(?:manual-node-server\.js|\.node-diagnostic-.*)$">
+  Require all denied
+</FilesMatch>
