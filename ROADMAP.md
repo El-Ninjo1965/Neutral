@@ -5,29 +5,27 @@
 
 Diese Datei enthält ausschließlich bewusst auf später verschobene Ziele. Aktuelle Fehler, Tasks und Core-Freeze-Gates stehen in `STATUS.md`, `TODO.md` und `CHATGPT.md`.
 
-## 1. Geführte Setup-/Installationsroutine
+## 1. Ausbau der Setup-/Installationsroutine
 
-Nach dem Core-Freeze soll eine weitgehend automatische Setup-Routine neue Installationen und Serverwechsel vereinfachen.
+Eine funktionierende Setup-Grundlage ist bereits vorhanden, einschließlich Prerequisite-Prüfung, Setup-API, Migrationen, Bootstrap-Admin und Sperr-/Recovery-Mechanismen. Nach dem Core-Freeze soll diese bestehende Grundlage weiter automatisiert und für neue Installationen und Serverwechsel vereinfacht werden.
 
 Leitprinzip:
 
 > Paket bereitstellen → Setup öffnen → Umgebung erkennen → nur unvermeidbare Daten eingeben → prüfen → installieren → Setup sperren.
 
-Automatisch erkennen oder ableiten, soweit zuverlässig möglich:
+Weiter auszubauen sind insbesondere automatische Erkennung oder Ableitung von:
 
-- PHP-Version und benötigte Extensions;
+- PHP-Version und benötigten Extensions;
 - HTTPS-/Request-Kontext;
-- Installationsroot und öffentlicher Base-Path;
-- Storage-/Runtimepfade;
-- Schreibrechte;
+- Installationsroot und öffentlichem Base-Path;
+- Storage-/Runtimepfaden;
+- Schreibrechten;
 - Rewrite-/Routing-Fähigkeit;
-- vorhandene Module;
+- vorhandenen Modulen;
 - Datenbanktreiber;
 - Installations-/Migrationsstatus.
 
-Manuell nur nicht sicher ableitbare oder geheime Werte anfordern, insbesondere Datenbankzugang, erster Administrator, App-Identität und tatsächlich benötigte externe Provider-Secrets.
-
-Setup muss Voraussetzungen vor destruktiven Schritten prüfen, sichere hostlokale Konfiguration erzeugen, Migrationen ausführen, den ersten Administrator anlegen, die Installation prüfen und sich danach standardmäßig sperren. Recovery bleibt ein separat autorisierter Pfad.
+Manuell sollen nur nicht sicher ableitbare oder geheime Werte erforderlich bleiben, insbesondere Datenbankzugang, erster Administrator, App-Identität und tatsächlich benötigte externe Provider-Secrets.
 
 ## 2. Referral / Rewards
 
@@ -45,10 +43,13 @@ Optionales generisches Systemmodul für Empfehlungen und Belohnungen:
 
 ## 3. Installierbare Web-App / PWA
 
-- PWA-Manifest und kontrollierter Service Worker;
+Eine kontrollierte Service-Worker-/Offline-Grundlage ist bereits vorhanden und getestet. Noch offen sind die vollständige PWA-Produktisierung und reale Geräteabnahme, insbesondere:
+
+- vollständiges PWA-Manifest und Installierbarkeit;
 - Offline-Synchronisation mit Konfliktbehandlung;
 - Push-Benachrichtigungen, soweit Plattform und Hosting dies erlauben;
-- reale Geräte- und Browsermatrix.
+- reale Geräte- und Browsermatrix;
+- Installations-, Update- und Recovery-Verhalten als Produkt-App.
 
 ## 4. Store-Apps
 
