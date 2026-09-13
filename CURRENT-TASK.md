@@ -1,20 +1,34 @@
-# CURRENT TASK – USER UI LIVE REPAIR
+# CURRENT TASK – REPOSITORY DEEP CLEANUP
 
-**Status:** OFFEN  
+**Status:** IN ARBEIT  
 **Datum:** 2026-09-13  
+**Branch:** `lea/repository-deep-cleanup`  
 **Core Freeze:** NICHT erklärt
 
-Bearbeite ausschließlich die drei im Operator-Live-Retest reproduzierten User-UI-Fehler:
+Ziel dieses separaten Wartungsblocks ist ein belegter Tiefenaudit des Repositorys ohne fachliche Funktionsänderungen.
 
-- [ ] Start/Home: Ein einzelner Klick/Tap auf `Start` muss den Home-/Start-Content tatsächlich rendern; Active-State, View-State und Route müssen konsistent bleiben.
-- [ ] Settings Save: Nach erfolgreichem Speichern muss das gemeinsame `Successfully saved.`-Popup im realen Browser erscheinen und bis zur Benutzeraktion sichtbar bleiben.
-- [ ] Passwort-Auge: Ein einzelner normaler Klick/Tap muss `password ↔ text` toggeln; kein Doppelklick und keine gerätespezifische Sonderlösung.
+## Scope
+
+- historische Workflow-/Deployment-Artefakte entfernen;
+- veraltete Phase-/Temporary-Kommentare bereinigen, wenn der zugrunde liegende Mechanismus regulärer Bestandteil des Systems ist;
+- Dokumentationswidersprüche gegen den tatsächlichen Code korrigieren;
+- tote Referenzen und eindeutig ungenutzte Reste nur dann entfernen, wenn ihre Nichtverwendung belegt ist;
+- echte Legacy-/Kompatibilitäts-/Migrationspfade erhalten, solange sie funktional benötigt werden.
 
 ## Grenzen
 
-- Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen in diesen Block mischen.
-- Root Cause vor Reparatur belegen.
-- Vor Änderungen passende Failing-Tests ergänzen oder vorhandene reproduzierbare Tests nachweisen.
-- Danach fokussierte Tests, Vollsuite, Syntax/Lint/Build/Package, `git diff --check`, Deployment und read-only Production Smoke.
-- Anschließend gezielter Operator-Live-Retest genau dieser drei Punkte.
-- Erst nach deren Abschluss folgt der separate Modularchitektur-Audit.
+- Keine neuen Features.
+- Keine Profile-/Moderation-/Modulreparaturen.
+- Keine funktionale Änderung an Auth, Sessions, Modulruntime, Backup/Restore oder Deployment ohne gesonderten Fehlernachweis.
+- Keine Entfernung von Legacy-Pfaden nur wegen ihres Namens.
+- Kein Merge nach `main`, bevor Diff und verfügbare Tests/Checks verifiziert sind.
+
+## Bekannte offene User-UI-Fehler
+
+Die drei bestätigten User-UI-Fehler bleiben offen und sind **nicht** Bestandteil dieses Cleanup-Branches:
+
+1. Start/Home rendert nach Navigation nicht zuverlässig den Home-Content.
+2. Das gemeinsame `Successfully saved.`-Popup fehlt im realen Browser trotz erfolgreichem Save.
+3. Das Passwort-Auge benötigt aktuell Doppelklick statt normalem Einzelklick/Tap.
+
+Nach Abschluss des Cleanup-Blocks wird der technische Reparaturblock dafür separat fortgesetzt.
