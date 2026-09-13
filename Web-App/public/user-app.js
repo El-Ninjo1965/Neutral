@@ -27,6 +27,13 @@
   const LOCATION_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.2" fill="currentColor"/></svg>`;
   const MODULE_ICON = `<svg class="user-app-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="4" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="6" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
   const NAV_LABEL_MAX = 32;
+  let lastLandingRenderKey = null;
+
+  const activateHome = () => {
+    state.activeView = 'home';
+    state.activeModuleId = null;
+    lastLandingRenderKey = null;
+  };
 
   const applyHashRoute = () => {
     let route = '';
@@ -35,7 +42,7 @@
     if (route === 'settings') { state.activeView = 'settings';state.settingsSection = 'areas';state.activeModuleId = null;return; }
     if (route.startsWith('module/')) { state.activeModuleId = route.slice(7);state.activeView = `module:${state.activeModuleId}`;return; }
     if (route === 'login') { state.activeView = 'login';state.activeModuleId = null;return; }
-    state.activeView = 'home';state.activeModuleId = null;
+    activateHome();
   };
   const writeHashRoute = (route) => { const hash = `#/${route}`;if (window.location.hash !== hash) window.history.pushState(null, '', hash); };
 
@@ -570,8 +577,7 @@
         }
         clearServerUser();
         await refreshModuleDiscovery().catch(() => []);
-        state.activeView = 'home';
-        state.activeModuleId = null;
+        activateHome();
         writeHashRoute('');
         renderApp();
       });
@@ -620,9 +626,12 @@
           renderApp();
           return;
         }
-        state.activeView = nextView;
-        state.activeModuleId = nextView.startsWith('module:') ? nextView.slice('module:'.length) : null;
-        if (nextView === 'home') lastLandingRenderKey = null;
+        if (nextView === 'home') {
+          activateHome();
+        } else {
+          state.activeView = nextView;
+          state.activeModuleId = nextView.slice('module:'.length);
+        }
         writeHashRoute(nextView === 'home' ? '' : `module/${state.activeModuleId}`);
         renderApp();
       });
@@ -716,7 +725,7 @@
       status.className = 'message success';
       status.textContent = 'Signed in successfully.';
       await refreshModuleDiscovery().catch(() => []);
-      state.activeView = 'home';
+      activateHome();
       writeHashRoute('');
       renderApp();
     });
@@ -931,8 +940,7 @@
       visibleModuleIds: preferences.visibleModuleIds
     });
     if (!module) {
-      state.activeView = 'home';
-      state.activeModuleId = null;
+      activateHome();
       writeHashRoute('');
       renderLandingPage();
       return;
@@ -983,8 +991,6 @@
       </div>
     `;
   };
-
-  let lastLandingRenderKey = null;
 
   const renderLandingPage = () => {
     if (!homepageResolved) {

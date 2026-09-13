@@ -14,12 +14,12 @@ function buildUserAppSourceForRuntime() {
     `      status.className = 'message success';
       status.textContent = 'Signed in successfully.';
       await refreshModuleDiscovery().catch(() => []);
-      state.activeView = 'home';
+      activateHome();
       writeHashRoute('');
       renderApp();`,
     `      status.className = 'message success';
       status.textContent = 'Signed in successfully.';
-      state.activeView = 'home';
+      activateHome();
       writeHashRoute('');
       renderApp();
       void refreshModuleDiscovery().catch(() => []);`
@@ -680,6 +680,29 @@ test('B. Start button stays stable during background updates', async () => {
 
   assert.equal(runtime.window.location.hash, '#/', 'background events do not move route');
   assert.ok(hasActiveClass(getNavById(runtime, 'home'), 'active'), 'start state survives background updates');
+});
+
+test('B2. Browser Back to Home invalidates the landing render cache', async () => {
+  const runtime = createRuntime({
+    currentUser: { id: 'u1', username: 'tester', roles: ['user'], permissions: ['user:read'] },
+    modules: [{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }],
+    discoverModules: async () => [{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }]
+  });
+
+  await flushMicrotasks();
+  runtime.window.__testHooks.renderApp();
+  await flushMicrotasks();
+  runtime.document.getElementById('userSettingsButton').click();
+  await flushMicrotasks();
+  assert.ok(runtime.document.getElementById('userSettingsSaveButton'), 'settings content is visible before browser Back');
+
+  runtime.window.location.hash = '#/';
+  runtime.window.dispatchEvent({ type: 'hashchange' });
+  await flushMicrotasks();
+
+  assert.ok(hasActiveClass(getNavById(runtime, 'home'), 'active'), 'browser Back activates Home');
+  assert.equal(runtime.window.location.hash, '#/', 'browser Back restores the Home route');
+  assert.equal(runtime.document.getElementById('userSettingsSaveButton'), null, 'browser Back replaces Settings with Home content');
 });
 
 test('C. Stale settings catalog responses do not overwrite successful state', async () => {

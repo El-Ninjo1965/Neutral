@@ -40,7 +40,7 @@ function runLoginForm() {
         });
       }
     },
-    state: {}, sessionRevision: 0, writeHashRoute() {}, renderApp() { calls.push('render'); },
+    state: {}, sessionRevision: 0, activateHome() {}, writeHashRoute() {}, renderApp() { calls.push('render'); },
     async refreshModuleDiscovery() { calls.push('discover'); },
     getServerApiClient() { return { async login(username, value) { calls.push([username, value]); return { ok: true }; } }; },
     extractServerAuthData() { return { user: { id: '7' } }; }, applyServerUser() { return { id: '7' }; },
