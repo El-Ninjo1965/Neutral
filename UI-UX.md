@@ -1,6 +1,6 @@
 # NEUTRAL – UI/UX-Zielbild
 
-**Status:** VERBINDLICHER ZIELVERTRAG
+**Status:** VERBINDLICHER ZIELVERTRAG  
 **Geprüft:** 2026-09-13
 
 Aktueller Implementierungs- und Live-Stand steht ausschließlich in `STATUS.md` und `CHATGPT.md`. Diese Datei enthält keine historische Fehlerchronik.
@@ -11,7 +11,15 @@ NEUTRAL ermöglicht Produkt-Apps, die schnell, klar, konsistent und touchfreundl
 
 ## Produktdesign und Branding
 
-Das Framework stellt zentrale Verträge für Farben, Typografie, Abstände, Radien, Rahmen, Buttons, Formulare, Karten und Zustände bereit. Light und Dark dürfen getrennte Paletten besitzen; Admin-Theme und persönliche User-Theme-Auswahl bleiben unabhängig. Application Name, Logo/Icon und Appearance-Werte sind produktbezogen austauschbar. Neutral-Branding ist nur Default. Custom CSS ist Expertenfunktion.
+Das Framework stellt zentrale Verträge für Farben, Typografie, Abstände, Radien, Rahmen, Buttons, Formulare, Karten und Zustände bereit. Light und Dark dürfen getrennte Paletten besitzen; Admin-Theme und persönliche User-Theme-Auswahl bleiben unabhängig. Application Name, Logo/Icon und Appearance-Werte sind produktbezogen austauschbar. Neutral-Branding ist nur Default.
+
+`Admin → Appearance` definiert die Gestaltung der Produkt-/User-App, nicht das Admin-Theme und nicht den persönlichen Light-/Dark-State des Users. Strukturierte Design-Tokens sind der normale Weg; kompatible Module erben diese Werte.
+
+Mindestens zentral steuerbar bzw. versionierbar sind Hintergrund/Surface, Primary/Secondary, Text/Muted/Border, relevante Statusfarben, Control-/Surface-Radien, Basisabstände, Content-Breite, Basistypografie sowie aktive/inaktive/fokussierte Navigations-, Button- und Formularzustände.
+
+Custom CSS ist ausschließlich eine optionale Advanced-/Developer-Funktion. Es darf zentrale Sicherheitsgrenzen nicht aufweichen, muss kontrolliert versionier-/zurücksetzbar sein und darf die Wiederherstellbarkeit der Produktkonfiguration nicht verhindern. Remote-Fonts oder andere zusätzliche Netzwerkabhängigkeiten sind keine Voraussetzung für den ersten Paint.
+
+Eine Appearance-Einstellung gilt nur dann als echte Funktion, wenn sie einen realen Consumer besitzt und in der User-App sichtbar wirkt. Funktionslose Alt-Controls sollen nicht als scheinbar aktive Konfiguration bestehen bleiben.
 
 ## User-App
 
@@ -21,7 +29,7 @@ Technische Framework-, Manifest-, Runtime-, Discovery- und Entwicklungsinformati
 
 `UI zuerst → notwendiger minimaler Core → Hintergrundinitialisierung` bleibt verbindlich. Netzwerk, Session-Refresh, Synchronisation und Discovery blockieren lokal sicher darstellbare Inhalte nicht unnötig.
 
-Ein aktives `publicOffline`-Modul kann aus der versionierten, sanitisierten lokalen Aktivierungsprojektion bereits im ersten stabilen Navigationsrender erscheinen. GPS ist die Referenz. Catalog-Synchronisierung erfolgt danach im Hintergrund und darf Welcome/Homepage nicht unnötig vollständig neu rendern. Authentifizierte permission-sensitive Module bleiben getrennt.
+Ein aktives `publicOffline`-Modul kann aus der versionierten, sanitisierten lokalen Aktivierungsprojektion bereits im ersten stabilen Navigationsrender erscheinen. Catalog-Synchronisierung erfolgt danach im Hintergrund und darf Welcome/Homepage nicht unnötig vollständig neu rendern. Authentifizierte permission-sensitive Module bleiben getrennt.
 
 Bekannte gültige lokale Homepage-/Shell-Zustände werden bei Warmstart/Reload sofort dargestellt, soweit keine aktuelle Sicherheitsentscheidung erforderlich ist.
 
@@ -37,6 +45,8 @@ Bekannte gültige lokale Homepage-/Shell-Zustände werden bei Warmstart/Reload s
 ## Startseite und Appearance
 
 Appearance-Einstellungen müssen nach Save tatsächlich in der User-App wirken. Ein zulässiges aktives Modul kann Startziel sein; konfigurierter Text/HTML wird als Startinhalt dargestellt. Ungültige oder unzugängliche Konfiguration fällt kontrolliert zurück. Reload/Warmstart respektiert den Persistenzvertrag.
+
+Eine Admin-Live-Preview darf denselben Token-Vertrag verwenden, darf aber den echten Userzustand nicht still verändern. Reset stellt definierte Produkt-/Frameworkdefaults wieder her und verändert nicht unbeabsichtigt Startseite oder persönliche Theme-Auswahl.
 
 ## User Settings
 
