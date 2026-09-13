@@ -1,46 +1,38 @@
 # NEUTRAL – CHATGPT HANDOFF
 
-**Richtung:** Codex → Lea/ChatGPT
-**Branch:** `fix/user-ui-live-repair`
-**Technischer Reparaturcommit:** `a3dd090341d749bdb6c7633f7c83d72a0a912388`
-**Datum:** 2026-09-13
-**Status:** P2-REVIEW-FUND TECHNISCH REPARIERT · PR-CI BESTANDEN · OPERATOR-LIVE-RETEST OFFEN
+**Richtung:** Codex → Lea/ChatGPT  
+**Branch:** `main`  
+**Datum:** 2026-09-14  
+**Status:** START/HOME LIVE BESTÄTIGT · 2 USER-UI-LIVE-FEHLER OFFEN  
+**Letzter verifiziert deployter Code-Stand:** `e930c2ad045e6dbc275a9d776e6b56504ba13490`  
 **Core Freeze:** NICHT erklärt
 
-## Belegte Root Cause
+## Verifizierter Live-Stand nach PR #66
 
-Die bisherige Landing-Cache-Invalidierung lag ausschließlich im Click-Handler der Start-Navigation. Der echte Browser-Back-Pfad setzt die Hashroute dagegen über `hashchange` und `applyHashRoute()` auf Home. Nach bereits gerendertem Home und anschließend sichtbaren Settings blieb dadurch `lastLandingRenderKey` unverändert. `renderLandingPage()` erkannte denselben Landing-Key und ein vorhandenes erstes Content-Element, kehrte früh zurück und ließ Settings-Content unter Home-Route und aktiver Home-Navigation stehen.
+PR #66 wurde gemergt. CodeQL und FTPS-Deploy einschließlich Production-Smoke waren erfolgreich.
 
-Der neue Runtime-Regressionstest bildet genau `Home → Settings → hashchange/Browser Back → Home` ab und prüft Route, aktive Navigation sowie das tatsächliche Entfernen des Settings-Contents.
+Der anschließende Operator-Live-Retest auf dem realen Browser/Endgerät ergab:
 
-## Genaue Änderung
+- **Start/Home:** funktioniert jetzt. Start/Home gilt live als bestätigt.
+- **Settings Save Success:** Speichern funktioniert weiterhin, aber es erscheint **kein sichtbares `Successfully saved.`-Popup**.
+- **Passwort-Auge:** Auge ist sichtbar, aber Tap/Klick zeigt das Passwort weiterhin **nicht** an.
 
-- `Web-App/public/user-app.js`: Die gemeinsame Funktion `activateHome()` setzt Home-View und leeres aktives Modul und invalidiert immer `lastLandingRenderKey`. Alle tatsächlichen Home-Übergänge verwenden diesen Pfad: Hashroute/Browser Back, direkter Start-Klick, erfolgreicher Login, Logout und der Fallback eines nicht verfügbaren Moduls.
-- `tests/user-ui-stability.test.js`: Neuer Browser-Back-/Hashchange-Regressionstest; der bestehende Login-Test-Harness verwendet ebenfalls den gemeinsamen Home-Übergang.
-- `tests/user-login-bootstrap-fallback.test.js`: Der isolierte Login-Harness stellt die neue gemeinsame Home-Funktion bereit.
+Damit sind die beiden zuletzt genannten Punkte trotz zuvor grüner automatisierter Tests **nicht live repariert**. Die bisherigen Tests/Harnesses bilden den real ausgelieferten Browserpfad für diese beiden Funktionen nicht ausreichend ab.
 
-Keine gerätespezifische Lösung und keine Änderung an Settings-Save, Passwort-Toggle, GPS oder Modularchitektur wurde vorgenommen.
+## Nächster technischer Arbeitsblock
 
-## Tatsächlich ausgeführte Verifikation
+Ausschließlich:
 
-- Fokussierte User-UI-/Routing-/Navigation-/GPS-Tests: **63 passed, 0 failed, 0 skipped**.
-- Vollständige Suite (`npm test`): **577 passed, 0 failed, 0 skipped**; 6 Suites.
-- JS-Syntax der drei geänderten JavaScript-Dateien: **3 passed, 0 failed**.
-- PHP-Syntax: **47 Dateien passed, 0 failed**.
-- Production Package: **passed**, 136 Dateien.
-- `git diff --check`: **passed**.
-- PR #66 ist offen, nicht als Draft und mergeable. Der offene P2-Kommentar zu `Web-App/public/user-app.js` ist mit dem Reparaturcommit adressiert.
-- Die beiden auf Head `248291865ab0e13fa8d6b7f4940724ff9884ad44` ausgelösten GitHub-Actions-Workflows **PR #66** und **Code scanning AI findings on PR #66** endeten jeweils mit **success**; die zugehörigen Checks `github-advanced-security`, `Analyze (javascript-typescript)` und `Analyze (actions)` waren erfolgreich.
+1. tatsächlichen Runtime-/DOM-/Event-Pfad des Settings-Save-Popups im ausgelieferten Production-Package nachweisen und korrigieren;
+2. tatsächlichen Runtime-/DOM-/Event-Pfad des sichtbaren Login-Passwortauges und des echten Passwortfeldes nachweisen und korrigieren.
 
-Es wurde weder gemergt noch auf `main` geschrieben.
+Root Cause vor Änderung. Keine erneute Arbeit an Start/Home ohne nachgewiesene Regression. Keine Modularchitektur-/Profile-/Moderation-/Access-/Admin-Arbeit in diesen Block mischen.
 
-## Offen und nächster Schritt
+## Verbindlicher Abschluss
 
-1. Lea/ChatGPT prüft PR #66 erneut; kein Merge in diesem Arbeitsblock.
-2. Danach bleibt der gezielte Operator-Live-Retest auf dem realen Browser/Endgerät erforderlich:
-   - Home → Settings → Browser Back muss sichtbaren Home-Inhalt zeigen;
-   - direkter Start-Klick muss sichtbaren Home-Inhalt zeigen;
-   - Settings Save muss `Successfully saved.` bis `OK` sichtbar halten;
-   - jeder einzelne Tap auf das Login-Passwortauge muss exakt einmal toggeln.
+Nach technischer Reparatur, Tests, PR, CI/CodeQL, Merge, FTPS-Deploy und Production-Smoke bleibt ein gezielter Operator-Live-Retest erforderlich:
 
-Erst nach dieser Live-Abnahme folgt separat der Modularchitektur-Audit. Kein Core Freeze.
+- Settings Save → sichtbares `Successfully saved.` bis Benutzeraktion;
+- Passwort-Auge → ein einzelner Tap/Klick toggelt das sichtbare echte Passwortfeld `password ↔ text`.
+
+Erst wenn beide Punkte live bestätigt sind, ist der User-UI-Reparaturblock abgeschlossen. Danach folgt separat der Modularchitektur-Audit.
