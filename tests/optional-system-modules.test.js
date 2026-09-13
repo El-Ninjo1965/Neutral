@@ -37,6 +37,6 @@ test('offline shell includes shared password feedback helper', () => {
 test('architecture keeps concrete system features optional and Field Notes core-neutral', () => {
   const contract = fs.readFileSync(path.join(root, 'SYSTEM-MODULES.md'), 'utf8');
   for (const key of ['profile', 'media', 'sharing', 'moderation', 'notifications', 'postbox', 'field-notes']) assert.match(contract, new RegExp('`' + key + '`'));
-  assert.match(contract, /without edits to existing Core files/);
-  assert.match(contract, /compatibility bridge/);
+  assert.match(contract, /ohne Core oder unabhängige Module funktionsunfähig zu machen/);
+  assert.match(contract, /ohne produktspezifische Core-Sonderintegration/);
 });
