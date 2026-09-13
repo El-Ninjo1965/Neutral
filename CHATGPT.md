@@ -1,39 +1,37 @@
 # NEUTRAL – CHATGPT HANDOFF
 
-**Richtung:** Codex → Lea/ChatGPT  
-**Branch:** `main`  
-**Datum:** 2026-09-13  
-**Status:** REPOSITORY-CLEANUP ABGESCHLOSSEN · 3 USER-UI-FEHLER OFFEN  
-**Letzter verifiziert deployter Code-Stand:** `2dfb95e42c5fc356bb796215f5679d7939170c17`  
+**Richtung:** Codex → Lea/ChatGPT
+**Branch:** `fix/user-ui-live-repair`
+**Datum:** 2026-09-13
+**Status:** 3 USER-UI-FEHLER TECHNISCH REPARIERT · OPERATOR-LIVE-RETEST OFFEN
 **Core Freeze:** NICHT erklärt
 
-## Verifizierter Ausgangsstand
+## Technischer Stand
 
-Repository-/Markdown-/Artefakt-Tiefenbereinigung ist abgeschlossen und über PR #65 nach `main` gemergt. Vollsuite, fokussierte Tests, Bootstrap/generated-project, Production-Package, JS-/PHP-Syntax, CodeQL, FTPS-Deploy und read-only Production-Smoke waren erfolgreich. Funktionale Legacy-/Compatibility-/Migration-/Restore-Pfade wurden nicht allein wegen historischer Namen entfernt.
+Die drei beauftragten User-UI-Fehler wurden ohne Modularchitektur-, Profile-, Moderation-, Access- oder Adminänderungen minimal repariert:
 
-## Aktueller Arbeitsblock
+1. **Start/Home:** Der Landing-Rendercache blieb beim Wechsel von einer anderen View gültig und konnte deshalb den notwendigen Home-Render überspringen. Ein Start-Klick invalidiert jetzt gezielt diesen Cache, bevor Route und View gerendert werden.
+2. **Settings Save Success:** Der gemeinsame Erfolgsdialog wurde erst nach einem nicht notwendigen vollständigen Rerender aufgerufen. Er wird jetzt unmittelbar nach bestätigter lokaler Persistenz geöffnet und erst danach wird die Settings-View aktualisiert; geschlossen wird er weiterhin ausschließlich durch die Dialoginteraktion.
+3. **Passwort-Auge:** Das statische Login-Auge besaß zusätzlich zur zentralen Capture-/Direct-Bindung einen eigenen Click-Handler. Ein Klick konnte dadurch zweimal toggeln und beim Ausgangstyp landen. Das Auge delegiert jetzt ausschließlich an `NeutralUiFeedback.bindPasswordToggle()`.
 
-Ausschließlich diese drei reproduzierten User-UI-Fehler:
+Geändert wurden ausschließlich `Web-App/public/user-app.js` sowie die fokussierten Regressionstests `tests/frontend-binding-hotfix.test.js`, `tests/live-startup-regression.test.js`, `tests/password-direct-package-followup.test.js`, `tests/user-login-bootstrap-fallback.test.js` und `tests/user-ui-stability.test.js`, zusätzlich zu dieser operativen Übergabe und `CURRENT-TASK.md`.
 
-1. **Start/Home:** `Start` wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View.
-2. **Settings Save Success:** Änderungen werden gespeichert, aber `Successfully saved.` erscheint im realen Browser nicht zuverlässig.
-3. **Passwort-Auge:** Ein normaler Einzelklick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; aktuell ist teilweise ein Doppelklick nötig.
+## Ausgeführte Verifikation
 
-Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen in diesen Block mischen. Nach technischer Reparatur folgt ein gezielter Operator-Live-Retest dieser drei Punkte. Erst danach folgt separat der Modularchitektur-Audit.
+- Fokussierte User-UI-Tests: 53 passed, 0 failed, 0 skipped.
+- Vollständige Suite: 576 passed, 0 failed, 0 skipped.
+- JS-Syntax der sechs geänderten JS-Dateien: passed.
+- PHP-Syntax: 47 Dateien passed.
+- Production Package: passed, 136 Dateien.
+- `git diff --check`: passed.
+- PR/CI/CodeQL, FTPS-Deployment und Production-Smoke: erst nach Commit und Push zu verifizieren; bis dahin keine PASS-Behauptung.
 
-## Übergaberegel für Codex
+## Offen
 
-Codex ersetzt/aktualisiert diese Datei nach jedem abgeschlossenen Arbeitsblock mit dem **tatsächlich verifizierten aktuellen Stand**. Keine historische Verlaufssammlung.
+Nach vollständiger technischer Verifikation, PR, CI und Deployment bleibt zwingend ein gezielter Operator-Live-Retest auf dem betroffenen realen Browser/Endgerät offen:
 
-Mindestens dokumentieren:
+1. aus einer anderen View einmal `Start` antippen und sichtbaren Home-Inhalt prüfen;
+2. Settings ändern und einmal speichern; `Successfully saved.` muss bis `OK` sichtbar bleiben;
+3. Login-Passwortauge jeweils einmal antippen; jeder Tap muss exakt einmal zwischen verborgen und sichtbar wechseln.
 
-- Arbeitsbranch und HEAD/Commit;
-- belegte Root Causes;
-- tatsächlich geänderte Dateien und Verhalten;
-- exakte Tests/Checks mit Passed/Failed/Skipped;
-- PR-/CI-/CodeQL-/FTPS-/Production-Smoke-Status;
-- verbleibende offene Punkte;
-- erforderlicher Operator-Live-Retest;
-- nächster sinnvoller Schritt.
-
-Falls `CHATGPT.md` fehlt, muss Codex sie neu erstellen. Keine Erfolgsbehauptung für nicht ausgeführte Prüfungen.
+Erst nach dieser Live-Abnahme folgt separat der Modularchitektur-Audit. Kein Core Freeze.

@@ -339,7 +339,10 @@ test('local settings save uses the shared success dialog and retains inline erro
 
   assert.match(source, /persisted = false;/);
   assert.match(source, /return \{ \.\.\.nextPreferences, persisted \};/);
-  assert.match(source, /if \(nextPreferences\.persisted\) \{[\s\S]*status\.textContent = ''[\s\S]*status\.className = 'user-settings-status'[\s\S]*renderApp\(\)[\s\S]*showSuccess\(\s*['"]Successfully saved\./is);
+  assert.match(source, /if \(nextPreferences\.persisted\) \{[\s\S]*status\.textContent = ''[\s\S]*status\.className = 'user-settings-status'[\s\S]*showSuccess\(\s*['"]Successfully saved\.[\s\S]*renderApp\(\)/is);
+  const persistedSave = source.match(/if \(nextPreferences\.persisted\) \{[\s\S]*?return;\s*\} else/);
+  assert.ok(persistedSave, 'persisted settings success branch exists');
+  assert.ok(persistedSave[0].indexOf('showSuccess') < persistedSave[0].indexOf('renderApp()'), 'success dialog is opened before nonessential rerendering');
   assert.match(css, /\.user-settings-status\.error\s*\{/);
   assert.doesNotMatch(source, /Profile and settings saved successfully/);
 });

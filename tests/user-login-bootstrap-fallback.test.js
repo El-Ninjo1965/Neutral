@@ -29,6 +29,17 @@ function runLoginForm() {
   };
   const sandbox = {
     document: { getElementById(id) { return elements[id]; } }, content: { innerHTML: '' },
+    NeutralUiFeedback: {
+      bindPasswordToggle(input, button) {
+        button.addEventListener('click', () => {
+          const visible = input.type === 'text';
+          input.type = visible ? 'password' : 'text';
+          button.setAttribute('aria-pressed', visible ? 'false' : 'true');
+          button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+          input.focus();
+        });
+      }
+    },
     state: {}, sessionRevision: 0, writeHashRoute() {}, renderApp() { calls.push('render'); },
     async refreshModuleDiscovery() { calls.push('discover'); },
     getServerApiClient() { return { async login(username, value) { calls.push([username, value]); return { ok: true }; } }; },

@@ -622,6 +622,7 @@
         }
         state.activeView = nextView;
         state.activeModuleId = nextView.startsWith('module:') ? nextView.slice('module:'.length) : null;
+        if (nextView === 'home') lastLandingRenderKey = null;
         writeHashRoute(nextView === 'home' ? '' : `module/${state.activeModuleId}`);
         renderApp();
       });
@@ -659,13 +660,7 @@
 
     const passwordInput = document.getElementById('userLoginPassword');
     const passwordReveal = document.getElementById('userLoginPasswordReveal');
-    passwordReveal.addEventListener('click', () => {
-      const visible = passwordInput.type === 'text';
-      passwordInput.type = visible ? 'password' : 'text';
-      passwordReveal.setAttribute('aria-pressed', visible ? 'false' : 'true');
-      passwordReveal.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
-      passwordInput.focus();
-    });
+    globalThis.NeutralUiFeedback?.bindPasswordToggle?.(passwordInput, passwordReveal);
 
     const submit = document.getElementById('userLoginSubmit');
     const loginForm = document.getElementById('userLoginForm');
@@ -907,8 +902,8 @@
             writeHashRoute(`settings/${state.settingsSection}`);
             status.textContent = '';
             status.className = 'user-settings-status';
-            renderApp();
             window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });
+            renderApp();
             return;
           } else {
             status.textContent = 'Settings could not be saved. Local storage is unavailable or restricted.';

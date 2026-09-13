@@ -661,11 +661,18 @@ test('B. Start button stays stable during background updates', async () => {
     discoverModules: async () => [{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }]
   });
 
+  getNavById(runtime, 'home').click();
+  await flushMicrotasks();
+  runtime.document.getElementById('userSettingsButton').click();
+  await flushMicrotasks();
+  assert.ok(runtime.document.getElementById('userSettingsSaveButton'), 'settings content is visible before returning home');
+
   const homeNav = getNavById(runtime, 'home');
   homeNav.click();
   await flushMicrotasks();
 
   assert.ok(hasActiveClass(getNavById(runtime, 'home'), 'active'), 'home stays active after click');
+  assert.equal(runtime.document.getElementById('userSettingsSaveButton'), null, 'one Start click replaces the previous view with home content');
 
   runtime.window.Core.emit('startup:modules-ready');
   runtime.window.Core.emit('startup:modules-error');
