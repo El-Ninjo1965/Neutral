@@ -24,7 +24,8 @@ Geändert wurden ausschließlich `Web-App/public/user-app.js` sowie die fokussie
 - PHP-Syntax: 47 Dateien passed.
 - Production Package: passed, 136 Dateien.
 - `git diff --check`: passed.
-- PR/CI/CodeQL, FTPS-Deployment und Production-Smoke: erst nach Commit und Push zu verifizieren; bis dahin keine PASS-Behauptung.
+- Implementierungscommit `55a4151ef8893be8f67df9711d14ff749e437720` wurde nach `origin/fix/user-ui-live-repair` gepusht.
+- PR-Erstellung ist blockiert: Der verfügbare GitHub-Token darf `createPullRequest` nicht ausführen (`Resource not accessible by personal access token`). Deshalb liefen für diesen Branch noch kein PR-CI/CodeQL, FTPS-Deployment oder Production-Smoke; hierfür wird kein PASS behauptet und `main` wurde nicht verändert.
 
 ## Offen
 
