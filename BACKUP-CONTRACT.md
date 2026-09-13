@@ -3,7 +3,7 @@
 **Status:** VERBINDLICHER DETAILVERTRAG
 **Geprüft:** 2026-09-13
 
-Neue Backups verwenden den aktuellen V2-Vertrag. Historische V1-Entwicklungsstände bleiben über Git nachvollziehbar.
+Neue Backups verwenden ausschließlich den aktuellen V2-Vertrag. Der Restore-Pfad akzeptiert zusätzlich validierte V1-Backups zur Rückwärtskompatibilität; neue V1-Backups werden nicht erzeugt.
 
 ## Umfang
 
