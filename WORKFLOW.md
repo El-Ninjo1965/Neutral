@@ -1,7 +1,7 @@
 # NEUTRAL – WORKFLOW
 
 **Status:** VERBINDLICHE ARBEITSREGELN  
-**Aktualisiert:** 2026-09-11
+**Aktualisiert:** 2026-09-13
 
 ## 1. Wahrheits-Hierarchie
 
@@ -13,7 +13,7 @@ Bei Projektarbeit gilt in dieser Reihenfolge:
 4. `WORKFLOW.md` und verbindliche Projektverträge, insbesondere `CORE-1.0.md` und `VISION.md`;
 5. tatsächlicher aktueller Code und Tests;
 6. aktuelle Status-/Todo-Dokumente;
-7. historische Evidenz.
+7. historische Evidenz aus der Git-History.
 
 Neuere Betreiberbefunde dürfen niemals durch ältere Dokumentation oder frühere Chatdiagnosen überschrieben werden.
 
@@ -23,7 +23,7 @@ Neuere Betreiberbefunde dürfen niemals durch ältere Dokumentation oder früher
 - `CURRENT-TASK.md`: operative, überprüfbare Arbeitsliste von Codex. Enthält genau einen aktuellen Gesamtauftrag und keine Historie.
 - `CHATGPT.md`: Codex → ChatGPT/Lea. Enthält ausschließlich den aktuellen Abschluss-/Übergabestand und offene Operator-Tests.
 
-Historie gehört in Git-History und, soweit fachlich erforderlich, append-only in `CHANGELOG.md`; nicht in diese drei operativen Übergabedateien.
+Historie gehört in die Git-History, nicht in diese drei operativen Übergabedateien.
 
 ## 3. Start jeder Codex-Task
 
@@ -71,4 +71,4 @@ Ein Core Freeze wird niemals automatisch aus Tests oder CI abgeleitet. Er darf e
 
 ## 7. Dokumentationsdisziplin
 
-Operative Dateien kurz und aktuell halten. Abgeschlossene Reparaturberichte, alte Device-Befunde, frühere Tasklisten und historische Diagnosen nicht in `CODEX.md`, `CURRENT-TASK.md`, `CHATGPT.md` oder `WORKFLOW.md` ansammeln. Für historische Nachvollziehbarkeit Git-History und `CHANGELOG.md` verwenden.
+Operative Dateien kurz und aktuell halten. Abgeschlossene Reparaturberichte, alte Device-Befunde, frühere Tasklisten und historische Diagnosen nicht in `CODEX.md`, `CURRENT-TASK.md`, `CHATGPT.md` oder `WORKFLOW.md` ansammeln. Für historische Nachvollziehbarkeit ausschließlich die Git-History verwenden.
