@@ -1,77 +1,102 @@
-# Neutral – optionale Systemmodule
+# NEUTRAL – APP MODULES UND SYSTEM MODULES
 
-**Status:** VERBINDLICHER ZIELVERTRAG MIT GETRENNTEM CODE-/LIVE-IST
-**Geprüft:** 2026-09-11
+**Status:** VERBINDLICHER KLASSIFIKATIONS- UND ABHÄNGIGKEITSVERTRAG  
+**Geprüft:** 2026-09-13
 
-## Gemeinsame Grenze
+## 1. Eine Modularchitektur
 
-Core besitzt nur generische Mechanismen. Alle hier beschriebenen Module sind optional, können ohne User-Menü aktiv sein und dürfen unabhängige Module nicht hart koppeln. Permissions autorisieren Aktionen; Visibility/Navigation entscheidet getrennt über sichtbare Einstiege und darf keine Rechte verleihen. Die rollenbezogene Visibility-Matrix ist code-seitig namespaced vorhanden; ihre Betreiber-Liveabnahme steht aus.
+`App Modules` und `System Modules` sind administrative Kategorien derselben Modulplattform. Es gibt keine zweite Registry, keinen zweiten Loader und keinen getrennten Lifecycle.
 
-## Administrative Modulklassifikation
+Beide Kategorien verwenden denselben Manifest-, Discovery-, Registry-, Install-, Activate-, Deactivate-, Update- und Uninstall-Vertrag.
 
-Für die Admin-Übersicht wird zwischen **App Modules** und **System Modules** unterschieden. Dies ist ausschließlich eine deklarative Klassifikation/Präsentation und **keine zweite Modularchitektur**.
+Die Manifest-Klassifikation ist `category: user|system`; fehlende ältere Angaben werden backward-kompatibel als `user` behandelt.
 
-Alle Module verwenden weiterhin denselben:
+## 2. Bedeutung der Kategorien
 
-- Manifestvertrag;
-- Registry-/Discovery-Pfad;
-- Install-/Register-Lifecycle;
-- Activate/Deactivate-Lifecycle;
-- Permission-Vertrag;
-- API-/Service-/Event-Vertrag;
-- Update-/Uninstall-Vertrag.
+**App Module:** typischerweise direkt benutzbare Funktion mit möglichem Navigationseintrag, z. B. GPS oder Profile.
 
-Die Klassifikation darf Sichtbarkeit nicht ersetzen. Ein Systemmodul kann sichtbare User-Funktionen anbieten; ein User-Modul kann für einzelne Rollen oder vollständig aus der Navigation ausgeblendet werden.
+**System Module:** technische oder querschnittliche Fähigkeit, die ohne eigenen Navigationseintrag aktiv sein kann, z. B. Media, Sharing oder Notifications.
 
-Beispiele für **App Modules**: `gps`, `profile`, `postbox`, `field-notes`.
+Die Kategorie entscheidet nicht über Berechtigungen und nicht automatisch über Sichtbarkeit. Ein System Module darf User-UI anbieten; ein App Module darf für bestimmte Kontexte unsichtbar sein.
 
-Beispiele für **System Modules**: `media`, `sharing`, `notifications`, `moderation`; später `referral`/`referral-rewards`.
+## 3. Unabhängigkeit
 
-Die konkrete Manifestform ist `category: user|system` mit backward-kompatiblem Default `user`. Keine parallele Runtime oder Sonderregistry einführen.
+Alle hier beschriebenen Module sind optional, sofern sie nicht ausdrücklich als Core-/Required-Funktion modelliert werden.
 
-| Modul | Verbindliches Ziel | Aktueller Code-/Live-Stand |
+Daraus folgt:
+- Deaktivieren eines optionalen Moduls darf Core nicht beschädigen.
+- Unabhängige Module müssen weiter funktionieren.
+- Neue Module sollen standardmäßig keine harte Modulabhängigkeit erhalten.
+- Erweiterungen durch andere Module werden bevorzugt über `optionalDependencies` plus kontrollierten Fallback modelliert.
+- Eine harte Dependency ist ein Ausnahmefall und muss vor Einführung architektonisch geprüft werden.
+
+Wichtig: Die aktuelle Runtime kann deklarierte Dependencies validieren. Das allein garantiert jedoch keinen vollständigen Schutz davor, eine bereits benötigte Dependency später zu deaktivieren. Deshalb dürfen harte Abhängigkeiten nicht beiläufig eingeführt werden.
+
+Der vollständige operative Vertrag steht in `ModuleCreation.md`.
+
+## 4. Permissions und Visibility
+
+Permissions autorisieren geschützte Aktionen. Visibility/Navigation entscheidet separat über sichtbare Einstiege und darf niemals zusätzliche Serverrechte verleihen.
+
+`publicOffline` ist ein eigener Modulvertrag für öffentliche/offline nutzbare Basisfunktion. Ein lokal verfügbarer Public/Offline-Zustand erteilt keine Serverrechte.
+
+GPS ist derzeit das Referenzmodul für diesen öffentlichen Offline-First-Vertrag.
+
+## 5. Aktuelle Modulklassifikation
+
+| Modul | Kategorie | Einordnung |
 |---|---|---|
-| `profile` | Displayname, `male`/`female`/`unspecified`, Geburtstag, Avatar, profilbezogene Privacy und Organization-Sharing; Daten bei Deaktivierung behalten | **TEILWEISE:** Manifest, Permissions, GET/PUT-Modulroute, additive Gender-/Avatar-Migration und User-UI-Gating vorhanden. Live registered/inactive; Aktivierung liefert HTTP 500. Upload/Crop/Replace/Delete, runde Darstellung, Gender-Defaults und Disable/Re-enable sind nicht live bewiesen. |
-| `media` | sichere generische Uploads, MIME/Größe, sichere IDs/Ziele, Resize/Optimierung, Metadaten, Replace/Delete, Cache und Backup; Traversal/Symlink/Executable-Schutz | **TEILWEISE/FEHLT:** Manifest und Status-Service-Scaffold vorhanden; ältere Core-`user_media`-/Moderationspfade und Backup-V2-Medienprimitives existieren, bilden aber noch keinen vollständigen unabhängigen Modulservice. Live-Install scheitert mit `Load failed`. |
-| `sharing` | erweiterbare serverautorisierte Visibility mit Default `private`; Fachmodule registrieren Ressourcen/Felder | **SCAFFOLDING:** Manifest/Status-Service; keine persistente generische Sharing-Engine. Lifecycle live bestanden, danach deaktiviert. |
-| `notifications` | In-App und E-Mail, User-/Admin-Kanalwahl, optional sofort/gebündelt | **SCAFFOLDING:** Manifest/Status-Service; keine Zustellengine oder Präferenz-UI. Lifecycle live bestanden, danach deaktiviert. |
-| `moderation` | Queue für Text/Bild, `pending/approved/rejected`, Edit/Review/Delete, Filter, optional Auto-Approval | **SCAFFOLDING:** Manifest/Status-Service. Bestehender Core-Media-Moderationspfad ist keine vollständige generische Modulimplementierung. Lifecycle live bestanden, danach deaktiviert. |
-| `postbox` | Inbox/Sent, read/unread, compose/reply, User/Mehrfach/Rolle/Gruppe/eigene Organisation, optionale Anhänge; separate Group-/Broadcast-Permissions, serverseitige Org-Grenze und Audit | **SCAFFOLDING:** Manifest deklariert Fähigkeiten und Permissions, aber keine Nachrichten-DB, Versand-/Empfängerlogik, UI oder Auditimplementierung. Lifecycle live bestanden, danach deaktiviert. |
-| `referral` / `referral-rewards` | generische Empfehlungen/Rewards: Pay-Referral nach bestätigtem Zahlungseingang direkt belohnen; qualifizierte Free-Referrals über Punkte; Punkte gegen administrativ definierte Premium-Zeit/Rewards; Missbrauchsschutz/Audit | **GEPLANT:** noch kein Modul, kein Manifest und keine Runtime-Implementierung. Darf den Core-Freeze nicht blockieren. |
+| `gps` | App Module | öffentliches `publicOffline`-Referenzmodul |
+| `profile` | App Module | Account-/Profilfunktion; geschützte Aktionen bleiben autorisiert |
+| `postbox` | App Module | optionale Nachrichtenfunktion |
+| `field-notes` | App Module | unabhängiges Referenz-/Fachmodul |
+| `media` | System Module | optionale Medienfähigkeit |
+| `sharing` | System Module | optionale Sharing-/Visibility-Erweiterung |
+| `notifications` | System Module | optionale Benachrichtigungsfähigkeit |
+| `moderation` | System Module | optionale Moderationsfähigkeit |
+| `referral` / `referral-rewards` | System Module, geplant | optionale Referral-/Reward-Fähigkeit |
 
-## Referral-/Rewards-Zielvertrag
+Diese Tabelle ist Klassifikation, kein Beweis für vollständige fachliche Implementierung oder Live-Abnahme eines Moduls.
 
-Das zukünftige Referral-Modul ist ein **System Module mit optional sichtbarer User-UI**.
+## 6. Fachliche Zielverträge
 
-Verbindliche Produktregeln:
+### Profile
 
-- Geworbener Pay-User: Reward nach serverseitig bestätigtem Zahlungseingang, keine zusätzliche Aktivitätsprüfung erforderlich.
-- Geworbener Free-User: reine Registrierung genügt nicht; Reward-Punkte erst nach konfigurierbaren Aktivitätskriterien.
-- Aktivitätskriterien bleiben neutral. Fachmodule liefern nur standardisierte qualifizierende Events/Counts; Referral kennt keine CatchTrack-Fachbegriffe.
-- Punkte sind gegen administrativ definierte Rewards einlösbar, z. B. 3 Tage, 7 Tage oder 1 Monat Premium.
-- Pay-User erhalten Zeit an bestehende Laufzeit angehängt; bei Free-Usern startet/aktiviert die verdiente Premium-Zeit nach Adminregel.
-- Punktwerte, Schwellen, Reward-Katalog, Umtauschraten, Limits und ggf. Cooldowns sind administrativ konfigurierbar.
-- Keine Pflichtabhängigkeit zu Profile, Community, Postbox oder Notifications.
-- Rewardvergabe serverseitig verifizieren, idempotent ausführen und auditieren; Selbstwerbung/Duplikate verhindern. Für Rückerstattung/Chargeback ist bei späterer Payment-Integration eine eindeutige Policy erforderlich.
+Optionales Account-Modul für Profilangaben und spätere Avatar-/Privacy-Funktionen. Profile ist keine allgemeine Voraussetzung für andere Apps oder Module und kein kommerzielles Pflicht-Package.
 
-## Profilbild-Zielvertrag
+### Media
 
-User wählt ein Bild, schneidet quadratisch zu, gespeichert wird nur eine optimierte Version bis 256×256; Original wird verworfen. Darstellung ist rund, lokal cachebar und Replace/Delete-fähig. Backup/Restore führt Datei und Metadaten mit. Ohne Bild wird ein nicht pro User gespeicherter neutraler Default nach Gender gerendert. **Code-IST:** der Profile-Service akzeptiert nur bereits quadratische Bild-Data-URLs bis 256 px/256 KiB und speichert sie in `user_profiles.avatar_data`; Browsercrop, generischer Media-Service, runde UI, Default-Avatare und Liveabnahme fehlen.
+Optionale generische Medienfähigkeit für sichere Upload-/Dateifunktionen. Fachmodule müssen ohne Media kontrolliert weiterarbeiten, sofern ihre Kernfunktion keinen zwingenden Medieninhalt voraussetzt.
 
-## Abhängigkeiten
+### Sharing
 
-Die optionalen Systemmodule haben keine Pflichtabhängigkeit. Profile nennt Media/Sharing und Postbox Media/Notifications nur optional. Fehlt ein Enhancement, bleibt die Hauptfunktion kontrolliert nutzbar. Field Notes ist als unabhängiges User Module ohne Pflicht- oder optionale Modulabhängigkeit implementiert.
+Optionale generische Visibility-/Sharing-Erweiterung. Default für neue private Ressourcen bleibt restriktiv; Fachmodule registrieren ihre Ressourcen über veröffentlichte Verträge statt Core-Sondercode.
 
-## Compatibility bridge and freeze proof
+### Notifications
 
-The remaining Core-owned `user_profiles` baseline and legacy Core media tables are a **compatibility bridge**, not the desired final ownership boundary. The next implementation rounds must remove ambiguity non-destructively rather than claim the bridge complete.
+Optionale In-App-/E-Mail-Benachrichtigungsfähigkeit. Fehlt das Modul, darf dies die Kernaktion eines unabhängigen Moduls nicht blockieren.
 
-`field-notes` is the code-/test-verified independent freeze proof. It was implemented without edits to existing Core files for product-specific integration; its product implementation consists only of new module files and uses generic Core contracts; operator-live acceptance remains open.
+### Moderation
 
-## Classification implementation
+Optionale Moderationsfähigkeit für Inhalte. Aktivierung und konkrete Nutzung richten sich nach dem jeweiligen Produkt-/Permission-Vertrag.
 
-App Modules: GPS, Profile, Postbox and reference modules. System Modules: Media, Moderation, Notifications and Sharing. This classification is declarative; it creates no second runtime and does not imply User visibility. Profile's migration is retry-safe and Media's packaged PHP status entry is verified locally, but both lifecycle fixes remain `OPERATOR RETEST REQUIRED`.
+### Postbox
 
-## Admin projection after operator repair
+Optionale Nachrichtenfunktion. Media und Notifications dürfen Erweiterungen liefern, sind aber keine stillschweigenden Pflichtabhängigkeiten.
 
-The operator-facing names are **App Modules** and **System Modules**, exposed as separate Admin destinations. They filter the same registry and share lifecycle, details, permissions and visibility. Profile install failure compensation is code-complete but remains `OPERATOR RETEST REQUIRED`; successful registration still synchronizes manifest permissions automatically.
+### Referral / Referral Rewards
+
+Geplantes optionales System Module. Keine Pflichtabhängigkeit zu Profile, Community, Postbox oder Notifications. Spätere Rewardvergabe muss serverseitig nachvollziehbar und idempotent sein.
+
+## 7. Modulbau und Prüfung
+
+Bei Erstellung oder Reparatur eines Moduls immer `ModuleCreation.md` verwenden. Besonders zu prüfen:
+
+1. Manifest und Kategorie;
+2. keine unbeabsichtigte harte Dependency;
+3. Activate/Deactivate/Re-enable;
+4. Verhalten bei fehlenden optionalen Erweiterungen;
+5. Navigation und Visibility getrennt von Autorisierung;
+6. keine produktspezifischen Core-Änderungen ohne universelle Core-Begründung.
+
+Historische Livefehler einzelner Module gehören in `STATUS.md`, `CHATGPT.md` oder Git-History und nicht dauerhaft in diesen Architekturvertrag.
