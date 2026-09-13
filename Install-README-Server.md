@@ -91,6 +91,8 @@ npm run setup:preflight -- --package=dist/neutral-production --public-url=https:
 
 Nur bei erfolgreichem Paket-/Preflight-Ergebnis deployen. Lokale Prüfung ersetzt nicht die Zielhost-Prüfung von PHP, Rewrite, HTTPS und Datenbank.
 
+Das Produktionsmanifest führt `sourceDirty`. `false` bedeutet, dass Git/Arbeitsbaum erfolgreich geprüft und sauber bzw. unverändert war; `true` bedeutet lokale Änderungen oder einen nicht zuverlässig prüfbaren Git-Status. Ein Release soll aus einem sauberen Commit gebaut werden.
+
 ## Installation
 
 1. Sauberen Commit verwenden.
@@ -127,7 +129,7 @@ Im Zielhosting prüfen:
 
 `scripts/manual-ftps-deploy.js` und `.github/workflows/ftp-upload.yml` übertragen denselben Produktionsumfang. Web-App und PHP-Server bleiben getrennte Verzeichnisbereiche innerhalb eines gemeinsamen Pakets.
 
-FTPS verwendet Zertifikats- und Hostnamenprüfung. Hostlokale Deploymentkonfiguration und Repository-Secrets dürfen nie protokolliert oder committed werden.
+FTPS verwendet Zertifikats- und Hostnamenprüfung. `FTP_SSL_CHECK_HOSTNAME=false` ist unzulässig und wird vom Deploymentweg abgelehnt. Hostlokale Deploymentkonfiguration und Repository-Secrets dürfen nie protokolliert oder committed werden.
 
 Dokumentations-only-Änderungen lösen keinen Produktionsdeploy aus. Produktionsdeploys bauen, testen und prüfen den Paketstand vor dem Upload.
 
