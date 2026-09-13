@@ -1,317 +1,189 @@
-# NEUTRAL – Verbindliche Anleitung zur Modulerstellung
+# NEUTRAL – Verbindlicher Modulvertrag
 
-## Aktueller Modulvertrag und Abgrenzung (2026-09-11)
+**Stand:** 2026-09-13  
+**Status:** AKTUELL / VERBINDLICH
 
-### Verbindliches Integrationsprinzip
+Diese Fassung ersetzt ältere Modulbau-Annahmen. Technische Primärquelle ist der aktuelle Runtime-Code in `Web-App/core/module-interface.js`, `module-registry.js`, `module-manager.js` und `core-loader.js` sowie die aktuelle Server-Modulruntime.
 
-Ein Fachmodul ändert keine Coredatei nur zu seiner eigenen Anbindung. Es nutzt Manifest, Browserentry, generischen Modulloader, `Server/php/modules/<id>/module.php`, Modulservice/-route, eigene deklarierte Tabellen/Migrationen, Permissions, Settings, Events und öffentliche Facades. Erst eine unabhängig belegte universelle Lücke rechtfertigt einen neutralen Core-Extension-Point.
+## 1. Architekturgrundsatz
 
-### Tatsächlich validierte Manifestbereiche
+Ein normales App- oder Systemmodul ist ein eigenständiges optionales Feature.
 
-`ModuleContract` validiert `id`, semantische `version`, `permissions`, `compatibility`, `server.entry/services/routes`, mutierende CSRF-Routen, optionale Routenlimits, `database.tables/migrations`, `limits` und `uninstall.dataPolicy`. Zusätzlich werden `presentation` (`userNavigation`, `adminNavigation`, `system`), `category`, `optionalDependencies` und der optionale sichere `standalone`-Self-Test-Eintrag normalisiert. `capabilities`, `access`, `admin` und weitere beschreibende Metadaten werden transportiert beziehungsweise von ihren jeweiligen Consumern ausgewertet; freie `contracts`-Objekte sind derzeit deklaratives Scaffolding und kein automatisch ausgeführter Fachvertrag.
+- Der Core muss ohne optionale Module funktionieren.
+- Deaktivierung eines optionalen Moduls darf Core und unabhängige Module nicht beschädigen.
+- Ein Modul besitzt seine Fachlogik, Dateien, Einstellungen und Daten selbst.
+- Ein Modul ändert keine Coredatei nur zu seiner eigenen Integration.
+- Profile, Media, Moderation, Notifications, Sharing, Postbox und GPS sind keine impliziten Voraussetzungen für andere normale Module.
 
-Pflichtabhängigkeiten stehen in `dependencies` und dürfen nur verwendet werden, wenn das Modul ohne sie nicht funktionieren kann. `optionalDependencies` blockieren Installation/Aktivierung nicht und müssen per Capability Detection mit sauberem Fallback genutzt werden. Abhängigkeiten verleihen keine Permission.
+Wenn eine Komponente für das Gesamtsystem zwingend erforderlich ist, darf sie nicht wie ein frei deaktivierbares optionales Modul behandelt werden. Der aktuelle Runtime-Code besitzt noch keinen vollständig abgesicherten generischen Required-Dependency-Lifecycle. Ein Agent darf deshalb keine versteckte Pflichtabhängigkeit als normales Modul einführen.
 
-### Lifecycle und Präsentation
+## 2. Dependencies
 
-Discovery bedeutet nur gefunden. Installation registriert Manifest, Permissiondefinitionen und Migrationen und endet inaktiv. Aktivierung ist ein eigener Schritt. Deaktivierung behält bei `retain` Daten. Uninstall folgt dem validierten Datenvertrag. `presentation.userNavigation=false` erlaubt aktive unsichtbare Systemmodule; `adminNavigation` steuert nur die deklarierte Präsentation. Eine namespacete rollenbezogene Visibility-/Navigation-Konfiguration ist getrennt von Permissions vorhanden. Permissions bleiben alleinige serverseitige Autorisierung.
+Der aktuelle Code kann `dependencies` technisch lesen und bei Installation/Aktivierung prüfen. Das ist noch keine Freigabe für harte Kopplungen zwischen normalen optionalen Modulen.
 
-### Server, Daten, Backup und Sicherheit
+Für neue normale Module gilt:
 
-Serverrouten liegen unter `/api/v1/modules/<id>/<path>` und deklarieren Service, Action, Permission und CSRF. Tabellen verwenden den Modulnamespace und Manifest-/PHP-Migrationsdeklarationen müssen übereinstimmen. Backup V2 nimmt Tabellen installierter Module aus deren Manifest und verwaltete Core-Mediendateien auf. Ein Modul darf daraus keine Sicherung nicht deklarierter externer Dateien ableiten. Browsercode enthält keine Secrets und behandelt 401/403/404/409/422/503 kontrolliert.
+- Standard: `dependencies: []`.
+- Nicht zwingende Erweiterungen gehören in `optionalDependencies`.
+- Fehlt eine optionale Erweiterung, muss die Hauptfunktion weiterlaufen.
+- Capability Detection und Fallback statt harter Kopplung.
 
-### UI, Settings, I18N, Theme und Offline
+Eine harte Modulabhängigkeit benötigt vor Verwendung eine Architekturprüfung. Insbesondere muss generisch geklärt sein, was bei Deaktivierung oder Uninstall der benötigten Komponente geschieht. Solange dies nicht vollständig abgesichert ist, keine neue harte Dependency zwischen optionalen Modulen einführen.
 
-Module verwenden zentrale responsive Komponenten/Tokens, stabile I18N-Keys und `moduleSettings.<id>`. Offlinefähigkeit muss konkret angegeben und getestet werden; der gecachte Entry allein beweist weder Offline-Datenhaltung noch Sync. Die generische Sync-/Konfliktengine ist noch geplant.
+## 3. Eine Runtime, zwei Kategorien
 
-### Standalone-/Self-Test
+`category: user|system` ist nur Klassifikation und Präsentation.
 
-Ein `standalone`-Entry ist sinnvoll, wenn eine isolierbare Browser-/Gerätefunktion ohne Auth, DB oder produktiven Serverzustand geprüft werden kann. Er muss Voraussetzungen und Grenzen deklarieren. GPS ist das einzige live bestätigte Referenzbeispiel. Ein Standalone-Test ersetzt niemals Manifest-, Lifecycle-, Permission-, CSRF-, DB-, Backup-, Offline- oder Produktionsprüfung und ist für reine Server-/Systemmodule nicht automatisch Pflicht.
+App Modules und System Modules verwenden dieselbe Registry, Discovery und denselben Lifecycle. Es gibt keine zweite Systemmodul-Runtime. Kategorie entscheidet nicht über User-Sichtbarkeit.
 
-### Systemmodule und Beweismodul
+## 4. Aktueller Client-Manifestvertrag
 
-Profile, Media, Sharing, Notifications, Moderation und Postbox sind optionale Module mit dem in `SYSTEM-MODULES.md` beschriebenen Zielgrad. Field Notes ist als unabhängiges User Module mit eigener Navigation, Permissions, Tabelle/Migration, CRUD, I18N und Theme über bestehende generische Verträge implementiert. Es beansprucht keine Offline-Synchronisation; Datenoperationen benötigen den Server. Code-/Testnachweis ersetzt nicht die offene Betreiber-Liveabnahme.
+`ModuleInterface.validateManifest()` normalisiert aktuell unter anderem:
 
----
+- `id`, `appId`, `name`, `version`, `apiVersion`, `type`, `description`
+- `dependencies`, `optionalDependencies`
+- `permissions`, `permissionDefinitions`, `capabilities`
+- `presentation.userNavigation`, `presentation.adminNavigation`, `presentation.system`
+- `category`
+- `source`, `entry`, `main`, `globalName`
+- `modulePath`, `mountPath`, `manifestPath`, `autoload`
+- `lifecycle`, `requirements`
+- `access.visibilityPermissions`, `usagePermissions`, `managementPermissions`, `adminPermissions`
+- `clientAccess`
+- `publicOffline`
+- `registered`, `status`, `lifecycleState`, `active`, `enabled`
+- `standalone`
+- `database.tables`
+- `admin`
 
-**Status:** VERBINDLICHER AKTUELLER MODULVERTRAG
+Client- und Servermanifest können unterschiedliche zusätzliche Felder konsumieren. Vor Verwendung eines Feldes ist der aktuelle Consumer zu prüfen; ältere Dokumentation allein ist kein Implementierungsbeweis.
 
-**Geprüft:** 2026-09-03
-**Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md); noch fehlende Core-1.0-Modulfähigkeiten stehen in [`STATUS.md`](STATUS.md).
-
-Diese Anleitung beschreibt den aktuellen Modulvertrag. Sie fordert kein neues Modul. Status **FEHLT/GEPLANT** bezeichnet nicht vorhandene Fähigkeiten, die nicht erfunden oder durch direkte Core-Manipulation umgangen werden dürfen.
-
-## 1. Grundregeln
-
-- Ein Modul implementiert eine abgegrenzte Erweiterung; der NEUTRAL-Core bleibt fachfrei.
-- Das Modul besitzt seine Dateien, Konfiguration und Daten selbst.
-- Discovery, Installation und Aktivierung sind getrennt.
-- Ein Modul wird nie allein durch Discovery oder Installation aktiv.
-- Keine Secrets im Manifest oder Browsercode.
-- Keine direkten Änderungen an `Web-App/core/core*.js`, `Web-App/core/master-framework.js`, `Server/public/api/index.php`, PHP-Coreklassen oder Dateien anderer Module, nur um ein einzelnes Feature anzubinden.
-- Fehlt ein universeller Vertrag, wird er in `TODO.md` dokumentiert und separat als Core-Entscheidung bearbeitet.
-
-## 2. Tatsächliche Struktur
-
-Referenz ist `Web-App/app/modules/gps/`:
+## 5. Typische Struktur
 
 ```text
 Web-App/app/modules/<module-id>/
-├── module.json       # Pflichtmanifest
-├── index.js          # deklarierter Browser-Entry
-└── index.html        # optionaler Standalone-Test, nur wenn deklariert
+├── module.json
+├── index.js
+└── index.html        # optionaler Standalone-/Self-Test
 ```
 
-Für Serverfähigkeiten gehört genau ein geschützter Entry hinzu:
+Serverfähigkeit, falls benötigt:
 
 ```text
 Server/php/modules/<module-id>/
-└── module.php       # gibt ID, Version, Services und Migrationen zurück
+└── module.php
 ```
-
-`Web-App/app/modules/index.json` kann Clientkatalogeinträge enthalten. PHP `Phase7ModuleRuntime` scannt Modulmanifeste im Projektmodulpfad. Pfade müssen relativ zum aktiven Installationskontext bleiben.
-
-## 3. Manifest
-
-Nachweisbar unterstützte Felder:
-
-- `id`: stabil, klein geschrieben und routing-/DB-tauglich
-- `name`, optional `displayName`, `description`
-- `version`
-- `type`
-- `entry`: Browser-Entry
-- `globalName`: global exportiertes Implementierungsobjekt
-- `dependencies`: deklarierte Modulabhängigkeiten
-- `permissions`: Definitionen mit `key`, `description`, `defaultRoles`
-- `access`: `visibilityPermissions`, `usagePermissions`, `managementPermissions`, `adminPermissions`
-- `capabilities`: beschreibende Fähigkeiten
-- `standalone`: optionaler Testentry mit `requires`
-- `database.tables`: explizit deklarierte modul-eigene Tabellen
-- `database.migrations`: geordnete Objekte aus unveränderlichem `key` und SemVer-`version`
-- `compatibility`: unterstützte Core-Spanne, API-Major und minimale PHP-Version
-- `server.entry`: relativer geschützter PHP-Entry
-- `server.services`: eindeutige Service-IDs
-- `server.routes`: relative Route, Methode, Service/Action, Permission und optional `limit`
-- `limits`: benannte rollenspezifische ganzzahlige Grenzwerte; `null` bedeutet unbegrenzt
-- `uninstall.dataPolicy`: `retain` als Standard oder explizit `destroy`
-- `admin.settings`: Settingsmetadaten mit Pfad unter `moduleSettings.<id>`
-
-Unbekannte Felder sind kein automatisch unterstützter Vertrag. Manifest und Implementierung müssen dieselbe ID/Version verwenden.
-
-## 4. Entry Point
-
-Der Entry wird durch `CoreLoader` geladen/evaluiert. Die Implementierung wird über `window[globalName]` gefunden und durch `ModuleRegistry`/`ModuleManager` normalisiert. Das Objekt darf nach aktuellem Manager folgende Lifecyclemethoden bereitstellen:
-
-- `install()`
-- `initialize()`
-- `enable()` oder `activate()`
-- `disable()` oder `deactivate()`
-- `update()`
-- `uninstall()`
-
-Methoden müssen idempotent geplant werden, Listener/Watcher bei Deaktivierung entfernen und Fehler werfen oder über den Core-Fehlerpfad melden, statt Fehler zu verschlucken.
-
-## 5. Discovery und Registration
-
-1. Loader liest Katalog/Manifest und Entry.
-2. `ModuleInterface.validateManifest()` normalisiert/validiert.
-3. `ModuleRegistry.discover()` kombiniert Katalog und externe Discovery.
-4. `ModuleManager.discoverModules()` registriert Clientrepräsentationen, ohne Aktivierung zu erzwingen.
-5. PHP `Phase7ModuleRuntime::discover()` liest Manifeste; `install()` persistiert Registration und inaktiven State.
-
-Discovery darf keine DB-Änderung, Geräteberechtigung, Netzwerkanfrage oder UI-Navigation auslösen.
 
 ## 6. Lifecycle
 
-| Phase | Zulässige Arbeit |
-|---|---|
-| DISCOVERED | Metadaten lesen/anzeigen; keine Aktivierung |
-| INSTALL/REGISTER | nur neues oder `retain`-tombstoniertes Modul; Manifest/Permissions registrieren; bleibt inaktiv |
-| INACTIVE | keine Watcher oder fachliche Hintergrundarbeit |
-| ACTIVATE/ACTIVE | nur exakt und eindeutig installierte Version; fehlender Versionsmarker scheitert geschlossen; Dependencies/Rechte prüfen, Listener und UI kontrolliert starten |
-| DEACTIVATE | Watcher, Timer, Listener und Ressourcen freigeben; Daten erhalten |
-| UPDATE | nur INACTIVE; Kompatibilität/Migrationen prüfen; Downgrade ablehnen; Version danach persistieren |
-| UNINSTALL | Registrierung, modulbezogene Rechte/Settings entfernen; Daten nur nach expliziter sicherer Deklaration löschen |
+Grundmodell:
 
-## 7. Dependencies
+`DISCOVERED/AVAILABLE → INSTALLED/INACTIVE → ENABLED/ACTIVE → DISABLED/INACTIVE → ENABLED/ACTIVE → UNINSTALL`
 
-Abhängigkeiten im Manifest deklarieren. `ModuleManager.validateDependencies()` bzw. `MasterFramework.validateModuleDependencies()` prüft Vorhandensein und Versionanforderungen. Kein Modul liest private Interna einer Dependency. Zyklische oder fehlende Abhängigkeiten müssen Aktivierung verhindern und diagnostizierbar sein.
+Discovery allein aktiviert kein normales Modul. Lifecycle-Aufrufe müssen wiederholbar und sauber sein. Bei Deaktivierung müssen modul-eigene Listener, Timer und Ressourcen beendet werden. Re-enable darf unabhängigen Zustand nicht beschädigen.
 
-## 8. Permissions und Security
+## 7. Discovery
 
-- Jeder Modulzugriff erhält modulbezogene Permissionkeys, z. B. `<id>.view`.
-- Sichtbarkeit, Nutzung, Verwaltung und Administration werden in `access` getrennt.
-- Clientprüfung verbessert UX, erteilt aber keine Serverrechte.
-- Serverseitige Daten/Actions benötigen zwingend serverseitige Permission- und CSRF-Prüfung.
-- Defaultrollen sind Installationsdefaults, keine unveränderliche Autorisierung.
-- Browser-Geheimnisse, DB-Zugangsdaten und Admin-Tokens sind verboten.
-- Jede Permission wird ausschließlich im Modulmanifest unter `permissions` mit stabilem `<module-id>.<action>`-Key, konkreter menschenlesbarer `description` und überprüften `defaultRoles` deklariert. Dieselben Keys werden in `access` und bei Serverrouten referenziert. Installation synchronisiert diese Definitionen in den read-only Permission Catalog; die Adminoberfläche erstellt, editiert oder löscht keine Keys.
-- Der öffentliche PHP-Modulkatalog verwendet für Besucher ohne Login ausschließlich die gespeicherten Modulrechte der Systemrolle `viewer`. Nur aktive Module mit Sichtrecht werden ausgeliefert; `clientAccess.canUse` benötigt zusätzlich das Nutzungsrecht.
-- `clientAccess` ist eine bereinigte Browserentscheidung und niemals ein Ersatz für Session-, Permission- oder CSRF-Prüfung an Serverendpunkten.
+Aktueller Clientpfad:
 
-## 9. Capabilities
+1. Loader liefert Katalog/Module.
+2. `ModuleInterface.validateManifest()` normalisiert.
+3. `ModuleRegistry.discover()` kombiniert Discoveryquellen.
+4. `ModuleManager.discoverModules()` reconciliert die Registry.
+5. Nur der jüngste Discovery-Lauf darf den aktuellen Registry-Zustand bestimmen.
 
-`capabilities` sind deklarative Metadaten und kein Rechteersatz. Die Serverkompatibilität wird separat über `compatibility.core`, `compatibility.api` und `compatibility.php` geprüft; derzeit gilt Core `>=1.0.0 <2.0.0`, API-Major `1` und PHP 8+.
+Discovery darf keine fachliche Kopplung zwischen Modulen erzeugen.
 
-## 9a. Mobile-/Plattformvertrag für Gerätefunktionen
+## 8. Public/Offline
 
-Zukünftige Produktmodule müssen grundsätzlich für mobile Web-App-Nutzung auf iOS und Android geeignet sein. Der Standard ist Mobile-First und Touch-First; ein Modul darf nicht ohne zwingende technische Notwendigkeit auf ein einzelnes Betriebssystem oder einen einzelnen Browser eingegrenzt werden.
+`publicOffline: true` ist ein generischer Vertrag für Module, deren bereinigte Client-Metadaten vor dem späteren Online-Abgleich lokal verfügbar sein dürfen.
 
-- Mobiles Web-Design ist der Standard. Touch-Ziele, kleine Bildschirme, schwankende Netzverbindungen und Gerätefunktionen werden als Teil des normalen Entwurfsverhaltens behandelt.
-- Gerätefunktionen werden über Capability Detection, standardisierte Web-APIs oder dokumentierte Core-Facaden abgerufen. Eine harte iOS-/Android-Erkennung ist nur zulässig, wenn der technische Unterschied nachweislich und lokal begrenzt notwendig ist.
-- Ein Modul muss definierte Fallbacks für fehlende Gerätefähigkeiten besitzen, statt bei einem nicht vorhandenen Feature sofort zu scheitern.
-- Berechtigungen müssen im UI und im Modulfluss klar behandelt werden; Browser-Permissiondialoge dürfen nur in verständlichem, benutzergesteuertem Kontext ausgelöst werden.
-- Der öffentliche Modulvertrag soll bei späteren nativen Wrappern möglichst erhalten bleiben. Ein nativer Container darf intern adaptieren, aber der Modulkontrakt und die Nutzererfahrung müssen konsistent bleiben.
-- Persönliche Modulvoreinstellungen für installierte Module werden im Namespace `moduleSettings.<id>` gespeichert; sie steuern das Nutzerverhalten ohne die serverseitige Modulinstallation oder den Lifecycle zu verwischen. Installation, Aktivierung und Deinstallation bleiben getrennte Admin-/Management-Entscheidungen.
-- `GPS` dient als Referenzmodul für diesen plattformneutralen Gerätevertrag; ein Gerät-Feature muss im Core oder im Modul selbst durch dokumentierte Fallbacks und Progressive Enhancement abgesichert werden.
+- lokale Sichtbarkeit ersetzt keine serverseitige Zugriffsentscheidung;
+- Online-Abgleich reconciliiert später den Lifecycle;
+- ein Online-Fehler ist kein erfolgreicher leerer Katalog;
+- keine GPS-Sonderruntime einführen.
 
-## 10. Erlaubte Core-Schnittstellen
+GPS ist derzeit die live bestätigte Referenz dieses Vertrags.
 
-Maßgeblich ist Vertrag `window.Core.getContract()` in Version `1.0.0`; eine erlaubte Facade wird mit `window.Core.getFacade(name)` bezogen. Nur Namen in `publicFacades` sind Modul-APIs; `internalGlobals` sind trotz globaler Erreichbarkeit privat.
+## 9. Standalone
 
-Module dürfen ausschließlich dokumentierte öffentliche Facaden nutzen:
+`standalone` ist optional und nur ein isolierter Self-Test.
 
-- `window.Core`: `on`, `off`, `once`, `emit` und dokumentierter Corezustand
-- `window.ModuleManager`/`ModuleRegistry`: nur für Modulverwaltung durch Framework-/Admincode; ein Fachmodul verwaltet nicht fremde Module
-- `Core.getFacade("ConfigManager")`: lesen/schreiben im eigenen Namespace `moduleSettings.<module-id>`
-- `Core.getFacade("CoreStorage")`: über `namespace("module:<id>")` nur eigene Daten
-- `Core.getFacade("DatabaseManager")`: dokumentierte CRUD-Operationen; eigene Records/Stores nur nach freigegebenem Schemavertrag
-- `Core.getFacade("ServiceManager")`: veröffentlichte Services beziehen; eigene Services unter kollisionsfreiem Modulnamen registrieren
-- `Core.getFacade("CoreErrorHandler")`: Fehler mit Modulkontext melden
-- `ApiClient`: dokumentierte Serverendpunkte verwenden
-- Browsergeräte-API nur, wenn noch kein Coreadapter existiert; Berechtigung und Fallback dokumentieren. GPS ist aktuelles Beispiel.
+- Nicht jedes Modul braucht Standalone.
+- Standalone ersetzt nicht den normalen Lifecycle.
+- `requires.server`, `requires.database`, `requires.auth` beschreiben Voraussetzungen.
+- Integriert übernimmt ein Modul das zentrale Framework-Theme/Appearance. Ein eigenes Fachlayout ist erlaubt, eine widersprüchliche globale Designwelt nicht.
 
-Vor Nutzung Methodensignatur in `Functions.md` und Quellcode prüfen. Direkter Zugriff auf globale Implementierungsobjekte ist nur eine Bestands-Kompatibilitätsschicht und kein Modulvertrag.
+## 10. Access und Sichtbarkeit
 
-## 11. Verbotene Core-Eingriffe
+Modulbezogene Zugriffsregeln und Navigation sind getrennte Aspekte.
 
-Ein Modul verändert nicht direkt:
+- `access.visibilityPermissions`: Sichtbarkeit
+- `access.usagePermissions`: Nutzung
+- `access.managementPermissions`: Verwaltung
+- `access.adminPermissions`: Administration
+- `presentation.userNavigation`: User-Navigation
+- `presentation.adminNavigation`: Admin-Navigation
 
-- Core-/Plattformdateien unter `Web-App/core/`
-- `MasterFramework`-Interna oder dessen private Zustandsstrukturen
-- den zentralen PHP-Router oder Core-Schema nur für modulfachliche Logik
-- Adminshell, Auth-, Session- oder RBAC-Core
-- Dateien/Storagekeys/Tabellen anderer Module
-- globale Eventhandler ohne Cleanup
+Ein Modul darf nicht allein deshalb Profile/User-Account voraussetzen, weil es optional personalisierte Funktionen anbieten kann. Anonyme und authentifizierte Nutzung werden entsprechend dem eigenen Fachvertrag behandelt.
 
-Benötigt ein Modul einen neuen universellen Extension Point, wird zuerst Vertrag, Sicherheitsgrenze, Tests und Migration dokumentiert.
+## 11. UI und Appearance
 
-## 12. Events, Hooks und Modulkommunikation
+Module verwenden zentrale Theme-/Appearance-Werte und Framework-Komponenten. Änderungen zentraler Appearance-Einstellungen sollen integrierte Module automatisch erreichen. Module definieren ihr Fachlayout, nicht eine unabhängige globale Farb-/Theme-Architektur.
 
-**VORHANDEN:** Module können `Core.on/off/once/emit` verwenden. Frameworkevents umfassen u. a. Modulregistrierung/-aktivierung/-deaktivierung, Lifecycle- und Datenbankinitialisierung.
+## 12. Settings und Daten
 
-Regeln:
+Modulbezogene Einstellungen liegen im eigenen Namespace, grundsätzlich `moduleSettings.<module-id>`. Installation/Aktivierung ist davon getrennt.
 
-- Eventnamen mit Modulnamespace, z. B. `module:<id>:<event>`.
-- Payload als dokumentiertes Objekt; keine Secrets oder mutable private Referenzen.
-- Listener bei Deaktivierung entfernen.
-- Module kommunizieren über Events oder explizit registrierte Services, niemals über Dateimanipulation oder private globale Variablen.
-- Request/Response über Events ist aktuell nicht formal standardisiert.
+Ein Modul mit eigenen Daten besitzt und deklariert diese selbst. Direkter Zugriff auf interne Daten eines anderen optionalen Moduls ist keine zulässige Kopplung.
 
-**VORHANDEN:** kanonischer Eventkatalog in Vertrag `1.0.0`. **FEHLT/GEPLANT:** formales Hookregister, versionsspezifische Payloadschemas, asynchrone Zustellgarantie und Sandbox.
+## 13. Verbotene Integrationsmuster
 
-## 13. Services
+Nicht zulässig:
 
-Browserservices werden mit einem Namen wie `module.<id>.<service>` als öffentlich oder intern registriert. Serverseitig sind Services in `server.services` deklariert und werden vom gleich identifizierten `module.php` als Factories geliefert. Doppelte oder fehlende Services sowie Manifest-/Entry-ID- oder Versionsabweichungen werden abgelehnt. Fremde Services dürfen nur über dokumentierte öffentliche Verträge verwendet werden.
+- Core-Dateien nur für ein einzelnes Fachmodul ändern;
+- fremde Moduldateien verändern;
+- private Zustände anderer Module als Vertrag verwenden;
+- Profile als allgemeine Voraussetzung für Apps verwenden;
+- Login als Voraussetzung annehmen, wenn die Fachfunktion anonym möglich sein soll;
+- deaktivierte Module weiterhin als Voraussetzung im Corepfad referenzieren;
+- UI-Tests ausschließlich über Quelltextmuster als Laufzeitbeweis behandeln.
 
-## 14. Storage und lokale Datenbank
+## 14. Pflichtprüfung für optionale Module
 
-- Keys über `CoreStorage.namespace("module:<id>")` immer mit Modul-ID namespacen.
-- Kein Passwort oder Server-Sessiongeheimnis lokal speichern.
-- localStorage nur für kleine, unkritische Werte.
-- IndexedDB für strukturierte/offlinefähige Daten.
-- Datenmodell, Version und Migration dokumentieren.
-- Deinstallation löscht lokale Daten nur nach expliziter Nutzer-/Vertragsentscheidung.
+Jedes optionale Modul muss mindestens beweisen:
 
-Eigene dynamische IndexedDB-Stores pro Modul sind derzeit nicht als stabiler öffentlicher Migrationsvertrag implementiert (**FEHLT/GEPLANT**). Bis dahin vorhandene gemeinsame Stores nur kontrolliert und namespaced verwenden.
+1. App startet mit Modul aktiv.
+2. Modul funktioniert.
+3. Modul deaktivieren.
+4. App/Core funktioniert weiterhin.
+5. Unabhängige Module funktionieren weiterhin.
+6. Navigation besitzt keinen Restzustand.
+7. Re-enable funktioniert entsprechend dem Lifecycle.
 
-## 15. Serverdatenbank und Migrationen
+Wenn Punkt 4 oder 5 fehlschlägt, ist die Implementierung nicht als optionales Modul akzeptiert.
 
-Das Manifest deklariert eigene Tabellen unter `database.tables`; Bindestriche der Modul-ID werden für den verlangten Tabellenpräfix zu Unterstrichen. Drop bei Uninstall ist nur bei `uninstall.dataPolicy=destroy` und ausschließlich für validierte eigene Tabellen zulässig. Ohne Angabe gilt `retain`.
+## 15. Referenzen
 
-`database.migrations` und die Definitionen aus `module.php` müssen in Reihenfolge, Key und Version exakt übereinstimmen. Der Server bindet angewendete Migrationen an SHA-256, sperrt konkurrierende Läufe und kompensiert einen fehlgeschlagenen Batch über die zugehörigen `down`-Statements. Eine bereits angewendete Migration darf nie verändert oder aus einer neueren Definition entfernt werden. Bei `retain` bleiben Modulzeile und Migrationshistorie als inaktiver, nicht registrierter Tombstone erhalten, damit eine Neuinstallation keine Migration doppelt ausführt. Destruktives Uninstall akzeptiert nur einzeln analysierbare Gegenmigrationen, deren Mutationsziel eine deklarierte eigene Tabelle ist; am Ende muss jede eigene Tabelle explizit entfernt werden. Keine SQL-Datei wird allein durch Ablage vertrauenswürdig oder ausgeführt.
+- GPS: Public/Offline, Gerätefunktion und Standalone.
+- `reference-notes`/Field Notes: fachlich unabhängiges Modulbeispiel, soweit im aktuellen Repository vorhanden.
+- Profile, Media, Sharing, Notifications, Moderation und Postbox: optionale Fachmodule bzw. Scaffolds; sie dürfen keine Voraussetzung für Core oder voneinander werden.
 
-## 16. API und Serverkommunikation
+Der konkrete Live-/Implementierungsstatus gehört in `SYSTEM-MODULES.md` und `STATUS.md`.
 
-Module verwenden über `ApiClient` ihre deklarierten Endpunkte unter `/api/v1/modules/<module-id>/<route>`. Der zentrale Kernel prüft aktiven Registrierungszustand, Methode, Authentifizierung, Permission und CSRF für Schreibmethoden, bevor Server-Entry und Servicefactory ausgeführt werden. Quantitative Limits werden über eine modul-/limitbezogene DB-Sperre atomar um Nutzungsmessung und Mutation erzwungen. Der zentrale Router erhält keine fachlichen Modulzweige.
+## 16. Entscheidungsregel für Agenten
 
-Keine direkte DB-Verbindung aus dem Browser. Keine feste Produktionsdomain im Modul. Offlinefehler kontrolliert behandeln.
+Vor Moduländerungen:
 
-## 17. Konfiguration
-
-Adminsettings im Manifest verwenden Pfade unter `moduleSettings.<module-id>` und werden über `ConfigManager.setModule/getModule` bereitgestellt. Defaults sind keine Secrets. Einstellungen werden validiert und über Config/Settings-Service gelesen. Ein Modul liest oder löscht keine fremden Namespaces. Serverseitige sicherheitsrelevante Konfiguration bleibt serverseitig.
-
-## 18. Logging und Fehler
-
-- Fehler an `CoreErrorHandler` mit Modul-ID, Lifecyclephase und sicherem Kontext melden.
-- Keine Passwörter, Tokens, vollständigen Standortverläufe oder personenbezogene Payloads loggen.
-- Aktivierungsfehler hinterlassen keinen halben aktiven Zustand.
-- Timer, Watcher und Listener in `finally`/Cleanup-Pfaden kontrolliert freigeben; Imports werden nicht in try/catch versteckt.
-
-## 19. Offline und Synchronisation
-
-Ein Modul muss Onlineabhängigkeit explizit deklarieren und lokale Zustände (`lokal`, `ausstehend`, `synchronisiert`, `Konflikt`, `Fehler`) sichtbar behandeln. Die universelle Sync-Queue, Retry-/Backoff-, Idempotenz- und Konfliktengine ist derzeit **FEHLT/GEPLANT**. Bis sie existiert, darf ein Modul nicht behaupten, generische Synchronisation sei garantiert.
-
-GPS validiert lokale Speicherung und Offlineverhalten, besitzt aber aktuell keine serverseitigen Tabellen und keinen vollständigen Syncvertrag.
-
-Der Loader speichert ausschließlich einen strukturell validierten anonymen Modulkatalog unter einem installationsbezogenen lokalen Schlüssel. Bei Netzwerkfehlern darf nur dieser anonyme Katalog wiederverwendet werden. Authentifizierte Antworten und fehlerhafte Kataloge werden nicht als anonymer Offlinezustand gespeichert. Ohne gültigen Cache bleibt die anonyme Modulliste leer.
-
-Ein Modul mit Geräteberechtigung darf bei bereits erteiltem Browserstatus kontrolliert aktualisieren. Es darf beim bloßen Rendern keinen erstmaligen Berechtigungsdialog auslösen. Das GPS-Referenzmodul zeigt zunächst den letzten lokalen Wert und fragt höchstens einmal pro Mount automatisch ab, wenn der Status bereits `granted` ist.
-
-Der allgemeine Offline-Vertrag des Cores: Nach einem erfolgreichen Online-Start stellt der Core-Service-Worker (`Web-App/public/service-worker.js`) die App-Shell, alle Core-Skripte, öffentliche CSS/JS-Assets und einmal erfolgreich geladene Modul-Entry-Skripte (`Web-App/app/modules/<id>/index.js`) versioniert im Cache Storage bereit. Ein Modul kann seinen Browser-Entry daher nach erfolgreichem ersten Laden auch offline erneut laden lassen. Nicht gecacht werden niemals: Nicht-GET-Requests, `/api/`-Antworten, Auth-/Session-, Admin- und Setup-Endpunkte sowie jede personalisierte oder sicherheitskritische Serverantwort. Module müssen deklarieren bzw. im Manifest-/Beschreibungstext dokumentieren, welche ihrer Funktionen offline arbeiten und welche zwingend Netzwerk benötigen; netzwerkabhängige Funktionen melden lokal `Offline – diese Funktion benötigt eine Verbindung.`, ohne die App zu blockieren.
-
-## 20. Test- und Abnahmeregel
-
-Mindestens prüfen:
-
-1. Manifestvalidierung und Discovery ohne Aktivierung.
-2. fehlende Dependency verhindert Aktivierung.
-3. Install bleibt inaktiv.
-4. Aktivierung registriert Ressourcen genau einmal.
-5. Deaktivierung entfernt Watcher/Listener.
-6. Update ist nur inaktiv, migrationssicher und downgradegeschützt.
-7. Uninstall entfernt Registration/Permissions/Settings ohne fremde Daten; Standard ist Datenerhalt.
-8. serverseitige Actions prüfen Session, Permission, CSRF und deklarierte Limits.
-9. Offline-/Fehlerzustände verlieren keine lokalen Daten.
-10. Standalone-Test ist nur Entwicklungsoberfläche und keine zweite Produktionsautorität.
-11. `TODO.md`, `WORKFLOW.md`, `Functions.md`, `API.md`, `Database.md` und `Security.md` werden bei Vertragsänderung aktualisiert.
-
-### Startperformance für Module
-
-Discovery erfolgt ausschließlich einmal in `CoreStartup.startBackground()`. Ein Modul startet bei Discovery keine Geräteabfrage, Netzwerkoperation oder Aktivierung. Installation bleibt inaktiv; teure Ressourcen beginnen erst bei expliziter Aktivierung und werden bei Deaktivierung freigegeben. Module dürfen keinen zweiten Katalogscan aus UI-Code anstoßen.
-
-## Permission domain
-
-Modules declare their permissions in the module contract. These permissions are classified as User-App/Module in the registry unless a separately reviewed administrative module contract says otherwise. Modules must not reuse Core Admin permission keys to make User-App features function, and the Admin UI does not create arbitrary permission keys.
-
-`Area` identifies the security/product surface (`Admin`, `User-App`, or `System`), not the noun in a permission key. A module permission such as `gps.admin` may control module-scoped settings, but Core module lifecycle and role assignment continue to require the separately enforced Core Admin permissions.
-
-## Responsive User content
-
-Module user interfaces use the shared `.user-content-grid` contract for groups of cards instead of device-specific widths. The grid fills available content width with `auto-fit`/`minmax`, collapses naturally on small viewports, and allows a module-specific modifier only to express content proportions. Cards remain token-based and touch-safe; modules do not hardcode iPad model dimensions.
-
-## Freeze-Entscheidung für neue Produktmodule
-
-Ein Produktfeature darf bestehende Coredateien nicht für seine konkrete Fachlogik patchen. Vor einem Core-Änderungswunsch ist der Referenzablauf aus Manifest, Browserentry, `module.php`, generischem `/api/v1/modules/<id>/…`-Dispatch, Modulmigrationen, Permissionregistry, Adminsettings und Lifecycle vollständig auszuschöpfen. Nur eine mit einem neutralen Contract-Test belegte allgemeine Frameworklücke rechtfertigt einen kleinen Core-Extension-Point; andernfalls bleibt die Änderung im Modul.
-
-## Entitlement projection contract
-
-A module may receive a server-authoritative entitlement projection of `available`, `locked`, or `hidden`. `locked` may be rendered with a generic required-entitlement notice; `hidden` is not rendered. Neither client state grants permissions. Package names remain configuration, never Core constants. Product modules must continue to use server permission checks and may not inspect organization names or commercial tiers in Core code.
-
-## Media and location reuse
-
-Modules use the published permission/API contracts for media and the GPS module's coordinate output. They must not bypass controlled media delivery, infer organization scope client-side, or duplicate the Web-Mercator projection with swapped latitude/longitude.
-
-## Module category and role navigation
-
-`category` accepts `user` or `system` and defaults to `user`; it does not alter lifecycle, permissions, visibility, activation or dependencies. Admin groups modules by this declaration. Per-role navigation visibility is a separate persisted presentation decision for Admin, Developer, User and Viewer. It may hide/show a navigation entry but never authorizes a route. `presentation.userNavigation` remains the default until a role override is stored.
-
-## Pre-freeze clarification: optional module Self-Test and Field Notes proof (2026-09-11)
-
-`standalone` is an optional object. When present, `entry` must be a relative, module-local `.html` path without absolute paths, traversal, backslashes or duplicate separators. `label` and `description` are display metadata; `requires.server`, `requires.database` and `requires.auth` truthfully disclose prerequisites. Invalid declarations fail manifest validation. Admin displays the action only for a valid declared entry. The page remains module-owned, may not bypass permissions, expose secrets or perform destructive production work, and proves only that isolated page—not lifecycle, API, database, permission, integration, backup or live operation. GPS is the current bundled example; modules without a meaningful isolated browser path declare no Self-Test.
-
-`field-notes` is now the no-Core-change proof module. It declares category `user`, no dependencies, `field-notes.view`/`field-notes.use`, owner-scoped generic module routes, a retained `field_notes_items` table/migration and an item limit. Its implementation required only new files below `Web-App/app/modules/field-notes/` and `Server/php/modules/field-notes/`; discovery, loading, navigation/visibility, authorization/CSRF, migrations and Backup V2 use existing generic contracts. Its production/operator lifecycle and UI remain `OPERATOR RETEST REQUIRED`; this code proof does not itself declare Core Freeze.
-
-## Install compensation contract
-
-Registration synchronizes declared permissions automatically. If server-entry resolution or migration then fails, the generic lifecycle marks the module not present, disabled and error while retaining owned data; a retry runs the existing checksum/additive migration machinery. Admin `App Modules`/`System Modules` routes are category filters only and impose no module dependency.
+1. aktuellen Runtime-Code lesen;
+2. diesen Vertrag lesen;
+3. Deaktivierbarkeit und Unabhängigkeit prüfen;
+4. vorhandene generische Verträge verwenden;
+5. keine Core-Erweiterung auf Verdacht;
+6. bei notwendiger harter Dependency Architekturreview durch Lea anfordern;
+7. Runtime-/Lifecycle-Tests durchführen;
+8. realer Betreiber-Live-Test bleibt für UI-/Geräteverhalten maßgeblich.
+
+## 17. Nächster Architektur-Audit
+
+Nach dem aktuellen User-UI-Live-Fix werden alle vorhandenen Module separat gegen diesen Vertrag geprüft. Profile/Moderation werden erst danach repariert. Historische Implementierungen dürfen diesen Vertrag nicht stillschweigend aufweichen.
