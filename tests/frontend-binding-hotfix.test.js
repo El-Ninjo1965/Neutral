@@ -103,3 +103,11 @@ test('production script order toggles the currently visible User Login input twi
   assert.equal(input.type, 'password');
   assert.equal(button.attributes['aria-pressed'], 'false');
 });
+
+test('User Login delegates its static Eye to the shared single-click password binding', () => {
+  const userApp = fs.readFileSync(path.join(__dirname, '../Web-App/public/user-app.js'), 'utf8');
+  const loginBinding = userApp.match(/const passwordInput = document\.getElementById\('userLoginPassword'\);[\s\S]*?const submit = document\.getElementById\('userLoginSubmit'\);/);
+  assert.ok(loginBinding, 'User Login password binding exists');
+  assert.match(loginBinding[0], /globalThis\.NeutralUiFeedback\?\.bindPasswordToggle\?\.\(passwordInput, passwordReveal\)/);
+  assert.doesNotMatch(loginBinding[0], /passwordReveal\.addEventListener\('click'/);
+});

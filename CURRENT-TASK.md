@@ -1,20 +1,22 @@
-# CURRENT TASK – USER UI LIVE REPAIR
+# CURRENT TASK – USER UI HOME ROUTING REVIEW FOLLOW-UP
 
-**Status:** OFFEN  
-**Datum:** 2026-09-13  
+**Status:** TECHNISCH REPARIERT · PR-CI BESTANDEN · OPERATOR-PRÜFUNG OFFEN
+**Datum:** 2026-09-13
 **Core Freeze:** NICHT erklärt
 
-Bearbeite ausschließlich die drei im Operator-Live-Retest reproduzierten User-UI-Fehler:
+Behebe ausschließlich den offenen P2-Fund aus dem Codex Review von PR #66:
 
-- [ ] Start/Home: Ein einzelner Klick/Tap auf `Start` muss den Home-/Start-Content tatsächlich rendern; Active-State, View-State und Route müssen konsistent bleiben.
-- [ ] Settings Save: Nach erfolgreichem Speichern muss das gemeinsame `Successfully saved.`-Popup im realen Browser erscheinen und bis zur Benutzeraktion sichtbar bleiben.
-- [ ] Passwort-Auge: Ein einzelner normaler Klick/Tap muss `password ↔ text` toggeln; kein Doppelklick und keine gerätespezifische Sonderlösung.
+- [x] Root Cause für Home → Settings → Browser Back/hashchange → Home reproduziert.
+- [x] Regressionstest für den Hashchange-/Browser-Back-Pfad ergänzt.
+- [x] Alle Übergänge nach Home verwenden dieselbe Cache-Invalidierung.
+- [x] Direkter Start-Klick, Settings-Erfolgsdialog und Passwort-Auge bleiben testgesichert.
+- [x] Fokussierte Tests, Vollsuite, JS-/PHP-Syntax, Production Package und `git diff --check` bestanden.
+- [x] PR #66 auf dem neuen Branch-HEAD erneut durch CI/CodeQL geprüft.
+- [ ] Gezielter Operator-Live-Retest der drei User-UI-Reparaturen im realen Browser/Endgerät.
 
 ## Grenzen
 
-- Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen in diesen Block mischen.
-- Root Cause vor Reparatur belegen.
-- Vor Änderungen passende Failing-Tests ergänzen oder vorhandene reproduzierbare Tests nachweisen.
-- Danach fokussierte Tests, Vollsuite, Syntax/Lint/Build/Package, `git diff --check`, Deployment und read-only Production Smoke.
-- Anschließend gezielter Operator-Live-Retest genau dieser drei Punkte.
-- Erst nach deren Abschluss folgt der separate Modularchitektur-Audit.
+- Nicht mergen und nicht auf `main` schreiben.
+- Keine anderen Entwicklungsaufgaben oder unnötigen Refactorings.
+- Kein Production Restore; produktiver Deploy ausschließlich über den vorgesehenen GitHub-Actions-Pfad.
+- Kein Core Freeze vor den ausdrücklich erforderlichen technischen und realen Abnahmen.

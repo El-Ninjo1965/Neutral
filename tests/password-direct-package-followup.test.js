@@ -13,7 +13,8 @@ test('User Login has one autofill password field and one local click Eye', () =>
   assert.equal((user.match(/id="userLoginPassword"/g) || []).length, 1);
   assert.equal((user.match(/id="userLoginPasswordReveal"/g) || []).length, 1);
   assert.match(user, /name="password" type="password" autocomplete="current-password"/);
-  assert.match(user, /passwordReveal\.addEventListener\('click'/);
+  assert.match(user, /globalThis\.NeutralUiFeedback\?\.bindPasswordToggle\?\.\(passwordInput, passwordReveal\)/);
+  assert.doesNotMatch(user, /passwordReveal\.addEventListener\('click'/);
   assert.doesNotMatch(user, /NeutralPasswordHoldReveal|enhancePasswordFields\(content\)|pointerdown/);
 });
 
