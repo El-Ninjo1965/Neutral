@@ -1,18 +1,20 @@
-# CURRENT TASK – OFFLINE-FIRST MODULE START
+# CURRENT TASK – USER UI LIVE REPAIR
 
-**Status:** IMPLEMENTIERT, VERIFIZIERT UND DEPLOYED – OPERATOR-RETEST AUSSTEHEND
-**Datum:** 2026-09-12
+**Status:** OFFEN  
+**Datum:** 2026-09-13  
+**Core Freeze:** NICHT erklärt
 
-- [x] Failing delayed/offline/lifecycle behavior captured.
-- [x] Generic versioned sanitized public/offline projection implemented.
-- [x] GPS declared public/offline and removed from User RBAC/Package/Entitlement base gating.
-- [x] Projection hydrated through existing registry before first render.
-- [x] Background reconciliation updates navigation/open Settings without Welcome full-render.
-- [x] Admin lifecycle updates public projection; deactivation prevents future offline hydration.
-- [x] Corrupt/incompatible projection fails closed and contains no auth material.
-- [x] Profile/Moderation remain permission-sensitive; catalog errors remain retryable.
-- [x] Accepted Details/Save/Theme/Table/GPS UI contracts retained.
-- [x] Full suite (560/560), JS syntax, PHP lint, diff check and 136-file production package.
-- [x] Commit, Push, CodeQL, FTPS und Production Read-only Smoke.
+Bearbeite ausschließlich die drei im Operator-Live-Retest reproduzierten User-UI-Fehler:
 
-Core Freeze remains not declared.
+- [ ] Start/Home: Ein einzelner Klick/Tap auf `Start` muss den Home-/Start-Content tatsächlich rendern; Active-State, View-State und Route müssen konsistent bleiben.
+- [ ] Settings Save: Nach erfolgreichem Speichern muss das gemeinsame `Successfully saved.`-Popup im realen Browser erscheinen und bis zur Benutzeraktion sichtbar bleiben.
+- [ ] Passwort-Auge: Ein einzelner normaler Klick/Tap muss `password ↔ text` toggeln; kein Doppelklick und keine gerätespezifische Sonderlösung.
+
+## Grenzen
+
+- Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen in diesen Block mischen.
+- Root Cause vor Reparatur belegen.
+- Vor Änderungen passende Failing-Tests ergänzen oder vorhandene reproduzierbare Tests nachweisen.
+- Danach fokussierte Tests, Vollsuite, Syntax/Lint/Build/Package, `git diff --check`, Deployment und read-only Production Smoke.
+- Anschließend gezielter Operator-Live-Retest genau dieser drei Punkte.
+- Erst nach deren Abschluss folgt der separate Modularchitektur-Audit.
