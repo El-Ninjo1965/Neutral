@@ -1,38 +1,42 @@
 # Neutral status
 
 **Stand:** 2026-09-13  
-**Deployed main:** `b5b76f70d57fee982cee7eb397d37009debde001`  
+**Letzter verifiziert deployter Code-Stand:** `5c1ac7659126de7d901386622b00e1d75d3e10ba`  
 **Automated Production Smoke:** PASS  
 **Operator-Live-Retest:** DURCHGEFÜHRT  
 **Core Freeze:** NICHT erklärt
 
 ## Bestätigter Live-Stand
 
-Der User-UI- und Admin-Live-Retest wurde am 2026-09-13 durchgeführt. Die zuvor offenen allgemeinen Retest-Blöcke sind damit nicht mehr pauschal als `RETEST REQUIRED` zu führen.
+Der User-UI- und Admin-Live-Retest wurde durchgeführt. Frühere pauschale Retest-Blöcke sind damit erledigt.
 
-### User UI – bestätigt funktionsfähig
+### User UI
 
-Anonym/Inkognito und authentifiziert funktionieren insbesondere Startnavigationseinstieg, GPS-Grundfunktion, Settings, Theme, Login, GPS-Aktualisierung, Google-Maps-Öffnen, natives Teilen, Apps/Navigation in Settings sowie GPS-Aktivierung/Deaktivierung und Navigation-Label Rename/Restore. Tester-Login und Settings-Speicherung funktionieren.
+Bestätigt funktionsfähig sind insbesondere GPS, Settings, Theme, Login, GPS-Aktualisierung, Google Maps, natives Teilen, Apps/Navigation in Settings sowie GPS-Aktivierung/Deaktivierung und Navigation-Label Rename/Restore. Tester-Login und Settings-Speicherung funktionieren.
 
-### Drei reproduzierbare User-UI-Fehler offen
+### Drei offene User-UI-Fehler
 
-1. **Start/Home:** Der Start-Button wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View. Navigation, View-State und Content laufen auseinander.
-2. **Settings Save Success:** Änderungen werden gespeichert und übernommen, aber das erwartete Shared-Success-Popup `Successfully saved.` erscheint im realen Browser nicht.
-3. **Passwort-Auge:** Ein einzelner Klick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; erst Doppelklick funktioniert.
+1. **Start/Home:** Start wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View.
+2. **Settings Save Success:** Änderungen werden gespeichert, aber `Successfully saved.` erscheint im realen Browser nicht.
+3. **Passwort-Auge:** Einzelklick/Tap toggelt nicht zuverlässig; aktuell funktioniert erst Doppelklick.
 
-Diese drei Punkte sind der nächste technische Reparaturblock. Sie dürfen nicht mit Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen vermischt werden.
+Diese drei Punkte sind der nächste technische Reparaturblock. Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen damit vermischen.
 
-### Admin UI – Basis live bestanden
+### Admin UI
 
-Admin-Login, Dashboard, App Modules, System Modules, Settings, Appearance, Users, Licenses/Organizations, Packages/Entitlements, Sessions, Roles & Permissions, Permission Catalog, Connections & Providers, Server-Test, Database-Test, Backup/Restore, Storage Path Test, Maintenance/Backup, Diagnostics, Audit Log und Logout wurden live erfolgreich geprüft.
+Die zentrale Adminbasis wurde live geprüft: Login, Dashboard, App/System Modules, Settings/Appearance, Users, Licenses, Packages, Sessions, Roles/Permissions, Permission Catalog, Connections/Providers, Server-/Database-Test, Backup/Restore, Storage Path Test, Diagnostics, Audit und Logout.
 
-Spätere, nicht blockierende Admin-Themen: Dashboard-Darstellung, Unlimited Device Limit als `∞`, alte `idle`-Sessions/Session-Lifecycle.
+Spätere nicht blockierende Punkte bleiben Dashboard-Darstellung, Unlimited-Anzeige als `∞` und alte `idle`-Sessions/Session-Lifecycle.
+
+## CI und Deployment
+
+Der aktuelle deployte Code-Stand bestand Tests, Paketbau, FTPS-Upload und read-only Produktionsprüfung. Dokumentations-only-Commits lösen keinen Produktionsdeploy aus.
 
 ## Architekturstatus
 
-Der generische Offline-First/Public-Module-Startvertrag ist implementiert und deployed. GPS verwendet die versionierte sanitisierten Public/Offline-Aktivierungsprojektion; Profile und Moderation bleiben permission-sensitiv. Ein Core Freeze wurde ausdrücklich nicht erklärt.
+Der generische Offline-First/Public-Module-Startvertrag ist implementiert. Ein Core Freeze wurde nicht erklärt.
 
-Nach Abschluss und Live-Abnahme der drei User-UI-Fehler folgt ein separater Modularchitektur-Audit. Erst danach werden Profile/Moderation und weitere Module erneut fachlich bewertet bzw. repariert.
+Nach Abschluss und Live-Abnahme der drei User-UI-Fehler folgt der separate Modularchitektur-Audit. Erst danach werden Profile/Moderation und weitere Module erneut bewertet.
 
 ## Wahrheitsgrenze
 
