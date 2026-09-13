@@ -3,70 +3,90 @@
 **Status:** VERBINDLICHE BETRIEBSANLEITUNG  
 **Geprüft:** 2026-09-13
 
+Diese Anleitung beschreibt den produktiven PHP-/Datenbank-/Setup-Anteil des gemeinsamen Full-Stack-Pakets. Aktuelle Livefehler und Entwicklungszwischenstände gehören ausschließlich in `STATUS.md`.
+
+## Produktionsmodell
+
+Neutral Core 1.0 läuft auf normalem Shared Hosting mit PHP 8.1+, MySQL/MariaDB und HTTPS. Node.js wird nur lokal für Entwicklung, Tests und Paketbau benötigt; auf dem Produktionshost sind weder Passenger noch ein öffentlicher Node-Port oder permanente Worker erforderlich.
+
+Produktion verwendet dasselbe verifizierte Paket wie die Web-App und enthält `Web-App/`, `Server/php/` und `Server/public/` in ihrer vorgesehenen Struktur.
+
 ## Voraussetzungen
 
-Der Serverteil ist für Shared Hosting mit PHP und MySQL/MariaDB ausgelegt. Node.js ist für Entwicklung, Tests und Paketbau nützlich, aber keine Voraussetzung für den produktiven PHP-Runtimepfad.
-
-Erforderlich sind insbesondere:
-
-- PHP in einer vom Projekt unterstützten Version;
-- MySQL/MariaDB;
+- Linux Shared Hosting, z. B. cPanel;
+- LiteSpeed oder Apache-kompatibles Rewrite;
+- PHP 8.1+;
+- PDO, `pdo_mysql`, JSON, Session und OpenSSL;
+- MySQL/MariaDB mit InnoDB und utf8mb4;
 - HTTPS;
-- Rewrite-Unterstützung;
-- Schreibrechte nur für ausdrücklich benötigte Runtime-/Log-/Backupbereiche;
-- ein nicht öffentlich zugänglicher Bereich für `.env`, Secrets und Backups.
+- Schreibrechte nur für tatsächlich benötigte Runtime-/Log-/Backupbereiche.
 
-## Verzeichnis- und Basis-Pfad
+Kein pauschales `777` verwenden.
 
-Die Installation kann im Webroot oder unter einem Basis-Pfad betrieben werden. Pfade werden nicht durch fest verdrahtete Hostnamen bestimmt. Öffentliche Web-App, Adminoberfläche, Setup und API müssen denselben konfigurierten Basisvertrag verwenden.
+## Serverstruktur
 
-Die PHP-API liegt unter:
+- `Server/php/bootstrap.php`, `Server/php/src/` – PHP-Core;
+- `Server/public/api/index.php` – zentraler API-Router;
+- `Server/public/api/.htaccess` – API-Rewrite;
+- `Server/public/admin.php` – geschützter Admin-Einstieg;
+- `Server/public/setup.php` – Setup-Einstieg;
+- `Web-App/app/modules/*/module.json` – Modulmanifeste;
+- `Server/runtime/` – hostlokale Runtime-/Logdaten;
+- `Server/node/` – ausschließlich lokale Referenz-/Testlaufzeit.
 
-```text
-<Basis>/api/v1/...
-```
+Die Root-`.htaccess` arbeitet relativ zum Installationsverzeichnis, erhält die Paketstruktur und schützt interne PHP-/Runtime-/Dotfile-Bereiche vor direkter Auslieferung.
 
-`<Basis>/api/status` bleibt der begrenzte öffentliche Statusendpunkt.
+## DocumentRoot und Basispfad
 
-## Hostlokale Konfiguration
+Drei Fälle sind getrennt zu behandeln:
 
-Produktive Konfiguration gehört in die hostlokale `.env`. Die Repositorydatei `.env.example` enthält ausschließlich sichere Platzhalter.
+1. **Domain-Root:** Paketinhalt im DocumentRoot, `NEUTRAL_BASE_PATH=`.
+2. **Eigener physischer DocumentRoot:** Domain/Subdomain zeigt direkt auf den Paketordner, öffentlicher URL-Root bleibt `/`, daher ebenfalls `NEUTRAL_BASE_PATH=`.
+3. **URL-Unterpfad:** Paket z. B. unter `meine-app/`, öffentliche Basis `/meine-app/`, daher `NEUTRAL_BASE_PATH=/meine-app`.
 
-Mindestens prüfen bzw. setzen:
+Der physische Zielordner und `NEUTRAL_BASE_PATH` sind unabhängig. Ein Ordnername erzeugt keinen URL-Unterpfad und ein Basispfad ändert keinen DocumentRoot.
 
-- `APP_ID`
-- `APP_NAME`
-- `APP_BASE_PATH`
-- `APP_URL`
-- Datenbankhost/-name/-user/-passwort
-- Session-/Securitywerte
-- Setup-/Recoverywerte nur bei tatsächlichem Bedarf
-- Backup-Pfad und Backup-Schlüssel
+`FTP_TARGET_DIR` ist beim Deployment ausdrücklich zu setzen; ein unbeabsichtigter Root-Default ist unzulässig.
 
-Secrets dürfen niemals in Git, Browsercode, Dokumentation oder Logs gelangen.
+## Environment
+
+Die wertfreie `.env.example` dient nur als Vorlage. Die produktive `.env` bleibt hostlokal und wird niemals committed oder ausgeliefert.
+
+Vor Installation mindestens konfigurieren:
+
+- Datenbankzugang über `DB_*` oder alternativ `DB_URL`;
+- `CORE_BOOTSTRAP_USERNAME`;
+- `CORE_BOOTSTRAP_PASSWORD`;
+- `NEUTRAL_BASE_PATH`;
+- `NEUTRAL_BACKUP_KEY` vor Nutzung von Backup/Restore.
+
+Secrets wie Session-, Provider-, Recovery-, Auth- oder Admin-Token erhalten niemals veröffentlichte Standardwerte. Setup-/Recovery-Secrets werden nur für den konkret benötigten Zeitraum aktiviert und danach deaktiviert bzw. rotiert.
 
 ## Datenbank
 
-Migrationen sind die autoritative Schemaquelle. Core und installierte Module führen ihre Migrationen über den vorgesehenen Migrationsvertrag aus; produktiver Code darf fehlende Spalten oder Tabellen nicht still improvisieren.
+1. Datenbank und Benutzer anlegen oder dem Setup die dafür notwendigen temporären Rechte geben.
+2. Benutzer auf das Neutral-Schema begrenzen.
+3. Host, Port, Name und `utf8mb4` korrekt konfigurieren.
+4. Verbindung prüfen.
+5. Core-Migrationen ausführen.
+6. Betriebsrechte anschließend auf den notwendigen Schema-/DML-Umfang reduzieren.
 
-Vor Migration oder Restore immer Datenbankziel und Backupzustand prüfen.
+Die verbindliche Datenstruktur steht in `Database.md`; keine Tabellen manuell außerhalb des Migrationsvertrags erfinden.
 
-## Setup
+## Paket bauen und prüfen
 
-`setup.php` und die Setup-API bilden die bestehende Setup-Grundlage. Sie prüfen Voraussetzungen, Datenbankverbindung, Migrationen, Core-Seeding und Bootstrap-Admin. Setup-/Recoveryzugang ist sicherheitsrelevant und darf nach erfolgreicher Aktivierung nicht dauerhaft offen bleiben.
-
-Ein vorhandener aktiver Installationszustand darf nicht unbeabsichtigt überschrieben werden.
-
-## Produktionspaket
-
-Das Produktionspaket wird mit dem vorgesehenen Buildweg erzeugt. Es enthält den auslieferbaren Web-App-/PHP-Bestand, Manifest und Prüfsummen, aber keine Entwicklungsartefakte, Git-Historie oder hostlokalen Secrets.
-
-Beispiel:
+Für Root:
 
 ```bash
-npm ci
-npm test
-npm run package:production -- --base-path="<Basis>" --output="dist/neutral-production"
+npm run package:production -- --base-path=
+npm run setup:preflight -- --package=dist/neutral-production --public-url=https://example.test/ --base-path=
+```
+
+Für Unterpfad:
+
+```bash
+npm run package:production -- --base-path=/meine-app
+npm run setup:preflight -- --package=dist/neutral-production --public-url=https://example.test/meine-app/ --base-path=/meine-app
 ```
 
 Nur bei erfolgreichem Paket-/Preflight-Ergebnis deployen. Lokale Prüfung ersetzt nicht die Zielhost-Prüfung von PHP, Rewrite, HTTPS und Datenbank.
@@ -109,7 +129,7 @@ Im Zielhosting prüfen:
 
 `scripts/manual-ftps-deploy.js` und `.github/workflows/ftp-upload.yml` übertragen denselben Produktionsumfang. Web-App und PHP-Server bleiben getrennte Verzeichnisbereiche innerhalb eines gemeinsamen Pakets.
 
-FTPS verwendet Zertifikats- und Hostnamenprüfung. `FTP_TARGET_DIR` muss ausdrücklich gesetzt sein. `FTP_SSL_CHECK_HOSTNAME=false` ist unzulässig und wird vom Deploymentweg abgelehnt. Hostlokale Deploymentkonfiguration und Repository-Secrets dürfen nie protokolliert oder committed werden.
+FTPS verwendet Zertifikats- und Hostnamenprüfung. `FTP_SSL_CHECK_HOSTNAME=false` ist unzulässig und wird vom Deploymentweg abgelehnt. Hostlokale Deploymentkonfiguration und Repository-Secrets dürfen nie protokolliert oder committed werden.
 
 Dokumentations-only-Änderungen lösen keinen Produktionsdeploy aus. Produktionsdeploys bauen, testen und prüfen den Paketstand vor dem Upload.
 
