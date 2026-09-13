@@ -1,289 +1,82 @@
 # NEUTRAL – Verbindungen und Wiederherstellung
 
-**Status:** ENDE-ZU-ENDE VERIFIZIERT  
-**Geprüft:** 2026-09-07
-**Repository:** `El-Ninjo1965/Neutral`  
-**Produktionsweg:** `PC → GitHub → GitHub Actions → FTPS → Webserver → HTTPS`
+**Status:** VERBINDLICHE BETRIEBSÜBERSICHT  
+**Geprüft:** 2026-09-13
 
-Diese Datei ist die verbindliche, secretsichere Betriebsübersicht für Codex-Sitzungen und Verbindungsdiagnosen. Sie enthält bewusst keine Passwörter, Tokens oder privaten Secret-Werte. Das Repository ist öffentlich.
+Diese Datei beschreibt den secretsicheren Betriebsweg für Repository-, CI-, Deployment- und Verbindungsdiagnosen. Historische Testcommits, einmalige Prüfläufe und alte Zugangszustände bleiben über Git nachvollziehbar und werden hier nicht fortgeschrieben.
 
-## 0. Verbindliche Codex-Arbeitsumgebung
+## Verbindlicher Weg
 
-Für Codex-Arbeit an diesem Projekt ist bis zum Projektabschluss die bestehende
-Codex-Umgebung **`Neutral`** zu verwenden. Die dauerhafte Aufgabenteilung lautet:
+`Arbeitsumgebung → GitHub main → GitHub Actions → FTPS → Webserver → HTTPS`
 
-- **Repository:** dauerhafte, nicht geheime Betriebsanleitung und Projektstand;
-- **Codex-Umgebung `Neutral`:** persistente Secrets und ENV-Konfiguration;
-- **einzelne Sandbox:** austauschbare Arbeitsumgebung ohne Anspruch auf eine
-  dauerhafte lokale Git-, CLI- oder Credential-Konfiguration.
+Repository und Hauptbranch sind `El-Ninjo1965/Neutral` und `main`. Produktionsdeployments laufen über den Workflow `FTPS Deploy`. Der konkrete physische Zielpfad kommt ausschließlich aus der host-/GitHub-seitigen Deploymentkonfiguration und wird nicht im Repository erraten oder festgeschrieben.
 
-Der am 2026-09-07 real bestätigte GitHub-Schreibweg ist:
+## Secret-Grenze
 
-`Neutral` → `GH_TOKEN` → GitHub-Konto `El-Ninjo1965` →
-`El-Ninjo1965/Neutral` → `main`
+Secret-Werte dürfen niemals in Repositorydateien, Issues, Pull Requests, Logs, Befehlszeilen-URLs oder Chatantworten geschrieben werden.
 
-Authentifizierter Schreibzugriff, Push nach `main`, Auslösung von GitHub Actions,
-FTPS und CodeQL wurden über diesen Weg erfolgreich nachgewiesen. Eine neue
-Sandbox prüft deshalb immer zuerst diesen Standardweg. Sie darf fehlenden
-GitHub-Schreibzugriff erst melden, nachdem Umgebung, Secret-Verfügbarkeit und
-Authentifizierung tatsächlich geprüft wurden.
+Verwendete Konfigurationsnamen können dokumentiert werden, insbesondere:
 
-## 1. Verbindliche Zuordnung
+- `GH_TOKEN` für autorisierten GitHub-Zugriff in Agent-/Codex-Umgebungen;
+- `FTP_HOST`, `FTP_PORT`, `FTP_USER`, `FTP_PASSWORD`;
+- `FTP_PROTOCOL`, `FTP_TARGET_DIR`, `FTP_SECURE`;
+- GitHub-Repository-Secrets für den produktiven FTPS-Workflow.
 
-| Komponente | Verbindlicher Wert |
-|---|---|
-| GitHub-Konto | `El-Ninjo1965` |
-| GitHub-Repository | `El-Ninjo1965/Neutral` |
-| Hauptbranch | `main` |
-| Git-Protokoll in Codex | HTTPS über `GH_TOKEN` aus Umgebung `Neutral` |
-| Verbindliches `origin` | `https://github.com/El-Ninjo1965/Neutral.git` |
-| Deployment | GitHub Actions, Workflow `FTPS Deploy` |
-| Produktionshost | `www.turbolikes.com` |
-| GitHub-Actions-FTPS | `server.cpprotect5.de`, Port `21`, FTPS, Hostnameprüfung aktiv |
-| Direkter manueller FTPS-Zugang | `ftp.turbolikes.com`, Port `21`, Explicit FTPS |
-| Verbindlicher FTPS-Benutzer | `root@turbolikes.com` |
-| Produktionsziel | aktueller, verifizierter Wert aus `FTP_TARGET_DIR`; niemals im Repository erraten oder festschreiben |
+Werte werden nur auf Vorhandensein und durch reale autorisierte Operationen geprüft, niemals ausgegeben. Lokale Deploymentwerte gehören in ignorierte hostlokale Environmentdateien; `.env` und reale Deploymentdateien werden nicht committed.
 
-Nicht auf ein anderes GitHub-Konto, Repository oder einen anderen Branch ausweichen. Ein einzelner fehlgeschlagener Aufruf beweist nicht, dass Repository oder Verbindung fehlen.
+## Git-/Repository-Prüfung
 
-## 2. Dauerhafte Secret-Speicherung
+Vor Änderungen oder Recovery:
 
-### Codex-Umgebung `Neutral`
-
-Die Umgebung benötigt für Entwicklungs- und direkten Betriebsweg folgende
-Secret-/ENV-Namen. Diese Liste dokumentiert ausschließlich Namen und Zweck:
-
-| Name | Zweck |
-|---|---|
-| `GH_TOKEN` | GitHub-Authentifizierung für Konto, Repository und Push |
-| `FTP_HOST` | Host des direkten FTPS-Zugangs |
-| `FTP_PORT` | FTPS-Port |
-| `FTP_USER` | verbindlicher FTPS-Benutzer |
-| `FTP_PASSWORD` | FTPS-Authentifizierung |
-| `FTP_PROTOCOL` | Auswahl des FTPS-Protokolls |
-| `FTP_TARGET_DIR` | aktueller verifizierter Produktionszielpfad |
-| `FTP_SECURE` | Aktivierung der sicheren FTPS-Verbindung |
-
-Secret-Werte dürfen niemals ausgegeben, in Befehlszeilen oder URLs eingebettet,
-in Repositorydateien geschrieben oder committed werden. Prüfungen beschränken
-sich auf Vorhandensein und reale authentifizierte Operationen. Für
-GitHub-Kommandos wird `GH_TOKEN` prozesslokal verwendet; es wird nicht in
-`origin` gespeichert.
-
-### GitHub
-
-Die produktiven Übertragungswerte liegen als Repository-Secrets in `El-Ninjo1965/Neutral`:
-
-- `FTP_HOST`
-- `FTP_USER`
-- `FTP_PASSWORD`
-- `FTP_PORT`
-- `FTP_TARGET_DIR`
-- `FTP_SSL_CHECK_HOSTNAME`
-
-GitHub zeigt gespeicherte Secret-Werte nach dem Anlegen nicht wieder an. Geprüft werden daher Secret-Namen, Aktualisierungszeit und ein realer Workflow-Lauf.
-
-### PC
-
-Die GitHub-CLI-Anmeldung liegt im Windows-Schlüsselbund. Lokale FTP-/FTPS-Zugangsdaten dürfen nur in einer ignorierten `.env`-Datei außerhalb der Versionskontrolle liegen. Die Vorlage ist [`.env.ftp.deploy.example`](.env.ftp.deploy.example).
-
-Folgende Dateien dürfen niemals committed werden:
-
-- `.env`
-- `.env.ftp.deploy`
-- Token-, Passwort- oder Credential-Exporte
-
-## 3. Verifizierter Stand
-
-Am 2026-09-01 wurde der vollständige Produktionsweg praktisch geprüft:
-
-1. Eine zufällig benannte, temporäre PHP-Prüfdatei wurde lokal erstellt.
-2. Test-Commit `3d61de7` wurde nach GitHub `main` gepusht.
-3. GitHub Actions übertrug das Produktions-Staging erfolgreich per FTPS.
-4. Der erste öffentliche HTTPS-Aufruf lieferte HTTP `200`, die erwartete Prüfkennung und `self_deleted=true`.
-5. Die Datei löschte sich auf dem Server selbst; der zweite Aufruf lieferte HTTP `404`.
-6. Cleanup-Commit `e2ca709` entfernte die Datei aus Git und GitHub.
-7. Das Cleanup-Deployment war erfolgreich; die öffentliche URL lieferte abschließend weiterhin HTTP `404`.
-
-Nachweise:
-
-- [FTPS-Testdeployment](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485515863)
-- [FTPS-Cleanup-Deployment](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485756322)
-- [CodeQL des Cleanup-Commits](https://github.com/El-Ninjo1965/Neutral/actions/runs/33485756143)
-- [FTPS-Deployment der Setup-Härtung](https://github.com/El-Ninjo1965/Neutral/actions/runs/33490787101)
-- [CodeQL der Setup-Härtung](https://github.com/El-Ninjo1965/Neutral/actions/runs/33490786715)
-
-Die temporäre Datei ist lokal, auf GitHub und auf dem Server entfernt.
-
-## 4. Schnellprüfung
-
-### Start einer neuen Codex-Sandbox
-
-Nicht erneut die gesamte Zugangshistorie untersuchen. In dieser Reihenfolge:
-
-1. bestätigen, dass die Task in der Codex-Umgebung `Neutral` läuft;
-2. Repository `El-Ninjo1965/Neutral` und aktuellen Arbeitsbaum prüfen;
-3. `GH_TOKEN` ausschließlich auf Vorhandensein prüfen, niemals ausgeben;
-4. `origin` prüfen und bei Bedarf auf die URL aus Abschnitt 1 setzen;
-5. `git fetch origin --prune` ausführen und `HEAD` mit `origin/main` vergleichen;
-6. `CODEX.md` vollständig lesen;
-7. den neuesten Auftrag vollständig nach `CURRENT-TASK.md` übernehmen;
-8. erst nach bestandener Capture-Prüfung arbeiten.
-
-Ein in einer isolierten Sandbox fehlendes `origin` ist kein Projektfehler. Vor
-dem Setzen oder Korrigieren eines Remotes werden vorhandene Änderungen und lokale
-Commits geprüft; nichts wird blind zurückgesetzt oder verworfen.
-
-Falls GitHub-Schreibzugriff scheinbar fehlt, werden vor einer Zugangsdiagnose
-richtige Umgebung `Neutral`, Vorhandensein von `GH_TOKEN`, erfolgreiche
-GitHub-Authentifizierung, Repositoryzuordnung und Schreibberechtigung geprüft.
-Erst wenn dieser dokumentierte Standardweg tatsächlich fehlschlägt, beginnt eine
-weitergehende Diagnose.
-
-### PC und lokales Git
-
-Im Repository ausführen:
-
-```powershell
+```bash
 git status --short --branch
 git remote -v
 git rev-parse HEAD
 git rev-parse origin/main
 ```
 
-Erwartung:
+Erwartet werden der beabsichtigte Branch, das korrekte Repository und keine unerwarteten lokalen Änderungen. Vor Reset, Clone oder Remote-Korrektur werden nicht veröffentlichte Änderungen und Commits gesichert bzw. verglichen.
 
-- Branch `main`
-- Remote `https://github.com/El-Ninjo1965/Neutral.git`
-- keine unerwarteten Arbeitskopieänderungen
-- `HEAD` und `origin/main` identisch, sofern keine bewusst unpublizierte Arbeit existiert
+Ein fehlendes `origin` oder fehlende persistente CLI-Anmeldung in einer austauschbaren Sandbox ist kein Projektdefekt. Zuerst Umgebung, Tokenverfügbarkeit, Repositoryzuordnung und Authentifizierung prüfen.
 
-### GitHub-Anmeldung und Rechte
+## CI-/Deployment-Prüfung
 
-```powershell
-gh auth status
-gh repo view El-Ninjo1965/Neutral --json nameWithOwner,defaultBranchRef,viewerPermission,url
-```
+Bei einem fehlgeschlagenen Workflow:
 
-Erwartung:
+1. den konkreten fehlgeschlagenen Schritt lesen;
+2. unterscheiden, ob Tests/Paketbau oder erst FTPS scheitern;
+3. Secret-Namen und Konfiguration auf Vorhandensein prüfen, Werte niemals ausgeben;
+4. `FTP_TARGET_DIR` nur aus autoritativer Konfiguration verwenden;
+5. Hostnamen-/Zertifikatsprüfung nicht abschwächen;
+6. erst nach Ursachenklärung erneut ausführen;
+7. anschließend den öffentlichen HTTPS-Zustand read-only prüfen.
 
-- aktives Konto `El-Ninjo1965`
-- Default-Branch `main`
-- Berechtigung `ADMIN`
+Ein erfolgreicher Workflow bestätigt nur den tatsächlich ausgeführten Weg. Eine direkte manuelle FTPS-Verbindung oder andere Umgebung muss separat geprüft werden.
 
-In Codex muss `GH_TOKEN` dabei aus der Umgebung `Neutral` stammen. Der Tokenwert
-wird weder angezeigt noch mit `gh auth token` abgefragt. Eine persistente
-CLI-Anmeldung in der austauschbaren Sandbox ist nicht erforderlich.
+Dokumentations-only-Commits lösen keinen Produktionsdeploy aus.
 
-### GitHub-Secrets
+## Wiederherstellung des Arbeitszugriffs
 
-```powershell
-gh secret list --repo El-Ninjo1965/Neutral
-```
+Wenn ein lokaler Checkout fehlt, Repository neu klonen und anschließend Abhängigkeiten und Tests ausführen. Einen vorhandenen alten Checkout nicht ungeprüft überschreiben.
 
-Die in Abschnitt 2 genannten sechs Secret-Namen müssen vorhanden sein. Keine Secret-Werte in Terminalausgaben, Logs oder Dokumentation kopieren.
+Wenn GitHub-Authentifizierung fehlt, den vorgesehenen autorisierten Login-/Tokenweg der jeweiligen Umgebung wiederherstellen und danach Repository sowie Berechtigung erneut prüfen.
 
-### Workflows und FTPS
+Wenn GitHub-Push funktioniert, FTPS jedoch scheitert, ausschließlich Workflow, Deploymentkonfiguration und Zielpfad diagnostizieren; keine alten Accounts oder historischen Fallback-Zugänge reaktivieren.
 
-```powershell
-gh run list --repo El-Ninjo1965/Neutral --branch main --limit 10
-```
+## Runtime-Wahrheit
 
-Der neueste erwartete Lauf `FTPS Deploy` muss `completed/success` erreichen. Details eines Laufs:
+Aktuelle hostlokale Environment-, Datenbank-, Session- und Auth-Konfiguration ist autoritativ. Historische Konfigurationswerte dürfen nicht als aktuelle Wahrheit übernommen werden.
 
-```powershell
-gh run view RUN_ID --repo El-Ninjo1965/Neutral
-```
+User- und Admin-Authentifizierung verwenden getrennte Scopes. Ein Login darf den jeweils anderen Scope nicht überschreiben.
 
-Ein erfolgreicher FTPS-Lauf bestätigt Anmeldung, TLS-Verbindung, Zielpfad und Upload aus GitHub Actions. Er bestätigt nicht automatisch eine direkte manuelle PC-zu-FTPS-Verbindung.
+Admin-Verbindungsansichten zeigen nur autoritative, sanitiserte Betriebsinformationen. Passwörter, Tokens, rohe Environmentwerte und Beispiel-URLs dürfen nicht als aktive Konfiguration erscheinen. Nicht konfigurierte optionale Provider werden ausdrücklich als nicht konfiguriert dargestellt.
 
-### Öffentliche Website
+## Sicherheitsregeln
 
-```powershell
-curl.exe --silent --show-error --output NUL --write-out "%{http_code}" https://www.turbolikes.com/
-```
+- keine Passwörter oder Tokens in Git oder Dokumentation;
+- keine produktiven Secrets in Tests;
+- temporäre öffentliche Prüfdaten harmlos und vollständig entfernbar halten;
+- vor Erfolgsmeldungen Remote-Commit, Workflowstatus und Zielzustand frisch prüfen;
+- fehlender Zugriff einer einzelnen Sandbox beweist nicht, dass Server- oder Repositoryzugang grundsätzlich fehlt.
 
-Ein HTTP-Status allein bestätigt nur die öffentliche Erreichbarkeit. Ein echter Ende-zu-Ende-Deploymenttest benötigt zusätzlich eine eindeutige temporäre Prüfkennung und vollständiges Cleanup.
-
-## 5. Wiederherstellung
-
-### GitHub-CLI ist abgemeldet oder Token ungültig
-
-Auf dem PC starten:
-
-```powershell
-gh auth login --hostname github.com --git-protocol https --web
-```
-
-GitHub zeigt einen Gerätecode. Die Freigabe kann auf einem iPad oder einem anderen Gerät unter `https://github.com/login/device` für das Konto `El-Ninjo1965` erfolgen. Danach `gh auth status` und die Repositoryabfrage aus Abschnitt 4 wiederholen.
-
-### Repository fehlt lokal
-
-```powershell
-git clone https://github.com/El-Ninjo1965/Neutral.git
-Set-Location Neutral
-npm ci
-npm test
-```
-
-Vor einem neuen Clone lokale, nicht gepushte Commits sichern und mit `origin/main` vergleichen. Niemals einen alten Checkout ungeprüft überschreiben oder zurücksetzen.
-
-### GitHub-Push funktioniert, FTPS-Workflow schlägt fehl
-
-In dieser Reihenfolge prüfen:
-
-1. aktuellen Workflow-Lauf und fehlgeschlagenen Schritt öffnen;
-2. Vorhandensein der sechs Repository-Secrets prüfen;
-3. keine Secret-Werte ausgeben oder in Kommentare kopieren;
-4. `FTP_TARGET_DIR` und `FTP_SSL_CHECK_HOSTNAME` auf beabsichtigte Konfiguration prüfen;
-5. fehlgeschlagenen Lauf erst nach Ursachenklärung erneut starten;
-6. nach erfolgreichem Lauf die erwartete öffentliche URL per HTTPS prüfen.
-
-`FTP_TARGET_DIR` muss ausdrücklich gesetzt sein; auch das Rootziel `/` wird niemals automatisch angenommen. `FTP_SSL_CHECK_HOSTNAME` muss `true` bleiben, weil `false` vom Deploymentwerkzeug abgelehnt wird. Ein Wechsel von Protokoll, Server, Port, Benutzer, Ziel oder Paketformat übernimmt wegen des gebundenen lokalen Deploymentmanifests keine früheren Löschkandidaten.
-
-### Workflow wartet auf Genehmigung
-
-Status mit `gh run list` und `gh run view` belegen. Nur Läufe mit `queued`, `in_progress`, `waiting` oder einer angezeigten Environment-Freigabe benötigen weitere Aufmerksamkeit. Abgeschlossene fehlgeschlagene Läufe blockieren neue Arbeit nicht.
-
-### Verbindliche FTPS-Wege
-
-Der GitHub-Actions-Produktionsweg verwendet verbindlich
-`server.cpprotect5.de:21` per FTPS mit aktiver Hostnameprüfung. Der direkte
-manuelle Weg verwendet `ftp.turbolikes.com:21`, Explicit FTPS und den Benutzer
-`root@turbolikes.com`. Beide verwenden den aktuell verifizierten Zielpfad nur
-über `FTP_TARGET_DIR`. Alte historische FTP-Konten dürfen nicht wiederhergestellt
-oder als Fallback eingesetzt werden.
-
-## 6. Aktuelle ENV-, Datenbank- und Auth-Wahrheit
-
-Die aktuell wiederhergestellte DB-, Bootstrap-, Admin-, Auth- und
-ENV-Konfiguration bleibt maßgeblich. Historische Werte dürfen nur verwendet
-werden, wenn sie dem aktuellen Projektvertrag entsprechen. Insbesondere darf
-keine historische Auth-Struktur die aktuelle getrennte User-/Admin-Sessionstruktur
-ersetzen.
-
-`P1 = LIVE BESTANDEN`
-
-User-App- und Admin-Authentifizierung bleiben getrennte Scopes; ein Login darf
-die Identität des jeweils anderen Scopes nicht überschreiben.
-
-## 7. Sicherheitsregeln
-
-- Keine Passwörter oder Tokens in Git, Markdown, Issues, Pull Requests oder Chatantworten wiedergeben.
-- Keine produktiven Secrets in Testdateien einbetten.
-- Temporäre öffentliche Prüfdaten zufällig benennen, inhaltlich harmlos halten und nach dem Test lokal, auf GitHub und auf dem Server entfernen.
-- Vor einer Erfolgsmeldung lokalen Status, Remote-Commit, Workflow-Endstatus und öffentliche URL frisch verifizieren.
-- Der PC muss eingeschaltet, online und der lokale Codex-Host erreichbar sein, damit lokale PC-Arbeit möglich ist.
-- GitHub-Secrets bleiben nutzbar, bis Zugangsdaten geändert, widerrufen oder vom Hostinganbieter ersetzt werden.
-
-## 8. Aussagegrenzen
-
-Bestätigt ist der Weg `PC → GitHub → GitHub Actions → FTPS → Webserver → HTTPS`. Eine direkte manuelle Übertragung `PC → FTPS` muss separat mit einer lokalen, nicht versionierten Deploy-Konfiguration geprüft werden. Fehlender Zugriff einer einzelnen Codex-Task-Sandbox auf eine `.env` bedeutet nicht, dass die Datei oder der Serverzugang fehlen.
-
-## Admin runtime inventory
-
-The Admin connection view reports only authoritative configured connection types and health. It never displays passwords, tokens, raw environment values, or example URLs as active configuration. Optional provider integrations are explicitly reported as not configured. Database metadata is restricted to safe operational fields in the protected Admin domain.
-
-## Operations readiness
-
-Connection status is derived from the configured primary runtime database with a bounded safe ping. Optional providers are explicitly `not_configured`. Failures are shown as unavailable/error states and never replaced by example endpoints or exposed credentials.
+Aktueller Implementierungs- und Live-Stand steht in `STATUS.md`; diese Datei enthält nur den dauerhaften Betriebs- und Recoveryvertrag.
