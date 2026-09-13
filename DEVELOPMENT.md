@@ -1,18 +1,13 @@
 # NEUTRAL – Lokale Entwicklungsumgebung
 
-## Standabgrenzung 2026-09-11
+**Status:** VERIFIZIERTE WINDOWS-REFERENZUMGEBUNG  
+**Geprüft:** 2026-09-13
 
-Lokale Tests und Manifestaudits können Codeverträge belegen, überschreiben aber keine Betreiber-Livefehler. Insbesondere bleiben Profile-Aktivierung, Media-Installation, Unlimited-Login, das statisch ersetzte User-Login-Eye und Field Notes trotz grüner lokaler Tests operator-live offen. Node.js bleibt Entwicklungswerkzeug; PHP 8.1+/MySQL/HTTPS bilden die Produktionsbasis.
+Diese Datei beschreibt ausschließlich die lokale Entwicklungsumgebung. Aktuelle Livefehler und Operator-Retests stehen in `STATUS.md` und `CHATGPT.md`.
 
----
+Neutral Core 1.0 muss weiterhin ohne Node.js auf PHP-/MySQL-Shared-Hosting funktionieren. Node.js bleibt Entwicklungs- und Testwerkzeug.
 
-**Status:** VERIFIZIERTE WINDOWS-REFERENZUMGEBUNG
-
-**Geprüft:** 2026-09-01
-
-Diese Datei beschreibt die lokale Entwicklungsumgebung. Sie ändert nicht die Produktionsvoraussetzungen: Neutral Core 1.0 muss weiterhin ohne Node.js auf PHP-/MySQL-Shared-Hosting funktionieren.
-
-Die verbindliche Übersicht zu PC-, GitHub-, FTPS- und Webserververbindungen sowie deren Wiederherstellung steht in [`CONNECTIONS.md`](CONNECTIONS.md).
+Die verbindliche Übersicht zu PC-, GitHub-, FTPS- und Webserververbindungen sowie deren Wiederherstellung steht in `CONNECTIONS.md`.
 
 ## Installierte Werkzeuge
 
@@ -24,7 +19,7 @@ Die verbindliche Übersicht zu PC-, GitHub-, FTPS- und Webserververbindungen sow
 | npm | 11.17.0 | reproduzierbare Installation aus `package-lock.json` |
 | PHP CLI | 8.5.8 | lokale Prüfung der PHP-Referenzproduktion |
 
-Composer, Docker, Redis, WSL und lokale MySQL-Server wurden bewusst nicht installiert, weil sie für den aktuellen Fertigstellungsblock keinen unmittelbaren Nutzen bringen.
+Composer, Docker, Redis, WSL und lokale MySQL-Server sind keine Voraussetzung für den aktuellen Entwicklungsweg.
 
 ## PHP-Erweiterungen
 
@@ -39,16 +34,16 @@ Die lokale `php.ini` aktiviert die für Neutral relevanten Erweiterungen:
 - `pdo_mysql`
 - `session`
 
-Die Konfiguration liegt hostlokal außerhalb des Repositorys. Sie enthält keine Projektsecrets.
+Die Konfiguration liegt hostlokal außerhalb des Repositorys und enthält keine Projektsecrets.
 
 ## Git und GitHub
 
-Git verwendet global die bestehende Autorenidentität des Repository-Eigentümers. GitHub CLI ist über den Windows-Schlüsselbund mit dem Konto `El-Ninjo1965` verbunden. Git verwendet HTTPS und den Credential Manager; Tokens werden nicht in Repositorydateien oder Skripten gespeichert.
+GitHub CLI ist über den Windows-Schlüsselbund mit dem Konto `El-Ninjo1965` verbunden. Git verwendet HTTPS und den Credential Manager; Tokens werden nicht in Repositorydateien oder Skripten gespeichert.
 
-Zusätzliche globale Git-Regeln:
+Globale Git-Regeln:
 
 - Standardbranch `main`
-- automatisches Entfernen veralteter Remote-Refs beim Fetch
+- veraltete Remote-Refs beim Fetch entfernen
 - lange Windows-Pfade aktiviert
 - keine automatische CRLF-Umschreibung
 
@@ -61,8 +56,8 @@ npm ci
 npm test
 ```
 
-`npm ci` installiert exakt den Lockfile-Stand. `node_modules` darf nicht committed oder deployed werden. Node-Dateien bleiben aus dem PHP-Produktionspaket ausgeschlossen.
+`npm ci` installiert exakt den Lockfile-Stand. `node_modules` wird weder committed noch deployed. Node-Dateien bleiben aus dem PHP-Produktionspaket ausgeschlossen.
 
-## Verifikationsstand
+## Wahrheitsgrenze
 
-Am 2026-09-01 wurden GitHub-Anmeldung, Repositoryabfrage, Git-Push im Trockenlauf, PHP-Erweiterungen, `argon2` und die vollständige Testsuite geprüft. Der Teststand ist in [`STATUS.md`](STATUS.md) dokumentiert; fehlgeschlagene Tests sind Projektfehler und keine fehlenden lokalen Werkzeuge mehr.
+Lokale Tests und Manifestaudits können Codeverträge belegen, ersetzen aber keinen ausdrücklich angeordneten Operator-Livetest. Der aktuelle Test- und Produktionsstand steht in `STATUS.md`.
