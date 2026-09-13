@@ -1,173 +1,52 @@
 # NEUTRAL – Datenhaltung
 
-## Technischer Korrekturstand 2026-09-11
+**Status:** VERBINDLICHER DETAILVERTRAG
+**Geprüft:** 2026-09-13
 
-`user_profiles` ist weiterhin Teil des Core-Schema-Baselinesatzes; das Profile-Modul deklariert dieselbe Tabelle und eine additive Migration für `gender` und `avatar_data`. Diese Doppelzuständigkeit ist code-seitig vorhanden und wahrscheinlich relevant für den live fehlgeschlagenen Profile-Lifecycle; bis zur Reparatur ist keine erfolgreiche Modulmigration zu behaupten. Profile-Daten werden bei Deaktivierung laut `retain` nicht gelöscht.
+## Client
 
-`modules`, `module_state` und `module_migrations` halten Lifecycle-/Manifestzustand. Sharing, Notifications, Moderation und Postbox deklarieren derzeit keine eigenen Tabellen; insbesondere existiert keine Postbox-Nachrichtendatenbank. Media deklariert ebenfalls keine Modultabelle. Bestehende Tabellen `user_media` und `media_moderation_history` stammen aus der Core-Schemabasis und sind nicht Beleg eines vollständigen eigenständigen Media-/Moderation-Moduls.
+Browserlokale Speicherung dient Einstellungen, Cache und strukturierten Offline-Daten. IndexedDB darf den ersten stabilen UI-Render nicht blockieren. Lokale Daten erteilen keine Serverrechte.
 
----
+Vorhandene Stores für Users, Modules, Logs, Sessions, Settings, Cache und Sync belegen nur die jeweilige technische Grundlage. Vollständige Sync-Queue, Retry/Backoff, Idempotenz, Konfliktauflösung und zentrale Cache-Invalidierung sind davon getrennte Fähigkeiten.
 
-**Status:** DETAILVERTRAG
+## Server
 
-**Geprüft:** 2026-09-01
-**Autorität:** untergeordnet zu [`CORE-1.0.md`](CORE-1.0.md) und [`Architecture.md`](Architecture.md).
+Produktion verwendet PDO mit MySQL/MariaDB. Datenbankzugriffe erfolgen ausschließlich serverseitig. Setup führt Core-Migrationen und Seed-Schritte aus; normaler Runtimebetrieb soll mit minimal erforderlichen Rechten arbeiten.
 
-## Statuslegende
+## Core-Schema
 
-**VORHANDEN**, **TEILWEISE**, **FEHLT**, **GEPLANT** beziehen sich auf den aktuellen Code.
+Der verwaltete Core umfasst Schema-/RBAC-/User-/Session-/Settings-/Module-/Setup-/Audit-/Backup-/Release-/Profile-/Package-/License-/Presence-/Media-Grundtabellen. Das Vorhandensein einer Coretabelle beweist nicht, dass ein optionales Fachmodul vollständig implementiert ist.
 
-# CLIENT
+## Modul-Daten
 
-## 1. IndexedDB
+Optionale Module besitzen ihre deklarierten Tabellen und Migrationen. Der Core nimmt keine neue produktspezifische Fachlogik in sein Basisschema auf.
 
-**VORHANDEN:** `Web-App/core/database-manager.js` konfiguriert standardmäßig Typ `indexeddb`, Name `CoreDB`, Version `1`. `init()` öffnet die Datenbank; `onupgradeneeded` erzeugt fehlende Stores. Öffentliche Operationen sind `save`, `get`, `insert`, `update`, `delete`, `clear`, `findByIndex`, `getAll` und `transaction`.
+Modultabellen werden über `database.tables` beschrieben. Installation und Update führen nur deklarierte Migrationen aus. Deaktivierung löscht Daten nicht automatisch. Uninstall respektiert den deklarierten Datenvertrag.
 
-### Tatsächlich definierte Stores
+`field_notes_items` ist ein Beispiel für eine modul-eigene Tabelle und wird ausschließlich über diesen generischen Vertrag behandelt. Bestehende Profile-Daten bleiben nicht-destruktiv erhalten; neue Profile-Funktionalität gehört zum Profile-Modul.
 
-| Store | Key | Indizes | Aktueller Zweck/Status |
-|---|---|---|---|
-| `users` | `id` | `email`, `role`, `active` | lokale Framework-/Entwicklungsdaten; VORHANDEN |
-| `modules` | `id` | `name`, `version`, `status` | lokaler Modulzustand; VORHANDEN |
-| `logs` | `id` | `timestamp`, `level`, `source` | lokale Logs; VORHANDEN |
-| `sessions` | `id` | `userId`, `createdAt`, `expiresAt` | lokaler Sessionartefakt-Store; keine Serverautorität |
-| `settings` | `key` | `category` | lokale Einstellungen; VORHANDEN |
-| `cache` | `key` | `createdAt`, `ttl` | Cachegrundlage; TEILWEISE, keine zentrale Invalidierungspolitik |
-| `sync` | `id` | `timestamp`, `status` | Sync-Grundlage; TEILWEISE, keine vollständige Queueengine |
+## Migrationen
 
-## 2. localStorage
+Core- und Modulmigrationen sind versioniert und nachvollziehbar. Modulmigrationen werden validiert, mit Checksummen geschützt und in `module_migrations` nachgewiesen. Nachträglich veränderte bereits angewendete Migrationen werden nicht still akzeptiert.
 
-**VORHANDEN:** `CoreStorage`, Config-/Setup-/Theme-/Auth- und GPS-nahe Komponenten verwenden browserlokale Speicherung. Schlüssel und Payloads sind komponentenspezifisch; localStorage ist synchron und unverschlüsselt und darf keine Serverrechte oder hochsensiblen Geheimnisse tragen.
+Updatefehler dürfen keinen scheinbar erfolgreichen Modulzustand hinterlassen. Automatische Downgrades sind nicht Teil des Vertrags.
 
-## 3. Clientmigrationen
+## Sessions und Geräte
 
-**TEILWEISE:** IndexedDB nutzt die Datenbankversion und erzeugt fehlende Stores bei Upgrade. Ein versionierter, nachvollziehbarer Migrationskatalog mit Roll-forward-/Fehlerstrategie fehlt.
+Sessions unterscheiden User- und Admin-Scope. User-Sessions dürfen persistent sein; Admin-Sessions dürfen endlich sein. Geräteidentität verwendet eine zufällige persistente Installations-ID. Browser-/OS-Angaben dienen nur Support und Anzeige.
 
-## 4. Cache
+Erneuter Login derselben Installation ersetzt ältere aktive Sessionzustände desselben Scopes. Device-Limits löschen bestehende Sessions nicht automatisch.
 
-**TEILWEISE:** Store und TTL-Index existieren. Einheitliche Read-through/Write-through-, Invalidierungs- und Größenregeln fehlen.
+## Packages und Licenses
 
-## 5. Sync-Daten
+Direktes User-Package, License-Package und Device-Limit-Modus bleiben getrennte Daten. Effektive Werte werden serverseitig aufgelöst. `unlimited` darf nicht als numerisch `0` interpretiert werden.
 
-**TEILWEISE/FEHLT:** Der Store `sync` belegt die geplante Richtung. Persistente Queueverarbeitung, Retry/Backoff, Idempotenzschlüssel, Änderungs-/Tombstone-Modell, Datenversionen und Konfliktauflösung fehlen als universelle Implementierung.
+## Backup
 
-# SERVER
+Backup V2 sichert den verwalteten Core-Tabellensatz, deklarierte Tabellen installierter Module und verwaltete Medien. Sessions und Loginversuche bleiben ausgeschlossen. Details stehen in `BACKUP-CONTRACT.md`.
 
-## 6. Engine und Zugriff
+## Betrieb
 
-**VORHANDEN:** `Server/php/src/Database.php` verwendet PDO mit MySQL/MariaDB-Konfiguration aus `AppConfig`. Verbindungen verwenden Exceptions und vorbereitete Statements in den Services. `ensureDatabaseExists()` kann die konfigurierte Datenbank anlegen. Produktion benötigt `pdo_mysql`.
+Datenbankzugriffe verwenden serverseitige Validierung und vorbereitete Statements. Explizite Readiness-/Migrationsprüfungen dürfen Deployment und Diagnose unterstützen, ersetzen aber keine Live-Abnahme.
 
-Node-Entwicklung besitzt zusätzlich file-/memory-basierte Persistenzadapter. Diese sind keine MariaDB-Produktionstabellen.
-
-## 7. Tatsächlich definierte Tabellen
-
-Quelle ist `Server/php/src/SchemaMigrator.php`; zusätzliche Tabellen dürfen nicht aus Zielvorstellungen abgeleitet werden.
-
-| Tabelle | Zweck | Wesentliche Beziehungen |
-|---|---|---|
-| `schema_migrations` | angewendete Migrationen und Checksummen | eigenständig |
-| `roles` | Rollenstamm | referenziert durch `user_roles`, `role_permissions` |
-| `permissions` | Permissionkatalog, optionaler Scope | referenziert durch `role_permissions` |
-| `users` | Benutzer und Passwort-Hash | Rollen/Sessions/Audit/Settings |
-| `user_roles` | n:m Benutzer–Rolle | FK zu `users`, `roles`, Cascade |
-| `role_permissions` | n:m Rolle–Permission | FK zu `roles`, `permissions`, Cascade |
-| `sessions` | Session-ID, CSRF, Laufzeit/Clientmetadaten | FK zu `users`, Cascade |
-| `settings` | JSON-Wert pro Setting-Key | optional `updated_by` → User |
-| `modules` | registrierte Manifeste/Pfade/Version | 1:1 State, 1:n Migrationen |
-| `module_state` | Status, Aktivierung, Version, Fehler | FK zu `modules`, Cascade |
-| `module_migrations` | angewendete Modulmigrationskeys | FK zu `modules`, Cascade |
-| `setup_status` | aktueller Installationsstand | eigenständig, optional updater |
-| `audit_log` | Aktion, Ressource, Ergebnis, Details | optional Actor → User |
-| `backups` | Backupmetadaten/-status | eigenständig |
-| `release_state` | Version, Umgebung, Maintenance/Checks | eigenständig |
-
-Das GPS-Manifest deklariert aktuell `database.tables: []`; es besitzt daher keine serverseitige GPS-Tabelle.
-
-## 8. Migrationen
-
-Bei einer Neuinstallation prüft `PrerequisiteChecker` zunächst die Erreichbarkeit des konfigurierten MySQL-Servers, ohne ein bereits vorhandenes Schema vorauszusetzen. `SetupInstaller` lässt danach `Database.ensureDatabaseExists()` das konfigurierte Schema prüfen beziehungsweise mit ausreichendem temporärem Recht anlegen und führt erst anschließend `SchemaMigrator` und `CoreDataSeeder` aus.
-
-**VORHANDEN:** Migration `2026_08_25_0001_core_schema` erzeugt die genannten Tabellen. `status()` vergleicht bekannte und angewendete Keys; `migrate()` wendet ausstehende Statements an und speichert SHA-1-Checksummen.
-
-**VORHANDEN für Module:** `ModuleMigrationRunner` gleicht Manifest und Serverdefinition ab, prüft SHA-256-Checksummen, serialisiert Läufe über eine DB-Sperre und führt bei einem Fehler die im begonnenen Batch deklarierte Gegenmigration rückwärts aus. Bereits angewendete, nachträglich veränderte oder alte checksumlose Migrationen werden sicher abgelehnt. Modulupdate kompensiert neue Migrationen, falls die anschließende atomare Metadaten-/Permission-Aktualisierung scheitert; ein Downgrade ist nicht zulässig. `retain` tombstoniert die Registration ohne Cascade und erhält damit die Migrationshistorie. Der Core-Schema-Upgradepfad verifiziert nach einem partiellen DDL-Lauf bereits vorhandene Spalten, bevor er ihn fortsetzt.
-
-## 9. Konfiguration
-
-Hostlokale `.env`-Werte werden über `EnvLoader`/`AppConfig` gelesen. Erwartete Daten umfassen Host, Port, Datenbankname, Benutzer, Passwort und Charset gemäß Code. Werte werden nicht committed oder im Client ausgeliefert.
-
-## 10. Rechte und Sicherheit
-
-Der DB-Benutzer soll nur notwendige Rechte auf das NEUTRAL-Schema besitzen. Datenbankerstellung benötigt temporär weitergehende Rechte; der normale Betrieb soll ohne globale Administration auskommen. Zugriffe erfolgen serverseitig, nie direkt aus der Web-App. Backups, Rotation, Verschlüsselung und Datenschutzfristen sind betriebliche Pflichten und noch nicht vollständig automatisiert.
-
-## 11. Ziel-/Fehlstellen
-
-- **GEPLANT:** Adapterfähigkeit für Infrastrukturwechsel ohne Client-Core-Umbau.
-- **FEHLT:** vollständiger clientseitiger Sync-/Konfliktvertrag.
-- **FEHLT:** formale Clientmigrationen mit Tests für Versionssprünge.
-- **TEILWEISE:** Der logische Core-Backup-/Restore-Vertrag ist in `BACKUP-CONTRACT.md` dokumentiert und isoliert geprüft. Aufbewahrung/Cron bleiben Hostbetrieb; Modul-Nutzdatentabellen und Medienbinärdateien sind im aktuellen Format nicht enthalten.
-
-## 12. Verbindliche Client-Verantwortlichkeiten
-
-- `CoreStorage`: kleine, nicht sensible, namespaced Key-Value-Daten in `localStorage`.
-- `DatabaseManager`: strukturierte/offlinefähige Datensätze und additive IndexedDB-Schema-Upgrades; vorhandene Stores werden nicht ersetzt.
-- `StorageManager`: Adapter für Framework-/Entwicklungs- und Serverpersistenz, nicht parallele Autorität für browserseitige CoreDB-Records.
-- `cache`: strukturierter Cache-Store; Gültigkeits-/Invalidierungspolitik bleibt eine separate offene Produktaufgabe.
-- `sync`: nur reservierte Persistenzgrundlage; P2 implementiert keine Queue- oder Konfliktlogik.
-
-IndexedDB wird in P3 ausschließlich in `CoreStartup.startBackground()` geöffnet. First Paint und UI-Interaktivität warten nicht darauf; Operationen, die strukturierte Daten benötigen, müssen die Storage-Ready-Phase abwarten. Ein Öffnungsfehler wird diagnostiziert und darf die statische Shell nicht ausblenden.
-
-## Operations migration (2026-09-09)
-
-Migration `2026_09_09_0004_operations_device_sessions` adds random device identity/label fields and an indexed user/device/session lookup, and removes legacy Admin permission grants from `viewer` and `user`. `release_state` is the authoritative persistent maintenance/release record. Device sessions and login throttling remain excluded from logical backups; restore clears both before re-login.
-
-## Explicit production migrations
-
-`scripts/run-core-migrations.php` is the idempotent cPanel/CLI entrypoint. Setup and login remain fallback safety lines, but deployment smoke now fails when `system/readiness` reports pending Core migrations. Partial Device Session migrations tolerate already-existing expected columns/index and the migration table remains authoritative.
-
-## 2026-09-09 Session and audit semantics
-
-For a `(user_id, device_id)` installation, only the newest successful login remains active; preceding active rows become `replaced` and no longer contribute to active counts. Audit queries join the actor handle for authorized display while retaining `actor_user_id` as the stable reference. Unchanged settings payloads do not update settings rows and do not append audit events.
-
-## Migration `2026_09_09_0005_account_license_foundation`
-
-Adds nullable/optional user e-mail plus `user_profiles`, `packages`, `licenses`, `license_users`, `installation_presence`, `user_media`, and `media_moderation_history`. Package entitlements and limits are versionable JSON configuration; SQL relations enforce organization/user scope. A NULL license/device limit represents `unlimited`. Presence stores random installation ID, audience and server-contact timestamps only. Media rows and immutable moderation history support `pending/approved/rejected/deleted` without public publishing.
-
-## Migration 2026_09_09_0006
-
-`license_users.membership_status` provides scoped `active`/`blocked` membership without deleting or globally blocking the account. The indexed license/status projection supports organization administration. Existing `user_media` and `media_moderation_history` tables are now exercised by the production service/API workflow; media bytes remain outside publicly executable paths.
-
-## Login-attempt ownership
-
-The `login_attempts` table is migration-managed. `PdoLoginAttemptStore` performs no `CREATE`/`ALTER` at request time, allowing production application credentials to follow least privilege (runtime DML without schema DDL).
-
-## Migration 2026_09_10_0007
-
-Packages gain an optional description. Licenses and license-user assignments gain explicit device-limit modes so `package default`, numeric override and `unlimited` are unambiguous. License-manager selection remains normalized in `license_users`: replacement is transactional, the selected user must exist and be active, and clearing the selection removes only the manager membership. Permission `audit.clear` is independently assignable and initially granted to the built-in Admin role. Package/license/user assignments remain normalized; reducing a limit never deletes sessions.
-
-License hard-delete is allowed only when `license_users` contains no User or Manager reference; Package, User and Session rows are never silently cascaded by this action, and successful delete plus Audit insert share one transaction. `core.ui.settings.backupStoragePath` stores the optional installation-specific absolute backup directory as non-secret configuration. Changing it affects subsequent list/create/upload/download/restore/retention operations and the automatic runner; files in an earlier directory are not moved. The host-only encryption key is not persisted there.
-
-The portable v1 set is exactly: `roles`, `permissions`, `users`, `user_roles`, `role_permissions`, `settings`, `modules`, `module_state`, `module_migrations`, `setup_status`, `audit_log`, `backups`, `release_state`, `user_profiles`, `packages`, `licenses`, `license_users`, `installation_presence`, `user_media`, `media_moderation_history`, and `schema_migrations`. All rows/columns are exported in one repeatable-read transaction and imported in one transaction. `sessions` and `login_attempts` are excluded/cleared. Module-owned tables and files referenced by `user_media.storage_path` are not currently portable.
-
-Backup v2 extends the portable table set at runtime with every installed module table declared by its validated `manifest_json.database.tables`; it never enumerates arbitrary schema tables. Target release/module declarations must match before restore. Core media bytes accompany `user_media` metadata in the encrypted file section.
-Migration `2026_09_11_0008_direct_user_packages` adds nullable `users.package_id`, `device_limit`, and `device_limit_mode`. The Package FK uses `ON DELETE SET NULL`, while service-level deletion still blocks Packages referenced by a user or License to avoid silent entitlement loss.
-Concrete optional modules own their declared tables and migrations. Generic backup discovery includes declared module tables; Core must not add Profile/Sharing/Postbox/Moderation/Notification domain columns for new module functionality. Existing Profile tables remain a migration bridge pending non-destructive extraction.
-
-Profile owns retained `user_profiles` data, including `gender` (`male`, `female`, `unspecified`) and the bounded processed `avatar_data`. Its additive module migration is applied by module installation; deactivation never drops data.
-
-Role navigation visibility is stored as namespaced JSON in `settings.setting_key = core.module.visibility`; no second module table/runtime is introduced. The module migration runner now treats only MySQL/MariaDB duplicate-column code 1060 for a validated additive `ALTER TABLE ... ADD COLUMN` retry as already applied, preserving the original migration checksum while allowing recovery after partial non-transactional DDL.
-
-## Field Notes declared module table (2026-09-11)
-
-`field_notes_items` is module-owned and declared through the generic module database contract: `id`, `owner_user_id`, `title` (max 160), `body`, `created_at`, `updated_at`, with an owner/update index and `users.id` foreign key. Deactivation and ordinary uninstall retain data (`destroyOnUninstall:false`, `dataPolicy:retain`). Backup V2 discovers it from the installed module manifest; no Core table list or Field-Notes backup branch is added.
-
-## Operations test history and device fallback (2026-09-11)
-
-`core.ui.settings` now retains `lastDatabaseTest` and `lastBackupPathTest`, each limited to result and UTC timestamp. Audit retains the corresponding test event; neither record is a current-health guarantee and neither contains path, connection data or secrets. Unassigned users resolve to the explicit one-device System default unless host policy `AUTH_MAX_DEVICES_PER_USER` supplies another positive value. License/User overrides and Package Unlimited continue to use SQL `NULL`, never numeric zero.
-
-## Schema `2026_09_11_0009`
-
-Migration `2026_09_11_0009_persistent_user_sessions` makes `sessions.expires_at` nullable. `NULL` represents an active User session without normal time expiry; timestamps remain available for finite Admin sessions and revoked/replaced rows. Active nullable sessions are retained by cleanup and counted for device limits.
-
-## Schema `2026_09_11_0010`
-
-Migration `2026_09_11_0010_recoverable_scoped_sessions` ergänzt `sessions.session_scope` (`user`/`admin`) und einen Scope-/Statusindex. Bestehende Zeilen werden konservativ als User-Scope übernommen; bestehende Admins melden sich einmal neu an. Neue Validierung, Recovery und Replacement sind scopegebunden.
+Aktueller Implementierungs-/Live-Stand steht ausschließlich in `STATUS.md` und `CHATGPT.md`.
