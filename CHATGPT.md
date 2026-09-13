@@ -4,7 +4,7 @@
 **Branch:** `fix/user-ui-live-repair`
 **Technischer Reparaturcommit:** `a3dd090341d749bdb6c7633f7c83d72a0a912388`
 **Datum:** 2026-09-13
-**Status:** P2-REVIEW-FUND TECHNISCH REPARIERT · PR-CI UND OPERATOR-LIVE-RETEST OFFEN
+**Status:** P2-REVIEW-FUND TECHNISCH REPARIERT · PR-CI BESTANDEN · OPERATOR-LIVE-RETEST OFFEN
 **Core Freeze:** NICHT erklärt
 
 ## Belegte Root Cause
@@ -29,16 +29,15 @@ Keine gerätespezifische Lösung und keine Änderung an Settings-Save, Passwort-
 - PHP-Syntax: **47 Dateien passed, 0 failed**.
 - Production Package: **passed**, 136 Dateien.
 - `git diff --check`: **passed**.
-- PR #66 war vor dem Push offen, nicht als Draft, mergeable und zeigte auf den vorherigen Head `db47ed556543f80ef1250def34bf5c46f048f4df`. Der offene P2-Kommentar bezog sich auf `Web-App/public/user-app.js` und ist mit dem Reparaturcommit adressiert.
+- PR #66 ist offen, nicht als Draft und mergeable. Der offene P2-Kommentar zu `Web-App/public/user-app.js` ist mit dem Reparaturcommit adressiert.
+- Die beiden auf Head `248291865ab0e13fa8d6b7f4940724ff9884ad44` ausgelösten GitHub-Actions-Workflows **PR #66** und **Code scanning AI findings on PR #66** endeten jeweils mit **success**; die zugehörigen Checks `github-advanced-security`, `Analyze (javascript-typescript)` und `Analyze (actions)` waren erfolgreich.
 
-Für den neuen finalen Dokumentations-HEAD werden PR-CI/CodeQL erst nach dem Push ausgelöst; dafür wird hier noch kein PASS behauptet. Es wurde weder gemergt noch auf `main` geschrieben.
+Es wurde weder gemergt noch auf `main` geschrieben.
 
 ## Offen und nächster Schritt
 
-1. Branch pushen und bestätigen, dass PR #66 denselben neuen Head verwendet.
-2. PR-CI/CodeQL auf diesem Head bis zum terminalen Status prüfen; kein Merge in diesem Arbeitsblock.
-3. Lea/ChatGPT prüft PR #66 erneut.
-4. Danach bleibt der gezielte Operator-Live-Retest auf dem realen Browser/Endgerät erforderlich:
+1. Lea/ChatGPT prüft PR #66 erneut; kein Merge in diesem Arbeitsblock.
+2. Danach bleibt der gezielte Operator-Live-Retest auf dem realen Browser/Endgerät erforderlich:
    - Home → Settings → Browser Back muss sichtbaren Home-Inhalt zeigen;
    - direkter Start-Klick muss sichtbaren Home-Inhalt zeigen;
    - Settings Save muss `Successfully saved.` bis `OK` sichtbar halten;
