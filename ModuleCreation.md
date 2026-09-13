@@ -60,6 +60,8 @@ Optionale Serverfähigkeit:
 Server/php/modules/<module-id>/module.php
 ```
 
+`reference-notes` ist eine interne Framework-/Testfixture für Modulverträge. Es ist kein Produktmodul und wird beim Erzeugen einer Produkt-App durch `create-neutral-app` entfernt. `field-notes` bleibt davon getrennt und dient als unabhängiges Fachmodul-Referenzbeispiel.
+
 ## Lifecycle
 
 Grundmodell:
