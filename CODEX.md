@@ -1,9 +1,8 @@
 # NEUTRAL – CODEX HANDOFF
 
 **Richtung:** ChatGPT/Lea → Codex  
-**Status:** REPOSITORY DEEP CLEANUP  
+**Status:** USER UI LIVE REPAIR  
 **Datum:** 2026-09-13  
-**Arbeitsbranch:** `lea/repository-deep-cleanup`  
 **Core Freeze:** NICHT erklärt
 
 ## Zuerst lesen
@@ -11,41 +10,40 @@
 1. `CURRENT-TASK.md`
 2. `CHATGPT.md`
 3. `WORKFLOW.md`
-4. `VISION.md`
-5. `CORE-1.0.md`
-6. `Architecture.md`
-7. danach aktuellen Branch-Diff und relevante Tests.
+4. `UI-UX.md`
+5. `VISION.md`
+6. `CORE-1.0.md`
+7. danach aktuellen Code und relevante Tests.
 
 ## Auftrag
 
-Führe ausschließlich den Tiefenaudit/Bereinigungsblock fort. Entferne oder korrigiere nur Dinge, deren Status belegt ist:
+Bearbeite ausschließlich die drei im Operator-Live-Retest reproduzierten User-UI-Fehler:
 
-- historische Workflow-/Deployment-Ausnahmen ohne aktuellen Zweck;
-- veraltete Phase-/Temporary-Kommentare, wenn der darunterliegende Mechanismus regulärer Bestandteil des Systems ist;
-- Dokumentationswidersprüche gegen den aktuellen Code;
-- tote Referenzen oder eindeutig ungenutzte Reste nach Nachweis.
-
-Echte Kompatibilitäts-, Migrations- und Restore-Pfade bleiben erhalten, solange ihre Entfernung nicht ausdrücklich als sicher belegt ist.
+1. **Start/Home:** Der Start-Button wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View. Ein einzelner Klick/Tap auf `Start` muss den Home-/Start-Content tatsächlich rendern; Navigation, View-State und Route müssen konsistent bleiben.
+2. **Settings Save Success:** Settings-Änderungen werden korrekt gespeichert und übernommen, aber das gemeinsame `Successfully saved.`-Popup erscheint im realen Browser nicht. Nach erfolgreichem Save muss das Popup erscheinen und bis zur Benutzeraktion sichtbar bleiben.
+3. **Passwort-Auge:** Ein einzelner normaler Klick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; erst Doppelklick funktioniert. Ein einzelner Klick/Tap muss `password ↔ text` toggeln, plattformneutral und ohne gerätespezifische Sonderlösung.
 
 ## Grenzen
 
-- Keine Features.
-- Keine User-UI-Reparaturen in diesen Branch mischen.
-- Keine Profile-/Moderation-/Access-/Modulreparaturen.
-- Keine funktionale Auth-/Session-/Backup-/Modulruntime-Änderung ohne separaten Root-Cause-Nachweis.
+- Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen in diesen Block mischen.
+- Root Cause vor Reparatur belegen.
+- Keine unnötigen Refactorings.
+- Vor Änderungen passende Failing-Tests ergänzen oder vorhandene reproduzierbare Tests nachweisen.
+- Bestehende bestätigte GPS-, Settings-, Theme-, Login- und Admin-Funktionen nicht regressieren.
 - Kein Production Restore.
 - Kein Core Freeze.
-- Nicht direkt auf `main` arbeiten.
 
-## Verifikation vor Merge
+## Verifikation
 
 Mindestens:
 
-- vollständigen Branch-Diff gegen `main` prüfen;
-- passende fokussierte Tests, falls funktionaler Code betroffen ist;
+- fokussierte Tests für alle drei Fehler;
 - vollständige Testsuite;
 - relevante JS-Syntax-/PHP-Lint-/Build-/Package-Prüfungen;
 - `git diff --check`;
-- keine Erfolgsbehauptung, falls ein Check in der jeweiligen Umgebung nicht ausgeführt werden konnte.
+- Commit und Push nach `main`;
+- CodeQL/CI und FTPS/Deployment bis terminal;
+- read-only Production Smoke;
+- `CHATGPT.md` mit tatsächlichem Ergebnis und gezieltem Operator-Retest aktualisieren.
 
-Die drei bekannten User-UI-Fehler bleiben offen und werden nach diesem Cleanup in einem separaten Block repariert.
+Erst nach erfolgreicher technischer Reparatur und gezielter Live-Abnahme dieser drei Punkte folgt der separate Modularchitektur-Audit.
