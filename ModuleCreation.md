@@ -1,11 +1,11 @@
 # NEUTRAL – Verbindlicher Modulvertrag
 
-**Stand:** 2026-09-13  
-**Status:** AKTUELL / VERBINDLICH
+**Status:** AKTUELL / VERBINDLICH  
+**Geprüft:** 2026-09-13
 
-Diese Fassung ersetzt ältere Modulbau-Annahmen. Technische Primärquelle ist der aktuelle Runtime-Code in `Web-App/core/module-interface.js`, `module-registry.js`, `module-manager.js` und `core-loader.js` sowie die aktuelle Server-Modulruntime.
+Dieses Dokument definiert den dauerhaften Modulvertrag. Aktueller Implementierungs- und Live-Stand steht in `STATUS.md` und `CHATGPT.md`.
 
-## 1. Architekturgrundsatz
+## Architekturgrundsatz
 
 Ein normales App- oder Systemmodul ist ein eigenständiges optionales Feature.
 
@@ -15,50 +15,37 @@ Ein normales App- oder Systemmodul ist ein eigenständiges optionales Feature.
 - Ein Modul ändert keine Coredatei nur zu seiner eigenen Integration.
 - Profile, Media, Moderation, Notifications, Sharing, Postbox und GPS sind keine impliziten Voraussetzungen für andere normale Module.
 
-Wenn eine Komponente für das Gesamtsystem zwingend erforderlich ist, darf sie nicht wie ein frei deaktivierbares optionales Modul behandelt werden. Der aktuelle Runtime-Code besitzt noch keinen vollständig abgesicherten generischen Required-Dependency-Lifecycle. Ein Agent darf deshalb keine versteckte Pflichtabhängigkeit als normales Modul einführen.
+Eine tatsächlich systemnotwendige Fähigkeit muss ausdrücklich als Core-/Required-Funktion modelliert werden und darf nicht als frei deaktivierbares optionales Modul erscheinen.
 
-## 2. Dependencies
+## Dependencies
 
-Der aktuelle Code kann `dependencies` technisch lesen und bei Installation/Aktivierung prüfen. Das ist noch keine Freigabe für harte Kopplungen zwischen normalen optionalen Modulen.
+Für neue normale Module gilt grundsätzlich `dependencies: []`. Nicht zwingende Erweiterungen gehören in `optionalDependencies` und benötigen Capability Detection sowie kontrollierte Fallbacks.
 
-Für neue normale Module gilt:
+Eine harte Modulabhängigkeit benötigt vor Verwendung eine Architekturprüfung und einen generisch abgesicherten Lifecycle für Deaktivierung und Uninstall.
 
-- Standard: `dependencies: []`.
-- Nicht zwingende Erweiterungen gehören in `optionalDependencies`.
-- Fehlt eine optionale Erweiterung, muss die Hauptfunktion weiterlaufen.
-- Capability Detection und Fallback statt harter Kopplung.
+## Eine Runtime, zwei Kategorien
 
-Eine harte Modulabhängigkeit benötigt vor Verwendung eine Architekturprüfung. Insbesondere muss generisch geklärt sein, was bei Deaktivierung oder Uninstall der benötigten Komponente geschieht. Solange dies nicht vollständig abgesichert ist, keine neue harte Dependency zwischen optionalen Modulen einführen.
+`category: user|system` ist Klassifikation und Präsentation, keine zweite Runtime. App Modules und System Modules verwenden dieselbe Registry, Discovery und denselben Lifecycle. Kategorie entscheidet nicht automatisch über User-Sichtbarkeit.
 
-## 3. Eine Runtime, zwei Kategorien
+## Manifestvertrag
 
-`category: user|system` ist nur Klassifikation und Präsentation.
+Der gemeinsame Manifestvertrag umfasst je nach Modul unter anderem:
 
-App Modules und System Modules verwenden dieselbe Registry, Discovery und denselben Lifecycle. Es gibt keine zweite Systemmodul-Runtime. Kategorie entscheidet nicht über User-Sichtbarkeit.
+- `id`, `appId`, `name`, `version`, `apiVersion`, `type`, `description`;
+- `dependencies`, `optionalDependencies`;
+- `permissions`, `permissionDefinitions`, `capabilities`;
+- `presentation.userNavigation`, `presentation.adminNavigation`, `presentation.system`;
+- `category`;
+- `source`, `entry`, `main`, `globalName`;
+- `modulePath`, `mountPath`, `manifestPath`, `autoload`;
+- `lifecycle`, `requirements`;
+- `access.visibilityPermissions`, `usagePermissions`, `managementPermissions`, `adminPermissions`;
+- `clientAccess`, `publicOffline`, `standalone`;
+- `database.tables` und `admin`.
 
-## 4. Aktueller Client-Manifestvertrag
+Vor Verwendung eines Feldes ist der aktuelle Consumer im Runtime-Code zu prüfen; Dokumentation allein ist kein Implementierungsbeweis.
 
-`ModuleInterface.validateManifest()` normalisiert aktuell unter anderem:
-
-- `id`, `appId`, `name`, `version`, `apiVersion`, `type`, `description`
-- `dependencies`, `optionalDependencies`
-- `permissions`, `permissionDefinitions`, `capabilities`
-- `presentation.userNavigation`, `presentation.adminNavigation`, `presentation.system`
-- `category`
-- `source`, `entry`, `main`, `globalName`
-- `modulePath`, `mountPath`, `manifestPath`, `autoload`
-- `lifecycle`, `requirements`
-- `access.visibilityPermissions`, `usagePermissions`, `managementPermissions`, `adminPermissions`
-- `clientAccess`
-- `publicOffline`
-- `registered`, `status`, `lifecycleState`, `active`, `enabled`
-- `standalone`
-- `database.tables`
-- `admin`
-
-Client- und Servermanifest können unterschiedliche zusätzliche Felder konsumieren. Vor Verwendung eines Feldes ist der aktuelle Consumer zu prüfen; ältere Dokumentation allein ist kein Implementierungsbeweis.
-
-## 5. Typische Struktur
+## Typische Struktur
 
 ```text
 Web-App/app/modules/<module-id>/
@@ -67,123 +54,80 @@ Web-App/app/modules/<module-id>/
 └── index.html        # optionaler Standalone-/Self-Test
 ```
 
-Serverfähigkeit, falls benötigt:
+Optionale Serverfähigkeit:
 
 ```text
-Server/php/modules/<module-id>/
-└── module.php
+Server/php/modules/<module-id>/module.php
 ```
 
-## 6. Lifecycle
+## Lifecycle
 
 Grundmodell:
 
 `DISCOVERED/AVAILABLE → INSTALLED/INACTIVE → ENABLED/ACTIVE → DISABLED/INACTIVE → ENABLED/ACTIVE → UNINSTALL`
 
-Discovery allein aktiviert kein normales Modul. Lifecycle-Aufrufe müssen wiederholbar und sauber sein. Bei Deaktivierung müssen modul-eigene Listener, Timer und Ressourcen beendet werden. Re-enable darf unabhängigen Zustand nicht beschädigen.
+Discovery aktiviert kein normales Modul. Lifecycle-Aufrufe müssen wiederholbar sein. Bei Deaktivierung beendet das Modul eigene Listener, Timer und Ressourcen. Re-enable darf unabhängigen Zustand nicht beschädigen.
 
-## 7. Discovery
+## Discovery
 
-Aktueller Clientpfad:
+Discovery normalisiert Manifeste, reconciliiert Registry und Runtimezustand und darf keine fachliche Kopplung zwischen Modulen erzeugen. Nur der aktuell gültige Discovery-Lauf darf den Registry-Zustand bestimmen.
 
-1. Loader liefert Katalog/Module.
-2. `ModuleInterface.validateManifest()` normalisiert.
-3. `ModuleRegistry.discover()` kombiniert Discoveryquellen.
-4. `ModuleManager.discoverModules()` reconciliert die Registry.
-5. Nur der jüngste Discovery-Lauf darf den aktuellen Registry-Zustand bestimmen.
+## Public/Offline
 
-Discovery darf keine fachliche Kopplung zwischen Modulen erzeugen.
+`publicOffline: true` erlaubt, bereinigte Client-Metadaten eines administrativ aktiven Moduls aus einer versionierten lokalen Projektion bereits vor dem späteren Online-Abgleich zu verwenden.
 
-## 8. Public/Offline
+Lokale Sichtbarkeit erteilt keine Serverrechte. Online-Abgleich reconciliiert den Lifecycle; ein Netzwerkfehler darf nicht als autoritativer leerer Katalog behandelt werden. Es gibt keine modulspezifische Sonderruntime für diesen Vertrag.
 
-`publicOffline: true` ist ein generischer Vertrag für Module, deren bereinigte Client-Metadaten vor dem späteren Online-Abgleich lokal verfügbar sein dürfen.
+## Standalone
 
-- lokale Sichtbarkeit ersetzt keine serverseitige Zugriffsentscheidung;
-- Online-Abgleich reconciliiert später den Lifecycle;
-- ein Online-Fehler ist kein erfolgreicher leerer Katalog;
-- keine GPS-Sonderruntime einführen.
+`standalone` ist optional und nur ein isolierter Self-Test. Es ersetzt weder Integration noch Lifecycle. Voraussetzungen wie Server, Datenbank oder Auth werden deklarativ beschrieben.
 
-GPS ist derzeit die live bestätigte Referenz dieses Vertrags.
+Integriert übernimmt ein Modul zentrale Framework-Theme-/Appearance-Verträge. Eigenes Fachlayout ist erlaubt, eine unabhängige globale Designwelt nicht.
 
-## 9. Standalone
+## Access und Sichtbarkeit
 
-`standalone` ist optional und nur ein isolierter Self-Test.
+Sichtbarkeit, Nutzung, Verwaltung und Administration sind getrennte Entscheidungen:
 
-- Nicht jedes Modul braucht Standalone.
-- Standalone ersetzt nicht den normalen Lifecycle.
-- `requires.server`, `requires.database`, `requires.auth` beschreiben Voraussetzungen.
-- Integriert übernimmt ein Modul das zentrale Framework-Theme/Appearance. Ein eigenes Fachlayout ist erlaubt, eine widersprüchliche globale Designwelt nicht.
+- `access.visibilityPermissions` – Sichtbarkeit;
+- `access.usagePermissions` – Nutzung;
+- `access.managementPermissions` – Verwaltung;
+- `access.adminPermissions` – Administration;
+- `presentation.userNavigation` – User-Navigation;
+- `presentation.adminNavigation` – Admin-Navigation.
 
-## 10. Access und Sichtbarkeit
+UI-Sichtbarkeit erteilt niemals Serverrechte.
 
-Modulbezogene Zugriffsregeln und Navigation sind getrennte Aspekte.
+## Settings und Daten
 
-- `access.visibilityPermissions`: Sichtbarkeit
-- `access.usagePermissions`: Nutzung
-- `access.managementPermissions`: Verwaltung
-- `access.adminPermissions`: Administration
-- `presentation.userNavigation`: User-Navigation
-- `presentation.adminNavigation`: Admin-Navigation
+Modulsettings liegen im eigenen Namespace, grundsätzlich `moduleSettings.<module-id>`. Installation/Aktivierung ist davon getrennt.
 
-Ein Modul darf nicht allein deshalb Profile/User-Account voraussetzen, weil es optional personalisierte Funktionen anbieten kann. Anonyme und authentifizierte Nutzung werden entsprechend dem eigenen Fachvertrag behandelt.
+Ein Modul mit eigenen Daten deklariert und besitzt diese selbst. Direkter Zugriff auf interne Daten eines anderen optionalen Moduls ist keine zulässige Kopplung.
 
-## 11. UI und Appearance
+## Verbotene Integrationsmuster
 
-Module verwenden zentrale Theme-/Appearance-Werte und Framework-Komponenten. Änderungen zentraler Appearance-Einstellungen sollen integrierte Module automatisch erreichen. Module definieren ihr Fachlayout, nicht eine unabhängige globale Farb-/Theme-Architektur.
-
-## 12. Settings und Daten
-
-Modulbezogene Einstellungen liegen im eigenen Namespace, grundsätzlich `moduleSettings.<module-id>`. Installation/Aktivierung ist davon getrennt.
-
-Ein Modul mit eigenen Daten besitzt und deklariert diese selbst. Direkter Zugriff auf interne Daten eines anderen optionalen Moduls ist keine zulässige Kopplung.
-
-## 13. Verbotene Integrationsmuster
-
-Nicht zulässig:
+Nicht zulässig sind insbesondere:
 
 - Core-Dateien nur für ein einzelnes Fachmodul ändern;
 - fremde Moduldateien verändern;
 - private Zustände anderer Module als Vertrag verwenden;
-- Profile als allgemeine Voraussetzung für Apps verwenden;
-- Login als Voraussetzung annehmen, wenn die Fachfunktion anonym möglich sein soll;
-- deaktivierte Module weiterhin als Voraussetzung im Corepfad referenzieren;
-- UI-Tests ausschließlich über Quelltextmuster als Laufzeitbeweis behandeln.
+- Profile oder Login pauschal als Voraussetzung annehmen;
+- deaktivierte Module im Corepfad weiter voraussetzen;
+- Laufzeitverhalten ausschließlich durch Quelltextmuster statt echte Tests beweisen.
 
-## 14. Pflichtprüfung für optionale Module
+## Pflichtprüfung für optionale Module
 
-Jedes optionale Modul muss mindestens beweisen:
+Ein optionales Modul muss mindestens beweisen:
 
 1. App startet mit Modul aktiv.
 2. Modul funktioniert.
-3. Modul deaktivieren.
-4. App/Core funktioniert weiterhin.
-5. Unabhängige Module funktionieren weiterhin.
-6. Navigation besitzt keinen Restzustand.
-7. Re-enable funktioniert entsprechend dem Lifecycle.
+3. Modul lässt sich deaktivieren.
+4. Core/App funktioniert danach weiter.
+5. Unabhängige Module funktionieren weiter.
+6. Navigation hinterlässt keinen Restzustand.
+7. Re-enable funktioniert gemäß Lifecycle.
 
-Wenn Punkt 4 oder 5 fehlschlägt, ist die Implementierung nicht als optionales Modul akzeptiert.
+Wenn 4 oder 5 fehlschlägt, ist die Implementierung nicht als optionales Modul akzeptiert.
 
-## 15. Referenzen
+## Agentenregel
 
-- GPS: Public/Offline, Gerätefunktion und Standalone.
-- `reference-notes`/Field Notes: fachlich unabhängiges Modulbeispiel, soweit im aktuellen Repository vorhanden.
-- Profile, Media, Sharing, Notifications, Moderation und Postbox: optionale Fachmodule bzw. Scaffolds; sie dürfen keine Voraussetzung für Core oder voneinander werden.
-
-Der konkrete Live-/Implementierungsstatus gehört in `SYSTEM-MODULES.md` und `STATUS.md`.
-
-## 16. Entscheidungsregel für Agenten
-
-Vor Moduländerungen:
-
-1. aktuellen Runtime-Code lesen;
-2. diesen Vertrag lesen;
-3. Deaktivierbarkeit und Unabhängigkeit prüfen;
-4. vorhandene generische Verträge verwenden;
-5. keine Core-Erweiterung auf Verdacht;
-6. bei notwendiger harter Dependency Architekturreview durch Lea anfordern;
-7. Runtime-/Lifecycle-Tests durchführen;
-8. realer Betreiber-Live-Test bleibt für UI-/Geräteverhalten maßgeblich.
-
-## 17. Nächster Architektur-Audit
-
-Nach dem aktuellen User-UI-Live-Fix werden alle vorhandenen Module separat gegen diesen Vertrag geprüft. Profile/Moderation werden erst danach repariert. Historische Implementierungen dürfen diesen Vertrag nicht stillschweigend aufweichen.
+Vor Moduländerungen aktuellen Runtime-Code und diesen Vertrag lesen, generische Verträge wiederverwenden, Deaktivierbarkeit prüfen und keine Core-Erweiterung auf Verdacht einführen. Notwendige harte Dependencies benötigen Architekturreview. Runtime-/Lifecycle-Tests sind Pflicht; erforderliche reale Betreiber-Livetests bleiben separat.
