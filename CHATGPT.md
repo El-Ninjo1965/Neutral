@@ -1,252 +1,136 @@
 # NEUTRAL – CHATGPT HANDOFF
 
-**Richtung:** Local Agent → ChatGPT/Lea  
-**Branch:** `lea/user-ui-stability`  
-**Datum:** 2026-09-12  
-**Status:** STOP – es bleibt ein echter Produktionscode-Fehler im stale-discovery-Pfad erhalten; der `live-startup-regression`-Eintrag an [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342) ist eine Test-/Regex-Fehlklassifikation, kein App-Fehler.  
-**Deployment:** VERBOTEN  
-**Merge nach `main`:** VERBOTEN  
-**Aktueller Commit:** `850ffa5`
+**Richtung:** ChatGPT/Lea ↔ Local Agent
+**Branch:** `main`
+**Datum:** 2026-09-13
+**Status:** DEPLOYED – OPERATOR-LIVE-RETEST DURCHGEFÜHRT; 3 USER-UI-FEHLER OFFEN
+**Deployed main / Merge-Commit:** `b5b76f70d57fee982cee7eb397d37009debde001`
 
-## Branch-/Sync-Status
+## Abgeschlossener User-UI-Stability-Block
 
-- Branch aktiv: `lea/user-ui-stability`
-- `git fetch origin` ausgeführt.
-- `git rebase origin/lea/user-ui-stability` erfolgreich.
-- Lokale Harness-Arbeit wurde erhalten.
-- Remote-Branch war vor dem Rebase weiter voraus; kein Force-Push, kein `ours`/`theirs` blind verwendet.
+Der frühere Branch `lea/user-ui-stability` wurde erfolgreich nach `main` integriert und deployed.
 
-## Verbleibender echter Produktionsfehler
+Verifiziert vor Deployment:
+- Basis 1–4: PASS
+- Runtime A–D: PASS
+- Testsuite: 575/575 PASS
+- Production Package: PASS
+- CodeQL: PASS
+- Deployment: PASS
+- Production Read-Only Smoke: PASS
 
-### C. Stale settings catalog responses do not overwrite successful state
+Der frühere stale-discovery-Fehler C ist behoben. Der aktuelle Discovery-Request aktualisiert bei sichtbaren Settings gezielt die Settings-UI. Es wurde bewusst kein globales `renderApp()` nach jeder Discovery eingeführt.
 
-**Testname:** `C. Stale settings catalog responses do not overwrite successful state`
+Frühere Harness-/Testprobleme sind ebenfalls abgeschlossen:
+- `pending` ist kein `error`; Retry muss während eines laufenden Requests nicht sichtbar sein.
+- Fake-Browser-Success-Dialog: Close-Button-Handler korrigiert.
+- Zu enge Source-Regex-Assertions für `showSuccess()` korrigiert.
 
-**Exakte Assertion:**
-`assert.ok(runtime.document.querySelectorAll('[data-user-setting-module]').length > 0, 'newer success result renders the catalog');`
+Diese Punkte dürfen nicht wieder als offene Produktionsfehler behandelt werden.
 
-**Erwarteter Zustand:**
-- Nach dem zweiten, neueren Discovery-Ergebnis muss die Settings-Katalogansicht wieder als erfolgreich gerendert werden.
-- Ein späteres altes Ergebnis darf den aktuellen guten Zustand nicht überschreiben.
+## Operator-Live-Retest – User UI
 
-**Tatsächlicher Zustand:**
-- Das alte, spätere Promise wird nach dem zweiten erfolgreichen Resultat noch als gültig behandelt und setzt den Render wieder auf den fehler-/pending-Zustand zurück oder verhindert das korrekte erneute Rendern.
-- Die Testausgabe zeigt genau: `AssertionError [ERR_ASSERTION]: newer success result renders the catalog`.
+### Bestätigt funktionsfähig
 
-**Klassifikation:**
-- **B) echter Produktionscode-Fehler**
-- Ursache: Der stale-discovery-Pfad in [Web-App/public/user-app.js](Web-App/public/user-app.js) prüft zwar `requestId` beim Abschluss, aber der Settings-Render selbst berücksichtigt nicht sauber die aktuelle Laufzeit-Generation und lässt ein altes Resultat in den UI-Status hineinlaufen.
+Anonym / Inkognito:
+- Start, GPS, Settings, Theme und Login sind sichtbar.
+- konfigurierte Homepage-/Welcome-Inhalte werden angezeigt.
+- GPS öffnet und bestimmt die Position.
+- Positionsaktualisierung funktioniert.
+- Google Maps öffnen funktioniert.
+- Position teilen öffnet den nativen Share-Dialog.
+- Settings zeigt Apps und Navigation.
+- GPS kann aktiviert/deaktiviert werden; Navigation reagiert unmittelbar.
+- Navigation Label Rename/Restore funktioniert.
 
-## Verbleibender weiterer Nachweis: live-startup-regression
+Authentifiziert:
+- Tester-Login funktioniert.
+- Login-Success und Weiterleitung funktionieren.
+- GPS bleibt sichtbar und funktionsfähig.
+- Settings Apps/Navigation ist verfügbar.
+- Settings-Änderungen werden gespeichert und übernommen.
 
-### Datei/Zeile
-- [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342)
+### OFFEN 1 – Start/Home Navigation
 
-### Testbeschreibung
-`local settings save uses the shared success dialog and retains inline errors`
+Reproduzierbar anonym und authentifiziert:
+- Klick/Tap auf `Start` setzt den Start-Button optisch aktiv/blau.
+- Der sichtbare Content bleibt jedoch auf der vorherigen View, z. B. Settings oder GPS.
+- Navigation-/Active-State und Content-View laufen auseinander.
 
-### Exakte Assertion
-`assert.match(source, /if \(nextPreferences\.persisted\) \{\s*status\.textContent = ''\;\s*status\.className = 'user-settings-status';\s*renderApp\(\);\s*window\.NeutralUiFeedback\.showSuccess\('Successfully saved\.'/s);`
+Soll: Ein einzelner Klick/Tap auf Start muss den Home-/Start-Content tatsächlich rendern und Navigation, View-State und Route konsistent halten.
 
-### Erwarteter Zustand
-- Der Code muss genau diese Zeilenfolge in der Source enthalten.
+### OFFEN 2 – Settings Save Success Popup
 
-### Tatsächlicher Zustand
-- Der echte Code in [Web-App/public/user-app.js](Web-App/public/user-app.js) nutzt:
-  `window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });`
-- Das ist semantisch korrekt, aber der Regex-Test erwartet eine andere Zeichenfolge mit einem anderen Form- und Argumentstil.
+Reproduzierbar anonym und authentifiziert:
+- Settings-Änderungen werden korrekt gespeichert und sichtbar übernommen.
+- User bleibt korrekt in Settings.
+- Das erwartete Shared-Success-Popup `Successfully saved.` erscheint im realen Browser nicht.
 
-**Klassifikation:**
-- **A) Harness-/Test-Fehler / Regex-Fehlklassifikation**
-- Kein echter App-Laufzeitfehler. Es ist ein string-basierter Test, der eine konkrete Code-Form erwartet, obwohl der produktive Code die gleiche Aktion mit optionalem Chaining und zusätzlichem Argument erfüllt.
+Soll: Nach erfolgreichem Save erscheint das Success-Popup und bleibt bis zur Benutzeraktion sichtbar.
 
-## Früher identifizierte Harnessfehler, die korrigiert wurden
+### OFFEN 3 – Passwort-Auge
 
-### 1. Falsche Pending/Retry-Erwartung
-- Der C-Test war ursprünglich auf dem falschen Grundsatz gelaufen: Während `pending` kein Retry-Button sichtbar sein darf.
-- Dieser Teil wurde als Harness/Expectations-Problem identifiziert und korrigiert.
+Production Login:
+- Einzelklick/Tap auf das Auge toggelt das Passwort nicht.
+- Erst Doppelklick schaltet die Passwortsichtbarkeit.
 
-### 2. D-Close-Button-Harnessfehler
-- Die `NeutralUiFeedback.showSuccess()`-Fake-Implementierung in [tests/user-ui-stability.test.js](tests/user-ui-stability.test.js) erzeugte den Dialog, aber der Close-Button hatte keinen echten Klick-Handler.
-- Korrigiert, damit der Dialog per Klick tatsächlich verschwindet.
+Soll: Ein einzelner normaler Klick/Tap toggelt `password ↔ text`, plattformneutral und ohne gerätespezifische Sonderlösung.
 
-## Statusmatrix
+## Operator-Live-Retest – Admin UI
 
-### Basis 1–4
-- Basis 1: PASS
-- Basis 2: PASS
-- Basis 3: PASS
-- Basis 4: PASS
+### Bestätigt funktionsfähig
+- Admin-Login → Dashboard
+- App Modules
+- System Modules
+- Settings
+- Appearance / Light-Dark
+- Users
+- Licenses / Organizations
+- Packages / Entitlements; New Package öffnet
+- Sessions
+- Roles & Permissions; New Role öffnet
+- Permission Catalog
+- Connections & Providers
+- Server-Test → Ready
+- Database-Test → Successful
+- Backup/Restore
+- Storage Path Test
+- Maintenance/Backup
+- Diagnostics
+- Audit Log; Delete-all mit Bestätigung funktioniert
+- Logout
 
-### A–D
-- A: PASS
-- B: PASS
-- C: FAIL (echter Produktionscode-Fehler)
-- D: PASS
+### Spätere Admin-Punkte – nicht Teil des nächsten User-UI-Fixes
+- Dashboard-Darstellung weiter überarbeiten.
+- Unlimited Device Limit später als `∞` darstellen.
+- Viele alte `idle`-Sessions / Session-Lifecycle separat prüfen.
 
-### Live Startup Regression
-- [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342): Test-Regex-/Harness-Mismatch, kein App-Fehler
+## Nächster technischer Arbeitsblock
 
-### npm test
-- FAIL
-- Ursache: C. Stale settings catalog responses do not overwrite successful state
+Ausschließlich die drei bestätigten User-UI-Live-Fehler:
+1. Start/Home: Active-State wechselt, Content rendert nicht.
+2. Settings Save: Speicherung funktioniert, Success-Popup fehlt in Production.
+3. Passwort-Auge: Doppelklick statt Einzelklick.
 
-### Production Package
-- Nicht erneut gestartet, weil die Stop-Bedingung erreicht wurde: echter Produktionscode-Fehler erkannt, keine Codeänderung am Produkt erlaubt.
+Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen mit diesem Block vermischen.
 
-## Verifiziertes Protokoll
+## Danach – Modularchitektur-Audit
 
-### Erfolgreich grün
-- `node --test --test-concurrency=1 --test-name-pattern='Basis 1: anonymous startup renders login shell without hanging' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='Basis 2: successful normal login resolves user state and home route' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='Basis 3: settings opens and renders module catalog without race' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='Basis 4: normal settings save triggers success and state persistence' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='A\. Login \+ delayed discovery' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='B\. Start button stays stable during background updates' tests/user-ui-stability.test.js`
-- `node --test --test-concurrency=1 --test-name-pattern='D\. Settings save keeps user in settings and shows success modal' tests/user-ui-stability.test.js`
+Nach Abschluss und Live-Abnahme der drei User-UI-Fehler folgt ein separater Architektur-/Modul-Audit.
 
-### Rot
-- `node --test --test-concurrency=1 tests/user-ui-stability.test.js`
-  - Ergebnis: 1 fail, C. Stale settings catalog responses do not overwrite successful state
-- `node --test --test-concurrency=1 tests/live-startup-regression.test.js`
-  - Ergebnis: Test-/Regex-Mismatch, keine App-Laufzeitfehlschlag-Validierung
+Vorgehen:
+1. Aktuellen Code als primäre Wahrheit lesen: Module Interface, Registry, Manager, Loader, Discovery, Manifeste, App Modules, System Modules, Admin-Lifecycle und User-Sichtbarkeit.
+2. IST-Code gegen die gewünschte neutrale Architektur prüfen.
+3. Verbindlichen Modulvertrag festlegen.
+4. Erst danach Dokumentation wie `ModuleCreation.md`, `Architecture.md`, `CORE-1.0.md`, `VISION.md`, `SYSTEM-MODULES.md` usw. synchronisieren.
+5. Anschließend erst Profile/Moderation und weitere Module reparieren.
 
-## Geänderte Dateien
+Architekturgrundsatz: Ein optionales Modul muss deaktivierbar sein, ohne Core oder unabhängige Module funktionsunfähig zu machen. Eine systemnotwendige Komponente muss ausdrücklich als nicht deaktivierbare Core-/Required-Funktion modelliert werden statt als scheinbar optionales Modul.
 
-- [tests/user-ui-stability.test.js](tests/user-ui-stability.test.js)
-  - korrigierter Harness für den erfolgreichen D-Dialog-Handler
-- [CHATGPT.md](CHATGPT.md)
-  - aktualisierter Handoff mit korrekter Klassifikation
+## Aktueller Status
 
-## Produktionscode-Status
-
-- **PRODUKTIONSCODE UNVERÄNDERT**
-- Keine Änderung an [Web-App/public/user-app.js](Web-App/public/user-app.js)
-
-## Deployment / Merge-Status
-
-- **nicht deployed**
-- **nicht nach main gemergt**
-- **nur Branch `lea/user-ui-stability`**
-
-## Abschluss
-
-Die einzige verbleibende echte Runtime-Regression ist der C-Laufpfad im stale-discovery-Flow. Der `live-startup-regression`-Eintrag ist kein echter Produktfehler, sondern ein zu strenger Test-/Regex-Check. Gemäß der gegebenen Entscheidungsregel wurde kein Produktcode verändert; stattdessen wurde der Zustand fachlich dokumentiert und der Branch sauber mit dem Remote-Upstream rebase-synchronisiert.
-
-## Root-Cause-Handoff für Lea – C: stale settings catalog responses do not overwrite successful state
-
-### 1) Vollständiger Testname
-`C. Stale settings catalog responses do not overwrite successful state`
-
-### 2) Exakte fehlgeschlagene Assertion
-`assert.ok(runtime.document.querySelectorAll('[data-user-setting-module]').length > 0, 'newer success result renders the catalog');`
-
-### 3) Erwarteter DOM-/Runtime-Zustand
-- `state.activeView` ist bereits auf `settings`.
-- `state.discoveryState` wurde mit dem zweiten Request auf `pending` gesetzt und anschließend auf `ready` gesetzt.
-- Die Settings-UI muss nach dem neueren erfolgreichen Discovery erneut mit sichtbaren Module-Checkboxen gerendert werden.
-- Es darf kein früheres `pending`/`error`-Fragment mehr sichtbar sein.
-- Der sichtbare Settings-Zustand muss mindestens ein Element mit dem Attribut `[data-user-setting-module]` enthalten.
-
-### 4) Tatsächlicher DOM-/Runtime-Zustand
-- Der erste Request bleibt offen, der zweite Request schafft zwar den Umschaltpunkt zu einem neueren erfolgreichen Verlauf, aber der UI-Render wird nicht erneut ausgelöst.
-- Das DOM bleibt dabei auf dem Zustand aus dem älteren pending/settings render stehen.
-- Damit ist `runtime.document.querySelectorAll('[data-user-setting-module]').length` nach dem zweiten erfolgreichen Resolve noch `0`.
-- Die Testausgabe zeigt exakt: `AssertionError [ERR_ASSERTION]: newer success result renders the catalog`.
-
-### 5) Vollständige zeitliche Reihenfolge
-1. `Request/Discovery 1`
-   - `pendingDiscovery = runtime.window.__testHooks.refreshModuleDiscovery();`
-   - `state.discoveryRequestId` wird auf `1` gesetzt.
-   - `state.discoveryState` wird auf `'pending'` gesetzt.
-2. `Settings-Render während pending`
-   - `settingsButton.click();`
-   - `renderUserSettings()` läuft und erkennt `isDiscoveryPending() || state.discoveryState === 'error'`.
-   - Dadurch erscheint der leere/pending-Status statt des Module-Katalogs.
-3. `Request/Discovery 2`
-   - `retryDiscovery = runtime.window.__testHooks.refreshModuleDiscovery();`
-   - `state.discoveryRequestId` wird auf `2` gesetzt.
-   - `state.discoveryState` wieder auf `'pending'` gesetzt.
-4. `Auflösung von Request 2` (neuere erfolgreiche Antwort)
-   - `resolveSecond([{ id: 'gps', active: true, status: 'enabled', description: 'GPS' }]);`
-   - in `refreshModuleDiscovery()` gilt nun: `requestId === state.discoveryRequestId` und `state.discoveryState = 'ready';`.
-   - Der Rückgabewert ist korrekt, aber kein `renderApp()`/`renderUserSettings()` wird nach diesem erfolgreichen Resolve ausgelöst.
-5. `sichtbarer Settings-Zustand`
-   - Das DOM bleibt auf dem älteren pending/empty settings render stehen.
-   - Es gibt nach diesem erfolgreichen Update noch kein sichtbares Module-Listing.
-6. `spätere stale Auflösung`
-   - `resolveFirst(new Error('stale failure'));`
-   - `refreshModuleDiscovery()` für Request 1 prüft `requestId !== state.discoveryRequestId` und beendet sich ohne `state.discoveryState = 'error'`.
-   - Damit ist der spätere Fehler zwar korrekt abgebrochen, aber schon zu spät: Der eigentliche Fehler war das fehlende Re-Render nach dem neueren erfolgreichen Discovery.
-
-### 6) Welche konkrete Funktion den korrekten neueren Zustand anschließend überschreibt
-Die eigentliche Ursache ist kein einzelner `discoveryRequestId`-Override, sondern das Fehlen eines nachfolgenden UI-Re-Render nach einem neuen erfolgreichen Discovery. Der kritisch relevante Pfad ist:
-- `renderUserSettings()` entscheidet anhand von `state.discoveryState` und `isDiscoveryPending()` über die sichtbare Settings-Anzeige.
-- Der Lauf bleibt wegen des fehlenden Re-Render nach einem erfolgreichen Request auf dem älteren pending/empty Zustand stehen.
-- Das bedeutet: Der korrekte neuere Zustand wird nicht „überschrieben“, sondern schlicht nicht in das DOM übernommen.
-
-### 7) Datei + Funktion + relevante Zeilen
-- Datei: [Web-App/public/user-app.js](Web-App/public/user-app.js)
-- Funktion: `refreshModuleDiscovery()`
-  - relevante Zeilen: ca. 377–391 in der aktuellen Datei
-- Funktion: `renderUserSettings()`
-  - relevante Zeilen: ca. 768–838 in der aktuellen Datei
-- Kernäußerungen:
-  - `refreshModuleDiscovery()` setzt nur `state.discoveryState`, aber führt nach erfolgreichen Discovery-Auflösungen keinen `renderApp()`/`renderUserSettings()` aus.
-  - `renderUserSettings()` zeigt den `pending`/`error`-State oder die empty-state-Katalogansicht, solange `state.discoveryState` nicht erneut mit einem Re-Render in den erfolgreichen Zustand gebracht wurde.
-
-### 8) Welcher Callback/Event/Promise diesen Aufruf auslöst
-- Der direkte Aufruf kommt aus dem Test selbst:
-  - `runtime.window.__testHooks.refreshModuleDiscovery()`
-- Die eigentliche DOM-Aktualisierung kommt nicht aus einem echten `startup:modules-ready`-Event im C-Pfad, sondern aus dem Render-Flow, der durch `settingsButton.click()` und die nachfolgende `renderUserSettings()`-Ausführung gestartet wurde.
-- Nach einem erfolgreichen Resolve von `window.ModuleManager.discoverModules()` bleibt der Trigger unverfüllt, weil weder `renderApp()` noch `renderUserSettings()` im Erfolgsfall erneut aufgerufen werden.
-
-### 9) Warum `discoveryRequestId` diesen konkreten Pfad nicht verhindert
-`discoveryRequestId` schützt nur gegen veraltete Antworten, wenn der Abschluss wirklich den aktuellen UI-Status überschreiben will. In diesem Fall ist der Fehler anders:
-- Request 2 gewinnt korrekt aufgrund des aktuellen `requestId`.
-- `state.discoveryState` wird auf `ready` gesetzt.
-- Der UI-Render selbst läuft aber nie erneut, deshalb bleibt der vorherige Sichtzustand sichtbar.
-- `discoveryRequestId` verhindert hier kein falsches Re-Render, sondern nur einen veralteten Antwortpfad nach einem bereits neueren Request.
-- Der eigentliche Produktionsfehler ist daher: Das erfolgreiche Ergebnis wird zwar registriert, aber nicht an die UI-Render-Lane zurückgegeben.
-
-### 10) Verantwortlicher Pfad
-- Verantwortlich ist der kombinierte Flow aus:
-  - `refreshModuleDiscovery()`
-  - `renderApp()`
-  - `renderUserSettings()`
-- Nicht primär verantwortlich:
-  - `startup:modules-ready` / `startup:modules-error` als Event-Signal, weil dieser Test den UI-Zustand mit direktem `refreshModuleDiscovery()`-Aufruf und anschließendem Render erzeugt.
-
-### 11) Minimal mögliche Reparaturhypothese – NUR BESCHREIBEN, noch nicht implementieren
-- Nachdem ein Discovery-Request erfolgreich einen neueren `requestId` abschließt, muss der UI-Render zwingend erneut angestoßen werden, wenn der aktuelle aktive View `settings` ist.
-- Die minimale und sichere Hypothese ist: Erfolgs- und Fehlerpfad in `refreshModuleDiscovery()` müssen im aktuellen View-Kontext ein gezieltes `renderApp()` oder `renderUserSettings()` auslösen, aber nur wenn der Request noch der jüngste ist.
-- Zusätzlich wäre eine sauberere Variante: Der Erfüllungsweg von `discoverModules()` sollte nicht nur `state.discoveryState` updaten, sondern auch den aktiven Render-Trigger konsistent durchlaufen.
-
-### 12) Welche Regressionen diese Reparatur theoretisch gefährden könnte
-- `settings`-View könnte nach einem normalen katalogischen Refresh unnötig neu gerendert werden und damit Fokus/Scroll-Position verlieren.
-- `startup:modules-ready` und andere Background-Events könnten doppelte Re-renders auslösen, wenn die Render-Auslöser nicht dedupliziert werden.
-- Dieser Fall betrifft besonders den `settings`-Pfad, daher könnten Navigations-/Theme-/Profile-Änderungen kurzzeitig in einen erneuten Re-Render schalten und dadurch UX-Störungen verursachen.
-- Eine zu aggressive Re-Render-Logik könnte im Home-/Landing-Pfad den ersten stabilen Render wiederholen und das Welcome-Flackern verstärken.
-
-## Klassifikation der gemeldeten Regression in `live-startup-regression.test.js:342`
-
-### Status
-**Harness-/Testfehler**
-
-### Warum
-- Der Test prüft eine exakte Source-String-Reihenfolge in [tests/live-startup-regression.test.js](tests/live-startup-regression.test.js#L342), nicht das tatsächliche Runtime-Verhalten.
-- Die reale Implementierung in [Web-App/public/user-app.js](Web-App/public/user-app.js) enthält semantisch dieselbe Logik, aber mit einem zusätzlichen optionalen Chaining-Parameter und anderer Formatierung:
-  - `window.NeutralUiFeedback?.showSuccess('Successfully saved.', { title: 'Saved' });`
-- Das ist ein technischer Regex-Mismatch, kein Laufzeitfehler oder ein echter Re-Render-/Discovery-Fehler.
-
-### Einordnung
-- **Nicht dieselbe Root Cause wie C**
-- **Kein Folgefehler von C**
-- **Harness-/Testfehler**
-- **Nicht ein unabhängiger Produktionsfehler**
-
-## Produktstatus
-- **PRODUKTIONSCODE UNVERÄNDERT**
-- **KEIN MERGE**
-- **KEIN DEPLOYMENT**
-- **KEIN FORCE-PUSH**
+- `main` deployed: JA
+- Automated Production Smoke: PASS
+- Operator-Live-Retest: DURCHGEFÜHRT
+- User-UI-Live-Abnahme: NICHT vollständig bestanden – 3 reproduzierbare Fehler offen
+- Admin-Basis-Live-Test: weitgehend bestanden; spätere Feinheiten dokumentiert
