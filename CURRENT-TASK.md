@@ -1,14 +1,15 @@
 # CURRENT TASK – USER UI LIVE REPAIR
 
-**Status:** OFFEN  
+**Status:** TECHNISCH REPARIERT · OPERATOR-LIVE-RETEST OFFEN
 **Datum:** 2026-09-13  
 **Core Freeze:** NICHT erklärt
 
 Bearbeite ausschließlich die drei im Operator-Live-Retest reproduzierten User-UI-Fehler:
 
-- [ ] Start/Home: Ein einzelner Klick/Tap auf `Start` muss den Home-/Start-Content tatsächlich rendern; Active-State, View-State und Route müssen konsistent bleiben.
-- [ ] Settings Save: Nach erfolgreichem Speichern muss das gemeinsame `Successfully saved.`-Popup im realen Browser erscheinen und bis zur Benutzeraktion sichtbar bleiben.
-- [ ] Passwort-Auge: Ein einzelner normaler Klick/Tap muss `password ↔ text` toggeln; kein Doppelklick und keine gerätespezifische Sonderlösung.
+- [x] Start/Home technisch: Ein einzelner Klick/Tap invalidiert den Landing-Rendercache und rendert den Home-/Start-Content; Active-State, View-State und Route bleiben konsistent.
+- [x] Settings Save technisch: Das gemeinsame `Successfully saved.`-Popup wird unmittelbar nach erfolgreicher Persistenz vor dem nicht notwendigen Rerender geöffnet und bleibt bis zur Benutzeraktion sichtbar.
+- [x] Passwort-Auge technisch: Das statische Login-Auge verwendet ausschließlich den gemeinsamen Single-Click-Bindingpfad; kein zweiter konkurrierender Click-Handler.
+- [ ] Gezielter Operator-Live-Retest aller drei Punkte auf dem realen Browser/Endgerät.
 
 ## Grenzen
 
