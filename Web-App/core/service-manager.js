@@ -231,8 +231,8 @@
         name: 'auth',
 
         /**
-         * Authentifiziert einen Benutzer
-         * Compatibility-only delegation to the central CoreAuth truth.
+         * Authentifiziert einen Benutzer.
+         * Delegiert an CoreAuth als einzige clientseitige Authentifizierungswahrheit.
          */
         async authenticate(userIdOrCredentials) {
             if (!window.CoreAuth || typeof window.CoreAuth.login !== 'function') {
