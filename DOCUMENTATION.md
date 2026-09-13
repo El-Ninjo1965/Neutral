@@ -1,60 +1,50 @@
 # NEUTRAL – Dokumentationsordnung
 
-## Ergänzung 2026-09-11: Entscheidungsprotokolle
-
-[`PRODUCT-DECISIONS-2026-09-11.md`](PRODUCT-DECISIONS-2026-09-11.md) ist nach diesem Konsistenzlauf ein **historisches, datiertes Betreiberentscheidungs- und Livebefundprotokoll**, keine konkurrierende Vertragsquelle. Seine Entscheidungen stehen dauerhaft in den gemäß dieser Hierarchie zuständigen Vertragsdateien; der aktuelle Nachweis steht in `STATUS.md`, ausführbare Arbeit in `TODO.md`. Bei Abweichungen gelten diese autoritativen Dateien.
-
----
-
 **Status:** VERBINDLICH  
-**Geprüft:** 2026-09-08
+**Stand:** 2026-09-13
 
-Diese Datei ist der Einstieg für jede zukünftige Arbeit am Repository. Sie legt fest, wo Anforderungen, Ist-Zustand, nächste Schritte und abgeschlossene Änderungen stehen.
+Aktive Dokumentation enthält ausschließlich den aktuellen Vertrag, den aktuell belegten IST-Stand und tatsächlich noch gültige Anforderungen. Historische Zwischenstände, abgeschlossene Fehlerberichte, alte Agentenaufträge und überholte Architekturvarianten gehören nicht in aktive Dokumente.
 
-## Verbindliche Reihenfolge
+## Autorität
 
-1. [`VISION.md`](VISION.md) beschreibt das langfristige, technologieunabhängige Ziel.
-2. [`CORE-1.0.md`](CORE-1.0.md) definiert den endlichen Umfang und die Abnahme von Neutral Core 1.0.
-3. [`Architecture.md`](Architecture.md) und [`ModuleCreation.md`](ModuleCreation.md) definieren Systemgrenzen und Erweiterungsverträge.
-4. [`UI-UX.md`](UI-UX.md) definiert das langfristige verbindliche UI-/UX-Zielbild; [`I18N.md`](I18N.md) definiert die langfristige zentrale Internationalisierungs-, Locale- und Sprachpaketarchitektur.
-5. [`API.md`](API.md), [`Database.md`](Database.md), [`Security.md`](Security.md) und [`Functions.md`](Functions.md) dokumentieren nachprüfbare Fachverträge.
-6. [`STATUS.md`](STATUS.md) beschreibt den aktuell nachgewiesenen Stand, ohne Anforderungen zu verändern.
-7. [`TODO.md`](TODO.md) enthält ausschließlich die nächsten ausführbaren Arbeiten.
+1. `VISION.md` – langfristige verbindliche Grundrichtung.
+2. `CORE-1.0.md` – Releaseumfang und Freeze-/Abnahmekriterien.
+3. `Architecture.md` und `ModuleCreation.md` – technische System- und Modulverträge.
+4. `UI-UX.md` und `I18N.md` – UI-/UX- und Internationalisierungsverträge.
+5. `API.md`, `Database.md`, `Security.md`, `Functions.md` und weitere Fachverträge.
+6. `STATUS.md` – aktuell nachgewiesener Stand und offene reale Punkte.
+7. `TODO.md` / `CURRENT-TASK.md` – ausschließlich aktuelle ausführbare Arbeit.
+8. `CHATGPT.md`, `CODEX.md`, `LOCAL-AGENT.md` – aktuelle Übergaben; keine Historie.
 
-[`ROADMAP.md`](ROADMAP.md) enthält bewusst auf später verschobene Ziele. [`CHANGELOG.md`](CHANGELOG.md) dokumentiert abgeschlossene Änderungen. Installationsanleitungen konkretisieren ausschließlich den Betrieb und stehen unter den genannten Verträgen.
+Bei Widerspruch gilt die höher eingeordnete aktuelle Vertragsquelle. Neuere ausdrücklich bestätigte Betreiber-Livebefunde schlagen ältere Dokumentation und müssen anschließend in die zuständige Datei übernommen werden.
 
-[`DEVELOPMENT.md`](DEVELOPMENT.md) beschreibt die verifizierte lokale Entwicklungsumgebung. Sie ist kein Produktionsvertrag und darf Node.js nicht zur Shared-Hosting-Voraussetzung machen.
+## Pflege
 
-## Relevanzregel für UI/I18N
+Bei materiellen Änderungen:
 
-`UI-UX.md` und `I18N.md` sind verbindliche Zielverträge, aber nicht bei jedem fachfremden Auftrag vollständig zu lesen. Bei Arbeiten an User-App, sichtbaren Texten, Navigation, Modulen, Locale, Sprache, Datum/Uhrzeit, Zahlen-/Einheitenformatierung, Sprachpaketen oder Übersetzungsprovidern müssen die jeweils betroffenen Verträge vor Implementierung gelesen und berücksichtigt werden.
+- betroffenen Vertrag aktualisieren;
+- `STATUS.md` auf tatsächlichen Stand bringen;
+- nur noch offene Arbeit in Task-/Todo-Dateien belassen;
+- operative Übergabedateien kurz und aktuell halten;
+- keine Secrets oder hostlokalen Zugangsdaten dokumentieren;
+- abgeschlossene Reparaturgeschichten aus aktiven Dateien entfernen.
 
-Neue Module dürfen keine Architektur schaffen, die den zentralen I18N-Vertrag aus `I18N.md` später verhindert oder durch inkompatible Insellösungen ersetzt.
-
-## Konfliktregel
-
-Bei einem Widerspruch gilt die höher eingeordnete Datei. Ein untergeordnetes Dokument darf keine neue Vision oder neue Core-1.0-Pflicht erfinden. Ein erkannter Widerspruch wird im selben Änderungssatz korrigiert und im Changelog genannt.
+Git-History ist die primäre technische Historie. Ein separates Changelog ist keine Voraussetzung für die tägliche Agentenarbeit und darf niemals aktuelle Vertragsdateien überstimmen.
 
 ## Statusbegriffe
 
-- **VORHANDEN:** im aktuellen Code implementiert und durch Codepfad, Test oder datierte Live-Prüfung nachweisbar.
-- **TEILWEISE:** nutzbare Grundlage vorhanden, aber eine konkret benannte Anforderung offen.
-- **GEPLANT:** freigegebenes Ziel ohne vollständige Implementierung.
-- **FEHLT:** benötigte Fähigkeit ohne belastbare Implementierung.
-- **BLOCKIERT:** Fortsetzung benötigt eine konkret benannte externe Voraussetzung.
+- **VORHANDEN:** im aktuellen Code/Produkt belastbar nachgewiesen.
+- **TEILWEISE:** nutzbare Grundlage, konkrete Anforderung offen.
+- **GEPLANT:** weiterhin gültiges Ziel, noch nicht vollständig umgesetzt.
+- **FEHLT:** erforderliche Fähigkeit ohne belastbare Implementierung.
+- **BLOCKIERT:** externe Voraussetzung verhindert Fortsetzung.
 
-Ein lokaler Test, eine Simulation oder ein Node-Referenzpfad beweist nicht automatisch die Funktion der PHP-Produktion. Live-Aussagen benötigen Datum und geprüfte Umgebung.
+Lokale Tests, CI oder Simulationen ersetzen keinen ausdrücklich erforderlichen Operator-Livetest.
 
-## Plattformregel
+## Plattform
 
-Neutral Core 1.0 muss produktiv mit PHP 8.1+, MySQL/MariaDB, HTTPS und den üblichen Dateirechten eines Shared Hostings funktionieren. Node.js, Redis, WebSockets, permanente Worker und native Store-Werkzeuge sind optionale spätere Adapter und keine Voraussetzung für Core 1.0.
+Core 1.0 muss mit PHP 8.1+, MySQL/MariaDB, HTTPS und normalen Shared-Hosting-Rechten funktionieren. Node.js, Redis, WebSockets, permanente Worker und native Store-Werkzeuge sind keine Core-1.0-Produktionsvoraussetzung.
 
-## Pflege bei jeder materiellen Änderung
+## Arbeitsregel für Agenten
 
-Eine Änderung ist erst dokumentarisch abgeschlossen, wenn der betroffene Vertrag, `STATUS.md`, `TODO.md`, `CHANGELOG.md` und das Arbeitsprotokoll in `WORKFLOW.md` gemeinsam aktuell sind, relevante Testergebnisse wahrheitsgemäß genannt werden und keine Secrets oder hostlokalen Zugangsdaten aufgenommen wurden. Jeder neue Workflow-Eintrag nennt außerdem, wer die Änderung ausgeführt und dokumentiert hat, damit spätere Codex-Sitzungen die Herkunft nachvollziehen können.
-
-Abgehakte historische Aufgaben gehören nicht dauerhaft in `TODO.md`; sie werden im Changelog bewahrt.
-
-Operations contracts for device sessions, permission domains, maintenance, infrastructure truth, audit retention and backup automation are authoritative in `Security.md`, `Architecture.md`, `API.md`, `Database.md` and `Install-README-Server.md`.
-
-The Phase-2 operations response, migration, backup-readiness, release and Admin UI contracts are recorded in `API.md`, `Database.md`, `Security.md`, `Architecture.md`, `UI-UX.md` and `Install-README-Server.md`.
+Vor Implementierung zuerst die für den Auftrag relevanten aktuellen Vertragsdateien und danach den aktuellen Code lesen. Historische Dateien, alte Pläne oder Git-History dürfen nur zur Ursachenanalyse herangezogen werden und niemals einen aktuellen Vertrag ersetzen.
