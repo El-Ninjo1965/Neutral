@@ -10,9 +10,7 @@
 (() => {
     'use strict';
 
-    // TEMPORARY diagnostic instrumentation (local-only, non-PII, no telemetry
-    // — see WORKFLOW.md). Removed once the offline/online discovery timing
-    // has been confirmed on a real device.
+    // Bounded, data-free startup phase measurements via CorePerformance.
     const mark = (name) => {
         if (typeof window !== 'undefined' && window.CorePerformance) window.CorePerformance.mark(name);
     };
@@ -288,18 +286,18 @@
 
     const fetchRemoteCatalog = async (catalogPath, expectedMode = currentCatalogMode()) => {
         if (!isCatalogRefreshOnline()) {
-            mark('fetch-remote-catalog-skipped'); // TEMPORARY diagnostic mark
+            mark('fetch-remote-catalog-skipped');
             throw new Error('Module catalog is unavailable while offline.');
         }
 
-        mark('fetch-remote-catalog-start'); // TEMPORARY diagnostic mark
+        mark('fetch-remote-catalog-start');
         const requestId = ++catalogRequestSequence;
         const startedAt = Date.now();
         try {
             const response = await fetch(catalogPath, { cache: 'no-store', credentials: 'same-origin' });
 
             if (!response.ok) {
-                mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
+                mark('fetch-remote-catalog-end');
                 throw new Error(`Module catalog request failed with HTTP ${response.status}.`);
             }
 
@@ -319,35 +317,35 @@
 
             writeAnonymousCatalogCache(modules);
 
-            mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
+            mark('fetch-remote-catalog-end');
             lastCatalogRequest = { requestId, mode, status: response.status, durationMs: Date.now() - startedAt, moduleCount: modules.length };
             return modules;
         } catch (error) {
             lastCatalogRequest = { requestId, mode: expectedMode, status: Number(error?.status || 0), durationMs: Date.now() - startedAt, moduleCount: 0, error: String(error?.message || error) };
-            mark('fetch-remote-catalog-end'); // TEMPORARY diagnostic mark
+            mark('fetch-remote-catalog-end');
             throw error;
         }
     };
 
     const readModuleCatalog = async (catalogPath) => {
-        mark('read-module-catalog-start'); // TEMPORARY diagnostic mark
+        mark('read-module-catalog-start');
         if (typeof fetch !== 'function') {
-            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
+            mark('read-module-catalog-end');
             return readAnonymousCatalogCache();
         }
 
         const mode = currentCatalogMode();
         const cached = mode === 'anonymous' ? readAnonymousCatalogCache() : [];
         if (!isCatalogRefreshOnline()) {
-            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
+            mark('read-module-catalog-end');
             return cached;
         }
         try {
             const remote = await fetchRemoteCatalog(catalogPath, mode);
-            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
+            mark('read-module-catalog-end');
             return remote;
         } catch (error) {
-            mark('read-module-catalog-end'); // TEMPORARY diagnostic mark
+            mark('read-module-catalog-end');
             if (mode === 'anonymous' && cached.length) return cached;
             throw error;
         }
@@ -475,13 +473,13 @@
                 return null;
             }
 
-            mark(`load-module-entry-start-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
+            mark(`load-module-entry-start-${normalizedManifest.id}`);
             const entryName = entryOverride || normalizedManifest.entry || normalizedManifest.main || 'index.js';
             const entryPath = toAbsolutePath(moduleRootPath, entryName);
             const scriptText = await readTextFile(entryPath);
 
             if (!scriptText) {
-                mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
+                mark(`load-module-entry-end-${normalizedManifest.id}`);
                 return null;
             }
 
@@ -490,7 +488,7 @@
             const implementation = resolveModuleImplementation(normalizedManifest);
 
             if (!implementation) {
-                mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
+                mark(`load-module-entry-end-${normalizedManifest.id}`);
                 return null;
             }
 
@@ -508,7 +506,7 @@
                 }
             }
 
-            mark(`load-module-entry-end-${normalizedManifest.id}`); // TEMPORARY diagnostic mark
+            mark(`load-module-entry-end-${normalizedManifest.id}`);
             return {
                 ...implementation,
                 id: implementation.id || normalizedManifest.id,
@@ -529,7 +527,7 @@
         },
 
         async discoverExternalModules(basePath = null) {
-            mark('discover-external-modules-start'); // TEMPORARY diagnostic mark
+            mark('discover-external-modules-start');
             const defaultBasePath = typeof process !== 'undefined' && process.versions && process.versions.node
                 ? 'Web-App/app/modules'
                 : window.NeutralPublicPath.join('Web-App/app/modules');
@@ -560,7 +558,7 @@
                 const rootDirectory = path.resolve(rootPath);
 
                 if (!fs.existsSync(rootDirectory)) {
-                    mark('discover-external-modules-end'); // TEMPORARY diagnostic mark
+                    mark('discover-external-modules-end');
                     return discovered;
                 }
 
@@ -666,7 +664,7 @@
                 }
             }
 
-            mark('discover-external-modules-end'); // TEMPORARY diagnostic mark
+            mark('discover-external-modules-end');
             return discovered;
         },
 

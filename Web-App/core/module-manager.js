@@ -9,9 +9,7 @@
 (() => {
     'use strict';
 
-    // TEMPORARY diagnostic instrumentation (local-only, non-PII, no telemetry
-    // — see WORKFLOW.md). Removed once the offline/online discovery timing
-    // has been confirmed on a real device.
+    // Bounded, data-free startup phase measurements via CorePerformance.
     const mark = (name) => {
         if (typeof window !== 'undefined' && window.CorePerformance) window.CorePerformance.mark(name);
     };
@@ -164,9 +162,9 @@
             this.ensureInitialized();
             const revision = ++this.discoveryRevision;
 
-            mark('module-manager-discover-modules-start'); // TEMPORARY diagnostic mark
+            mark('module-manager-discover-modules-start');
             if (!window.ModuleRegistry || typeof window.ModuleRegistry.discover !== 'function') {
-                mark('module-manager-discover-modules-end'); // TEMPORARY diagnostic mark
+                mark('module-manager-discover-modules-end');
                 return [];
             }
 
@@ -251,7 +249,7 @@
                         ...nextDefinition,
                     });
                     if (isActive) {
-                        mark(`module-init-enable-start-${registered.id}`); // TEMPORARY diagnostic mark
+                        mark(`module-init-enable-start-${registered.id}`);
                         if (typeof runtimeModule.initialize === 'function') {
                             await runtimeModule.initialize();
                         }
@@ -260,7 +258,7 @@
                         } else if (typeof runtimeModule.activate === 'function') {
                             await runtimeModule.activate();
                         }
-                        mark(`module-init-enable-end-${registered.id}`); // TEMPORARY diagnostic mark
+                        mark(`module-init-enable-end-${registered.id}`);
                         runtimeModule.status = 'enabled';
                         runtimeModule.lifecycleState = 'ACTIVE';
                         runtimeModule.registered = true;
@@ -294,7 +292,7 @@
                 }
             }
 
-            mark('module-manager-discover-modules-end'); // TEMPORARY diagnostic mark
+            mark('module-manager-discover-modules-end');
             return discovered;
         },
 

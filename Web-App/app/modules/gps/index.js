@@ -27,7 +27,6 @@
     let lastError = null;
     let lastPosition = null;
     // Bounded diagnostic state. Coordinates and personal data are never recorded here.
-    // TEMPORARY: remove after the real-device GPS fault has been identified.
     const diagnostics = {
         secureContext: typeof window !== 'undefined' && window.isSecureContext === true,
         geolocationAvailable: false,
