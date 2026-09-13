@@ -1,46 +1,40 @@
 # NEUTRAL – CHATGPT HANDOFF
 
 **Richtung:** ChatGPT/Lea ↔ Agenten  
-**Branch:** `main`  
+**Branch:** `lea/repository-deep-cleanup`  
 **Datum:** 2026-09-13  
-**Status:** 3 USER-UI-FEHLER OFFEN  
-**Letzter verifiziert deployter Code-Stand:** `5c1ac7659126de7d901386622b00e1d75d3e10ba`
+**Status:** REPOSITORY DEEP CLEANUP IN ARBEIT  
+**Core Freeze:** NICHT erklärt
 
-## Aktueller Live-Stand
+## Aktueller Arbeitsblock
 
-Der User-UI- und Admin-Live-Retest wurde durchgeführt. Allgemeine frühere Retest-Blöcke sind nicht mehr offen.
+Der laufende Branch ist ein separater Tiefenaudit/Bereinigungsblock. Ziel ist nicht, Funktionen umzubauen, sondern belegte historische Artefakte, veraltete Kommentare, tote Referenzen und Dokumentationswidersprüche zu entfernen bzw. zu korrigieren.
 
-Bestätigt funktionsfähig sind insbesondere:
+Bisherige belegte Cleanup-Funde:
 
-- anonyme und authentifizierte Navigation zu GPS und Settings;
-- Theme;
-- Login;
-- GPS-Position, Aktualisierung, Google Maps und natives Teilen;
-- Settings Apps/Navigation einschließlich GPS-Aktivierung und Label Rename/Restore;
-- Admin-Login und zentrale Adminbereiche einschließlich Users, Packages, Licenses, Sessions, Roles/Permissions, Connections, Database-Test, Backup/Restore, Diagnostics und Audit;
-- CI/Test-/Deploymentpfad des zuletzt deployten Code-Stands.
+- obsolete `[cleanup-public-html]`-Ausnahme im aktiven FTPS-Workflow;
+- Widerspruch zwischen `BACKUP-CONTRACT.md` und der weiterhin vorhandenen V1-Restore-Kompatibilität;
+- alte Entwicklungsphasen-Bezeichnungen in Node-Auth-Kommentaren;
+- als `TEMPORARY` bezeichnete Core-Performance-Marks, obwohl die Messinfrastruktur regulär vorhanden ist;
+- Compatibility-/Legacy-Pfade wurden geprüft und **nicht** allein wegen ihres Namens entfernt.
 
-## Drei offene User-UI-Fehler
+## Sicherheitsgrenze des Cleanup
 
-1. **Start/Home:** `Start` wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View. Ein normaler Klick/Tap muss Home tatsächlich rendern und Active-State, View-State und Route konsistent halten.
-2. **Settings Save Success:** Änderungen werden gespeichert, aber das gemeinsame `Successfully saved.`-Popup erscheint im realen Browser nicht. Es muss nach erfolgreichem Save erscheinen und bis zur Benutzeraktion sichtbar bleiben.
-3. **Passwort-Auge:** Ein normaler Einzelklick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; aktuell funktioniert erst Doppelklick. Ein einzelner Klick/Tap muss `password ↔ text` toggeln.
+- Keine neue Fachlogik.
+- Keine Entfernung funktionaler Kompatibilitäts-/Migrationspfade ohne Nachweis.
+- Keine Profile-/Moderation-/Access-/Modulreparaturen in diesen Branch mischen.
+- Keine funktionale Auth-/Session-/Backup-/Restore-Änderung ohne separaten Root-Cause-Nachweis.
+- Kein Production Restore.
+- Kein Core Freeze.
 
-Diese drei Fehler bilden den nächsten technischen Arbeitsblock. Keine Modularchitektur-, Profile-, Moderation-, Access- oder Admin-Reparaturen damit vermischen.
+## Verifikation
 
-## Arbeitsregel
+Der Branch ist erst mergefähig, wenn der vollständige Diff gegen `main` geprüft und die verfügbaren Tests/Checks frisch ausgeführt wurden. In Umgebungen ohne ausführbaren Repository-Checkout darf kein Test-PASS behauptet werden.
 
-- Root Cause vor Änderung belegen.
-- Passenden Failing-Test vor der Reparatur nachweisen oder ergänzen.
-- Danach fokussierte Tests und Vollsuite ausführen.
-- Relevante Syntax-/Lint-/Build-/Package-Prüfungen und `git diff --check` durchführen.
-- Erst nach erfolgreicher CI, Deployment und read-only Production Smoke den technischen Block als erledigt betrachten.
-- Danach gezielter Operator-Live-Retest exakt dieser drei Punkte.
+## Bekannte offene User-UI-Fehler außerhalb dieses Branches
 
-## Danach
+1. **Start/Home:** `Start` wird aktiv, aber der sichtbare Content bleibt auf der vorherigen View.
+2. **Settings Save Success:** Änderungen werden gespeichert, aber das gemeinsame `Successfully saved.`-Popup erscheint im realen Browser nicht.
+3. **Passwort-Auge:** Ein normaler Einzelklick/Tap toggelt die Passwortsichtbarkeit nicht zuverlässig; aktuell funktioniert erst Doppelklick.
 
-Nach technischer Reparatur und Live-Abnahme der drei User-UI-Punkte folgt ein separater Modularchitektur-Audit. Erst danach werden Profile/Moderation und weitere optionale Module erneut bewertet bzw. repariert.
-
-Architekturgrundsatz: Ein optionales Modul muss deaktivierbar sein, ohne Core oder unabhängige Module funktionsunfähig zu machen. Eine tatsächlich systemnotwendige Fähigkeit muss ausdrücklich Core/Required sein.
-
-**Core Freeze:** NICHT erklärt.
+Diese drei Fehler bleiben offen und werden nach dem Cleanup in einem separaten technischen Block fortgesetzt.
