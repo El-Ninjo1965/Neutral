@@ -1,158 +1,43 @@
 # NEUTRAL – LOCAL AGENT HANDOFF
 
-**Richtung:** Lea → lokaler Codespace-Agent  
-**Branch:** `lea/user-ui-stability`  
-**Priorität:** Test-Harness / User-UI Runtime Proof  
-**Produktionscode:** GESPERRT  
-**Deployment:** VERBOTEN  
-**Merge nach `main`:** VERBOTEN
+**Status:** KEIN AKTIVER AGENTENAUFTRAG  
+**Datum:** 2026-09-13  
+**Branch:** `main`
 
-## WICHTIGE KORREKTUR DER STOP-REGEL
+## Aktueller Stand
 
-Der vorherige Auftrag war missverständlich: Du hast bei Test C korrekt gestoppt, obwohl der bekannte C-Failure bereits als **falsche Harness-Erwartung** identifiziert wurde.
+Der frühere Auftrag auf `lea/user-ui-stability` ist abgeschlossen und darf nicht erneut ausgeführt werden.
 
-Für den JETZIGEN Schritt gilt deshalb ausdrücklich:
+Abgeschlossen sind insbesondere:
+- stale-discovery Test C und zugehöriger Produktionsfix;
+- Pending/Retry-Harnesskorrektur;
+- Success-Dialog-Harnesskorrektur;
+- User-UI-Stability-Branch;
+- Merge und Deployment dieses Blocks.
 
-> Der bekannte C-Failure `retry button is visible while the first catalog request is still pending` ist KEIN Stop-Grund. Du bist ausdrücklich autorisiert und angewiesen, diesen TEST/HARNESS zu korrigieren.
+Der aktuelle Projekt- und Live-Stand steht in `CHATGPT.md`.
+Der aktuelle Modulvertrag steht in `ModuleCreation.md`.
+Architekturgrundlagen stehen in `VISION.md`, `Architecture.md` und `CORE-1.0.md`.
 
-Die STOP-Regel gilt **erst nachdem** diese bekannte falsche Harness-Erwartung korrigiert wurde und der korrigierte Runtime-Test tatsächlich ausgeführt wird.
+## Agentenregel
 
-Produktionscode bleibt vollständig gesperrt.
+Ohne ausdrücklich neuen Auftrag von Lea/ChatGPT:
+- keine Produktionsdateien ändern;
+- keine alten Branch-Aufträge fortsetzen;
+- keine historischen STOP-/FAIL-Angaben als aktuellen Projektstatus behandeln;
+- keinen Merge und kein Deployment durchführen.
 
-## Verbindlicher UI-Vertrag für Test C
+Vor einem neuen Entwicklungsauftrag zuerst die aktuellen Dokumente und danach den relevanten aktuellen Code lesen.
 
-- `pending` → Discovery läuft. Kein Error-State und kein Retry-Button als Pflicht.
-- `ready` → erfolgreiche Module/Settings-Anzeige.
-- `error` → Fehlermeldung und Retry-Control.
+## Bekannte offene Live-Punkte
 
-Der Test darf den Produktionscode nicht dazu zwingen, im Pending-State einen Retry-Button zu zeigen.
+Der Operator-Live-Retest nach dem letzten Deployment hat drei getrennt zu bearbeitende User-UI-Probleme bestätigt:
+1. Start/Home wird optisch aktiv, aber der Content wechselt nicht auf Home.
+2. Settings werden gespeichert, aber das Success-Popup fehlt im realen Browser.
+3. Das Passwort-Auge reagiert erst auf Doppelklick statt auf einen einzelnen Tap/Klick.
 
-## SCHRITT 1 – bekannten Harness-Fehler jetzt tatsächlich korrigieren
+Diese Punkte sind in `CHATGPT.md` dokumentiert. Sie sind noch kein Arbeitsauftrag, bis Lea/ChatGPT einen neuen Auftrag ausdrücklich freigibt.
 
-Bearbeite `tests/user-ui-stability.test.js`.
+## Modularchitektur
 
-Entferne/ersetze die falsche C-Erwartung, dass während des ersten noch laufenden Catalog-Requests ein Retry-Button sichtbar sein müsse.
-
-Baue C als echten Runtime-/DOM-Verhaltenstest über den realen User-Flow:
-
-1. Settings öffnen.
-2. Catalog Request 1 bleibt kontrolliert pending.
-3. Beweisen: Pending wird NICHT als Error dargestellt; Retry ist in diesem Zustand nicht erforderlich.
-4. Erzeuge anschließend über einen fachlich realen Flow einen Zustand, in dem ein weiterer Discovery-Lauf stattfinden kann. Falls ein Retry benötigt wird, muss zuerst ein echter Error-State eintreten, in dem der Retry-Control sichtbar ist.
-5. Neuerer Request liefert erfolgreich Module.
-6. Älterer Request/älterer Fehler trifft verspätet ein.
-7. Beweisen:
-   - neuester Erfolg bleibt maßgeblich;
-   - Module bleiben sichtbar;
-   - kein nachträgliches `Modules could not be loaded` durch stale Resultat;
-   - Retry-Control erscheint nur im tatsächlichen Error-State.
-
-Keine Regex-/Source-String-Beweise. Keine unexponierten Produktionsinternas nur für Tests öffnen.
-
-### Entscheidungsregel während Schritt 1
-
-Wenn C wegen eines **Harness-/Fake-Browser-Problems** fehlschlägt, darfst und sollst du den Harness weiter korrigieren.
-
-Wenn C nach einem validierten Harness wegen eines **nachweislichen Produktionsverhaltens** fehlschlägt, dann STOP und melde den exakten Runtime-Failure.
-
-## SCHRITT 2 – danach ALLE Basis- und Runtime-Tests ausführen
-
-Erst nach erfolgreicher Harness-Korrektur von C gemeinsam ausführen:
-
-### Basis
-- Basis 1
-- Basis 2
-- Basis 3
-- Basis 4
-
-### Runtime
-- A Login + delayed/stale discovery
-- B Start button during background updates
-- C competing/stale Settings catalog
-- D Settings Save + Success Modal
-
-Erwartungen:
-
-### A
-Erfolgreicher Login → Home/Start bleibt deterministisch aktiv. Stale Discovery darf keine alte Login-/Route-View wiederherstellen.
-
-### B
-Ein Klick auf Start reicht auch nach Background-Updates. Eventhandler/DOM bleiben funktionsfähig.
-
-### C
-Neuester erfolgreicher Catalog gewinnt. Stale Resultate überschreiben ihn nicht.
-
-### D
-Erfolgreicher Settings-Save → User bleibt in Settings; `Successfully saved.` erscheint als echtes Modal/Popup; bleibt nach Render sichtbar; verschwindet erst nach Benutzeraktion/OK. Keine Weiterleitung erforderlich.
-
-## STOP-REGEL AB SCHRITT 2
-
-Jetzt erst gilt die harte STOP-Regel:
-
-Wenn Basis 1–4 oder A–D nach validiertem Harness einen reproduzierbaren **Produktionscode-Failure** zeigen:
-
-- STOP.
-- Produktionscode NICHT ändern.
-- tatsächlichen DOM-/Runtime-State dokumentieren.
-- `STOP – REVIEW DURCH LEA ERFORDERLICH` melden.
-
-Wenn Basis 1–4 + A–D vollständig PASS → weiter zu Schritt 3.
-
-## SCHRITT 3 – vollständige Verifikation
-
-Nur bei vollständigem PASS:
-
-1. `npm test`
-2. `node --check Web-App/public/user-app.js`
-3. `node --check tests/user-ui-stability.test.js`
-4. `git diff --check`
-5. `node scripts/build-production-package.js`
-
-## Änderungsgrenzen
-
-Erlaubt:
-- `tests/user-ui-stability.test.js`
-- notwendige reine Harness-Hilfen unter `tests/`
-- `CHATGPT.md`
-
-VERBOTEN:
-- `Web-App/public/user-app.js`
-- GPS
-- Profile
-- Moderation
-- Admin
-- Server/Auth
-- Core-Runtime
-- Datenbank
-
-Keine gerätespezifische Optimierung. Die Ziel-Web-App ist plattformneutral.
-
-## SCHRITT 4 – Dokumentation / Commit
-
-`CHATGPT.md` aktualisieren:
-
-### HARNESS
-- Basis 1 PASS/FAIL
-- Basis 2 PASS/FAIL
-- Basis 3 PASS/FAIL
-- Basis 4 PASS/FAIL
-
-### RUNTIME
-- A PASS/FAIL
-- B PASS/FAIL
-- C PASS/FAIL
-- D PASS/FAIL
-
-### VERIFIKATION
-- npm test
-- node --check
-- git diff --check
-- Production Package
-
-### PRODUKTIONSCODE
-Ausdrücklich:
-`PRODUKTIONSCODE UNVERÄNDERT`
-
-Committe und pushe ausschließlich Test-/Dokumentationsänderungen auf `lea/user-ui-stability`.
-
-NICHT DEPLOYEN. NICHT NACH MAIN MERGEN.
+Für neue oder zu reparierende Module gilt `ModuleCreation.md` als aktueller Arbeitsvertrag. Ein optionales Modul darf Core oder unabhängige Module nicht zu seiner Voraussetzung machen. Harte Modulabhängigkeiten sind Ausnahmefälle und müssen vor Verwendung architektonisch begründet werden.
