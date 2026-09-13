@@ -94,7 +94,7 @@
         var input = document.getElementById('userLoginPassword');
         if (!input) return;
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         input.type = input.type === 'password' ? 'text' : 'password';
         var visible = input.type === 'text';
         button.setAttribute('aria-pressed', visible ? 'true' : 'false');
