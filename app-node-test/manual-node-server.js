@@ -1,7 +1,7 @@
 'use strict';
 
-const fs = require('node:fs');
-const http = require('node:http');
+const fs = require('fs');
+const http = require('http');
 
 const [token, stateFile, timeoutRaw] = process.argv.slice(2);
 const timeoutSeconds = Math.min(300, Math.max(30, Number.parseInt(timeoutRaw || '120', 10) || 120));
