@@ -458,6 +458,10 @@ function printHelp() {
 }
 
 async function main() {
+  if (fs.existsSync(path.join(projectRoot, 'dev.php'))) {
+    await require('./upload-dev-diagnostic.js').main();
+    return;
+  }
   const args = new Set(process.argv.slice(2));
 
   if (args.has('--help') || args.has('-h')) {
