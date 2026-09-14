@@ -60,7 +60,6 @@ async function main() {
 
   await runLftp([
     ...connection(settings),
-    `mkdir -p ${quote(remote)}`,
     ...files.map((file) => `put ${quote(path.join(source, file))} -o ${quote(`${remote}/${file}`)}`),
     'bye',
   ].join('\n'));
