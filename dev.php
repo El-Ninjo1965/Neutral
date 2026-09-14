@@ -105,7 +105,10 @@ function commandPath(string $name): ?string
 
 function findNode24(): array
 {
-    $paths = [];
+    $candidatePaths = [];
+    $record = static function (string $path, string $source) use (&$candidatePaths): void {
+        if ($path !== '' && !isset($candidatePaths[$path])) $candidatePaths[$path] = $source;
+    };
     foreach ([
         '/opt/alt/alt-nodejs24/root/usr/bin/node',
         '/opt/alt/alt-nodejs24/usr/bin/node',
@@ -115,38 +118,80 @@ function findNode24(): array
         '/opt/plesk/node/24/bin/node',
         '/usr/local/nodejs24/bin/node',
         '/usr/local/node24/bin/node',
+        '/usr/bin/node24',
+        '/usr/local/bin/node24',
+        '/opt/bin/node24',
     ] as $path) {
-        addCandidate($paths, $path);
+        $record($path, 'bekannter Node-24-Pfad');
     }
-    foreach ([
-        '/opt/alt/alt-nodejs24*/root/usr/bin/node',
-        '/opt/cpanel/ea-nodejs24*/bin/node',
-        '/opt/cpanel/ea-nodejs24*/root/usr/bin/node',
-        '/opt/cloudlinux/alt-nodejs24*/root/usr/bin/node',
-        '/opt/plesk/node/24*/bin/node',
-    ] as $pattern) {
-        foreach ((array)@glob($pattern, GLOB_NOSORT) as $path) {
-            addCandidate($paths, $path);
+
+    $altDirectories = [];
+    foreach ((array)@glob('/opt/alt/alt-nodejs*', GLOB_NOSORT) as $directory) {
+        if (!is_dir($directory)) continue;
+        $altDirectories[] = $directory;
+        if (preg_match('/alt-nodejs24(?:\D|$)/', basename($directory)) === 1) {
+            foreach (['root/usr/bin/node', 'usr/bin/node', 'bin/node'] as $relative) $record($directory . '/' . $relative, 'ermittelte /opt/alt-Struktur');
         }
     }
-    foreach (['node', 'nodejs'] as $name) {
-        $path = commandPath($name);
-        if ($path !== null) {
-            addCandidate($paths, $path);
+    sort($altDirectories);
+
+    foreach (['/opt/cpanel/*nodejs24*', '/opt/cloudlinux/*nodejs24*', '/opt/plesk/node/24*', '/usr/local/*node*24*', '/opt/*node*24*'] as $directoryPattern) {
+        foreach ((array)@glob($directoryPattern, GLOB_NOSORT) as $directory) {
+            if (!is_dir($directory)) continue;
+            foreach (['root/usr/bin/node', 'usr/bin/node', 'bin/node'] as $relative) $record(rtrim($directory, '/') . '/' . $relative, 'ermittelte Hostingstruktur');
         }
     }
-    ksort($paths);
+
+    $pathEvidence = [];
+    foreach (['command -v node', 'which node', 'command -v nodejs', 'which nodejs'] as $probe) {
+        $result = execute(['/bin/sh', '-c', $probe], 2000);
+        $pathEvidence[] = $probe . ' => ' . ($result['ok'] ? $result['out'] : 'kein Ergebnis' . ($result['err'] ? ': ' . $result['err'] : ''));
+        if ($result['ok']) {
+            $path = strtok($result['out'], "\n");
+            if (is_string($path) && str_starts_with($path, '/')) $record($path, 'normaler PATH: ' . $probe);
+        }
+    }
+    ksort($candidatePaths);
+
     $valid = [];
-    $attempts = [];
-    foreach ($paths as $path => $executable) {
-        $version = $executable ? execute([$path, '--version']) : ['ok' => false, 'out' => '', 'err' => 'not executable'];
+    $candidates = [];
+    $installationFound = count(array_filter($altDirectories, fn($directory) => preg_match('/alt-nodejs24(?:\D|$)/', basename($directory)) === 1)) > 0;
+    $binaryFound = false;
+    foreach ($candidatePaths as $path => $source) {
+        $exists = is_file($path);
+        $executable = $exists && is_executable($path);
+        $named24 = preg_match('/(?:nodejs|node)[^\/]*24|\/24[^\/]*\//i', $path) === 1;
+        if ($exists && $named24) $binaryFound = true;
+        $version = $executable ? execute([$path, '--version']) : ['ok' => false, 'out' => '', 'err' => $exists ? 'not executable' : 'file not found', 'state' => 'not run'];
         $is24 = $version['ok'] && preg_match('/^v24\./', $version['out']) === 1;
-        $attempts[] = $path . ' => ' . ($version['ok'] ? $version['out'] : 'TEST FEHLGESCHLAGEN: ' . ($version['err'] ?: 'not executable'));
         if ($is24) {
-            $valid[$path] = $version['out'];
+            $process = execute([$path, '-e', 'process.stdout.write(JSON.stringify({version:process.version,execPath:process.execPath}))']);
+            if ($process['ok']) {
+                $valid[$path] = ['version' => $version['out'], 'process' => $process['out']];
+                $installationFound = true;
+                $binaryFound = true;
+            }
+        } else {
+            $process = ['ok' => false, 'out' => '', 'err' => 'nicht ausgeführt: --version bestätigt kein Node 24'];
         }
+        $candidates[] = implode("\n", [
+            'Fundort: ' . $path,
+            'Quelle: ' . $source,
+            'Datei vorhanden: ' . ($exists ? 'JA' : 'NEIN'),
+            'Executable: ' . ($executable ? 'JA' : 'NEIN'),
+            '--version: ' . ($version['ok'] ? $version['out'] : 'TEST FEHLGESCHLAGEN'),
+            'process.version/process.execPath: ' . ($process['ok'] ? $process['out'] : 'NICHT ERMITTELT'),
+            'Fehlerausgabe: ' . (($version['err'] ?? '') !== '' ? $version['err'] : (($process['err'] ?? '') !== '' ? $process['err'] : 'keine')),
+        ]);
     }
-    return ['valid' => $valid, 'attempts' => $attempts];
+    return [
+        'valid' => $valid,
+        'candidates' => $candidates,
+        'altDirectories' => $altDirectories,
+        'pathEvidence' => $pathEvidence,
+        'installation' => $installationFound ? 'JA' : 'NICHT EINDEUTIG',
+        'binaryFound' => $binaryFound,
+    ];
 }
 
 function stateFile(): string
@@ -209,31 +254,48 @@ function nodeStatusText(array $state, string $message = ''): string
 function testNode24(): string
 {
     $found = findNode24();
-    if (!$found['valid']) {
-        return "NICHT GEFUNDEN\nNode 24 wurde an den gezielt geprüften Pfaden nicht erfolgreich ausgeführt.\n" . implode("\n", $found['attempts']);
-    }
-    $path = array_key_first($found['valid']);
-    $version = $found['valid'][$path];
-    $script = execute([$path, '-e', 'process.stdout.write(JSON.stringify({ok:true,version:process.version,execPath:process.execPath}))']);
+    $path = $found['valid'] ? array_key_first($found['valid']) : null;
+    $version = $path !== null ? $found['valid'][$path]['version'] : null;
+    $script = $path !== null ? execute([$path, '-e', 'process.stdout.write(JSON.stringify({ok:true,version:process.version,execPath:process.execPath}))']) : ['ok' => false, 'out' => '', 'err' => 'kein ausführbares Node-24-Binary'];
     $httpCode = <<<'JS'
 const http=require('http');const server=http.createServer((q,s)=>s.end('OK'));const guard=setTimeout(()=>process.exit(4),2500);server.listen(0,'127.0.0.1',()=>{const a=server.address();http.get({host:'127.0.0.1',port:a.port},r=>{r.resume();r.on('end',()=>server.close(()=>{clearTimeout(guard);process.stdout.write(JSON.stringify({pid:process.pid,host:a.address,port:a.port,status:r.statusCode,closed:true}))}))}).on('error',()=>process.exit(3))});
 JS;
-    $http = execute([$path, '-e', $httpCode], 4000);
+    $http = $path !== null ? execute([$path, '-e', $httpCode], 4000) : ['ok' => false, 'out' => '', 'err' => 'kein ausführbares Node-24-Binary'];
     $tools = [];
     foreach (['npm', 'npx'] as $name) {
-        $tool = dirname($path) . '/' . $name;
-        if (is_file($tool)) {
+        $tool = $path !== null ? dirname($path) . '/' . $name : '';
+        if ($path !== null && is_file($tool)) {
             $result = execute([$path, $tool, '--version'], 6000);
             $tools[] = strtoupper($name) . ': ' . ($result['ok'] ? $result['out'] . ' (' . $tool . ')' : 'TEST FEHLGESCHLAGEN');
         } else {
             $tools[] = strtoupper($name) . ': NICHT GEFUNDEN';
         }
     }
+    $state = readNodeState();
+    $manual = 'NICHT GETESTET';
+    if (isset($state['startedAt']) && preg_match('/^v24\./', (string)($state['version'] ?? '')) === 1) {
+        $manual = ($state['status'] ?? '') === 'failed' ? 'NICHT STARTBAR' : 'STARTBAR';
+    }
+    $practical = $path === null
+        ? 'NOCH NICHT BEWIESEN'
+        : (!$script['ok'] || !$http['ok'] ? 'NEIN' : ($manual === 'STARTBAR' ? 'JA' : 'NOCH NICHT BEWIESEN'));
+    $alt = $found['altDirectories'] ?: ['keine mit den PHP-Rechten sichtbaren alt-nodejs*-Verzeichnisse'];
     return implode("\n", [
-        'FUNKTIONIERT', 'Node-Version: ' . $version, 'Binary: ' . $path,
-        'Einfaches Skript: ' . ($script['ok'] ? 'FUNKTIONIERT ' . $script['out'] : 'TEST FEHLGESCHLAGEN ' . $script['err']),
+        'NODE 24 INSTALLATION GEFUNDEN: ' . $found['installation'],
+        'NODE 24 BINARY GEFUNDEN: ' . ($found['binaryFound'] ? 'JA' : 'NEIN'),
+        'NODE 24 AUSFÜHRBAR: ' . ($path !== null ? 'JA' : 'NEIN'),
+        'NODE 24 SKRIPT: ' . ($script['ok'] ? 'FUNKTIONIERT' : 'FUNKTIONIERT NICHT'),
+        'NODE 24 LOCALHOST HTTP: ' . ($http['ok'] ? 'FUNKTIONIERT' : 'FUNKTIONIERT NICHT'),
+        'NODE 24 MANUELLER PROZESS: ' . $manual,
+        'NODE 24 PRAKTISCH NUTZBAR: ' . $practical,
+        'Node-Version: ' . ($version ?? 'nicht bestätigt'),
+        'Binary: ' . ($path ?? 'kein bestätigtes Node-24-Binary'),
+        'Einfaches Skript: ' . ($script['ok'] ? $script['out'] : $script['err']),
         ...$tools,
-        '127.0.0.1 HTTP-Selbsttest: ' . ($http['ok'] ? 'FUNKTIONIERT ' . $http['out'] : 'TEST FEHLGESCHLAGEN ' . $http['err']),
+        '127.0.0.1 HTTP-Selbsttest: ' . ($http['ok'] ? $http['out'] : $http['err']),
+        '', 'TATSÄCHLICH GEFUNDENE /opt/alt/alt-nodejs*-VERZEICHNISSE:', ...$alt,
+        '', 'PATH-PRÜFUNGEN:', ...$found['pathEvidence'],
+        '', 'NODE-24-KANDIDATEN:', ...$found['candidates'],
     ]);
 }
 
